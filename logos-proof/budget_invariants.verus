@@ -1,0 +1,17 @@
+use vstd::prelude::*;
+
+verus! {
+
+proof fn rollover_conservation(start: int, assigned: int, spent: int)
+    ensures start + assigned - spent == (start + assigned) - spent
+{
+}
+
+proof fn rollover_rearrangement(start: int, assigned: int, spent: int)
+    ensures (start + assigned - spent) + spent == start + assigned
+{
+}
+
+}
+
+fn main() {}

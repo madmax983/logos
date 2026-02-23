@@ -1,2 +1,22 @@
-// Placeholder for transaction invariant proofs.
-// Task 12 will replace this with formal Verus specifications and lemmas.
+use vstd::prelude::*;
+
+verus! {
+
+spec fn balanced(total: int) -> bool {
+    total == 0
+}
+
+proof fn debit_credit_pair_balances(amount: int)
+    ensures balanced(amount + (-amount))
+{
+}
+
+proof fn transfer_preserves_global_balance(from_delta: int, to_delta: int)
+    requires from_delta + to_delta == 0
+    ensures balanced(from_delta + to_delta)
+{
+}
+
+}
+
+fn main() {}

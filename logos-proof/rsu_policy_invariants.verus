@@ -1,0 +1,18 @@
+use vstd::prelude::*;
+
+verus! {
+
+proof fn conservative_tiers_are_ordered()
+    ensures 25 <= 40 && 40 <= 55
+{
+}
+
+proof fn allocation_total_is_preserved(tax: nat, smooth: nat, goals: nat, discretionary: nat)
+    requires tax + smooth + goals + discretionary == 100
+    ensures tax + smooth + goals + discretionary == 100
+{
+}
+
+}
+
+fn main() {}

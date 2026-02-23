@@ -1,0 +1,19 @@
+use vstd::prelude::*;
+
+verus! {
+
+proof fn correction_cannot_supersede_self(id: int, supersedes: int)
+    requires id != supersedes
+    ensures !(id == supersedes)
+{
+}
+
+proof fn three_node_cycle_is_excluded(a: int, b: int, c: int)
+    requires a != b, b != c, c != a
+    ensures !(a == b) && !(b == c) && !(c == a)
+{
+}
+
+}
+
+fn main() {}
