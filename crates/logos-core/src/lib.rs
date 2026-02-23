@@ -1,4 +1,4 @@
-#[must_use]
-pub const fn crate_ready() -> bool {
-    true
-}
+pub mod domain;
+
+pub use domain::account::AccountType;
+pub use domain::category::{Category, CategoryGroup, CategoryGroupId};
