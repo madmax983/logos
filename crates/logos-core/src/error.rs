@@ -5,6 +5,7 @@ pub enum DomainError {
     EmptyTransactionDescription,
     EmptyCorrectionReason,
     CorrectionCannotSupersedeSelf,
+    InvalidAllocationTotal { total: u16 },
     UnbalancedTransaction { total: i64 },
 }
 
@@ -19,6 +20,9 @@ impl fmt::Display for DomainError {
             }
             Self::CorrectionCannotSupersedeSelf => {
                 write!(f, "correction cannot supersede itself")
+            }
+            Self::InvalidAllocationTotal { total } => {
+                write!(f, "allocation percentages must sum to 100, got {total}")
             }
             Self::UnbalancedTransaction { total } => {
                 write!(
