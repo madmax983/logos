@@ -1,3 +1,4 @@
 fn main() {
-    println!("logos-tui placeholder");
+    let app = logos_tui::App::new();
+    println!("{}", app.render_frame());
 }
