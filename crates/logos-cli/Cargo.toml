@@ -9,3 +9,6 @@ workspace = true
 
 [dependencies]
 logos-core = { path = "../logos-core" }
+logos-import = { path = "../logos-import" }
+logos-reporting = { path = "../logos-reporting" }
+logos-store-aletheia = { path = "../logos-store-aletheia" }

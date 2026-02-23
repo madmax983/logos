@@ -7,6 +7,9 @@ name = "logos-cli"
 version = "0.1.0"
 dependencies = [
  "logos-core",
+ "logos-import",
+ "logos-reporting",
+ "logos-store-aletheia",
 ]
 
 [[package]]

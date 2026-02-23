@@ -1,6 +1,9 @@
 use logos_core::{Correction, TransactionId};
 
-use crate::{AletheiaStore, model::StoredCorrection};
+use crate::{
+    AletheiaStore,
+    model::{StoredCorrection, StoredTransaction},
+};
 
 impl AletheiaStore {
     #[must_use]
@@ -21,5 +24,9 @@ impl AletheiaStore {
     #[must_use]
     pub fn latest_correction(&self) -> Option<&Correction> {
         self.corrections.last().map(StoredCorrection::correction)
+    }
+
+    pub fn transactions(&self) -> impl Iterator<Item = &StoredTransaction> + '_ {
+        self.transactions.values()
     }
 }
