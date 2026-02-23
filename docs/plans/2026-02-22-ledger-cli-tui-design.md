@@ -250,3 +250,16 @@ TUI tests:
 - live market API integration
 - TUI write/edit workflows
 - advanced scenario optimizer beyond current RSU policy model
+
+## 13. Implementation Status (2026-02-23)
+
+Completed in `feat/ledger-v0-impl`:
+
+- Workspace scaffolding and crate boundaries.
+- `logos-core` transaction, correction, budget, and RSU policy invariants with tests.
+- `logos-import` CSV mapping and deterministic fingerprint dedupe.
+- `logos-store-aletheia` store contract with write/read tests.
+- `logos-reporting` projection modules with smoke coverage.
+- `logos-tui` read-only app/view skeleton with smoke test.
+- `logos-proof` spine proofs (`transaction`, `correction`, `budget`, `rsu_policy`) verified by Verus.
+- CLI parser + runtime harness + e2e tests for posting, dedupe, and correction regression.

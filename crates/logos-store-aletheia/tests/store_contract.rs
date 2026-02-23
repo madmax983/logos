@@ -43,7 +43,9 @@ fn correction_append_links_superseded_transaction() {
         .expect("write");
 
     let correction = Correction::new(id.clone(), "fix memo").expect("correction");
-    store.write_correction(correction).expect("append correction");
+    store
+        .write_correction(correction)
+        .expect("append correction");
 
     let latest = store.latest_correction().expect("correction exists");
     assert_eq!(latest.supersedes_id(), &id);

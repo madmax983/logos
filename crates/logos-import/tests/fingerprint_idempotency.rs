@@ -36,5 +36,8 @@ fn changed_record_produces_different_fingerprint() {
         "income:rsu",
     );
 
-    assert_ne!(deterministic_fingerprint(&base), deterministic_fingerprint(&changed));
+    assert_ne!(
+        deterministic_fingerprint(&base),
+        deterministic_fingerprint(&changed)
+    );
 }

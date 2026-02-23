@@ -6,12 +6,7 @@ fn e2e_happy_path_posts_and_reports_register_balance() {
     let mut runtime = CliRuntime::new();
 
     let txn_id = runtime
-        .post_double_entry(
-            "paycheck",
-            "assets:checking",
-            "income:salary",
-            10_000,
-        )
+        .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
         .expect("post");
 
     assert!(runtime.transaction_exists(&txn_id));
@@ -24,8 +19,12 @@ fn e2e_import_is_idempotent_by_fingerprint() {
     let mapping = CsvMapping::default();
     let line = "2026-02-01T09:30:00,12345,RSU sale,assets:checking,income:rsu";
 
-    let inserted_first = runtime.import_csv_row(line, &mapping).expect("first import");
-    let inserted_second = runtime.import_csv_row(line, &mapping).expect("second import");
+    let inserted_first = runtime
+        .import_csv_row(line, &mapping)
+        .expect("first import");
+    let inserted_second = runtime
+        .import_csv_row(line, &mapping)
+        .expect("second import");
 
     assert!(inserted_first);
     assert!(!inserted_second);

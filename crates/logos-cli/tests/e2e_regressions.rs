@@ -4,12 +4,7 @@ use logos_cli::runtime::CliRuntime;
 fn e2e_correction_tracks_latest_superseded_transaction() {
     let mut runtime = CliRuntime::new();
     let txn_id = runtime
-        .post_double_entry(
-            "paycheck",
-            "assets:checking",
-            "income:salary",
-            10_000,
-        )
+        .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
         .expect("post");
 
     runtime

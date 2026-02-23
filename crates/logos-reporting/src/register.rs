@@ -17,7 +17,9 @@ impl RegisterEntry {
 
 #[must_use]
 pub fn project_register_balance(opening_balance_cents: i64, entries: &[RegisterEntry]) -> i64 {
-    entries.iter().fold(opening_balance_cents, |balance, entry| {
-        balance + entry.delta_cents()
-    })
+    entries
+        .iter()
+        .fold(opening_balance_cents, |balance, entry| {
+            balance + entry.delta_cents()
+        })
 }

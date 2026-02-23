@@ -11,7 +11,8 @@ fn correction_links_to_prior_transaction() {
 #[test]
 fn correction_cannot_supersede_itself() {
     let id = TransactionId::new("txn-1");
-    let err = Correction::new(id.clone(), "self").and_then(|correction| correction.validate_not_self(&id));
+    let err = Correction::new(id.clone(), "self")
+        .and_then(|correction| correction.validate_not_self(&id));
 
     assert!(err.is_err());
 }

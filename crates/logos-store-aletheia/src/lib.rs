@@ -60,11 +60,7 @@ impl AletheiaStore {
         self.corrections.push(StoredCorrection::new(correction));
     }
 
-    pub(crate) fn persist_transaction(
-        &mut self,
-        id: TransactionId,
-        txn: logos_core::Transaction,
-    ) {
+    pub(crate) fn persist_transaction(&mut self, id: TransactionId, txn: logos_core::Transaction) {
         self.transactions
             .insert(id.clone(), StoredTransaction::new(id, txn));
     }

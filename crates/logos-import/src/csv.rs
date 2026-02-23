@@ -110,17 +110,16 @@ impl ImportRecord {
 /// Returns an error when required columns are missing or amount parsing fails.
 pub fn parse_simple_csv_row(row: &str, mapping: &CsvMapping) -> Result<ImportRecord, ImportError> {
     let columns: Vec<&str> = row.split(',').collect();
-    let needed = 1
-        + [
-            mapping.timestamp_idx,
-            mapping.amount_idx,
-            mapping.memo_idx,
-            mapping.account_idx,
-            mapping.category_idx,
-        ]
-        .into_iter()
-        .max()
-        .unwrap_or(0);
+    let needed = 1 + [
+        mapping.timestamp_idx,
+        mapping.amount_idx,
+        mapping.memo_idx,
+        mapping.account_idx,
+        mapping.category_idx,
+    ]
+    .into_iter()
+    .max()
+    .unwrap_or(0);
 
     if columns.len() < needed {
         return Err(ImportError::MissingColumns {

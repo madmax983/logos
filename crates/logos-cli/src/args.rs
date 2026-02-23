@@ -23,7 +23,10 @@ impl fmt::Display for CliError {
             Self::UnknownSubcommand {
                 command,
                 subcommand,
-            } => write!(f, "unknown subcommand '{subcommand}' for command '{command}'"),
+            } => write!(
+                f,
+                "unknown subcommand '{subcommand}' for command '{command}'"
+            ),
             Self::MissingArgValue { flag } => write!(f, "missing value for argument '{flag}'"),
             Self::MissingTxnDescription => write!(f, "missing transaction description"),
         }
@@ -177,10 +180,8 @@ fn parse_flag_value(args: &[String], flag: &str) -> Result<String, CliError> {
         .iter()
         .position(|arg| arg == flag)
         .ok_or(CliError::MissingTxnDescription)?;
-    let value = args
-        .get(idx + 1)
-        .ok_or_else(|| CliError::MissingArgValue {
-            flag: flag.to_owned(),
-        })?;
+    let value = args.get(idx + 1).ok_or_else(|| CliError::MissingArgValue {
+        flag: flag.to_owned(),
+    })?;
     Ok(value.clone())
 }
