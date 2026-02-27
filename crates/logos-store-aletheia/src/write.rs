@@ -1,7 +1,7 @@
 use aletheiadb::Timestamp;
 use logos_core::{Correction, TransactionBuilder, TransactionId};
 
-use crate::{AletheiaStore, StoreError};
+use crate::{AletheiaStore, StoreError, model::StoredBudgetTarget};
 
 impl AletheiaStore {
     /// Validates and persists a transaction in append-only storage.
@@ -28,8 +28,9 @@ impl AletheiaStore {
     ) -> Result<TransactionId, StoreError> {
         let txn = Self::build_and_validate(builder)?;
         let id = self.next_transaction_id();
-        self.persist_transaction_graph(&id, &txn, valid_from)?;
-        self.persist_transaction(id.clone(), txn);
+        let effective_at = valid_from.unwrap_or_else(aletheiadb::time::now);
+        self.persist_transaction_graph(&id, &txn, effective_at)?;
+        self.persist_transaction(id.clone(), txn, effective_at);
         Ok(id)
     }
 
@@ -47,6 +48,23 @@ impl AletheiaStore {
 
         self.persist_correction_graph(&correction)?;
         self.push_correction(correction);
+        Ok(())
+    }
+
+    /// Appends or replaces the effective budget target for a `(month_key, expense_prefix)` pair.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when persistence fails.
+    pub fn write_budget_target(
+        &mut self,
+        month_key: &str,
+        expense_account_prefix: &str,
+        budget_cents: i64,
+    ) -> Result<(), StoreError> {
+        let target = StoredBudgetTarget::new(month_key, expense_account_prefix, budget_cents);
+        self.persist_budget_target_graph(&target)?;
+        self.persist_budget_target(target);
         Ok(())
     }
 }

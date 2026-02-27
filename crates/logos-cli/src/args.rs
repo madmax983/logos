@@ -77,7 +77,7 @@ impl ParsedArgs {
     ///
     /// Returns parser-level validation errors for incomplete command payloads.
     pub fn execute(&self) -> Result<(), CliError> {
-        match self.command() {
+        match &self.command {
             Command::Help(topic) => commands::help::show(*topic),
             Command::Aletheia(AletheiaCommand::Start) => commands::aletheia::start(),
             Command::Aletheia(AletheiaCommand::Status) => commands::aletheia::status(),
@@ -88,14 +88,56 @@ impl ParsedArgs {
                 amount_cents,
             }) => commands::txn::add(description, debit_account, credit_account, *amount_cents),
             Command::Budget(BudgetCommand::Set {
+                month_key,
                 budget_cents,
                 expense_account_prefix,
-            }) => commands::budget::set(*budget_cents, expense_account_prefix),
-            Command::Report(ReportCommand::Month { checking_account }) => {
-                commands::report::month(checking_account)
+            }) => {
+                commands::budget::set(month_key.as_deref(), *budget_cents, expense_account_prefix)
             }
+            Command::Report(ReportCommand::Month {
+                checking_account,
+                month_key,
+            }) => commands::report::month(checking_account, month_key.as_deref()),
         }
     }
+}
+
+fn parse_month_key(flag: &str, value: String) -> Result<String, CliError> {
+    let bytes = value.as_bytes();
+    if bytes.len() != 7 || bytes[4] != b'-' {
+        return Err(CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value,
+        });
+    }
+
+    if !bytes[0..4].iter().all(u8::is_ascii_digit) || !bytes[5..7].iter().all(u8::is_ascii_digit) {
+        return Err(CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value,
+        });
+    }
+
+    let month = value[5..7]
+        .parse::<u8>()
+        .map_err(|_| CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value: value.clone(),
+        })?;
+    if !(1..=12).contains(&month) {
+        return Err(CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value,
+        });
+    }
+
+    Ok(value)
+}
+
+fn parse_optional_month_flag(args: &[String], flag: &str) -> Result<Option<String>, CliError> {
+    parse_optional_flag_value(args, flag)?
+        .map(|value| parse_month_key(flag, value))
+        .transpose()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -153,6 +195,7 @@ pub enum TxnCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BudgetCommand {
     Set {
+        month_key: Option<String>,
         budget_cents: i64,
         expense_account_prefix: String,
     },
@@ -160,7 +203,10 @@ pub enum BudgetCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ReportCommand {
-    Month { checking_account: String },
+    Month {
+        checking_account: String,
+        month_key: Option<String>,
+    },
 }
 
 /// Parses verb-first CLI arguments.
@@ -233,6 +279,7 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
             command: Command::Help(HelpTopic::Budget),
         }),
         "set" => {
+            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
             let budget_cents =
                 parse_optional_i64_flag(&args[2..], "--budget-cents", DEFAULT_BUDGET_CENTS)?;
             let expense_account_prefix =
@@ -240,6 +287,7 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
                     .unwrap_or_else(|| DEFAULT_EXPENSE_ACCOUNT_PREFIX.to_owned());
             Ok(ParsedArgs {
                 command: Command::Budget(BudgetCommand::Set {
+                    month_key,
                     budget_cents,
                     expense_account_prefix,
                 }),
@@ -264,8 +312,12 @@ fn parse_report(args: &[String]) -> Result<ParsedArgs, CliError> {
         "month" => {
             let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?
                 .unwrap_or_else(|| DEFAULT_CHECKING_ACCOUNT.to_owned());
+            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
             Ok(ParsedArgs {
-                command: Command::Report(ReportCommand::Month { checking_account }),
+                command: Command::Report(ReportCommand::Month {
+                    checking_account,
+                    month_key,
+                }),
             })
         }
         _ => Err(CliError::UnknownSubcommand {

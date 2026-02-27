@@ -25,15 +25,16 @@ const BUDGET_HELP_TEXT: &str = "\
 Usage: ledger budget <subcommand> [options]
 
 Subcommands:
-  set --budget-cents <i64> --expense-account-prefix <prefix>
-                                    Set budget target and expense scope (both optional)
+  set --month <YYYY-MM> --budget-cents <i64> --expense-account-prefix <prefix>
+                                     Set budget target for month/scope (all optional)
 ";
 
 const REPORT_HELP_TEXT: &str = "\
 Usage: ledger report <subcommand> [options]
 
 Subcommands:
-  month --checking-account <name>   Show monthly report for account (optional)
+  month --month <YYYY-MM> --checking-account <name>
+                                     Show month-windowed report (both optional)
 ";
 
 const ALETHEIA_HELP_TEXT: &str = "\

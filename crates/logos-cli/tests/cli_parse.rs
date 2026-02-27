@@ -168,9 +168,10 @@ fn parses_budget_set_with_default_value_flags() {
     assert!(matches!(
         parsed.command(),
         logos_cli::args::Command::Budget(logos_cli::args::BudgetCommand::Set {
+            month_key,
             budget_cents,
             expense_account_prefix
-        }) if *budget_cents == 0 && expense_account_prefix == "expenses:"
+        }) if month_key.is_none() && *budget_cents == 0 && expense_account_prefix == "expenses:"
     ));
 }
 
@@ -191,9 +192,10 @@ fn parses_budget_set_with_explicit_value_flags() {
     assert!(matches!(
         parsed.command(),
         logos_cli::args::Command::Budget(logos_cli::args::BudgetCommand::Set {
+            month_key,
             budget_cents,
             expense_account_prefix
-        }) if *budget_cents == 250_000 && expense_account_prefix == "expenses:food"
+        }) if month_key.is_none() && *budget_cents == 250_000 && expense_account_prefix == "expenses:food"
     ));
 }
 
@@ -205,6 +207,34 @@ fn rejects_budget_set_when_budget_cents_is_not_integer() {
     assert_eq!(
         err.to_string(),
         "invalid value 'ten' for argument '--budget-cents'"
+    );
+}
+
+#[test]
+fn parses_budget_set_with_month_flag() {
+    let args = vec!["ledger", "budget", "set", "--month", "2026-03"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Budget(logos_cli::args::BudgetCommand::Set {
+            month_key,
+            budget_cents,
+            expense_account_prefix
+        }) if month_key.as_deref() == Some("2026-03")
+            && *budget_cents == 0
+            && expense_account_prefix == "expenses:"
+    ));
+}
+
+#[test]
+fn rejects_budget_set_when_month_is_invalid() {
+    let args = vec!["ledger", "budget", "set", "--month", "2026-13"];
+    let err = logos_cli::parse_args(args).expect_err("invalid month");
+
+    assert_eq!(
+        err.to_string(),
+        "invalid value '2026-13' for argument '--month'"
     );
 }
 
@@ -225,8 +255,9 @@ fn parses_report_month_with_default_value_flags() {
     assert!(matches!(
         parsed.command(),
         logos_cli::args::Command::Report(logos_cli::args::ReportCommand::Month {
-            checking_account
-        }) if checking_account == "assets:checking"
+            checking_account,
+            month_key
+        }) if checking_account == "assets:checking" && month_key.is_none()
     ));
 }
 
@@ -245,9 +276,35 @@ fn parses_report_month_with_explicit_checking_account() {
     assert!(matches!(
         parsed.command(),
         logos_cli::args::Command::Report(logos_cli::args::ReportCommand::Month {
-            checking_account
-        }) if checking_account == "assets:brokerage"
+            checking_account,
+            month_key
+        }) if checking_account == "assets:brokerage" && month_key.is_none()
     ));
+}
+
+#[test]
+fn parses_report_month_with_month_flag() {
+    let args = vec!["ledger", "report", "month", "--month", "2026-04"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Report(logos_cli::args::ReportCommand::Month {
+            checking_account,
+            month_key
+        }) if checking_account == "assets:checking" && month_key.as_deref() == Some("2026-04")
+    ));
+}
+
+#[test]
+fn rejects_report_month_when_month_is_invalid() {
+    let args = vec!["ledger", "report", "month", "--month", "2026-00"];
+    let err = logos_cli::parse_args(args).expect_err("invalid month");
+
+    assert_eq!(
+        err.to_string(),
+        "invalid value '2026-00' for argument '--month'"
+    );
 }
 
 #[test]

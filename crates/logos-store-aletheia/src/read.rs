@@ -9,8 +9,9 @@ use crate::{
     AletheiaStore, StoreError, map_load_error,
     model::{
         AsOf, EDGE_HAS_POSTING, EDGE_SUPERSEDES, LABEL_LEDGER_CORRECTION, PROP_ACCOUNT,
-        PROP_AMOUNT_CENTS, PROP_DESCRIPTION, PROP_ORDINAL, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID,
-        StoredCorrection, StoredTransaction,
+        PROP_AMOUNT_CENTS, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_ORDINAL,
+        PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID, StoredBudgetTarget, StoredCorrection,
+        StoredTransaction,
     },
     parse_posting, required_edge_i64_property, required_node_i64_property,
     required_node_string_property,
@@ -39,6 +40,20 @@ impl AletheiaStore {
 
     pub fn transactions(&self) -> impl Iterator<Item = &StoredTransaction> + '_ {
         self.transactions.values()
+    }
+
+    #[must_use]
+    pub fn budget_target(
+        &self,
+        month_key: &str,
+        expense_account_prefix: &str,
+    ) -> Option<&StoredBudgetTarget> {
+        self.budget_targets
+            .get(&(month_key.to_owned(), expense_account_prefix.to_owned()))
+    }
+
+    pub fn budget_targets(&self) -> impl Iterator<Item = &StoredBudgetTarget> + '_ {
+        self.budget_targets.values()
     }
 
     /// Reconstructs transactions visible at a bi-temporal point in time.
@@ -85,7 +100,13 @@ impl AletheiaStore {
                 &txn_node,
                 as_of,
             )?;
-            transactions.push(StoredTransaction::new(txn_id.clone(), transaction));
+            let effective_at = optional_node_timestamp_property(&txn_node, PROP_EFFECTIVE_AT_US)
+                .unwrap_or_else(|| as_of.valid_time());
+            transactions.push(StoredTransaction::with_effective_at(
+                txn_id.clone(),
+                transaction,
+                effective_at,
+            ));
         }
 
         transactions.sort_by(|left, right| left.id().as_str().cmp(right.id().as_str()));
@@ -241,4 +262,10 @@ const fn is_node_not_visible(error: &DbError) -> bool {
 
 const fn is_edge_not_visible(error: &DbError) -> bool {
     matches!(error, DbError::Storage(StorageError::EdgeNotFound(_)))
+}
+
+fn optional_node_timestamp_property(node: &Node, key: &str) -> Option<Timestamp> {
+    node.get_property(key)
+        .and_then(aletheiadb::PropertyValue::as_int)
+        .map(Into::into)
 }

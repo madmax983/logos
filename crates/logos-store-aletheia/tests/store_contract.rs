@@ -137,6 +137,25 @@ fn open_persists_correction_chain_across_reopen() {
 }
 
 #[test]
+fn open_persists_budget_target_across_reopen() {
+    let path = temp_store_path("persist-budget-target");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        store
+            .write_budget_target("2026-03", "expenses:food", 250_000)
+            .expect("write budget target");
+    }
+
+    let reopened = AletheiaStore::open(&path).expect("reopen");
+    let target = reopened
+        .budget_target("2026-03", "expenses:food")
+        .expect("budget target exists");
+    assert_eq!(target.budget_cents(), 250_000);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
 fn embedded_mapping_writes_transaction_and_posting_graph_entities() {
     let path = temp_store_path("mapping-transaction");
     {

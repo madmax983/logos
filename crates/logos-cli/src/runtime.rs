@@ -2,13 +2,14 @@ use std::collections::HashSet;
 use std::env;
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
 use logos_import::{CsvMapping, ImportError, deterministic_fingerprint, parse_simple_csv_row};
 use logos_reporting::{
     RegisterEntry, project_budget_variance, project_cashflow, project_register_balance,
 };
-use logos_store_aletheia::{AletheiaStore, StoreError};
+use logos_store_aletheia::{AletheiaStore, StoreError, model::StoredTransaction};
 
 const LOGOS_DB_PATH_ENV: &str = "LOGOS_DB_PATH";
 const DEFAULT_DB_DIRECTORY: &str = ".logos";
@@ -195,12 +196,59 @@ impl CliRuntime {
         project_budget_variance(budget_cents, actual_expense_cents)
     }
 
+    /// Persists a budget target for a month and account-prefix scope.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when persistence fails.
+    pub fn set_budget_target_for_month(
+        &mut self,
+        month_key: &str,
+        expense_account_prefix: &str,
+        budget_cents: i64,
+    ) -> Result<(), RuntimeError> {
+        self.store
+            .write_budget_target(month_key, expense_account_prefix, budget_cents)?;
+        Ok(())
+    }
+
     #[must_use]
-    pub fn month_report_for(&self, checking_account: &str) -> MonthReport {
-        let checking_balance_cents = self.register_balance_for(checking_account);
+    pub fn budget_target_for_month(
+        &self,
+        month_key: &str,
+        expense_account_prefix: &str,
+    ) -> Option<i64> {
+        self.store
+            .budget_target(month_key, expense_account_prefix)
+            .map(logos_store_aletheia::model::StoredBudgetTarget::budget_cents)
+    }
+
+    #[must_use]
+    pub fn budget_variance_for_month(
+        &self,
+        month_key: &str,
+        budget_cents: i64,
+        expense_account_prefix: &str,
+    ) -> i64 {
+        let actual_expense_cents = self.expense_total_for_month(month_key, expense_account_prefix);
+        project_budget_variance(budget_cents, actual_expense_cents)
+    }
+
+    #[must_use]
+    pub fn month_report_for(&self, checking_account: &str, month_key: &str) -> MonthReport {
+        let checking_balance_cents: i64 = self
+            .store
+            .transactions()
+            .filter(|stored| transaction_in_month(stored, month_key))
+            .flat_map(|stored| stored.transaction().postings().iter())
+            .filter(|posting| posting.account() == checking_account)
+            .map(Posting::amount)
+            .sum();
+
         let income_cents: i64 = self
             .store
             .transactions()
+            .filter(|stored| transaction_in_month(stored, month_key))
             .flat_map(|stored| stored.transaction().postings().iter())
             .filter(|posting| posting.account().starts_with("income:"))
             .map(Posting::amount)
@@ -211,6 +259,7 @@ impl CliRuntime {
         let expense_cents: i64 = self
             .store
             .transactions()
+            .filter(|stored| transaction_in_month(stored, month_key))
             .flat_map(|stored| stored.transaction().postings().iter())
             .filter(|posting| posting.account().starts_with("expenses:"))
             .map(Posting::amount)
@@ -224,6 +273,17 @@ impl CliRuntime {
             expense_cents,
             cashflow_cents,
         )
+    }
+
+    #[must_use]
+    pub fn current_month_key_utc() -> String {
+        let wallclock_us = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|duration| duration.as_micros())
+            .ok()
+            .and_then(|micros| i64::try_from(micros).ok())
+            .unwrap_or(0);
+        month_key_from_wallclock_utc(wallclock_us)
     }
 
     /// Imports one CSV row with deterministic idempotency.
@@ -274,4 +334,45 @@ impl CliRuntime {
             .latest_correction()
             .map(|correction| correction.supersedes_id().clone())
     }
+
+    fn expense_total_for_month(&self, month_key: &str, expense_account_prefix: &str) -> i64 {
+        self.store
+            .transactions()
+            .filter(|stored| transaction_in_month(stored, month_key))
+            .flat_map(|stored| stored.transaction().postings().iter())
+            .filter(|posting| posting.account().starts_with(expense_account_prefix))
+            .map(Posting::amount)
+            .filter(|amount| *amount > 0)
+            .sum()
+    }
+}
+
+fn transaction_in_month(stored: &StoredTransaction, month_key: &str) -> bool {
+    month_key_from_wallclock_utc(stored.effective_at().wallclock()) == month_key
+}
+
+fn month_key_from_wallclock_utc(wallclock_us: i64) -> String {
+    let secs = wallclock_us.div_euclid(1_000_000);
+    let days = secs.div_euclid(86_400);
+    let (year, month, _) = civil_from_days(days);
+    format!("{year:04}-{month:02}")
+}
+
+fn civil_from_days(days_since_unix_epoch: i64) -> (i64, u32, u32) {
+    let z = days_since_unix_epoch + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let day_of_era = z - era * 146_097;
+    let year_of_era =
+        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let mut year = year_of_era + era * 400;
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let month_prime = (5 * day_of_year + 2) / 153;
+    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
+    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
+    if month <= 2 {
+        year += 1;
+    }
+    let month_u32 = u32::try_from(month).unwrap_or(1);
+    let day_u32 = u32::try_from(day).unwrap_or(1);
+    (year, month_u32, day_u32)
 }

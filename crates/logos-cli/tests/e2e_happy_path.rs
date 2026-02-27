@@ -70,6 +70,7 @@ fn e2e_runtime_reopen_restores_persisted_transactions() {
 #[test]
 fn e2e_runtime_month_report_and_budget_variance_use_posted_transactions() {
     let mut runtime = CliRuntime::new_in_memory();
+    let month_key = CliRuntime::current_month_key_utc();
 
     runtime
         .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
@@ -78,10 +79,38 @@ fn e2e_runtime_month_report_and_budget_variance_use_posted_transactions() {
         .post_double_entry("groceries", "expenses:food", "assets:checking", 2_500)
         .expect("post expense");
 
-    let report = runtime.month_report_for("assets:checking");
+    let report = runtime.month_report_for("assets:checking", &month_key);
     assert_eq!(report.checking_balance_cents(), 7_500);
     assert_eq!(report.income_cents(), 10_000);
     assert_eq!(report.expense_cents(), 2_500);
     assert_eq!(report.cashflow_cents(), 7_500);
-    assert_eq!(runtime.budget_variance_for(3_000, "expenses:"), 500);
+    assert_eq!(
+        runtime.budget_variance_for_month(&month_key, 3_000, "expenses:"),
+        500
+    );
+
+    let empty_month_report = runtime.month_report_for("assets:checking", "1900-01");
+    assert_eq!(empty_month_report.checking_balance_cents(), 0);
+    assert_eq!(empty_month_report.income_cents(), 0);
+    assert_eq!(empty_month_report.expense_cents(), 0);
+    assert_eq!(empty_month_report.cashflow_cents(), 0);
+}
+
+#[test]
+fn e2e_runtime_reopen_restores_persisted_budget_targets() {
+    let path = temp_runtime_path("reopen-budget-target");
+    {
+        let mut runtime = CliRuntime::open(&path).expect("open");
+        runtime
+            .set_budget_target_for_month("2026-03", "expenses:food", 250_000)
+            .expect("set budget");
+    }
+
+    let reopened = CliRuntime::open(&path).expect("reopen");
+    assert_eq!(
+        reopened.budget_target_for_month("2026-03", "expenses:food"),
+        Some(250_000)
+    );
+
+    cleanup_runtime_path(&path);
 }

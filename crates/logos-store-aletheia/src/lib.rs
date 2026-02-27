@@ -10,9 +10,11 @@ use aletheiadb::{
 use logos_core::{Correction, DomainError, Posting, TransactionBuilder, TransactionId};
 
 use crate::model::{
-    EDGE_HAS_POSTING, EDGE_SUPERSEDES, LABEL_LEDGER_CORRECTION, LABEL_LEDGER_POSTING,
-    LABEL_LEDGER_TRANSACTION, PROP_ACCOUNT, PROP_AMOUNT_CENTS, PROP_DESCRIPTION, PROP_ORDINAL,
-    PROP_REASON, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID, StoredCorrection, StoredTransaction,
+    EDGE_HAS_POSTING, EDGE_SUPERSEDES, LABEL_LEDGER_BUDGET_TARGET, LABEL_LEDGER_CORRECTION,
+    LABEL_LEDGER_POSTING, LABEL_LEDGER_TRANSACTION, PROP_ACCOUNT, PROP_AMOUNT_CENTS,
+    PROP_BUDGET_CENTS, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_EXPENSE_ACCOUNT_PREFIX,
+    PROP_MONTH_KEY, PROP_ORDINAL, PROP_REASON, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID,
+    StoredBudgetTarget, StoredCorrection, StoredTransaction,
 };
 
 pub mod model;
@@ -57,6 +59,7 @@ pub struct AletheiaStore {
     pub(crate) next_id: u64,
     pub(crate) transactions: HashMap<TransactionId, StoredTransaction>,
     pub(crate) corrections: Vec<StoredCorrection>,
+    pub(crate) budget_targets: HashMap<BudgetTargetKey, StoredBudgetTarget>,
     pub(crate) embedded: Option<EmbeddedStore>,
 }
 
@@ -65,7 +68,10 @@ struct LoadedProjection {
     transactions: HashMap<TransactionId, StoredTransaction>,
     transaction_nodes: HashMap<TransactionId, NodeId>,
     corrections: Vec<StoredCorrection>,
+    budget_targets: HashMap<BudgetTargetKey, StoredBudgetTarget>,
 }
+
+type BudgetTargetKey = (String, String);
 
 pub(crate) struct EmbeddedStore {
     pub(crate) db: AletheiaDB,
@@ -87,6 +93,7 @@ impl fmt::Debug for AletheiaStore {
             .field("next_id", &self.next_id)
             .field("transactions", &self.transactions.len())
             .field("corrections", &self.corrections.len())
+            .field("budget_targets", &self.budget_targets.len())
             .field("embedded", &self.embedded.as_ref().map(|_| "enabled"))
             .finish()
     }
@@ -127,6 +134,7 @@ impl AletheiaStore {
             next_id,
             transactions: loaded.transactions,
             corrections: loaded.corrections,
+            budget_targets: loaded.budget_targets,
             embedded: Some(EmbeddedStore {
                 db,
                 transaction_nodes: loaded.transaction_nodes,
@@ -143,9 +151,24 @@ impl AletheiaStore {
         self.corrections.push(StoredCorrection::new(correction));
     }
 
-    pub(crate) fn persist_transaction(&mut self, id: TransactionId, txn: logos_core::Transaction) {
-        self.transactions
-            .insert(id.clone(), StoredTransaction::new(id, txn));
+    pub(crate) fn persist_transaction(
+        &mut self,
+        id: TransactionId,
+        txn: logos_core::Transaction,
+        effective_at: Timestamp,
+    ) {
+        self.transactions.insert(
+            id.clone(),
+            StoredTransaction::with_effective_at(id, txn, effective_at),
+        );
+    }
+
+    pub(crate) fn persist_budget_target(&mut self, target: StoredBudgetTarget) {
+        let key = (
+            target.month_key().to_owned(),
+            target.expense_account_prefix().to_owned(),
+        );
+        self.budget_targets.insert(key, target);
     }
 
     pub(crate) fn build_and_validate(
@@ -158,7 +181,7 @@ impl AletheiaStore {
         &mut self,
         id: &TransactionId,
         transaction: &logos_core::Transaction,
-        valid_from: Option<Timestamp>,
+        effective_at: Timestamp,
     ) -> Result<(), StoreError> {
         let Some(embedded) = self.embedded.as_mut() else {
             return Ok(());
@@ -175,8 +198,9 @@ impl AletheiaStore {
                 PropertyMapBuilder::new()
                     .insert(PROP_TXN_ID, id.as_str())
                     .insert(PROP_DESCRIPTION, transaction.description())
+                    .insert(PROP_EFFECTIVE_AT_US, effective_at.wallclock())
                     .build(),
-                valid_from,
+                Some(effective_at),
             )
             .map_err(|err| map_persist_error("unable to create LedgerTransaction node", err))?;
 
@@ -193,7 +217,7 @@ impl AletheiaStore {
                         .insert(PROP_ACCOUNT, posting.account())
                         .insert(PROP_AMOUNT_CENTS, posting.amount())
                         .build(),
-                    valid_from,
+                    Some(effective_at),
                 )
                 .map_err(|err| map_persist_error("unable to create LedgerPosting node", err))?;
 
@@ -204,7 +228,7 @@ impl AletheiaStore {
                 PropertyMapBuilder::new()
                     .insert(PROP_ORDINAL, ordinal)
                     .build(),
-                valid_from,
+                Some(effective_at),
             )
             .map_err(|err| map_persist_error("unable to create HAS_POSTING edge", err))?;
         }
@@ -258,6 +282,32 @@ impl AletheiaStore {
             .map_err(|err| map_persist_error("unable to commit embedded correction write", err))?;
         Ok(())
     }
+
+    pub(crate) fn persist_budget_target_graph(
+        &mut self,
+        target: &StoredBudgetTarget,
+    ) -> Result<(), StoreError> {
+        let Some(embedded) = self.embedded.as_mut() else {
+            return Ok(());
+        };
+
+        let mut tx = embedded.db.write_transaction().map_err(|err| {
+            map_persist_error("unable to start budget target write transaction", err)
+        })?;
+
+        tx.create_node(
+            LABEL_LEDGER_BUDGET_TARGET,
+            PropertyMapBuilder::new()
+                .insert(PROP_MONTH_KEY, target.month_key())
+                .insert(PROP_EXPENSE_ACCOUNT_PREFIX, target.expense_account_prefix())
+                .insert(PROP_BUDGET_CENTS, target.budget_cents())
+                .build(),
+        )
+        .map_err(|err| map_persist_error("unable to create LedgerBudgetTarget node", err))?;
+
+        tx.commit()
+            .map_err(|err| map_persist_error("unable to commit embedded budget target write", err))
+    }
 }
 
 fn open_embedded_db(root_path: &Path) -> Result<AletheiaDB, StoreError> {
@@ -286,10 +336,12 @@ fn open_embedded_db(root_path: &Path) -> Result<AletheiaDB, StoreError> {
 fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
     let (transactions, transaction_nodes) = load_transactions(db)?;
     let corrections = load_corrections(db, &transaction_nodes)?;
+    let budget_targets = load_budget_targets(db)?;
     Ok(LoadedProjection {
         transactions,
         transaction_nodes,
         corrections,
+        budget_targets,
     })
 }
 
@@ -310,6 +362,8 @@ fn load_transactions(db: &AletheiaDB) -> Result<TransactionLoad, StoreError> {
         let txn_id_value = required_node_string_property(&txn_node, PROP_TXN_ID)?;
         let description = required_node_string_property(&txn_node, PROP_DESCRIPTION)?;
         let txn_id = TransactionId::new(&txn_id_value);
+        let effective_at = optional_node_i64_property(&txn_node, PROP_EFFECTIVE_AT_US)
+            .map_or_else(aletheiadb::time::now, Into::into);
 
         if transaction_nodes
             .insert(txn_id.clone(), txn_node_id)
@@ -329,7 +383,10 @@ fn load_transactions(db: &AletheiaDB) -> Result<TransactionLoad, StoreError> {
         }
 
         let transaction = builder.build().map_err(StoreError::Domain)?;
-        transactions.insert(txn_id.clone(), StoredTransaction::new(txn_id, transaction));
+        transactions.insert(
+            txn_id.clone(),
+            StoredTransaction::with_effective_at(txn_id, transaction, effective_at),
+        );
     }
 
     Ok((transactions, transaction_nodes))
@@ -438,6 +495,41 @@ fn load_corrections(
         .collect())
 }
 
+fn load_budget_targets(
+    db: &AletheiaDB,
+) -> Result<HashMap<BudgetTargetKey, StoredBudgetTarget>, StoreError> {
+    let mut latest_by_key: HashMap<BudgetTargetKey, (u64, StoredBudgetTarget)> = HashMap::new();
+    for node_id in db.scan_nodes_by_label(LABEL_LEDGER_BUDGET_TARGET) {
+        let node = db
+            .get_node(node_id)
+            .map_err(|err| map_load_error("unable to read LedgerBudgetTarget node", err))?;
+
+        let month_key = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let expense_account_prefix =
+            required_node_string_property(&node, PROP_EXPENSE_ACCOUNT_PREFIX)?;
+        let budget_cents = required_node_i64_property(&node, PROP_BUDGET_CENTS)?;
+        let target = StoredBudgetTarget::new(&month_key, &expense_account_prefix, budget_cents);
+        let key = (month_key, expense_account_prefix);
+
+        match latest_by_key.get_mut(&key) {
+            Some((latest_node_id, latest_target)) => {
+                if node.id.as_u64() > *latest_node_id {
+                    *latest_node_id = node.id.as_u64();
+                    *latest_target = target;
+                }
+            }
+            None => {
+                latest_by_key.insert(key, (node.id.as_u64(), target));
+            }
+        }
+    }
+
+    Ok(latest_by_key
+        .into_iter()
+        .map(|(key, (_, target))| (key, target))
+        .collect())
+}
+
 fn required_node_string_property(node: &Node, key: &str) -> Result<String, StoreError> {
     node.get_property(key)
         .and_then(|value| value.as_str())
@@ -461,6 +553,11 @@ fn required_node_i64_property(node: &Node, key: &str) -> Result<i64, StoreError>
                 key
             ),
         })
+}
+
+fn optional_node_i64_property(node: &Node, key: &str) -> Option<i64> {
+    node.get_property(key)
+        .and_then(aletheiadb::PropertyValue::as_int)
 }
 
 fn required_edge_i64_property(edge: &Edge, key: &str) -> Result<i64, StoreError> {

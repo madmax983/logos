@@ -1,12 +1,22 @@
 use crate::{args::CliError, runtime::CliRuntime};
 
 trait BudgetRuntime {
-    fn budget_variance_for(&self, budget_cents: i64, expense_account_prefix: &str) -> i64;
+    fn budget_variance_for_month(
+        &self,
+        month_key: &str,
+        budget_cents: i64,
+        expense_account_prefix: &str,
+    ) -> i64;
 }
 
 impl BudgetRuntime for CliRuntime {
-    fn budget_variance_for(&self, budget_cents: i64, expense_account_prefix: &str) -> i64 {
-        Self::budget_variance_for(self, budget_cents, expense_account_prefix)
+    fn budget_variance_for_month(
+        &self,
+        month_key: &str,
+        budget_cents: i64,
+        expense_account_prefix: &str,
+    ) -> i64 {
+        Self::budget_variance_for_month(self, month_key, budget_cents, expense_account_prefix)
     }
 }
 
@@ -15,24 +25,43 @@ impl BudgetRuntime for CliRuntime {
 /// # Errors
 ///
 /// Returns an error when runtime initialization fails.
-pub fn set(budget_cents: i64, expense_account_prefix: &str) -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+pub fn set(
+    month_key: Option<&str>,
+    budget_cents: i64,
+    expense_account_prefix: &str,
+) -> Result<(), CliError> {
+    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "budget.set".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
-    let output = render_budget_set_output(&runtime, budget_cents, expense_account_prefix);
+    let resolved_month_key =
+        month_key.map_or_else(CliRuntime::current_month_key_utc, str::to_owned);
+    runtime
+        .set_budget_target_for_month(&resolved_month_key, expense_account_prefix, budget_cents)
+        .map_err(|err| CliError::CommandRuntimeFailed {
+            command: "budget.set".to_owned(),
+            message: err.to_string(),
+        })?;
+    let output = render_budget_set_output(
+        &runtime,
+        &resolved_month_key,
+        budget_cents,
+        expense_account_prefix,
+    );
     println!("{output}");
     Ok(())
 }
 
 fn render_budget_set_output(
     runtime: &impl BudgetRuntime,
+    month_key: &str,
     budget_cents: i64,
     expense_account_prefix: &str,
 ) -> String {
-    let variance_cents = runtime.budget_variance_for(budget_cents, expense_account_prefix);
+    let variance_cents =
+        runtime.budget_variance_for_month(month_key, budget_cents, expense_account_prefix);
     format!(
-        "budget.set budget_cents={budget_cents} actual_prefix={expense_account_prefix} variance_cents={variance_cents}"
+        "budget.set month={month_key} budget_cents={budget_cents} actual_prefix={expense_account_prefix} variance_cents={variance_cents}"
     )
 }
 
@@ -45,7 +74,12 @@ mod tests {
     }
 
     impl BudgetRuntime for FakeBudgetRuntime {
-        fn budget_variance_for(&self, _budget_cents: i64, _expense_account_prefix: &str) -> i64 {
+        fn budget_variance_for_month(
+            &self,
+            _month_key: &str,
+            _budget_cents: i64,
+            _expense_account_prefix: &str,
+        ) -> i64 {
             self.variance_cents
         }
     }
@@ -55,11 +89,11 @@ mod tests {
         let runtime = FakeBudgetRuntime {
             variance_cents: -1_250,
         };
-        let output = render_budget_set_output(&runtime, 5_000, "expenses:");
+        let output = render_budget_set_output(&runtime, "2026-03", 5_000, "expenses:");
 
         assert_eq!(
             output,
-            "budget.set budget_cents=5000 actual_prefix=expenses: variance_cents=-1250"
+            "budget.set month=2026-03 budget_cents=5000 actual_prefix=expenses: variance_cents=-1250"
         );
     }
 }
