@@ -146,6 +146,27 @@ impl ParsedArgs {
             }) => {
                 commands::budget::set(month_key.as_deref(), *budget_cents, expense_account_prefix)
             }
+            Command::Budget(BudgetCommand::RsuPlan {
+                month_key,
+                quarterly_units,
+                days_to_vest,
+                bear_price_cents,
+                base_price_cents,
+                bull_price_cents,
+                fixed_commitments_cents,
+                reserve_sweep_pct,
+                investing_sweep_pct,
+            }) => commands::budget::rsu_plan(
+                month_key.as_deref(),
+                *quarterly_units,
+                *days_to_vest,
+                *bear_price_cents,
+                *base_price_cents,
+                *bull_price_cents,
+                *fixed_commitments_cents,
+                *reserve_sweep_pct,
+                *investing_sweep_pct,
+            ),
             Command::Report(ReportCommand::Month {
                 checking_account,
                 month_key,
@@ -230,6 +251,7 @@ impl Command {
             Self::Reconcile(ReconcileCommand::Show { .. }) => "reconcile.show",
             Self::Close(CloseCommand::Month { .. }) => "close.month",
             Self::Budget(BudgetCommand::Set { .. }) => "budget.set",
+            Self::Budget(BudgetCommand::RsuPlan { .. }) => "budget.rsu-plan",
             Self::Report(ReportCommand::Month { .. }) => "report.month",
         }
     }
@@ -321,6 +343,17 @@ pub enum BudgetCommand {
         month_key: Option<String>,
         budget_cents: i64,
         expense_account_prefix: String,
+    },
+    RsuPlan {
+        month_key: Option<String>,
+        quarterly_units: u32,
+        days_to_vest: u16,
+        bear_price_cents: i64,
+        base_price_cents: i64,
+        bull_price_cents: i64,
+        fixed_commitments_cents: i64,
+        reserve_sweep_pct: u8,
+        investing_sweep_pct: u8,
     },
 }
 
@@ -417,6 +450,32 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
                     month_key,
                     budget_cents,
                     expense_account_prefix,
+                }),
+            })
+        }
+        "rsu-plan" => {
+            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
+            let quarterly_units = parse_required_u32_flag(&args[2..], "--quarterly-units")?;
+            let days_to_vest = parse_optional_u16_flag(&args[2..], "--days-to-vest", 45)?;
+            let bear_price_cents = parse_required_i64_flag(&args[2..], "--bear-price-cents")?;
+            let base_price_cents = parse_required_i64_flag(&args[2..], "--base-price-cents")?;
+            let bull_price_cents = parse_required_i64_flag(&args[2..], "--bull-price-cents")?;
+            let fixed_commitments_cents =
+                parse_optional_i64_flag(&args[2..], "--fixed-commitments-cents", 0)?;
+            let reserve_sweep_pct = parse_optional_u8_flag(&args[2..], "--reserve-sweep-pct", 60)?;
+            let investing_sweep_pct =
+                parse_optional_u8_flag(&args[2..], "--investing-sweep-pct", 30)?;
+            Ok(ParsedArgs {
+                command: Command::Budget(BudgetCommand::RsuPlan {
+                    month_key,
+                    quarterly_units,
+                    days_to_vest,
+                    bear_price_cents,
+                    base_price_cents,
+                    bull_price_cents,
+                    fixed_commitments_cents,
+                    reserve_sweep_pct,
+                    investing_sweep_pct,
                 }),
             })
         }
@@ -723,6 +782,36 @@ fn parse_required_i64_flag(args: &[String], flag: &str) -> Result<i64, CliError>
     value.parse::<i64>().map_err(|_| CliError::InvalidArgValue {
         flag: flag.to_owned(),
         value,
+    })
+}
+
+fn parse_required_u32_flag(args: &[String], flag: &str) -> Result<u32, CliError> {
+    let value = parse_flag_value(args, flag)?;
+    value.parse::<u32>().map_err(|_| CliError::InvalidArgValue {
+        flag: flag.to_owned(),
+        value,
+    })
+}
+
+fn parse_optional_u16_flag(
+    args: &[String],
+    flag: &str,
+    default_value: u16,
+) -> Result<u16, CliError> {
+    parse_optional_flag_value(args, flag)?.map_or(Ok(default_value), |value| {
+        value.parse::<u16>().map_err(|_| CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value,
+        })
+    })
+}
+
+fn parse_optional_u8_flag(args: &[String], flag: &str, default_value: u8) -> Result<u8, CliError> {
+    parse_optional_flag_value(args, flag)?.map_or(Ok(default_value), |value| {
+        value.parse::<u8>().map_err(|_| CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value,
+        })
     })
 }
 

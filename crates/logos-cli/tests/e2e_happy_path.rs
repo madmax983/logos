@@ -128,6 +128,24 @@ fn e2e_runtime_month_report_and_budget_variance_use_posted_transactions() {
 }
 
 #[test]
+fn e2e_runtime_rsu_budget_plan_returns_conservative_baseline() {
+    let runtime = CliRuntime::new_in_memory();
+    let month_key = CliRuntime::current_month_key_utc();
+
+    let plan = runtime
+        .plan_rsu_budget_for_month(&month_key, 300, 45, 10_000, 12_000, 16_000, 250_000, 60, 30)
+        .expect("plan");
+    let bear = plan.bear().expect("bear");
+
+    assert_eq!(plan.month_key(), month_key);
+    assert_eq!(
+        plan.conservative_budget_cents(),
+        bear.monthly_income_cents()
+    );
+    assert!(plan.base().expect("base").reserve_sweep_cents() >= 0);
+}
+
+#[test]
 fn e2e_runtime_reconcile_month_computes_match_and_variance() {
     let mut runtime = CliRuntime::new_in_memory();
     let month_key = CliRuntime::current_month_key_utc();

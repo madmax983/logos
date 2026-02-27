@@ -454,6 +454,69 @@ fn rejects_budget_set_when_month_is_invalid() {
 }
 
 #[test]
+fn parses_budget_rsu_plan_with_defaults() {
+    let args = vec![
+        "ledger",
+        "budget",
+        "rsu-plan",
+        "--quarterly-units",
+        "300",
+        "--bear-price-cents",
+        "10000",
+        "--base-price-cents",
+        "12000",
+        "--bull-price-cents",
+        "16000",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "budget.rsu-plan");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Budget(logos_cli::args::BudgetCommand::RsuPlan {
+            month_key,
+            quarterly_units,
+            days_to_vest,
+            bear_price_cents,
+            base_price_cents,
+            bull_price_cents,
+            fixed_commitments_cents,
+            reserve_sweep_pct,
+            investing_sweep_pct,
+        }) if month_key.is_none()
+            && *quarterly_units == 300
+            && *days_to_vest == 45
+            && *bear_price_cents == 10_000
+            && *base_price_cents == 12_000
+            && *bull_price_cents == 16_000
+            && *fixed_commitments_cents == 0
+            && *reserve_sweep_pct == 60
+            && *investing_sweep_pct == 30
+    ));
+}
+
+#[test]
+fn rejects_budget_rsu_plan_without_quarterly_units() {
+    let args = vec![
+        "ledger",
+        "budget",
+        "rsu-plan",
+        "--bear-price-cents",
+        "10000",
+        "--base-price-cents",
+        "12000",
+        "--bull-price-cents",
+        "16000",
+    ];
+    let err = logos_cli::parse_args(args).expect_err("missing units");
+
+    assert_eq!(
+        err.to_string(),
+        "missing value for argument '--quarterly-units'"
+    );
+}
+
+#[test]
 fn parses_report_help_flag() {
     let args = vec!["ledger", "report", "--help"];
     let parsed = logos_cli::parse_args(args).expect("parse");
@@ -680,13 +743,7 @@ fn rejects_reconcile_show_without_run_id() {
 
 #[test]
 fn parses_close_month_with_required_run_id() {
-    let args = vec![
-        "ledger",
-        "close",
-        "month",
-        "--run-id",
-        "recon-9",
-    ];
+    let args = vec!["ledger", "close", "month", "--run-id", "recon-9"];
     let parsed = logos_cli::parse_args(args).expect("parse");
 
     assert_eq!(parsed.command_path(), "close.month");

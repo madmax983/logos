@@ -31,6 +31,10 @@ Usage: ledger budget <subcommand> [options]
 Subcommands:
   set --month <YYYY-MM> --budget-cents <i64> --expense-account-prefix <prefix>
                                      Set budget target for month/scope (all optional)
+  rsu-plan --quarterly-units <u32> --bear-price-cents <i64> --base-price-cents <i64> --bull-price-cents <i64>
+           [--month <YYYY-MM>] [--days-to-vest <u16>] [--fixed-commitments-cents <i64>]
+           [--reserve-sweep-pct <u8>] [--investing-sweep-pct <u8>]
+                                     Build bear/base/bull RSU budget scenarios with conservative baseline
 ";
 
 const REPORT_HELP_TEXT: &str = "\
