@@ -19,12 +19,13 @@ pub fn month(
     let resolved_month_key = if let Some(explicit_month) = month_key {
         explicit_month.to_owned()
     } else {
-        let run = runtime
-            .reconciliation_run(run_id)
-            .ok_or_else(|| CliError::CommandRuntimeFailed {
-                command: "close.month".to_owned(),
-                message: format!("reconciliation run '{run_id}' not found"),
-            })?;
+        let run =
+            runtime
+                .reconciliation_run(run_id)
+                .ok_or_else(|| CliError::CommandRuntimeFailed {
+                    command: "close.month".to_owned(),
+                    message: format!("reconciliation run '{run_id}' not found"),
+                })?;
         run.month_key().to_owned()
     };
 
@@ -50,7 +51,10 @@ pub fn month(
     Ok(())
 }
 
-fn render_close_month_output(close: &StoredMonthClose, analytics_artifact_id: Option<&str>) -> String {
+fn render_close_month_output(
+    close: &StoredMonthClose,
+    analytics_artifact_id: Option<&str>,
+) -> String {
     format!(
         "close.month close_id={} month={} checking_account={} reconciliation_run_id={} analytics_artifact_id={} closed_at_us={}",
         close.close_id(),

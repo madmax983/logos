@@ -385,11 +385,12 @@ impl AletheiaStore {
             });
         }
 
-        let run = self.reconciliation_runs.get(reconciliation_run_id).ok_or_else(|| {
-            StoreError::PersistFailed {
+        let run = self
+            .reconciliation_runs
+            .get(reconciliation_run_id)
+            .ok_or_else(|| StoreError::PersistFailed {
                 message: format!("unknown reconciliation run '{reconciliation_run_id}'"),
-            }
-        })?;
+            })?;
         if run.month_key() != month_key {
             return Err(StoreError::PersistFailed {
                 message: format!(

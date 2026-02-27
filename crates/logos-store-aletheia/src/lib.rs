@@ -10,26 +10,25 @@ use aletheiadb::{
 use logos_core::{Correction, DomainError, Posting, TransactionBuilder, TransactionId};
 
 use crate::model::{
-    EDGE_DERIVED_FROM, EDGE_EVIDENCES_TXN, EDGE_HAS_IMPORT_RECORD, EDGE_HAS_POSTING,
-    EDGE_HAS_STATEMENT_LINE, EDGE_RECONCILES_STMT_LINE, EDGE_RECONCILES_TXN, EDGE_SUPERSEDES,
-    EDGE_CLOSES_ANALYTICS_ARTIFACT, EDGE_CLOSES_RECONCILIATION_RUN, LABEL_ANALYTICS_ARTIFACT_MANIFEST,
-    LABEL_LEDGER_BUDGET_TARGET, LABEL_LEDGER_CORRECTION, LABEL_LEDGER_IMPORT_BATCH,
-    LABEL_LEDGER_IMPORT_RECORD, LABEL_LEDGER_MONTH_CLOSE, LABEL_LEDGER_POSTING,
-    LABEL_LEDGER_RECONCILIATION_RUN, LABEL_LEDGER_STATEMENT_LINE, LABEL_LEDGER_TRANSACTION,
-    NewImportRecord, PROP_ACCOUNT, PROP_AMOUNT_CENTS, PROP_ARTIFACT_ID, PROP_ARTIFACT_KIND,
-    PROP_ARTIFACT_URI, PROP_BUDGET_CENTS, PROP_CONTENT_HASH, PROP_CREATED_AT_US, PROP_DESCRIPTION,
-    PROP_EFFECTIVE_AT_US, PROP_EXPENSE_ACCOUNT_PREFIX, PROP_IMPORT_BATCH_ID, PROP_IMPORT_BATCH_KEY,
-    PROP_IMPORT_CONTENT_HASH_KEY, PROP_IMPORT_DRY_RUN, PROP_IMPORT_DUPLICATE_COUNT,
-    PROP_IMPORT_IMPORTED_AT_US, PROP_IMPORT_IMPORTED_TXN_ID, PROP_IMPORT_KIND,
-    PROP_IMPORT_OCR_ENABLED, PROP_IMPORT_RECORD_COUNT, PROP_IMPORT_SOURCE_URI, PROP_MONTH_KEY,
+    EDGE_CLOSES_ANALYTICS_ARTIFACT, EDGE_CLOSES_RECONCILIATION_RUN, EDGE_DERIVED_FROM,
+    EDGE_EVIDENCES_TXN, EDGE_HAS_IMPORT_RECORD, EDGE_HAS_POSTING, EDGE_HAS_STATEMENT_LINE,
+    EDGE_RECONCILES_STMT_LINE, EDGE_RECONCILES_TXN, EDGE_SUPERSEDES,
+    LABEL_ANALYTICS_ARTIFACT_MANIFEST, LABEL_LEDGER_BUDGET_TARGET, LABEL_LEDGER_CORRECTION,
+    LABEL_LEDGER_IMPORT_BATCH, LABEL_LEDGER_IMPORT_RECORD, LABEL_LEDGER_MONTH_CLOSE,
+    LABEL_LEDGER_POSTING, LABEL_LEDGER_RECONCILIATION_RUN, LABEL_LEDGER_STATEMENT_LINE,
+    LABEL_LEDGER_TRANSACTION, NewImportRecord, PROP_ACCOUNT, PROP_AMOUNT_CENTS, PROP_ARTIFACT_ID,
+    PROP_ARTIFACT_KIND, PROP_ARTIFACT_URI, PROP_BUDGET_CENTS, PROP_CONTENT_HASH,
+    PROP_CREATED_AT_US, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_EXPENSE_ACCOUNT_PREFIX,
+    PROP_IMPORT_BATCH_ID, PROP_IMPORT_BATCH_KEY, PROP_IMPORT_CONTENT_HASH_KEY, PROP_IMPORT_DRY_RUN,
+    PROP_IMPORT_DUPLICATE_COUNT, PROP_IMPORT_IMPORTED_AT_US, PROP_IMPORT_IMPORTED_TXN_ID,
+    PROP_IMPORT_KIND, PROP_IMPORT_OCR_ENABLED, PROP_IMPORT_RECORD_COUNT, PROP_IMPORT_SOURCE_URI,
     PROP_MONTH_CLOSE_ANALYTICS_ARTIFACT_ID, PROP_MONTH_CLOSE_CLOSED_AT_US, PROP_MONTH_CLOSE_ID,
-    PROP_MONTH_CLOSE_RECONCILIATION_RUN_ID,
-    PROP_ORDINAL, PROP_REASON, PROP_RECONCILIATION_CHECKING_ACCOUNT,
-    PROP_RECONCILIATION_CREATED_AT_US, PROP_RECONCILIATION_EXPECTED_CLOSING_BALANCE_CENTS,
-    PROP_RECONCILIATION_INFLOW_CENTS, PROP_RECONCILIATION_LEDGER_DELTA_CENTS,
-    PROP_RECONCILIATION_MATCHED_POSTINGS, PROP_RECONCILIATION_MATCHED_TRANSACTION_COUNT,
-    PROP_RECONCILIATION_OPENING_BALANCE_CENTS, PROP_RECONCILIATION_OUTFLOW_CENTS,
-    PROP_RECONCILIATION_RECONCILED, PROP_RECONCILIATION_RUN_ID,
+    PROP_MONTH_CLOSE_RECONCILIATION_RUN_ID, PROP_MONTH_KEY, PROP_ORDINAL, PROP_REASON,
+    PROP_RECONCILIATION_CHECKING_ACCOUNT, PROP_RECONCILIATION_CREATED_AT_US,
+    PROP_RECONCILIATION_EXPECTED_CLOSING_BALANCE_CENTS, PROP_RECONCILIATION_INFLOW_CENTS,
+    PROP_RECONCILIATION_LEDGER_DELTA_CENTS, PROP_RECONCILIATION_MATCHED_POSTINGS,
+    PROP_RECONCILIATION_MATCHED_TRANSACTION_COUNT, PROP_RECONCILIATION_OPENING_BALANCE_CENTS,
+    PROP_RECONCILIATION_OUTFLOW_CENTS, PROP_RECONCILIATION_RECONCILED, PROP_RECONCILIATION_RUN_ID,
     PROP_RECONCILIATION_STATEMENT_CLOSING_BALANCE_CENTS, PROP_RECONCILIATION_VARIANCE_CENTS,
     PROP_ROW_COUNT, PROP_SCHEMA_VERSION, PROP_SNAPSHOT_KEY, PROP_SNAPSHOT_TX_AT_US,
     PROP_SNAPSHOT_VALID_AT_US, PROP_STATEMENT_AMOUNT_CENTS, PROP_STATEMENT_LINE_ID,
@@ -230,7 +229,8 @@ impl AletheiaStore {
         let next_reconciliation_run_id =
             infer_next_reconciliation_run_id(loaded.reconciliation_runs.keys());
         let next_month_close_id = infer_next_month_close_id(loaded.month_closes.keys());
-        let statement_line_ids_by_txn = index_statement_lines_by_transaction(&loaded.statement_lines);
+        let statement_line_ids_by_txn =
+            index_statement_lines_by_transaction(&loaded.statement_lines);
         let month_close_by_scope = index_month_close_by_scope(&loaded.month_closes);
 
         Ok(Self {
@@ -680,20 +680,21 @@ impl AletheiaStore {
                 })?;
 
                 if let Some(txn_id) = line.imported_txn_id() {
-                    let txn_node = embedded.transaction_nodes.get(txn_id).copied().ok_or_else(|| {
-                        StoreError::UnknownTransaction {
-                            transaction_id: txn_id.clone(),
-                        }
-                    })?;
+                    let txn_node =
+                        embedded
+                            .transaction_nodes
+                            .get(txn_id)
+                            .copied()
+                            .ok_or_else(|| StoreError::UnknownTransaction {
+                                transaction_id: txn_id.clone(),
+                            })?;
                     tx.create_edge(
                         line_node,
                         txn_node,
                         EDGE_EVIDENCES_TXN,
                         PropertyMapBuilder::new().build(),
                     )
-                    .map_err(|err| {
-                        map_persist_error("unable to create EVIDENCES_TXN edge", err)
-                    })?;
+                    .map_err(|err| map_persist_error("unable to create EVIDENCES_TXN edge", err))?;
                 }
 
                 statement_line_nodes.push((line.line_id().to_owned(), line_node));
@@ -718,8 +719,10 @@ impl AletheiaStore {
         run: &StoredReconciliationRun,
         reconciled_txn_ids: &[TransactionId],
     ) -> Result<Vec<String>, StoreError> {
-        let statement_line_ids =
-            collect_statement_line_ids_for_transactions(&self.statement_line_ids_by_txn, reconciled_txn_ids);
+        let statement_line_ids = collect_statement_line_ids_for_transactions(
+            &self.statement_line_ids_by_txn,
+            reconciled_txn_ids,
+        );
 
         let Some(embedded) = self.embedded.as_mut() else {
             return Ok(statement_line_ids);
@@ -806,9 +809,7 @@ impl AletheiaStore {
                 EDGE_RECONCILES_STMT_LINE,
                 PropertyMapBuilder::new().build(),
             )
-            .map_err(|err| {
-                map_persist_error("unable to create RECONCILES_STMT_LINE edge", err)
-            })?;
+            .map_err(|err| map_persist_error("unable to create RECONCILES_STMT_LINE edge", err))?;
         }
 
         tx.commit().map_err(|err| {
@@ -821,7 +822,10 @@ impl AletheiaStore {
         Ok(statement_line_ids)
     }
 
-    pub(crate) fn persist_month_close_graph(&mut self, close: &StoredMonthClose) -> Result<(), StoreError> {
+    pub(crate) fn persist_month_close_graph(
+        &mut self,
+        close: &StoredMonthClose,
+    ) -> Result<(), StoreError> {
         let Some(embedded) = self.embedded.as_mut() else {
             return Ok(());
         };
@@ -838,17 +842,19 @@ impl AletheiaStore {
                 ),
             })?;
 
-        let mut tx = embedded
-            .db
-            .write_transaction()
-            .map_err(|err| map_persist_error("unable to start month close write transaction", err))?;
+        let mut tx = embedded.db.write_transaction().map_err(|err| {
+            map_persist_error("unable to start month close write transaction", err)
+        })?;
         let close_node = tx
             .create_node(
                 LABEL_LEDGER_MONTH_CLOSE,
                 PropertyMapBuilder::new()
                     .insert(PROP_MONTH_CLOSE_ID, close.close_id())
                     .insert(PROP_MONTH_KEY, close.month_key())
-                    .insert(PROP_RECONCILIATION_CHECKING_ACCOUNT, close.checking_account())
+                    .insert(
+                        PROP_RECONCILIATION_CHECKING_ACCOUNT,
+                        close.checking_account(),
+                    )
                     .insert(
                         PROP_MONTH_CLOSE_RECONCILIATION_RUN_ID,
                         close.reconciliation_run_id(),
@@ -884,7 +890,9 @@ impl AletheiaStore {
                 EDGE_CLOSES_ANALYTICS_ARTIFACT,
                 PropertyMapBuilder::new().build(),
             )
-            .map_err(|err| map_persist_error("unable to create CLOSES_ANALYTICS_ARTIFACT edge", err))?;
+            .map_err(|err| {
+                map_persist_error("unable to create CLOSES_ANALYTICS_ARTIFACT edge", err)
+            })?;
         }
 
         tx.commit()
@@ -924,20 +932,12 @@ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
     let corrections = load_corrections(db, &transaction_nodes)?;
     let budget_targets = load_budget_targets(db)?;
     let (analytics_artifacts, analytics_artifact_nodes) = load_analytics_artifacts(db)?;
-    let (
-        import_batches,
-        import_records,
-        import_batch_nodes,
-        statement_lines,
-        statement_line_nodes,
-    ) = load_import_batches_and_records(db, &transaction_nodes)?;
+    let (import_batches, import_records, import_batch_nodes, statement_lines, statement_line_nodes) =
+        load_import_batches_and_records(db, &transaction_nodes)?;
     let (reconciliation_runs, reconciliation_run_nodes, reconciliation_statement_line_ids) =
         load_reconciliation_runs(db, &transaction_nodes, &statement_line_nodes)?;
-    let (month_closes, month_close_nodes) = load_month_closes(
-        db,
-        &reconciliation_run_nodes,
-        &analytics_artifact_nodes,
-    )?;
+    let (month_closes, month_close_nodes) =
+        load_month_closes(db, &reconciliation_run_nodes, &analytics_artifact_nodes)?;
     Ok(LoadedProjection {
         transactions,
         transaction_nodes,
@@ -1426,7 +1426,10 @@ fn ensure_no_orphan_import_records(
     Ok(())
 }
 
-type StatementLineLoad = (HashMap<String, StoredStatementLine>, HashMap<String, NodeId>);
+type StatementLineLoad = (
+    HashMap<String, StoredStatementLine>,
+    HashMap<String, NodeId>,
+);
 
 #[allow(clippy::too_many_lines)]
 fn load_statement_lines(
@@ -1797,9 +1800,9 @@ fn load_month_closes(
         }
 
         for edge_id in db.get_outgoing_edges_with_label(node_id, EDGE_CLOSES_ANALYTICS_ARTIFACT) {
-            let edge = db
-                .get_edge(edge_id)
-                .map_err(|err| map_load_error("unable to read CLOSES_ANALYTICS_ARTIFACT edge", err))?;
+            let edge = db.get_edge(edge_id).map_err(|err| {
+                map_load_error("unable to read CLOSES_ANALYTICS_ARTIFACT edge", err)
+            })?;
             if !artifact_ids_by_node.contains_key(&edge.target) {
                 return Err(StoreError::LoadFailed {
                     message: format!(
@@ -1810,11 +1813,9 @@ fn load_month_closes(
             }
         }
         for edge_id in db.get_outgoing_edges_with_label(node_id, EDGE_CLOSES_RECONCILIATION_RUN) {
-            let edge = db
-                .get_edge(edge_id)
-                .map_err(|err| {
-                    map_load_error("unable to read CLOSES_RECONCILIATION_RUN edge", err)
-                })?;
+            let edge = db.get_edge(edge_id).map_err(|err| {
+                map_load_error("unable to read CLOSES_RECONCILIATION_RUN edge", err)
+            })?;
             if !run_ids_by_node.contains_key(&edge.target) {
                 return Err(StoreError::LoadFailed {
                     message: format!(
