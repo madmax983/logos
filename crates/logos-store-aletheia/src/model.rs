@@ -10,6 +10,7 @@ pub(crate) const LABEL_LEDGER_IMPORT_BATCH: &str = "LedgerImportBatch";
 pub(crate) const LABEL_LEDGER_IMPORT_RECORD: &str = "LedgerImportRecord";
 pub(crate) const LABEL_LEDGER_STATEMENT_LINE: &str = "LedgerStatementLine";
 pub(crate) const LABEL_LEDGER_RECONCILIATION_RUN: &str = "LedgerReconciliationRun";
+pub(crate) const LABEL_LEDGER_MONTH_CLOSE: &str = "LedgerMonthClose";
 
 pub(crate) const EDGE_HAS_POSTING: &str = "HAS_POSTING";
 pub(crate) const EDGE_SUPERSEDES: &str = "SUPERSEDES";
@@ -19,6 +20,8 @@ pub(crate) const EDGE_HAS_STATEMENT_LINE: &str = "HAS_STATEMENT_LINE";
 pub(crate) const EDGE_EVIDENCES_TXN: &str = "EVIDENCES_TXN";
 pub(crate) const EDGE_RECONCILES_TXN: &str = "RECONCILES_TXN";
 pub(crate) const EDGE_RECONCILES_STMT_LINE: &str = "RECONCILES_STMT_LINE";
+pub(crate) const EDGE_CLOSES_RECONCILIATION_RUN: &str = "CLOSES_RECONCILIATION_RUN";
+pub(crate) const EDGE_CLOSES_ANALYTICS_ARTIFACT: &str = "CLOSES_ANALYTICS_ARTIFACT";
 
 pub(crate) const PROP_TXN_ID: &str = "txn_id";
 pub(crate) const PROP_DESCRIPTION: &str = "description";
@@ -75,6 +78,10 @@ pub(crate) const PROP_RECONCILIATION_MATCHED_TRANSACTION_COUNT: &str =
 pub(crate) const PROP_RECONCILIATION_INFLOW_CENTS: &str = "reconciliation_inflow_cents";
 pub(crate) const PROP_RECONCILIATION_OUTFLOW_CENTS: &str = "reconciliation_outflow_cents";
 pub(crate) const PROP_RECONCILIATION_CREATED_AT_US: &str = "reconciliation_created_at_us";
+pub(crate) const PROP_MONTH_CLOSE_ID: &str = "month_close_id";
+pub(crate) const PROP_MONTH_CLOSE_RECONCILIATION_RUN_ID: &str = "month_close_reconciliation_run_id";
+pub(crate) const PROP_MONTH_CLOSE_ANALYTICS_ARTIFACT_ID: &str = "month_close_analytics_artifact_id";
+pub(crate) const PROP_MONTH_CLOSE_CLOSED_AT_US: &str = "month_close_closed_at_us";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AsOf {
@@ -247,6 +254,16 @@ pub struct StoredReconciliationRun {
     inflow_cents: i64,
     outflow_cents: i64,
     created_at: Timestamp,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredMonthClose {
+    close_id: String,
+    month_key: String,
+    checking_account: String,
+    reconciliation_run_id: String,
+    analytics_artifact_id: Option<String>,
+    closed_at: Timestamp,
 }
 
 impl StoredAnalyticsArtifactManifest {
@@ -697,6 +714,57 @@ impl StoredReconciliationRun {
     #[must_use]
     pub const fn created_at(&self) -> Timestamp {
         self.created_at
+    }
+}
+
+impl StoredMonthClose {
+    #[must_use]
+    pub fn new(
+        close_id: &str,
+        month_key: &str,
+        checking_account: &str,
+        reconciliation_run_id: &str,
+        analytics_artifact_id: Option<&str>,
+        closed_at: Timestamp,
+    ) -> Self {
+        Self {
+            close_id: close_id.to_owned(),
+            month_key: month_key.to_owned(),
+            checking_account: checking_account.to_owned(),
+            reconciliation_run_id: reconciliation_run_id.to_owned(),
+            analytics_artifact_id: analytics_artifact_id.map(str::to_owned),
+            closed_at,
+        }
+    }
+
+    #[must_use]
+    pub fn close_id(&self) -> &str {
+        &self.close_id
+    }
+
+    #[must_use]
+    pub fn month_key(&self) -> &str {
+        &self.month_key
+    }
+
+    #[must_use]
+    pub fn checking_account(&self) -> &str {
+        &self.checking_account
+    }
+
+    #[must_use]
+    pub fn reconciliation_run_id(&self) -> &str {
+        &self.reconciliation_run_id
+    }
+
+    #[must_use]
+    pub fn analytics_artifact_id(&self) -> Option<&str> {
+        self.analytics_artifact_id.as_deref()
+    }
+
+    #[must_use]
+    pub const fn closed_at(&self) -> Timestamp {
+        self.closed_at
     }
 }
 

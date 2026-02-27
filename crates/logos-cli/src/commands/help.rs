@@ -10,6 +10,7 @@ Commands:
   analytics snapshot ...            Manage immutable analytics artifacts
   import pdf ...                    Import statement rows from a PDF
   reconcile month                   Reconcile month against statement balances
+  close month                       Freeze a month scope with evidence links
   budget set                        Set a budget value
   report month                      Show the current month report
 ";
@@ -60,6 +61,14 @@ Subcommands:
                                      Show one reconciliation run by id
 ";
 
+const CLOSE_HELP_TEXT: &str = "\
+Usage: ledger close <subcommand> [options]
+
+Subcommands:
+  month --run-id <id> [--month <YYYY-MM>] [--checking-account <name>] [--analytics-artifact-id <id>]
+                                     Close one month scope using a reconciliation run and optional analytics artifact
+";
+
 const ANALYTICS_HELP_TEXT: &str = "\
 Usage: ledger analytics snapshot <action> [options]
 
@@ -101,6 +110,7 @@ pub fn show(topic: HelpTopic) -> Result<(), CliError> {
         HelpTopic::Aletheia => ALETHEIA_HELP_TEXT,
         HelpTopic::Import => IMPORT_HELP_TEXT,
         HelpTopic::Reconcile => RECONCILE_HELP_TEXT,
+        HelpTopic::Close => CLOSE_HELP_TEXT,
     };
     println!("{text}");
     Ok(())

@@ -12,8 +12,9 @@ use logos_core::{Correction, DomainError, Posting, TransactionBuilder, Transacti
 use crate::model::{
     EDGE_DERIVED_FROM, EDGE_EVIDENCES_TXN, EDGE_HAS_IMPORT_RECORD, EDGE_HAS_POSTING,
     EDGE_HAS_STATEMENT_LINE, EDGE_RECONCILES_STMT_LINE, EDGE_RECONCILES_TXN, EDGE_SUPERSEDES,
-    LABEL_ANALYTICS_ARTIFACT_MANIFEST, LABEL_LEDGER_BUDGET_TARGET, LABEL_LEDGER_CORRECTION,
-    LABEL_LEDGER_IMPORT_BATCH, LABEL_LEDGER_IMPORT_RECORD, LABEL_LEDGER_POSTING,
+    EDGE_CLOSES_ANALYTICS_ARTIFACT, EDGE_CLOSES_RECONCILIATION_RUN, LABEL_ANALYTICS_ARTIFACT_MANIFEST,
+    LABEL_LEDGER_BUDGET_TARGET, LABEL_LEDGER_CORRECTION, LABEL_LEDGER_IMPORT_BATCH,
+    LABEL_LEDGER_IMPORT_RECORD, LABEL_LEDGER_MONTH_CLOSE, LABEL_LEDGER_POSTING,
     LABEL_LEDGER_RECONCILIATION_RUN, LABEL_LEDGER_STATEMENT_LINE, LABEL_LEDGER_TRANSACTION,
     NewImportRecord, PROP_ACCOUNT, PROP_AMOUNT_CENTS, PROP_ARTIFACT_ID, PROP_ARTIFACT_KIND,
     PROP_ARTIFACT_URI, PROP_BUDGET_CENTS, PROP_CONTENT_HASH, PROP_CREATED_AT_US, PROP_DESCRIPTION,
@@ -21,6 +22,8 @@ use crate::model::{
     PROP_IMPORT_CONTENT_HASH_KEY, PROP_IMPORT_DRY_RUN, PROP_IMPORT_DUPLICATE_COUNT,
     PROP_IMPORT_IMPORTED_AT_US, PROP_IMPORT_IMPORTED_TXN_ID, PROP_IMPORT_KIND,
     PROP_IMPORT_OCR_ENABLED, PROP_IMPORT_RECORD_COUNT, PROP_IMPORT_SOURCE_URI, PROP_MONTH_KEY,
+    PROP_MONTH_CLOSE_ANALYTICS_ARTIFACT_ID, PROP_MONTH_CLOSE_CLOSED_AT_US, PROP_MONTH_CLOSE_ID,
+    PROP_MONTH_CLOSE_RECONCILIATION_RUN_ID,
     PROP_ORDINAL, PROP_REASON, PROP_RECONCILIATION_CHECKING_ACCOUNT,
     PROP_RECONCILIATION_CREATED_AT_US, PROP_RECONCILIATION_EXPECTED_CLOSING_BALANCE_CENTS,
     PROP_RECONCILIATION_INFLOW_CENTS, PROP_RECONCILIATION_LEDGER_DELTA_CENTS,
@@ -33,7 +36,8 @@ use crate::model::{
     PROP_STATEMENT_MEMO, PROP_STATEMENT_SOURCE_URI, PROP_STATEMENT_TIMESTAMP,
     PROP_SUPERSEDES_ARTIFACT_ID, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID,
     StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredCorrection, StoredImportBatch,
-    StoredImportRecord, StoredReconciliationRun, StoredStatementLine, StoredTransaction,
+    StoredImportRecord, StoredMonthClose, StoredReconciliationRun, StoredStatementLine,
+    StoredTransaction,
 };
 
 pub mod model;
@@ -87,6 +91,7 @@ pub struct AletheiaStore {
     pub(crate) next_import_batch_id: u64,
     pub(crate) next_statement_line_id: u64,
     pub(crate) next_reconciliation_run_id: u64,
+    pub(crate) next_month_close_id: u64,
     pub(crate) transactions: HashMap<TransactionId, StoredTransaction>,
     pub(crate) corrections: Vec<StoredCorrection>,
     pub(crate) budget_targets: HashMap<BudgetTargetKey, StoredBudgetTarget>,
@@ -97,6 +102,8 @@ pub struct AletheiaStore {
     pub(crate) statement_line_ids_by_txn: HashMap<TransactionId, Vec<String>>,
     pub(crate) reconciliation_runs: HashMap<String, StoredReconciliationRun>,
     pub(crate) reconciliation_statement_line_ids: HashMap<String, Vec<String>>,
+    pub(crate) month_closes: HashMap<String, StoredMonthClose>,
+    pub(crate) month_close_by_scope: HashMap<BudgetTargetKey, String>,
     pub(crate) embedded: Option<EmbeddedStore>,
 }
 
@@ -116,6 +123,8 @@ struct LoadedProjection {
     reconciliation_runs: HashMap<String, StoredReconciliationRun>,
     reconciliation_run_nodes: HashMap<String, NodeId>,
     reconciliation_statement_line_ids: HashMap<String, Vec<String>>,
+    month_closes: HashMap<String, StoredMonthClose>,
+    month_close_nodes: HashMap<String, NodeId>,
 }
 
 type BudgetTargetKey = (String, String);
@@ -127,6 +136,7 @@ pub(crate) struct EmbeddedStore {
     pub(crate) import_batch_nodes: HashMap<String, NodeId>,
     pub(crate) statement_line_nodes: HashMap<String, NodeId>,
     pub(crate) reconciliation_run_nodes: HashMap<String, NodeId>,
+    pub(crate) month_close_nodes: HashMap<String, NodeId>,
 }
 
 impl fmt::Debug for EmbeddedStore {
@@ -144,6 +154,7 @@ impl fmt::Debug for EmbeddedStore {
                 "reconciliation_run_nodes",
                 &self.reconciliation_run_nodes.len(),
             )
+            .field("month_close_nodes", &self.month_close_nodes.len())
             .finish()
     }
 }
@@ -159,6 +170,7 @@ impl fmt::Debug for AletheiaStore {
                 "next_reconciliation_run_id",
                 &self.next_reconciliation_run_id,
             )
+            .field("next_month_close_id", &self.next_month_close_id)
             .field("transactions", &self.transactions.len())
             .field("corrections", &self.corrections.len())
             .field("budget_targets", &self.budget_targets.len())
@@ -175,6 +187,8 @@ impl fmt::Debug for AletheiaStore {
                 "reconciliation_statement_line_ids",
                 &self.reconciliation_statement_line_ids.len(),
             )
+            .field("month_closes", &self.month_closes.len())
+            .field("month_close_by_scope", &self.month_close_by_scope.len())
             .field("embedded", &self.embedded.as_ref().map(|_| "enabled"))
             .finish()
     }
@@ -215,7 +229,9 @@ impl AletheiaStore {
         let next_statement_line_id = infer_next_statement_line_id(loaded.statement_lines.keys());
         let next_reconciliation_run_id =
             infer_next_reconciliation_run_id(loaded.reconciliation_runs.keys());
+        let next_month_close_id = infer_next_month_close_id(loaded.month_closes.keys());
         let statement_line_ids_by_txn = index_statement_lines_by_transaction(&loaded.statement_lines);
+        let month_close_by_scope = index_month_close_by_scope(&loaded.month_closes);
 
         Ok(Self {
             next_id,
@@ -223,6 +239,7 @@ impl AletheiaStore {
             next_import_batch_id,
             next_statement_line_id,
             next_reconciliation_run_id,
+            next_month_close_id,
             transactions: loaded.transactions,
             corrections: loaded.corrections,
             budget_targets: loaded.budget_targets,
@@ -233,6 +250,8 @@ impl AletheiaStore {
             statement_line_ids_by_txn,
             reconciliation_runs: loaded.reconciliation_runs,
             reconciliation_statement_line_ids: loaded.reconciliation_statement_line_ids,
+            month_closes: loaded.month_closes,
+            month_close_by_scope,
             embedded: Some(EmbeddedStore {
                 db,
                 transaction_nodes: loaded.transaction_nodes,
@@ -240,6 +259,7 @@ impl AletheiaStore {
                 import_batch_nodes: loaded.import_batch_nodes,
                 statement_line_nodes: loaded.statement_line_nodes,
                 reconciliation_run_nodes: loaded.reconciliation_run_nodes,
+                month_close_nodes: loaded.month_close_nodes,
             }),
         })
     }
@@ -267,6 +287,11 @@ impl AletheiaStore {
     pub(crate) fn next_reconciliation_run_id(&mut self) -> String {
         self.next_reconciliation_run_id = self.next_reconciliation_run_id.saturating_add(1);
         format!("recon-{}", self.next_reconciliation_run_id)
+    }
+
+    pub(crate) fn next_month_close_id(&mut self) -> String {
+        self.next_month_close_id = self.next_month_close_id.saturating_add(1);
+        format!("close-{}", self.next_month_close_id)
     }
 
     pub(crate) fn push_correction(&mut self, correction: Correction) {
@@ -331,6 +356,17 @@ impl AletheiaStore {
     ) {
         self.reconciliation_statement_line_ids
             .insert(run_id.to_owned(), statement_line_ids);
+    }
+
+    pub(crate) fn persist_month_close(&mut self, close: StoredMonthClose) {
+        self.month_close_by_scope.insert(
+            (
+                close.month_key().to_owned(),
+                close.checking_account().to_owned(),
+            ),
+            close.close_id().to_owned(),
+        );
+        self.month_closes.insert(close.close_id().to_owned(), close);
     }
 
     pub(crate) fn build_and_validate(
@@ -784,6 +820,80 @@ impl AletheiaStore {
             .insert(run.run_id().to_owned(), run_node);
         Ok(statement_line_ids)
     }
+
+    pub(crate) fn persist_month_close_graph(&mut self, close: &StoredMonthClose) -> Result<(), StoreError> {
+        let Some(embedded) = self.embedded.as_mut() else {
+            return Ok(());
+        };
+
+        let run_node = embedded
+            .reconciliation_run_nodes
+            .get(close.reconciliation_run_id())
+            .copied()
+            .ok_or_else(|| StoreError::PersistFailed {
+                message: format!(
+                    "month close '{}' references unknown reconciliation run '{}'",
+                    close.close_id(),
+                    close.reconciliation_run_id()
+                ),
+            })?;
+
+        let mut tx = embedded
+            .db
+            .write_transaction()
+            .map_err(|err| map_persist_error("unable to start month close write transaction", err))?;
+        let close_node = tx
+            .create_node(
+                LABEL_LEDGER_MONTH_CLOSE,
+                PropertyMapBuilder::new()
+                    .insert(PROP_MONTH_CLOSE_ID, close.close_id())
+                    .insert(PROP_MONTH_KEY, close.month_key())
+                    .insert(PROP_RECONCILIATION_CHECKING_ACCOUNT, close.checking_account())
+                    .insert(
+                        PROP_MONTH_CLOSE_RECONCILIATION_RUN_ID,
+                        close.reconciliation_run_id(),
+                    )
+                    .insert(
+                        PROP_MONTH_CLOSE_ANALYTICS_ARTIFACT_ID,
+                        close.analytics_artifact_id().unwrap_or(""),
+                    )
+                    .insert(PROP_MONTH_CLOSE_CLOSED_AT_US, close.closed_at().wallclock())
+                    .build(),
+            )
+            .map_err(|err| map_persist_error("unable to create LedgerMonthClose node", err))?;
+
+        tx.create_edge(
+            close_node,
+            run_node,
+            EDGE_CLOSES_RECONCILIATION_RUN,
+            PropertyMapBuilder::new().build(),
+        )
+        .map_err(|err| map_persist_error("unable to create CLOSES_RECONCILIATION_RUN edge", err))?;
+
+        if let Some(artifact_id) = close.analytics_artifact_id() {
+            let artifact_node = embedded
+                .analytics_artifact_nodes
+                .get(artifact_id)
+                .copied()
+                .ok_or_else(|| StoreError::UnknownArtifact {
+                    artifact_id: artifact_id.to_owned(),
+                })?;
+            tx.create_edge(
+                close_node,
+                artifact_node,
+                EDGE_CLOSES_ANALYTICS_ARTIFACT,
+                PropertyMapBuilder::new().build(),
+            )
+            .map_err(|err| map_persist_error("unable to create CLOSES_ANALYTICS_ARTIFACT edge", err))?;
+        }
+
+        tx.commit()
+            .map_err(|err| map_persist_error("unable to commit embedded month close write", err))?;
+        embedded
+            .month_close_nodes
+            .insert(close.close_id().to_owned(), close_node);
+        Ok(())
+    }
 }
 
 fn open_embedded_db(root_path: &Path) -> Result<AletheiaDB, StoreError> {
@@ -823,6 +933,11 @@ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
     ) = load_import_batches_and_records(db, &transaction_nodes)?;
     let (reconciliation_runs, reconciliation_run_nodes, reconciliation_statement_line_ids) =
         load_reconciliation_runs(db, &transaction_nodes, &statement_line_nodes)?;
+    let (month_closes, month_close_nodes) = load_month_closes(
+        db,
+        &reconciliation_run_nodes,
+        &analytics_artifact_nodes,
+    )?;
     Ok(LoadedProjection {
         transactions,
         transaction_nodes,
@@ -838,6 +953,8 @@ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
         reconciliation_runs,
         reconciliation_run_nodes,
         reconciliation_statement_line_ids,
+        month_closes,
+        month_close_nodes,
     })
 }
 
@@ -1587,6 +1704,142 @@ fn load_reconciliation_runs(
     Ok((runs, run_nodes, run_statement_line_ids))
 }
 
+type MonthCloseLoad = (HashMap<String, StoredMonthClose>, HashMap<String, NodeId>);
+
+#[allow(clippy::too_many_lines)]
+fn load_month_closes(
+    db: &AletheiaDB,
+    reconciliation_run_nodes: &HashMap<String, NodeId>,
+    analytics_artifact_nodes: &HashMap<String, NodeId>,
+) -> Result<MonthCloseLoad, StoreError> {
+    let run_ids_by_node: HashMap<_, _> = reconciliation_run_nodes
+        .iter()
+        .map(|(run_id, node_id)| (*node_id, run_id.clone()))
+        .collect();
+    let artifact_ids_by_node: HashMap<_, _> = analytics_artifact_nodes
+        .iter()
+        .map(|(artifact_id, node_id)| (*node_id, artifact_id.clone()))
+        .collect();
+
+    let mut closes = HashMap::new();
+    let mut close_nodes = HashMap::new();
+
+    for node_id in db.scan_nodes_by_label(LABEL_LEDGER_MONTH_CLOSE) {
+        let node = db
+            .get_node(node_id)
+            .map_err(|err| map_load_error("unable to read LedgerMonthClose node", err))?;
+
+        let close_id = required_node_string_property(&node, PROP_MONTH_CLOSE_ID)?;
+        if closes.contains_key(&close_id) {
+            return Err(StoreError::LoadFailed {
+                message: format!("duplicate month close id '{close_id}' in graph projection"),
+            });
+        }
+
+        let month_key = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let checking_account =
+            required_node_string_property(&node, PROP_RECONCILIATION_CHECKING_ACCOUNT)?;
+        let reconciliation_run_id =
+            required_node_string_property(&node, PROP_MONTH_CLOSE_RECONCILIATION_RUN_ID)?;
+        let analytics_artifact_id =
+            optional_node_string_property(&node, PROP_MONTH_CLOSE_ANALYTICS_ARTIFACT_ID)
+                .filter(|value| !value.is_empty());
+        let closed_at = required_node_i64_property(&node, PROP_MONTH_CLOSE_CLOSED_AT_US)?.into();
+
+        let run_node = reconciliation_run_nodes
+            .get(&reconciliation_run_id)
+            .copied()
+            .ok_or_else(|| StoreError::LoadFailed {
+                message: format!(
+                    "month close '{close_id}' references unknown reconciliation run '{reconciliation_run_id}'"
+                ),
+            })?;
+        let has_run_edge = db
+            .get_outgoing_edges_with_label(node_id, EDGE_CLOSES_RECONCILIATION_RUN)
+            .into_iter()
+            .any(|edge_id| {
+                db.get_edge(edge_id)
+                    .map(|edge| edge.target == run_node)
+                    .unwrap_or(false)
+            });
+        if !has_run_edge {
+            return Err(StoreError::LoadFailed {
+                message: format!(
+                    "month close '{close_id}' is missing CLOSES_RECONCILIATION_RUN edge to '{reconciliation_run_id}'"
+                ),
+            });
+        }
+
+        if let Some(artifact_id) = &analytics_artifact_id {
+            let artifact_node = analytics_artifact_nodes
+                .get(artifact_id)
+                .copied()
+                .ok_or_else(|| StoreError::LoadFailed {
+                    message: format!(
+                        "month close '{close_id}' references unknown analytics artifact '{artifact_id}'"
+                    ),
+                })?;
+            let has_artifact_edge = db
+                .get_outgoing_edges_with_label(node_id, EDGE_CLOSES_ANALYTICS_ARTIFACT)
+                .into_iter()
+                .any(|edge_id| {
+                    db.get_edge(edge_id)
+                        .map(|edge| edge.target == artifact_node)
+                        .unwrap_or(false)
+                });
+            if !has_artifact_edge {
+                return Err(StoreError::LoadFailed {
+                    message: format!(
+                        "month close '{close_id}' is missing CLOSES_ANALYTICS_ARTIFACT edge to '{artifact_id}'"
+                    ),
+                });
+            }
+        }
+
+        for edge_id in db.get_outgoing_edges_with_label(node_id, EDGE_CLOSES_ANALYTICS_ARTIFACT) {
+            let edge = db
+                .get_edge(edge_id)
+                .map_err(|err| map_load_error("unable to read CLOSES_ANALYTICS_ARTIFACT edge", err))?;
+            if !artifact_ids_by_node.contains_key(&edge.target) {
+                return Err(StoreError::LoadFailed {
+                    message: format!(
+                        "month close '{close_id}' has CLOSES_ANALYTICS_ARTIFACT edge to unknown node {}",
+                        edge.target.as_u64()
+                    ),
+                });
+            }
+        }
+        for edge_id in db.get_outgoing_edges_with_label(node_id, EDGE_CLOSES_RECONCILIATION_RUN) {
+            let edge = db
+                .get_edge(edge_id)
+                .map_err(|err| {
+                    map_load_error("unable to read CLOSES_RECONCILIATION_RUN edge", err)
+                })?;
+            if !run_ids_by_node.contains_key(&edge.target) {
+                return Err(StoreError::LoadFailed {
+                    message: format!(
+                        "month close '{close_id}' has CLOSES_RECONCILIATION_RUN edge to unknown node {}",
+                        edge.target.as_u64()
+                    ),
+                });
+            }
+        }
+
+        let close = StoredMonthClose::new(
+            &close_id,
+            &month_key,
+            &checking_account,
+            &reconciliation_run_id,
+            analytics_artifact_id.as_deref(),
+            closed_at,
+        );
+        closes.insert(close_id.clone(), close);
+        close_nodes.insert(close_id, node.id);
+    }
+
+    Ok((closes, close_nodes))
+}
+
 fn required_node_string_property(node: &Node, key: &str) -> Result<String, StoreError> {
     node.get_property(key)
         .and_then(|value| value.as_str())
@@ -1713,6 +1966,22 @@ fn collect_statement_line_ids_for_transactions(
     line_ids
 }
 
+fn index_month_close_by_scope(
+    month_closes: &HashMap<String, StoredMonthClose>,
+) -> HashMap<BudgetTargetKey, String> {
+    let mut by_scope = HashMap::new();
+    for close in month_closes.values() {
+        by_scope.insert(
+            (
+                close.month_key().to_owned(),
+                close.checking_account().to_owned(),
+            ),
+            close.close_id().to_owned(),
+        );
+    }
+    by_scope
+}
+
 fn infer_next_id<'a, I>(ids: I) -> u64
 where
     I: Iterator<Item = &'a TransactionId>,
@@ -1768,6 +2037,18 @@ where
 {
     ids.filter_map(|id| {
         id.strip_prefix("recon-")
+            .and_then(|value| value.parse::<u64>().ok())
+    })
+    .max()
+    .unwrap_or(0)
+}
+
+fn infer_next_month_close_id<'a, I>(ids: I) -> u64
+where
+    I: Iterator<Item = &'a String>,
+{
+    ids.filter_map(|id| {
+        id.strip_prefix("close-")
             .and_then(|value| value.parse::<u64>().ok())
     })
     .max()

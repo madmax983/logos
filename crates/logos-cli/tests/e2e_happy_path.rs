@@ -237,6 +237,46 @@ fn e2e_runtime_reconcile_list_filters_and_sorts_latest_first() {
 }
 
 #[test]
+fn e2e_runtime_month_close_persists_and_blocks_duplicate_scope_close() {
+    let path = temp_runtime_path("month-close");
+    let month_key = CliRuntime::current_month_key_utc();
+    let run_id;
+
+    {
+        let mut runtime = CliRuntime::open(&path).expect("open");
+        runtime
+            .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
+            .expect("post");
+        run_id = runtime
+            .reconcile_and_persist_month_for("assets:checking", &month_key, 100_000, 110_000)
+            .expect("run")
+            .run_id()
+            .to_owned();
+
+        let close = runtime
+            .close_month(&month_key, "assets:checking", &run_id, None)
+            .expect("close");
+        assert_eq!(close.close_id(), "close-1");
+
+        let duplicate_err = runtime
+            .close_month(&month_key, "assets:checking", &run_id, None)
+            .expect_err("duplicate close");
+        assert!(duplicate_err.to_string().contains("already closed"));
+    }
+
+    {
+        let reopened = CliRuntime::open(&path).expect("reopen");
+        let close = reopened
+            .month_close_for_scope(&month_key, "assets:checking")
+            .expect("reloaded close");
+        assert_eq!(close.reconciliation_run_id(), run_id);
+        assert_eq!(close.month_key(), month_key);
+    }
+
+    cleanup_runtime_path(&path);
+}
+
+#[test]
 fn e2e_runtime_reopen_restores_persisted_budget_targets() {
     let path = temp_runtime_path("reopen-budget-target");
     {

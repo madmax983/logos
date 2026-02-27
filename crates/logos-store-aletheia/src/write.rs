@@ -7,7 +7,7 @@ use crate::{
     AletheiaStore, StoreError,
     model::{
         NewImportRecord, StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredImportBatch,
-        StoredImportRecord, StoredReconciliationRun, StoredStatementLine,
+        StoredImportRecord, StoredMonthClose, StoredReconciliationRun, StoredStatementLine,
     },
 };
 
@@ -355,5 +355,87 @@ impl AletheiaStore {
         self.persist_reconciliation_run(run.clone());
         self.persist_reconciliation_statement_line_ids(run.run_id(), statement_line_ids);
         Ok(run)
+    }
+
+    /// Writes an immutable month-close record that links to reconciliation and optional analytics evidence.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when metadata is invalid, references are unknown, or the scope is already closed.
+    pub fn write_month_close(
+        &mut self,
+        month_key: &str,
+        checking_account: &str,
+        reconciliation_run_id: &str,
+        analytics_artifact_id: Option<&str>,
+    ) -> Result<StoredMonthClose, StoreError> {
+        if month_key.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "month_key must not be empty".to_owned(),
+            });
+        }
+        if checking_account.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "checking_account must not be empty".to_owned(),
+            });
+        }
+        if reconciliation_run_id.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "reconciliation_run_id must not be empty".to_owned(),
+            });
+        }
+
+        let run = self.reconciliation_runs.get(reconciliation_run_id).ok_or_else(|| {
+            StoreError::PersistFailed {
+                message: format!("unknown reconciliation run '{reconciliation_run_id}'"),
+            }
+        })?;
+        if run.month_key() != month_key {
+            return Err(StoreError::PersistFailed {
+                message: format!(
+                    "month close month '{month_key}' does not match reconciliation run month '{}'",
+                    run.month_key()
+                ),
+            });
+        }
+        if run.checking_account() != checking_account {
+            return Err(StoreError::PersistFailed {
+                message: format!(
+                    "month close checking_account '{checking_account}' does not match reconciliation run account '{}'",
+                    run.checking_account()
+                ),
+            });
+        }
+
+        if let Some(artifact_id) = analytics_artifact_id {
+            if !self.analytics_artifacts.contains_key(artifact_id) {
+                return Err(StoreError::UnknownArtifact {
+                    artifact_id: artifact_id.to_owned(),
+                });
+            }
+        }
+
+        let scope_key = (month_key.to_owned(), checking_account.to_owned());
+        if let Some(existing_close_id) = self.month_close_by_scope.get(&scope_key) {
+            return Err(StoreError::PersistFailed {
+                message: format!(
+                    "month '{month_key}' for account '{checking_account}' is already closed by '{existing_close_id}'"
+                ),
+            });
+        }
+
+        let close_id = self.next_month_close_id();
+        let closed_at = aletheiadb::time::now();
+        let close = StoredMonthClose::new(
+            &close_id,
+            month_key,
+            checking_account,
+            reconciliation_run_id,
+            analytics_artifact_id,
+            closed_at,
+        );
+        self.persist_month_close_graph(&close)?;
+        self.persist_month_close(close.clone());
+        Ok(close)
     }
 }

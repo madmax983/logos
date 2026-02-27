@@ -314,6 +314,56 @@ fn open_persists_reconciliation_run_across_reopen() {
 }
 
 #[test]
+fn open_persists_month_close_across_reopen() {
+    let path = temp_store_path("persist-month-close");
+    let run_id;
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let txn_id = store
+            .write_transaction(
+                TransactionBuilder::new("paycheck")
+                    .posting(Posting::debit("assets:checking", 10_000))
+                    .posting(Posting::credit("income:salary", 10_000)),
+            )
+            .expect("txn");
+        run_id = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                10_000,
+                110_000,
+                110_000,
+                0,
+                true,
+                1,
+                10_000,
+                0,
+                std::slice::from_ref(&txn_id),
+            )
+            .expect("run")
+            .run_id()
+            .to_owned();
+
+        let close = store
+            .write_month_close("2026-03", "assets:checking", &run_id, None)
+            .expect("close month");
+        assert_eq!(close.close_id(), "close-1");
+    }
+
+    let reopened = AletheiaStore::open(&path).expect("reopen");
+    assert_eq!(reopened.month_close_count(), 1);
+    let close = reopened
+        .month_close_for_scope("2026-03", "assets:checking")
+        .expect("close exists");
+    assert_eq!(close.reconciliation_run_id(), run_id);
+    assert_eq!(close.month_key(), "2026-03");
+    assert_eq!(close.checking_account(), "assets:checking");
+
+    cleanup_store_path(&path);
+}
+
+#[test]
 fn embedded_mapping_writes_transaction_and_posting_graph_entities() {
     let path = temp_store_path("mapping-transaction");
     {
@@ -608,6 +658,83 @@ fn embedded_mapping_links_reconciliation_run_to_statement_lines() {
     assert_eq!(run_nodes.len(), 1);
     assert_eq!(statement_line_count, 1);
     assert_eq!(reconciles_statement_line_edges, 1);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn embedded_mapping_writes_month_close_edges() {
+    let path = temp_store_path("mapping-month-close");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let txn = store
+            .write_transaction(
+                TransactionBuilder::new("paycheck")
+                    .posting(Posting::debit("assets:checking", 10_000))
+                    .posting(Posting::credit("income:salary", 10_000)),
+            )
+            .expect("txn");
+        let run = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                10_000,
+                110_000,
+                110_000,
+                0,
+                true,
+                1,
+                10_000,
+                0,
+                std::slice::from_ref(&txn),
+            )
+            .expect("run");
+        let artifact = store
+            .write_analytics_artifact_manifest(
+                "parquet",
+                "C:\\artifacts\\snapshot.parquet",
+                "hash-close",
+                1,
+                2,
+                time::from_secs(1_700_000_500),
+                time::from_secs(1_700_000_501),
+                None,
+            )
+            .expect("artifact");
+
+        store
+            .write_month_close(
+                "2026-03",
+                "assets:checking",
+                run.run_id(),
+                Some(artifact.artifact_id()),
+            )
+            .expect("close");
+    }
+
+    let graph = open_raw_graph(&path);
+    let close_nodes: Vec<_> = graph.scan_nodes_by_label("LedgerMonthClose").collect();
+    let closes_run_edges: usize = close_nodes
+        .iter()
+        .map(|node_id| {
+            graph
+                .get_outgoing_edges_with_label(*node_id, "CLOSES_RECONCILIATION_RUN")
+                .len()
+        })
+        .sum();
+    let closes_artifact_edges: usize = close_nodes
+        .iter()
+        .map(|node_id| {
+            graph
+                .get_outgoing_edges_with_label(*node_id, "CLOSES_ANALYTICS_ARTIFACT")
+                .len()
+        })
+        .sum();
+
+    assert_eq!(close_nodes.len(), 1);
+    assert_eq!(closes_run_edges, 1);
+    assert_eq!(closes_artifact_edges, 1);
 
     cleanup_store_path(&path);
 }

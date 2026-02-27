@@ -17,7 +17,7 @@ use logos_reporting::{
 use logos_store_aletheia::{
     AletheiaStore, StoreError,
     model::{
-        NewImportRecord, StoredAnalyticsArtifactManifest, StoredReconciliationRun,
+        NewImportRecord, StoredAnalyticsArtifactManifest, StoredMonthClose, StoredReconciliationRun,
         StoredStatementLine, StoredTransaction,
     },
 };
@@ -532,6 +532,39 @@ impl CliRuntime {
                 .then_with(|| left.run_id().cmp(right.run_id()))
         });
         runs
+    }
+
+    /// Closes a month scope using a previously persisted reconciliation run.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when scope metadata is invalid or write persistence fails.
+    pub fn close_month(
+        &mut self,
+        month_key: &str,
+        checking_account: &str,
+        reconciliation_run_id: &str,
+        analytics_artifact_id: Option<&str>,
+    ) -> Result<StoredMonthClose, RuntimeError> {
+        self.store
+            .write_month_close(
+                month_key,
+                checking_account,
+                reconciliation_run_id,
+                analytics_artifact_id,
+            )
+            .map_err(RuntimeError::from)
+    }
+
+    #[must_use]
+    pub fn month_close_for_scope(
+        &self,
+        month_key: &str,
+        checking_account: &str,
+    ) -> Option<StoredMonthClose> {
+        self.store
+            .month_close_for_scope(month_key, checking_account)
+            .cloned()
     }
 
     #[must_use]

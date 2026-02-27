@@ -11,8 +11,8 @@ use crate::{
         AsOf, EDGE_HAS_POSTING, EDGE_SUPERSEDES, LABEL_LEDGER_CORRECTION, PROP_ACCOUNT,
         PROP_AMOUNT_CENTS, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_ORDINAL,
         PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID, StoredAnalyticsArtifactManifest, StoredBudgetTarget,
-        StoredCorrection, StoredImportBatch, StoredImportRecord, StoredReconciliationRun,
-        StoredStatementLine, StoredTransaction,
+        StoredCorrection, StoredImportBatch, StoredImportRecord, StoredMonthClose,
+        StoredReconciliationRun, StoredStatementLine, StoredTransaction,
     },
     parse_posting, required_edge_i64_property, required_node_i64_property,
     required_node_string_property,
@@ -126,6 +126,32 @@ impl AletheiaStore {
 
     pub fn reconciliation_runs(&self) -> impl Iterator<Item = &StoredReconciliationRun> + '_ {
         self.reconciliation_runs.values()
+    }
+
+    #[must_use]
+    pub fn month_close_count(&self) -> usize {
+        self.month_closes.len()
+    }
+
+    #[must_use]
+    pub fn month_close(&self, close_id: &str) -> Option<&StoredMonthClose> {
+        self.month_closes.get(close_id)
+    }
+
+    #[must_use]
+    pub fn month_close_for_scope(
+        &self,
+        month_key: &str,
+        checking_account: &str,
+    ) -> Option<&StoredMonthClose> {
+        let close_id = self
+            .month_close_by_scope
+            .get(&(month_key.to_owned(), checking_account.to_owned()))?;
+        self.month_closes.get(close_id)
+    }
+
+    pub fn month_closes(&self) -> impl Iterator<Item = &StoredMonthClose> + '_ {
+        self.month_closes.values()
     }
 
     /// Reconstructs transactions visible at a bi-temporal point in time.

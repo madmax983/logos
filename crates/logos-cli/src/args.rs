@@ -128,6 +128,17 @@ impl ParsedArgs {
             Command::Reconcile(ReconcileCommand::Show { run_id }) => {
                 commands::reconcile::show(run_id)
             }
+            Command::Close(CloseCommand::Month {
+                month_key,
+                checking_account,
+                run_id,
+                analytics_artifact_id,
+            }) => commands::close::month(
+                month_key.as_deref(),
+                checking_account,
+                run_id,
+                analytics_artifact_id.as_deref(),
+            ),
             Command::Budget(BudgetCommand::Set {
                 month_key,
                 budget_cents,
@@ -189,6 +200,7 @@ pub enum Command {
     Analytics(AnalyticsCommand),
     Import(ImportCommand),
     Reconcile(ReconcileCommand),
+    Close(CloseCommand),
     Budget(BudgetCommand),
     Report(ReportCommand),
 }
@@ -205,6 +217,7 @@ impl Command {
             Self::Help(HelpTopic::Analytics) => "help.analytics",
             Self::Help(HelpTopic::Import) => "help.import",
             Self::Help(HelpTopic::Reconcile) => "help.reconcile",
+            Self::Help(HelpTopic::Close) => "help.close",
             Self::Aletheia(AletheiaCommand::Start) => "aletheia.start",
             Self::Aletheia(AletheiaCommand::Status) => "aletheia.status",
             Self::Txn(TxnCommand::Add { .. }) => "txn.add",
@@ -215,6 +228,7 @@ impl Command {
             Self::Reconcile(ReconcileCommand::Month { .. }) => "reconcile.month",
             Self::Reconcile(ReconcileCommand::List { .. }) => "reconcile.list",
             Self::Reconcile(ReconcileCommand::Show { .. }) => "reconcile.show",
+            Self::Close(CloseCommand::Month { .. }) => "close.month",
             Self::Budget(BudgetCommand::Set { .. }) => "budget.set",
             Self::Report(ReportCommand::Month { .. }) => "report.month",
         }
@@ -231,6 +245,7 @@ pub enum HelpTopic {
     Aletheia,
     Import,
     Reconcile,
+    Close,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -291,6 +306,16 @@ pub enum ReconcileCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CloseCommand {
+    Month {
+        month_key: Option<String>,
+        checking_account: String,
+        run_id: String,
+        analytics_artifact_id: Option<String>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BudgetCommand {
     Set {
         month_key: Option<String>,
@@ -332,6 +357,7 @@ where
         "analytics" => parse_analytics(&values),
         "import" => parse_import(&values),
         "reconcile" => parse_reconcile(&values),
+        "close" => parse_close(&values),
         "budget" => parse_budget(&values),
         "report" => parse_report(&values),
         _ => Err(CliError::UnknownCommand {
@@ -568,6 +594,38 @@ fn parse_reconcile(args: &[String]) -> Result<ParsedArgs, CliError> {
     }
 }
 
+fn parse_close(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
+        command: "close".to_owned(),
+    })?;
+
+    match subcommand.as_str() {
+        "--help" | "-h" => Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Close),
+        }),
+        "month" => {
+            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
+            let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?
+                .unwrap_or_else(|| DEFAULT_CHECKING_ACCOUNT.to_owned());
+            let run_id = parse_flag_value(&args[2..], "--run-id")?;
+            let analytics_artifact_id =
+                parse_optional_flag_value(&args[2..], "--analytics-artifact-id")?;
+            Ok(ParsedArgs {
+                command: Command::Close(CloseCommand::Month {
+                    month_key,
+                    checking_account,
+                    run_id,
+                    analytics_artifact_id,
+                }),
+            })
+        }
+        _ => Err(CliError::UnknownSubcommand {
+            command: "close".to_owned(),
+            subcommand: subcommand.clone(),
+        }),
+    }
+}
+
 fn parse_aletheia(args: &[String]) -> Result<ParsedArgs, CliError> {
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "aletheia".to_owned(),
@@ -600,6 +658,7 @@ fn parse_help_topic(args: &[String]) -> Result<HelpTopic, CliError> {
         Some("aletheia") => Ok(HelpTopic::Aletheia),
         Some("import") => Ok(HelpTopic::Import),
         Some("reconcile") => Ok(HelpTopic::Reconcile),
+        Some("close") => Ok(HelpTopic::Close),
         Some(subcommand) => Err(CliError::UnknownSubcommand {
             command: "help".to_owned(),
             subcommand: subcommand.to_owned(),

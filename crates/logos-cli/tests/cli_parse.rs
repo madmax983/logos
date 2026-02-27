@@ -679,6 +679,72 @@ fn rejects_reconcile_show_without_run_id() {
 }
 
 #[test]
+fn parses_close_month_with_required_run_id() {
+    let args = vec![
+        "ledger",
+        "close",
+        "month",
+        "--run-id",
+        "recon-9",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "close.month");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Close(logos_cli::args::CloseCommand::Month {
+            month_key,
+            checking_account,
+            run_id,
+            analytics_artifact_id
+        }) if month_key.is_none()
+            && checking_account == "assets:checking"
+            && run_id == "recon-9"
+            && analytics_artifact_id.is_none()
+    ));
+}
+
+#[test]
+fn parses_close_month_with_explicit_flags() {
+    let args = vec![
+        "ledger",
+        "close",
+        "month",
+        "--month",
+        "2026-04",
+        "--checking-account",
+        "assets:brokerage",
+        "--run-id",
+        "recon-11",
+        "--analytics-artifact-id",
+        "artifact-7",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "close.month");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Close(logos_cli::args::CloseCommand::Month {
+            month_key,
+            checking_account,
+            run_id,
+            analytics_artifact_id
+        }) if month_key.as_deref() == Some("2026-04")
+            && checking_account == "assets:brokerage"
+            && run_id == "recon-11"
+            && analytics_artifact_id.as_deref() == Some("artifact-7")
+    ));
+}
+
+#[test]
+fn rejects_close_month_without_run_id() {
+    let args = vec!["ledger", "close", "month"];
+    let err = logos_cli::parse_args(args).expect_err("missing run id");
+
+    assert_eq!(err.to_string(), "missing value for argument '--run-id'");
+}
+
+#[test]
 fn parses_aletheia_start_command() {
     let args = vec!["ledger", "aletheia", "start"];
     let parsed = logos_cli::parse_args(args).expect("parse");
