@@ -21,3 +21,14 @@ fn unbalanced_transaction_is_rejected() {
 
     assert!(err.to_string().contains("balanced"));
 }
+
+#[test]
+fn empty_transaction_description_is_rejected() {
+    let err = TransactionBuilder::new("   ")
+        .posting(Posting::debit("assets:checking", 10_000))
+        .posting(Posting::credit("income:salary", 10_000))
+        .build()
+        .expect_err("must fail");
+
+    assert_eq!(err.to_string(), "transaction description cannot be empty");
+}

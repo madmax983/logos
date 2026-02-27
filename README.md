@@ -34,21 +34,36 @@ C:\Users\markm\verus\verus.exe logos-proof\budget_invariants.verus
 C:\Users\markm\verus\verus.exe logos-proof\rsu_policy_invariants.verus
 ```
 
-## Example Commands (Current Skeleton)
+## Example Commands
 
 ```powershell
 # Optional: override local embedded DB path (default is ~/.logos/ledger or %USERPROFILE%\.logos\ledger)
 $env:LOGOS_DB_PATH = "C:\Users\markm\logos\.data\ledger"
 
 cargo run -p logos-cli -- txn add --description "paycheck" --debit-account "assets:checking" --credit-account "income:salary" --amount-cents 100000
+cargo run -p logos-cli -- budget set --month 2026-03 --budget-cents 300000 --expense-account-prefix "expenses:"
+cargo run -p logos-cli -- report month --month 2026-03 --checking-account "assets:checking"
 cargo run -p logos-tui
 ```
 
-`logos-tui` is currently read-only skeleton output; rich terminal widgets come in later tasks.
+`budget set` persists month-scoped targets in the embedded store. `report month` is month-windowed using transaction effective time.
+
+## Embedded Persistence + History
+
+- Storage is local and in-process by default; no HTTP server is required for normal CLI usage.
+- Writes are append-only journal entities with correction links in `logos-store-aletheia`.
+- Historical reads are available via bi-temporal APIs (`valid_time`, `tx_time`) such as:
+  - `AletheiaStore::transactions_as_of(valid_time, tx_time)`
+
+### Backup / Restore Basics
+
+- Stop writer processes before taking a filesystem backup of your ledger directory.
+- Backup the directory configured by `LOGOS_DB_PATH` (or the default profile path).
+- Restore by replacing that directory and starting the CLI again.
 
 ## Run Local AletheiaDB
 
-Use the CLI helper to launch and check a real local `aletheia-server` instance:
+Use the CLI helper to launch and check a real local `aletheia-server` instance when you want HTTP integration/testing. This is optional for local CLI persistence.
 
 ```powershell
 # Optional if your checkout is not at C:\Users\markm\gallifreydb

@@ -2,6 +2,14 @@ use vstd::prelude::*;
 
 verus! {
 
+spec fn superseded_visible_at_snapshot(
+    txn_written_at: int,
+    correction_written_at: int,
+    snapshot_tx_at: int,
+) -> bool {
+    txn_written_at <= snapshot_tx_at && snapshot_tx_at < correction_written_at
+}
+
 proof fn correction_cannot_supersede_self(id: int, supersedes: int)
     requires id != supersedes
     ensures !(id == supersedes)
@@ -11,6 +19,26 @@ proof fn correction_cannot_supersede_self(id: int, supersedes: int)
 proof fn three_node_cycle_is_excluded(a: int, b: int, c: int)
     requires a != b, b != c, c != a
     ensures !(a == b) && !(b == c) && !(c == a)
+{
+}
+
+proof fn correction_hides_superseded_at_or_after_correction_time(
+    txn_written_at: int,
+    correction_written_at: int,
+    snapshot_tx_at: int,
+)
+    requires txn_written_at <= correction_written_at, correction_written_at <= snapshot_tx_at
+    ensures !superseded_visible_at_snapshot(txn_written_at, correction_written_at, snapshot_tx_at)
+{
+}
+
+proof fn superseded_visible_before_correction_tx_time(
+    txn_written_at: int,
+    correction_written_at: int,
+    snapshot_tx_at: int,
+)
+    requires txn_written_at <= snapshot_tx_at, snapshot_tx_at < correction_written_at
+    ensures superseded_visible_at_snapshot(txn_written_at, correction_written_at, snapshot_tx_at)
 {
 }
 

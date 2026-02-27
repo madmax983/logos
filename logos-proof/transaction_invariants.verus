@@ -6,6 +6,19 @@ spec fn balanced(total: int) -> bool {
     total == 0
 }
 
+spec fn visible_in_snapshot(
+    valid_at: int,
+    written_at: int,
+    snapshot_valid_at: int,
+    snapshot_tx_at: int,
+) -> bool {
+    valid_at <= snapshot_valid_at && written_at <= snapshot_tx_at
+}
+
+spec fn in_month(effective_month: int, requested_month: int) -> bool {
+    effective_month == requested_month
+}
+
 proof fn debit_credit_pair_balances(amount: int)
     ensures balanced(amount + (-amount))
 {
@@ -14,6 +27,40 @@ proof fn debit_credit_pair_balances(amount: int)
 proof fn transfer_preserves_global_balance(from_delta: int, to_delta: int)
     requires from_delta + to_delta == 0
     ensures balanced(from_delta + to_delta)
+{
+}
+
+proof fn visibility_requires_temporal_bounds(
+    valid_at: int,
+    written_at: int,
+    snapshot_valid_at: int,
+    snapshot_tx_at: int,
+)
+    ensures visible_in_snapshot(valid_at, written_at, snapshot_valid_at, snapshot_tx_at)
+        ==> valid_at <= snapshot_valid_at && written_at <= snapshot_tx_at
+{
+}
+
+proof fn visibility_is_monotone_for_later_snapshots(
+    valid_at: int,
+    written_at: int,
+    snapshot_valid_at: int,
+    snapshot_tx_at: int,
+    later_snapshot_valid_at: int,
+    later_snapshot_tx_at: int,
+)
+    requires
+        visible_in_snapshot(valid_at, written_at, snapshot_valid_at, snapshot_tx_at),
+        snapshot_valid_at <= later_snapshot_valid_at,
+        snapshot_tx_at <= later_snapshot_tx_at,
+    ensures
+        visible_in_snapshot(valid_at, written_at, later_snapshot_valid_at, later_snapshot_tx_at)
+{
+}
+
+proof fn month_filter_excludes_other_months(effective_month: int, requested_month: int)
+    requires effective_month != requested_month
+    ensures !in_month(effective_month, requested_month)
 {
 }
 

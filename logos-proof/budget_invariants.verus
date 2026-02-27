@@ -2,6 +2,19 @@ use vstd::prelude::*;
 
 verus! {
 
+spec fn latest_budget_target(
+    first_tx_time: int,
+    first_budget_cents: int,
+    second_tx_time: int,
+    second_budget_cents: int,
+) -> int {
+    if first_tx_time <= second_tx_time {
+        second_budget_cents
+    } else {
+        first_budget_cents
+    }
+}
+
 proof fn rollover_conservation(start: int, assigned: int, spent: int)
     ensures start + assigned - spent == (start + assigned) - spent
 {
@@ -9,6 +22,23 @@ proof fn rollover_conservation(start: int, assigned: int, spent: int)
 
 proof fn rollover_rearrangement(start: int, assigned: int, spent: int)
     ensures (start + assigned - spent) + spent == start + assigned
+{
+}
+
+proof fn latest_write_wins_for_budget_targets(
+    first_tx_time: int,
+    first_budget_cents: int,
+    second_tx_time: int,
+    second_budget_cents: int,
+)
+    requires first_tx_time <= second_tx_time
+    ensures
+        latest_budget_target(
+            first_tx_time,
+            first_budget_cents,
+            second_tx_time,
+            second_budget_cents,
+        ) == second_budget_cents
 {
 }
 

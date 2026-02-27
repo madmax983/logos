@@ -4,9 +4,9 @@ This module contains Verus specifications and proof spines for Logos core invari
 
 Current proof files:
 
-- transaction balance validity
-- correction lineage integrity
-- budget rollover conservation
+- transaction balance validity and bi-temporal snapshot visibility
+- correction lineage integrity and tx-time supersede visibility behavior
+- budget rollover conservation and latest-write-wins target semantics
 - RSU policy table and allocation invariants
 
 Files:

@@ -29,15 +29,15 @@ The v0 design calls for Aletheia-first storage and a Verus-backed proof boundary
 Positive:
 
 - Domain invariants remain centralized and testable.
-- Storage adapter can evolve toward full Aletheia integration without destabilizing core rules.
+- Storage adapter can evolve without destabilizing core rules now that embedded durable mode is the default runtime path.
 - Verus proof artifacts document mathematical intent and expected safety properties.
 
 Tradeoffs:
 
-- Proofs currently cover spine lemmas, not full end-to-end adapter behavior.
-- v0 currently uses offline-safe scaffold implementations; live integration depth grows in later tasks.
+- Proofs still cover spine lemmas, not full end-to-end adapter behavior.
+- CLI and store behavior now include local durable persistence and bi-temporal reads, which increases adapter complexity and test scope.
 
 ## Follow-up
 
-- Expand `logos-store-aletheia` from contract-level in-memory behavior to full Aletheia persistence.
+- Keep strengthening regression coverage for month-windowed reporting and budget-target persistence.
 - Add tighter coupling between proven invariants and runtime representations where feasible.
