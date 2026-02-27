@@ -1111,6 +1111,7 @@ dependencies = [
 name = "logos-tui"
 version = "0.1.0"
 dependencies = [
+ "logos-cli",
  "logos-core",
 ]
 
