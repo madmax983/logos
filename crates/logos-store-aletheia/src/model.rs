@@ -8,13 +8,17 @@ pub(crate) const LABEL_LEDGER_BUDGET_TARGET: &str = "LedgerBudgetTarget";
 pub(crate) const LABEL_ANALYTICS_ARTIFACT_MANIFEST: &str = "AnalyticsArtifactManifest";
 pub(crate) const LABEL_LEDGER_IMPORT_BATCH: &str = "LedgerImportBatch";
 pub(crate) const LABEL_LEDGER_IMPORT_RECORD: &str = "LedgerImportRecord";
+pub(crate) const LABEL_LEDGER_STATEMENT_LINE: &str = "LedgerStatementLine";
 pub(crate) const LABEL_LEDGER_RECONCILIATION_RUN: &str = "LedgerReconciliationRun";
 
 pub(crate) const EDGE_HAS_POSTING: &str = "HAS_POSTING";
 pub(crate) const EDGE_SUPERSEDES: &str = "SUPERSEDES";
 pub(crate) const EDGE_DERIVED_FROM: &str = "DERIVED_FROM";
 pub(crate) const EDGE_HAS_IMPORT_RECORD: &str = "HAS_IMPORT_RECORD";
+pub(crate) const EDGE_HAS_STATEMENT_LINE: &str = "HAS_STATEMENT_LINE";
+pub(crate) const EDGE_EVIDENCES_TXN: &str = "EVIDENCES_TXN";
 pub(crate) const EDGE_RECONCILES_TXN: &str = "RECONCILES_TXN";
+pub(crate) const EDGE_RECONCILES_STMT_LINE: &str = "RECONCILES_STMT_LINE";
 
 pub(crate) const PROP_TXN_ID: &str = "txn_id";
 pub(crate) const PROP_DESCRIPTION: &str = "description";
@@ -49,6 +53,11 @@ pub(crate) const PROP_IMPORT_OCR_ENABLED: &str = "ocr_enabled";
 pub(crate) const PROP_IMPORT_CONTENT_HASH_KEY: &str = "content_hash_key";
 pub(crate) const PROP_IMPORT_IMPORTED_TXN_ID: &str = "imported_txn_id";
 pub(crate) const PROP_IMPORT_IMPORTED_AT_US: &str = "imported_at_us";
+pub(crate) const PROP_STATEMENT_LINE_ID: &str = "statement_line_id";
+pub(crate) const PROP_STATEMENT_SOURCE_URI: &str = "statement_source_uri";
+pub(crate) const PROP_STATEMENT_TIMESTAMP: &str = "statement_timestamp";
+pub(crate) const PROP_STATEMENT_MEMO: &str = "statement_memo";
+pub(crate) const PROP_STATEMENT_AMOUNT_CENTS: &str = "statement_amount_cents";
 pub(crate) const PROP_RECONCILIATION_RUN_ID: &str = "reconciliation_run_id";
 pub(crate) const PROP_RECONCILIATION_CHECKING_ACCOUNT: &str = "reconciliation_checking_account";
 pub(crate) const PROP_RECONCILIATION_OPENING_BALANCE_CENTS: &str =
@@ -196,9 +205,30 @@ pub struct StoredImportRecord {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredStatementLine {
+    line_id: String,
+    batch_id: String,
+    source_uri: String,
+    statement_timestamp: String,
+    memo: String,
+    amount_cents: i64,
+    imported_txn_id: Option<TransactionId>,
+    imported_at: Timestamp,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NewStatementLine {
+    source_uri: String,
+    statement_timestamp: String,
+    memo: String,
+    amount_cents: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewImportRecord {
     content_hash_key: String,
     imported_txn_id: Option<TransactionId>,
+    statement_line: Option<NewStatementLine>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -416,12 +446,133 @@ impl StoredImportRecord {
     }
 }
 
+impl StoredStatementLine {
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        line_id: &str,
+        batch_id: &str,
+        source_uri: &str,
+        statement_timestamp: &str,
+        memo: &str,
+        amount_cents: i64,
+        imported_txn_id: Option<TransactionId>,
+        imported_at: Timestamp,
+    ) -> Self {
+        Self {
+            line_id: line_id.to_owned(),
+            batch_id: batch_id.to_owned(),
+            source_uri: source_uri.to_owned(),
+            statement_timestamp: statement_timestamp.to_owned(),
+            memo: memo.to_owned(),
+            amount_cents,
+            imported_txn_id,
+            imported_at,
+        }
+    }
+
+    #[must_use]
+    pub fn line_id(&self) -> &str {
+        &self.line_id
+    }
+
+    #[must_use]
+    pub fn batch_id(&self) -> &str {
+        &self.batch_id
+    }
+
+    #[must_use]
+    pub fn source_uri(&self) -> &str {
+        &self.source_uri
+    }
+
+    #[must_use]
+    pub fn statement_timestamp(&self) -> &str {
+        &self.statement_timestamp
+    }
+
+    #[must_use]
+    pub fn memo(&self) -> &str {
+        &self.memo
+    }
+
+    #[must_use]
+    pub const fn amount_cents(&self) -> i64 {
+        self.amount_cents
+    }
+
+    #[must_use]
+    pub const fn imported_txn_id(&self) -> Option<&TransactionId> {
+        self.imported_txn_id.as_ref()
+    }
+
+    #[must_use]
+    pub const fn imported_at(&self) -> Timestamp {
+        self.imported_at
+    }
+}
+
+impl NewStatementLine {
+    #[must_use]
+    pub fn new(source_uri: &str, statement_timestamp: &str, memo: &str, amount_cents: i64) -> Self {
+        Self {
+            source_uri: source_uri.to_owned(),
+            statement_timestamp: statement_timestamp.to_owned(),
+            memo: memo.to_owned(),
+            amount_cents,
+        }
+    }
+
+    #[must_use]
+    pub fn source_uri(&self) -> &str {
+        &self.source_uri
+    }
+
+    #[must_use]
+    pub fn statement_timestamp(&self) -> &str {
+        &self.statement_timestamp
+    }
+
+    #[must_use]
+    pub fn memo(&self) -> &str {
+        &self.memo
+    }
+
+    #[must_use]
+    pub const fn amount_cents(&self) -> i64 {
+        self.amount_cents
+    }
+}
+
 impl NewImportRecord {
     #[must_use]
     pub fn new(content_hash_key: &str, imported_txn_id: Option<&TransactionId>) -> Self {
         Self {
             content_hash_key: content_hash_key.to_owned(),
             imported_txn_id: imported_txn_id.cloned(),
+            statement_line: None,
+        }
+    }
+
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub fn with_statement_line(
+        content_hash_key: &str,
+        imported_txn_id: Option<&TransactionId>,
+        source_uri: &str,
+        statement_timestamp: &str,
+        memo: &str,
+        amount_cents: i64,
+    ) -> Self {
+        Self {
+            content_hash_key: content_hash_key.to_owned(),
+            imported_txn_id: imported_txn_id.cloned(),
+            statement_line: Some(NewStatementLine::new(
+                source_uri,
+                statement_timestamp,
+                memo,
+                amount_cents,
+            )),
         }
     }
 
@@ -433,6 +584,11 @@ impl NewImportRecord {
     #[must_use]
     pub const fn imported_txn_id(&self) -> Option<&TransactionId> {
         self.imported_txn_id.as_ref()
+    }
+
+    #[must_use]
+    pub const fn statement_line(&self) -> Option<&NewStatementLine> {
+        self.statement_line.as_ref()
     }
 }
 

@@ -18,7 +18,7 @@ use logos_store_aletheia::{
     AletheiaStore, StoreError,
     model::{
         NewImportRecord, StoredAnalyticsArtifactManifest, StoredReconciliationRun,
-        StoredTransaction,
+        StoredStatementLine, StoredTransaction,
     },
 };
 use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
@@ -620,7 +620,14 @@ impl CliRuntime {
             }
 
             let txn_id = self.post_import_record(&record)?;
-            imported_records.push(NewImportRecord::new(&content_hash_key, Some(&txn_id)));
+            imported_records.push(NewImportRecord::with_statement_line(
+                &content_hash_key,
+                Some(&txn_id),
+                &source_uri,
+                record.timestamp(),
+                record.memo(),
+                record.amount_cents(),
+            ));
             imported_keys.push(content_hash_key);
             self.imported_records = self.imported_records.saturating_add(1);
         }
@@ -655,6 +662,15 @@ impl CliRuntime {
     #[must_use]
     pub const fn imported_record_count(&self) -> usize {
         self.imported_records
+    }
+
+    #[must_use]
+    pub fn statement_lines_for_reconciliation_run(&self, run_id: &str) -> Vec<StoredStatementLine> {
+        self.store
+            .statement_lines_for_reconciliation_run(run_id)
+            .into_iter()
+            .cloned()
+            .collect()
     }
 
     #[must_use]

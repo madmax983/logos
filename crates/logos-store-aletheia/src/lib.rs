@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fs;
 use std::path::Path;
@@ -10,10 +10,11 @@ use aletheiadb::{
 use logos_core::{Correction, DomainError, Posting, TransactionBuilder, TransactionId};
 
 use crate::model::{
-    EDGE_DERIVED_FROM, EDGE_HAS_IMPORT_RECORD, EDGE_HAS_POSTING, EDGE_RECONCILES_TXN,
-    EDGE_SUPERSEDES, LABEL_ANALYTICS_ARTIFACT_MANIFEST, LABEL_LEDGER_BUDGET_TARGET,
-    LABEL_LEDGER_CORRECTION, LABEL_LEDGER_IMPORT_BATCH, LABEL_LEDGER_IMPORT_RECORD,
-    LABEL_LEDGER_POSTING, LABEL_LEDGER_RECONCILIATION_RUN, LABEL_LEDGER_TRANSACTION,
+    EDGE_DERIVED_FROM, EDGE_EVIDENCES_TXN, EDGE_HAS_IMPORT_RECORD, EDGE_HAS_POSTING,
+    EDGE_HAS_STATEMENT_LINE, EDGE_RECONCILES_STMT_LINE, EDGE_RECONCILES_TXN, EDGE_SUPERSEDES,
+    LABEL_ANALYTICS_ARTIFACT_MANIFEST, LABEL_LEDGER_BUDGET_TARGET, LABEL_LEDGER_CORRECTION,
+    LABEL_LEDGER_IMPORT_BATCH, LABEL_LEDGER_IMPORT_RECORD, LABEL_LEDGER_POSTING,
+    LABEL_LEDGER_RECONCILIATION_RUN, LABEL_LEDGER_STATEMENT_LINE, LABEL_LEDGER_TRANSACTION,
     NewImportRecord, PROP_ACCOUNT, PROP_AMOUNT_CENTS, PROP_ARTIFACT_ID, PROP_ARTIFACT_KIND,
     PROP_ARTIFACT_URI, PROP_BUDGET_CENTS, PROP_CONTENT_HASH, PROP_CREATED_AT_US, PROP_DESCRIPTION,
     PROP_EFFECTIVE_AT_US, PROP_EXPENSE_ACCOUNT_PREFIX, PROP_IMPORT_BATCH_ID, PROP_IMPORT_BATCH_KEY,
@@ -28,9 +29,11 @@ use crate::model::{
     PROP_RECONCILIATION_RECONCILED, PROP_RECONCILIATION_RUN_ID,
     PROP_RECONCILIATION_STATEMENT_CLOSING_BALANCE_CENTS, PROP_RECONCILIATION_VARIANCE_CENTS,
     PROP_ROW_COUNT, PROP_SCHEMA_VERSION, PROP_SNAPSHOT_KEY, PROP_SNAPSHOT_TX_AT_US,
-    PROP_SNAPSHOT_VALID_AT_US, PROP_SUPERSEDES_ARTIFACT_ID, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID,
+    PROP_SNAPSHOT_VALID_AT_US, PROP_STATEMENT_AMOUNT_CENTS, PROP_STATEMENT_LINE_ID,
+    PROP_STATEMENT_MEMO, PROP_STATEMENT_SOURCE_URI, PROP_STATEMENT_TIMESTAMP,
+    PROP_SUPERSEDES_ARTIFACT_ID, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID,
     StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredCorrection, StoredImportBatch,
-    StoredImportRecord, StoredReconciliationRun, StoredTransaction,
+    StoredImportRecord, StoredReconciliationRun, StoredStatementLine, StoredTransaction,
 };
 
 pub mod model;
@@ -82,6 +85,7 @@ pub struct AletheiaStore {
     pub(crate) next_id: u64,
     pub(crate) next_artifact_id: u64,
     pub(crate) next_import_batch_id: u64,
+    pub(crate) next_statement_line_id: u64,
     pub(crate) next_reconciliation_run_id: u64,
     pub(crate) transactions: HashMap<TransactionId, StoredTransaction>,
     pub(crate) corrections: Vec<StoredCorrection>,
@@ -89,7 +93,10 @@ pub struct AletheiaStore {
     pub(crate) analytics_artifacts: HashMap<String, StoredAnalyticsArtifactManifest>,
     pub(crate) import_batches: HashMap<String, StoredImportBatch>,
     pub(crate) import_records: HashMap<String, StoredImportRecord>,
+    pub(crate) statement_lines: HashMap<String, StoredStatementLine>,
+    pub(crate) statement_line_ids_by_txn: HashMap<TransactionId, Vec<String>>,
     pub(crate) reconciliation_runs: HashMap<String, StoredReconciliationRun>,
+    pub(crate) reconciliation_statement_line_ids: HashMap<String, Vec<String>>,
     pub(crate) embedded: Option<EmbeddedStore>,
 }
 
@@ -104,8 +111,11 @@ struct LoadedProjection {
     import_batches: HashMap<String, StoredImportBatch>,
     import_records: HashMap<String, StoredImportRecord>,
     import_batch_nodes: HashMap<String, NodeId>,
+    statement_lines: HashMap<String, StoredStatementLine>,
+    statement_line_nodes: HashMap<String, NodeId>,
     reconciliation_runs: HashMap<String, StoredReconciliationRun>,
     reconciliation_run_nodes: HashMap<String, NodeId>,
+    reconciliation_statement_line_ids: HashMap<String, Vec<String>>,
 }
 
 type BudgetTargetKey = (String, String);
@@ -115,6 +125,7 @@ pub(crate) struct EmbeddedStore {
     pub(crate) transaction_nodes: HashMap<TransactionId, NodeId>,
     pub(crate) analytics_artifact_nodes: HashMap<String, NodeId>,
     pub(crate) import_batch_nodes: HashMap<String, NodeId>,
+    pub(crate) statement_line_nodes: HashMap<String, NodeId>,
     pub(crate) reconciliation_run_nodes: HashMap<String, NodeId>,
 }
 
@@ -128,6 +139,7 @@ impl fmt::Debug for EmbeddedStore {
                 &self.analytics_artifact_nodes.len(),
             )
             .field("import_batch_nodes", &self.import_batch_nodes.len())
+            .field("statement_line_nodes", &self.statement_line_nodes.len())
             .field(
                 "reconciliation_run_nodes",
                 &self.reconciliation_run_nodes.len(),
@@ -142,6 +154,7 @@ impl fmt::Debug for AletheiaStore {
             .field("next_id", &self.next_id)
             .field("next_artifact_id", &self.next_artifact_id)
             .field("next_import_batch_id", &self.next_import_batch_id)
+            .field("next_statement_line_id", &self.next_statement_line_id)
             .field(
                 "next_reconciliation_run_id",
                 &self.next_reconciliation_run_id,
@@ -152,7 +165,16 @@ impl fmt::Debug for AletheiaStore {
             .field("analytics_artifacts", &self.analytics_artifacts.len())
             .field("import_batches", &self.import_batches.len())
             .field("import_records", &self.import_records.len())
+            .field("statement_lines", &self.statement_lines.len())
+            .field(
+                "statement_line_ids_by_txn",
+                &self.statement_line_ids_by_txn.len(),
+            )
             .field("reconciliation_runs", &self.reconciliation_runs.len())
+            .field(
+                "reconciliation_statement_line_ids",
+                &self.reconciliation_statement_line_ids.len(),
+            )
             .field("embedded", &self.embedded.as_ref().map(|_| "enabled"))
             .finish()
     }
@@ -190,13 +212,16 @@ impl AletheiaStore {
         let next_id = infer_next_id(loaded.transactions.keys());
         let next_artifact_id = infer_next_artifact_id(loaded.analytics_artifacts.keys());
         let next_import_batch_id = infer_next_import_batch_id(loaded.import_batches.keys());
+        let next_statement_line_id = infer_next_statement_line_id(loaded.statement_lines.keys());
         let next_reconciliation_run_id =
             infer_next_reconciliation_run_id(loaded.reconciliation_runs.keys());
+        let statement_line_ids_by_txn = index_statement_lines_by_transaction(&loaded.statement_lines);
 
         Ok(Self {
             next_id,
             next_artifact_id,
             next_import_batch_id,
+            next_statement_line_id,
             next_reconciliation_run_id,
             transactions: loaded.transactions,
             corrections: loaded.corrections,
@@ -204,12 +229,16 @@ impl AletheiaStore {
             analytics_artifacts: loaded.analytics_artifacts,
             import_batches: loaded.import_batches,
             import_records: loaded.import_records,
+            statement_lines: loaded.statement_lines,
+            statement_line_ids_by_txn,
             reconciliation_runs: loaded.reconciliation_runs,
+            reconciliation_statement_line_ids: loaded.reconciliation_statement_line_ids,
             embedded: Some(EmbeddedStore {
                 db,
                 transaction_nodes: loaded.transaction_nodes,
                 analytics_artifact_nodes: loaded.analytics_artifact_nodes,
                 import_batch_nodes: loaded.import_batch_nodes,
+                statement_line_nodes: loaded.statement_line_nodes,
                 reconciliation_run_nodes: loaded.reconciliation_run_nodes,
             }),
         })
@@ -228,6 +257,11 @@ impl AletheiaStore {
     pub(crate) fn next_import_batch_id(&mut self) -> String {
         self.next_import_batch_id = self.next_import_batch_id.saturating_add(1);
         format!("import-batch-{}", self.next_import_batch_id)
+    }
+
+    pub(crate) fn next_statement_line_id(&mut self) -> String {
+        self.next_statement_line_id = self.next_statement_line_id.saturating_add(1);
+        format!("stmt-line-{}", self.next_statement_line_id)
     }
 
     pub(crate) fn next_reconciliation_run_id(&mut self) -> String {
@@ -274,9 +308,29 @@ impl AletheiaStore {
             .insert(record.content_hash_key().to_owned(), record);
     }
 
+    pub(crate) fn persist_statement_line(&mut self, line: StoredStatementLine) {
+        let line_id = line.line_id().to_owned();
+        if let Some(txn_id) = line.imported_txn_id().cloned() {
+            self.statement_line_ids_by_txn
+                .entry(txn_id)
+                .or_default()
+                .push(line_id.clone());
+        }
+        self.statement_lines.insert(line_id, line);
+    }
+
     pub(crate) fn persist_reconciliation_run(&mut self, run: StoredReconciliationRun) {
         self.reconciliation_runs
             .insert(run.run_id().to_owned(), run);
+    }
+
+    pub(crate) fn persist_reconciliation_statement_line_ids(
+        &mut self,
+        run_id: &str,
+        statement_line_ids: Vec<String>,
+    ) {
+        self.reconciliation_statement_line_ids
+            .insert(run_id.to_owned(), statement_line_ids);
     }
 
     pub(crate) fn build_and_validate(
@@ -487,11 +541,24 @@ impl AletheiaStore {
         Ok(())
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn persist_import_batch_graph(
         &mut self,
         batch: &StoredImportBatch,
         records: &[NewImportRecord],
+        statement_lines: &[Option<StoredStatementLine>],
     ) -> Result<(), StoreError> {
+        if records.len() != statement_lines.len() {
+            return Err(StoreError::PersistFailed {
+                message: format!(
+                    "import batch '{}' received {} records but {} statement lines",
+                    batch.batch_id(),
+                    records.len(),
+                    statement_lines.len()
+                ),
+            });
+        }
+
         let Some(embedded) = self.embedded.as_mut() else {
             return Ok(());
         };
@@ -517,7 +584,8 @@ impl AletheiaStore {
             )
             .map_err(|err| map_persist_error("unable to create LedgerImportBatch node", err))?;
 
-        for record in records {
+        let mut statement_line_nodes = Vec::new();
+        for (record, statement_line) in records.iter().zip(statement_lines.iter()) {
             let record_node = tx
                 .create_node(
                     LABEL_LEDGER_IMPORT_RECORD,
@@ -542,6 +610,58 @@ impl AletheiaStore {
                 PropertyMapBuilder::new().build(),
             )
             .map_err(|err| map_persist_error("unable to create HAS_IMPORT_RECORD edge", err))?;
+
+            if let Some(line) = statement_line {
+                let line_node = tx
+                    .create_node(
+                        LABEL_LEDGER_STATEMENT_LINE,
+                        PropertyMapBuilder::new()
+                            .insert(PROP_STATEMENT_LINE_ID, line.line_id())
+                            .insert(PROP_IMPORT_BATCH_ID, line.batch_id())
+                            .insert(PROP_STATEMENT_SOURCE_URI, line.source_uri())
+                            .insert(PROP_STATEMENT_TIMESTAMP, line.statement_timestamp())
+                            .insert(PROP_STATEMENT_MEMO, line.memo())
+                            .insert(PROP_STATEMENT_AMOUNT_CENTS, line.amount_cents())
+                            .insert(
+                                PROP_IMPORT_IMPORTED_TXN_ID,
+                                line.imported_txn_id().map_or("", TransactionId::as_str),
+                            )
+                            .insert(PROP_IMPORT_IMPORTED_AT_US, line.imported_at().wallclock())
+                            .build(),
+                    )
+                    .map_err(|err| {
+                        map_persist_error("unable to create LedgerStatementLine node", err)
+                    })?;
+
+                tx.create_edge(
+                    record_node,
+                    line_node,
+                    EDGE_HAS_STATEMENT_LINE,
+                    PropertyMapBuilder::new().build(),
+                )
+                .map_err(|err| {
+                    map_persist_error("unable to create HAS_STATEMENT_LINE edge", err)
+                })?;
+
+                if let Some(txn_id) = line.imported_txn_id() {
+                    let txn_node = embedded.transaction_nodes.get(txn_id).copied().ok_or_else(|| {
+                        StoreError::UnknownTransaction {
+                            transaction_id: txn_id.clone(),
+                        }
+                    })?;
+                    tx.create_edge(
+                        line_node,
+                        txn_node,
+                        EDGE_EVIDENCES_TXN,
+                        PropertyMapBuilder::new().build(),
+                    )
+                    .map_err(|err| {
+                        map_persist_error("unable to create EVIDENCES_TXN edge", err)
+                    })?;
+                }
+
+                statement_line_nodes.push((line.line_id().to_owned(), line_node));
+            }
         }
 
         tx.commit().map_err(|err| {
@@ -551,6 +671,9 @@ impl AletheiaStore {
         embedded
             .import_batch_nodes
             .insert(batch.batch_id().to_owned(), batch_node);
+        for (line_id, line_node) in statement_line_nodes {
+            embedded.statement_line_nodes.insert(line_id, line_node);
+        }
         Ok(())
     }
 
@@ -558,9 +681,12 @@ impl AletheiaStore {
         &mut self,
         run: &StoredReconciliationRun,
         reconciled_txn_ids: &[TransactionId],
-    ) -> Result<(), StoreError> {
+    ) -> Result<Vec<String>, StoreError> {
+        let statement_line_ids =
+            collect_statement_line_ids_for_transactions(&self.statement_line_ids_by_txn, reconciled_txn_ids);
+
         let Some(embedded) = self.embedded.as_mut() else {
-            return Ok(());
+            return Ok(statement_line_ids);
         };
 
         let mut tx = embedded.db.write_transaction().map_err(|err| {
@@ -626,6 +752,29 @@ impl AletheiaStore {
             .map_err(|err| map_persist_error("unable to create RECONCILES_TXN edge", err))?;
         }
 
+        for line_id in &statement_line_ids {
+            let line_node = embedded
+                .statement_line_nodes
+                .get(line_id)
+                .copied()
+                .ok_or_else(|| StoreError::PersistFailed {
+                    message: format!(
+                        "reconciliation run '{}' references unknown statement line '{}'",
+                        run.run_id(),
+                        line_id
+                    ),
+                })?;
+            tx.create_edge(
+                run_node,
+                line_node,
+                EDGE_RECONCILES_STMT_LINE,
+                PropertyMapBuilder::new().build(),
+            )
+            .map_err(|err| {
+                map_persist_error("unable to create RECONCILES_STMT_LINE edge", err)
+            })?;
+        }
+
         tx.commit().map_err(|err| {
             map_persist_error("unable to commit embedded reconciliation write", err)
         })?;
@@ -633,7 +782,7 @@ impl AletheiaStore {
         embedded
             .reconciliation_run_nodes
             .insert(run.run_id().to_owned(), run_node);
-        Ok(())
+        Ok(statement_line_ids)
     }
 }
 
@@ -665,9 +814,15 @@ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
     let corrections = load_corrections(db, &transaction_nodes)?;
     let budget_targets = load_budget_targets(db)?;
     let (analytics_artifacts, analytics_artifact_nodes) = load_analytics_artifacts(db)?;
-    let (import_batches, import_records, import_batch_nodes) = load_import_batches_and_records(db)?;
-    let (reconciliation_runs, reconciliation_run_nodes) =
-        load_reconciliation_runs(db, &transaction_nodes)?;
+    let (
+        import_batches,
+        import_records,
+        import_batch_nodes,
+        statement_lines,
+        statement_line_nodes,
+    ) = load_import_batches_and_records(db, &transaction_nodes)?;
+    let (reconciliation_runs, reconciliation_run_nodes, reconciliation_statement_line_ids) =
+        load_reconciliation_runs(db, &transaction_nodes, &statement_line_nodes)?;
     Ok(LoadedProjection {
         transactions,
         transaction_nodes,
@@ -678,8 +833,11 @@ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
         import_batches,
         import_records,
         import_batch_nodes,
+        statement_lines,
+        statement_line_nodes,
         reconciliation_runs,
         reconciliation_run_nodes,
+        reconciliation_statement_line_ids,
     })
 }
 
@@ -967,13 +1125,26 @@ type ImportLoad = (
     HashMap<String, StoredImportBatch>,
     HashMap<String, StoredImportRecord>,
     HashMap<String, NodeId>,
+    HashMap<String, StoredStatementLine>,
+    HashMap<String, NodeId>,
 );
 
-fn load_import_batches_and_records(db: &AletheiaDB) -> Result<ImportLoad, StoreError> {
+fn load_import_batches_and_records(
+    db: &AletheiaDB,
+    transaction_nodes: &HashMap<TransactionId, NodeId>,
+) -> Result<ImportLoad, StoreError> {
     let (batches, batch_nodes) = load_import_batches(db)?;
     let records = load_import_records(db, &batches, &batch_nodes)?;
     ensure_no_orphan_import_records(db, &records)?;
-    Ok((batches, records, batch_nodes))
+    let (statement_lines, statement_line_nodes) =
+        load_statement_lines(db, transaction_nodes, &records)?;
+    Ok((
+        batches,
+        records,
+        batch_nodes,
+        statement_lines,
+        statement_line_nodes,
+    ))
 }
 
 type ImportBatchLoad = (HashMap<String, StoredImportBatch>, HashMap<String, NodeId>);
@@ -1138,20 +1309,155 @@ fn ensure_no_orphan_import_records(
     Ok(())
 }
 
-type ReconciliationLoad = (
-    HashMap<String, StoredReconciliationRun>,
-    HashMap<String, NodeId>,
-);
+type StatementLineLoad = (HashMap<String, StoredStatementLine>, HashMap<String, NodeId>);
 
-fn load_reconciliation_runs(
+#[allow(clippy::too_many_lines)]
+fn load_statement_lines(
     db: &AletheiaDB,
     transaction_nodes: &HashMap<TransactionId, NodeId>,
-) -> Result<ReconciliationLoad, StoreError> {
-    let mut runs = HashMap::new();
-    let mut run_nodes = HashMap::new();
+    records: &HashMap<String, StoredImportRecord>,
+) -> Result<StatementLineLoad, StoreError> {
+    let mut lines = HashMap::new();
+    let mut line_nodes = HashMap::new();
     let transaction_ids_by_node: HashMap<_, _> = transaction_nodes
         .iter()
         .map(|(txn_id, node_id)| (*node_id, txn_id.clone()))
+        .collect();
+
+    for node_id in db.scan_nodes_by_label(LABEL_LEDGER_STATEMENT_LINE) {
+        let node = db
+            .get_node(node_id)
+            .map_err(|err| map_load_error("unable to read LedgerStatementLine node", err))?;
+        let line_id = required_node_string_property(&node, PROP_STATEMENT_LINE_ID)?;
+        if lines.contains_key(&line_id) {
+            return Err(StoreError::LoadFailed {
+                message: format!("duplicate statement line id '{line_id}' in graph projection"),
+            });
+        }
+
+        let batch_id = required_node_string_property(&node, PROP_IMPORT_BATCH_ID)?;
+        let source_uri = required_node_string_property(&node, PROP_STATEMENT_SOURCE_URI)?;
+        let statement_timestamp = required_node_string_property(&node, PROP_STATEMENT_TIMESTAMP)?;
+        let memo = required_node_string_property(&node, PROP_STATEMENT_MEMO)?;
+        let amount_cents = required_node_i64_property(&node, PROP_STATEMENT_AMOUNT_CENTS)?;
+        let imported_txn_id = optional_node_string_property(&node, PROP_IMPORT_IMPORTED_TXN_ID)
+            .filter(|value| !value.is_empty())
+            .map(|value| TransactionId::new(&value));
+        let imported_at = required_node_i64_property(&node, PROP_IMPORT_IMPORTED_AT_US)?.into();
+
+        if let Some(txn_id) = &imported_txn_id {
+            if !transaction_nodes.contains_key(txn_id) {
+                return Err(StoreError::LoadFailed {
+                    message: format!(
+                        "statement line '{line_id}' references unknown transaction '{}'",
+                        txn_id.as_str()
+                    ),
+                });
+            }
+
+            let evidences_edges = db.get_outgoing_edges_with_label(node_id, EDGE_EVIDENCES_TXN);
+            if evidences_edges.len() != 1 {
+                return Err(StoreError::LoadFailed {
+                    message: format!(
+                        "statement line '{line_id}' expected one EVIDENCES_TXN edge, found {}",
+                        evidences_edges.len()
+                    ),
+                });
+            }
+
+            let edge = db
+                .get_edge(evidences_edges[0])
+                .map_err(|err| map_load_error("unable to read EVIDENCES_TXN edge", err))?;
+            let Some(edge_txn_id) = transaction_ids_by_node.get(&edge.target) else {
+                return Err(StoreError::LoadFailed {
+                    message: format!(
+                        "statement line '{line_id}' EVIDENCES_TXN edge targets unknown transaction node {}",
+                        edge.target.as_u64()
+                    ),
+                });
+            };
+            if edge_txn_id != txn_id {
+                return Err(StoreError::LoadFailed {
+                    message: format!(
+                        "statement line '{line_id}' imported_txn_id '{}' does not match EVIDENCES_TXN edge '{}'",
+                        txn_id.as_str(),
+                        edge_txn_id.as_str()
+                    ),
+                });
+            }
+        }
+
+        let line = StoredStatementLine::new(
+            &line_id,
+            &batch_id,
+            &source_uri,
+            &statement_timestamp,
+            &memo,
+            amount_cents,
+            imported_txn_id,
+            imported_at,
+        );
+        lines.insert(line_id.clone(), line);
+        line_nodes.insert(line_id, node.id);
+    }
+
+    let mut seen_line_ids = HashSet::new();
+    for node_id in db.scan_nodes_by_label(LABEL_LEDGER_IMPORT_RECORD) {
+        let node = db
+            .get_node(node_id)
+            .map_err(|err| map_load_error("unable to read LedgerImportRecord node", err))?;
+        let content_hash_key = required_node_string_property(&node, PROP_IMPORT_CONTENT_HASH_KEY)?;
+        if !records.contains_key(&content_hash_key) {
+            continue;
+        }
+
+        for edge_id in db.get_outgoing_edges_with_label(node_id, EDGE_HAS_STATEMENT_LINE) {
+            let edge = db
+                .get_edge(edge_id)
+                .map_err(|err| map_load_error("unable to read HAS_STATEMENT_LINE edge", err))?;
+            let line_node = db
+                .get_node(edge.target)
+                .map_err(|err| map_load_error("unable to read statement line edge target", err))?;
+            let line_id = required_node_string_property(&line_node, PROP_STATEMENT_LINE_ID)?;
+            seen_line_ids.insert(line_id);
+        }
+    }
+
+    for line_id in lines.keys() {
+        if !seen_line_ids.contains(line_id) {
+            return Err(StoreError::LoadFailed {
+                message: format!(
+                    "statement line '{line_id}' is missing HAS_STATEMENT_LINE edge from an import record"
+                ),
+            });
+        }
+    }
+
+    Ok((lines, line_nodes))
+}
+
+type ReconciliationLoad = (
+    HashMap<String, StoredReconciliationRun>,
+    HashMap<String, NodeId>,
+    HashMap<String, Vec<String>>,
+);
+
+#[allow(clippy::too_many_lines)]
+fn load_reconciliation_runs(
+    db: &AletheiaDB,
+    transaction_nodes: &HashMap<TransactionId, NodeId>,
+    statement_line_nodes: &HashMap<String, NodeId>,
+) -> Result<ReconciliationLoad, StoreError> {
+    let mut runs = HashMap::new();
+    let mut run_nodes = HashMap::new();
+    let mut run_statement_line_ids = HashMap::new();
+    let transaction_ids_by_node: HashMap<_, _> = transaction_nodes
+        .iter()
+        .map(|(txn_id, node_id)| (*node_id, txn_id.clone()))
+        .collect();
+    let statement_line_ids_by_node: HashMap<_, _> = statement_line_nodes
+        .iter()
+        .map(|(line_id, node_id)| (*node_id, line_id.clone()))
         .collect();
 
     for node_id in db.scan_nodes_by_label(LABEL_LEDGER_RECONCILIATION_RUN) {
@@ -1249,11 +1555,36 @@ fn load_reconciliation_runs(
             outflow_cents,
             created_at,
         );
+        let mut statement_line_ids = Vec::new();
+        let mut seen_statement_line_ids = HashSet::new();
+        for edge_id in db.get_outgoing_edges_with_label(node_id, EDGE_RECONCILES_STMT_LINE) {
+            let edge = db
+                .get_edge(edge_id)
+                .map_err(|err| map_load_error("unable to read RECONCILES_STMT_LINE edge", err))?;
+            let Some(line_id) = statement_line_ids_by_node.get(&edge.target) else {
+                return Err(StoreError::LoadFailed {
+                    message: format!(
+                        "reconciliation run '{run_id}' points to unknown statement line node {}",
+                        edge.target.as_u64()
+                    ),
+                });
+            };
+            if !seen_statement_line_ids.insert(line_id.clone()) {
+                return Err(StoreError::LoadFailed {
+                    message: format!(
+                        "reconciliation run '{run_id}' has duplicate RECONCILES_STMT_LINE edge to '{line_id}'"
+                    ),
+                });
+            }
+            statement_line_ids.push(line_id.clone());
+        }
+        statement_line_ids.sort();
         runs.insert(run_id.clone(), run);
+        run_statement_line_ids.insert(run_id.clone(), statement_line_ids);
         run_nodes.insert(run_id, node.id);
     }
 
-    Ok((runs, run_nodes))
+    Ok((runs, run_nodes, run_statement_line_ids))
 }
 
 fn required_node_string_property(node: &Node, key: &str) -> Result<String, StoreError> {
@@ -1347,6 +1678,41 @@ fn map_persist_error(context: &str, error: impl fmt::Display) -> StoreError {
     }
 }
 
+fn index_statement_lines_by_transaction(
+    statement_lines: &HashMap<String, StoredStatementLine>,
+) -> HashMap<TransactionId, Vec<String>> {
+    let mut by_txn = HashMap::<TransactionId, Vec<String>>::new();
+    for line in statement_lines.values() {
+        if let Some(txn_id) = line.imported_txn_id().cloned() {
+            by_txn
+                .entry(txn_id)
+                .or_default()
+                .push(line.line_id().to_owned());
+        }
+    }
+
+    for line_ids in by_txn.values_mut() {
+        line_ids.sort();
+        line_ids.dedup();
+    }
+    by_txn
+}
+
+fn collect_statement_line_ids_for_transactions(
+    statement_line_ids_by_txn: &HashMap<TransactionId, Vec<String>>,
+    txn_ids: &[TransactionId],
+) -> Vec<String> {
+    let mut line_ids = Vec::new();
+    for txn_id in txn_ids {
+        if let Some(ids) = statement_line_ids_by_txn.get(txn_id) {
+            line_ids.extend(ids.iter().cloned());
+        }
+    }
+    line_ids.sort();
+    line_ids.dedup();
+    line_ids
+}
+
 fn infer_next_id<'a, I>(ids: I) -> u64
 where
     I: Iterator<Item = &'a TransactionId>,
@@ -1378,6 +1744,18 @@ where
 {
     ids.filter_map(|id| {
         id.strip_prefix("import-batch-")
+            .and_then(|value| value.parse::<u64>().ok())
+    })
+    .max()
+    .unwrap_or(0)
+}
+
+fn infer_next_statement_line_id<'a, I>(ids: I) -> u64
+where
+    I: Iterator<Item = &'a String>,
+{
+    ids.filter_map(|id| {
+        id.strip_prefix("stmt-line-")
             .and_then(|value| value.parse::<u64>().ok())
     })
     .max()

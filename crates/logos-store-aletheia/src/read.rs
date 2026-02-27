@@ -12,7 +12,7 @@ use crate::{
         PROP_AMOUNT_CENTS, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_ORDINAL,
         PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID, StoredAnalyticsArtifactManifest, StoredBudgetTarget,
         StoredCorrection, StoredImportBatch, StoredImportRecord, StoredReconciliationRun,
-        StoredTransaction,
+        StoredStatementLine, StoredTransaction,
     },
     parse_posting, required_edge_i64_property, required_node_i64_property,
     required_node_string_property,
@@ -87,6 +87,31 @@ impl AletheiaStore {
 
     pub fn import_batches(&self) -> impl Iterator<Item = &StoredImportBatch> + '_ {
         self.import_batches.values()
+    }
+
+    #[must_use]
+    pub fn statement_line_count(&self) -> usize {
+        self.statement_lines.len()
+    }
+
+    pub fn statement_lines(&self) -> impl Iterator<Item = &StoredStatementLine> + '_ {
+        self.statement_lines.values()
+    }
+
+    #[must_use]
+    pub fn statement_lines_for_reconciliation_run(
+        &self,
+        run_id: &str,
+    ) -> Vec<&StoredStatementLine> {
+        let mut lines = self
+            .reconciliation_statement_line_ids
+            .get(run_id)
+            .into_iter()
+            .flatten()
+            .filter_map(|line_id| self.statement_lines.get(line_id))
+            .collect::<Vec<_>>();
+        lines.sort_by(|left, right| left.line_id().cmp(right.line_id()));
+        lines
     }
 
     #[must_use]

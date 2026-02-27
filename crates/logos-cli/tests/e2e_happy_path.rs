@@ -286,6 +286,46 @@ fn e2e_pdf_import_posts_transactions_and_deduplicates() {
 }
 
 #[test]
+fn e2e_pdf_import_reconciliation_exposes_statement_line_evidence() {
+    let path = temp_runtime_path("pdf-reconcile-evidence");
+    let statement_path = temp_runtime_path("pdf-reconcile-evidence-statement")
+        .with_extension("pdf")
+        .to_string_lossy()
+        .to_string();
+    std::fs::write(&statement_path, "2026-02-01 COFFEE SHOP -12.34\n").expect("write statement");
+
+    let run_id;
+    {
+        let mut runtime = CliRuntime::open(&path).expect("open");
+        let summary = runtime
+            .import_pdf_statement(&statement_path, "assets:checking", false, false)
+            .expect("import");
+        assert_eq!(summary.imported_count(), 1);
+
+        let run = runtime
+            .reconcile_and_persist_month_for("assets:checking", "2026-02", 100_000, 98_766)
+            .expect("reconcile");
+        run_id = run.run_id().to_owned();
+
+        let lines = runtime.statement_lines_for_reconciliation_run(&run_id);
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].memo(), "COFFEE SHOP");
+        assert_eq!(lines[0].amount_cents(), -1_234);
+    }
+
+    {
+        let reopened = CliRuntime::open(&path).expect("reopen");
+        let lines = reopened.statement_lines_for_reconciliation_run(&run_id);
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].memo(), "COFFEE SHOP");
+        assert_eq!(lines[0].source_uri(), statement_path);
+    }
+
+    cleanup_file(Path::new(&statement_path));
+    cleanup_runtime_path(&path);
+}
+
+#[test]
 fn e2e_pdf_import_dedupe_persists_across_reopen() {
     let root = temp_runtime_path("pdf-reopen-idempotency");
     let ledger_path = root.join("ledger");

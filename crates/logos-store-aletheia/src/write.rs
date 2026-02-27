@@ -7,7 +7,7 @@ use crate::{
     AletheiaStore, StoreError,
     model::{
         NewImportRecord, StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredImportBatch,
-        StoredImportRecord, StoredReconciliationRun,
+        StoredImportRecord, StoredReconciliationRun, StoredStatementLine,
     },
 };
 
@@ -161,7 +161,7 @@ impl AletheiaStore {
     /// # Errors
     ///
     /// Returns an error when required metadata is missing or record keys already exist.
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     pub fn write_import_batch(
         &mut self,
         import_kind: &str,
@@ -230,7 +230,43 @@ impl AletheiaStore {
             imported_at,
         );
 
-        self.persist_import_batch_graph(&batch, records)?;
+        let statement_lines = records
+            .iter()
+            .map(|record| {
+                record.statement_line().map(|line| {
+                    StoredStatementLine::new(
+                        &self.next_statement_line_id(),
+                        batch.batch_id(),
+                        line.source_uri(),
+                        line.statement_timestamp(),
+                        line.memo(),
+                        line.amount_cents(),
+                        record.imported_txn_id().cloned(),
+                        imported_at,
+                    )
+                })
+            })
+            .collect::<Vec<_>>();
+
+        for line in statement_lines.iter().flatten() {
+            if line.source_uri().is_empty() {
+                return Err(StoreError::PersistFailed {
+                    message: "statement line source_uri must not be empty".to_owned(),
+                });
+            }
+            if line.statement_timestamp().is_empty() {
+                return Err(StoreError::PersistFailed {
+                    message: "statement line timestamp must not be empty".to_owned(),
+                });
+            }
+            if line.memo().is_empty() {
+                return Err(StoreError::PersistFailed {
+                    message: "statement line memo must not be empty".to_owned(),
+                });
+            }
+        }
+
+        self.persist_import_batch_graph(&batch, records, &statement_lines)?;
         self.persist_import_batch(batch.clone());
 
         for record in records {
@@ -241,6 +277,9 @@ impl AletheiaStore {
                 imported_at,
             );
             self.persist_import_record(stored);
+        }
+        for line in statement_lines.into_iter().flatten() {
+            self.persist_statement_line(line);
         }
 
         Ok(batch)
@@ -312,8 +351,9 @@ impl AletheiaStore {
             outflow_cents,
             created_at,
         );
-        self.persist_reconciliation_run_graph(&run, reconciled_txn_ids)?;
+        let statement_line_ids = self.persist_reconciliation_run_graph(&run, reconciled_txn_ids)?;
         self.persist_reconciliation_run(run.clone());
+        self.persist_reconciliation_statement_line_ids(run.run_id(), statement_line_ids);
         Ok(run)
     }
 }

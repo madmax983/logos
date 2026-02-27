@@ -218,6 +218,56 @@ fn open_persists_import_record_content_hash_across_reopen() {
 }
 
 #[test]
+fn open_persists_statement_line_evidence_across_reopen() {
+    let path = temp_store_path("persist-statement-line");
+    let txn_id;
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        txn_id = store
+            .write_transaction(
+                TransactionBuilder::new("coffee")
+                    .posting(Posting::debit("expenses:food", 500))
+                    .posting(Posting::credit("assets:checking", 500)),
+            )
+            .expect("write txn");
+
+        store
+            .write_import_batch(
+                "pdf-statement",
+                "C:\\statements\\march.pdf",
+                "batch-key-lines-1",
+                0,
+                false,
+                false,
+                &[NewImportRecord::with_statement_line(
+                    "line-abc",
+                    Some(&txn_id),
+                    "C:\\statements\\march.pdf",
+                    "2026-03-01T00:00:00",
+                    "COFFEE SHOP",
+                    -500,
+                )],
+            )
+            .expect("write import with statement line");
+        assert_eq!(store.statement_line_count(), 1);
+    }
+
+    let reopened = AletheiaStore::open(&path).expect("reopen");
+    assert_eq!(reopened.statement_line_count(), 1);
+    let line = reopened
+        .statement_lines()
+        .next()
+        .expect("statement line exists");
+    assert_eq!(line.source_uri(), "C:\\statements\\march.pdf");
+    assert_eq!(line.statement_timestamp(), "2026-03-01T00:00:00");
+    assert_eq!(line.memo(), "COFFEE SHOP");
+    assert_eq!(line.amount_cents(), -500);
+    assert_eq!(line.imported_txn_id(), Some(&txn_id));
+
+    cleanup_store_path(&path);
+}
+
+#[test]
 fn open_persists_reconciliation_run_across_reopen() {
     let path = temp_store_path("persist-reconciliation-run");
     let txn_id;
@@ -483,6 +533,81 @@ fn embedded_mapping_writes_reconciliation_run_and_edges() {
 
     assert_eq!(run_nodes.len(), 1);
     assert_eq!(reconciles_edges, 2);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn embedded_mapping_links_reconciliation_run_to_statement_lines() {
+    let path = temp_store_path("mapping-reconciliation-statement-line");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let txn = store
+            .write_transaction(
+                TransactionBuilder::new("coffee")
+                    .posting(Posting::debit("expenses:food", 500))
+                    .posting(Posting::credit("assets:checking", 500)),
+            )
+            .expect("txn");
+
+        store
+            .write_import_batch(
+                "pdf-statement",
+                "C:\\statements\\march.pdf",
+                "batch-key-lines-2",
+                0,
+                false,
+                false,
+                &[NewImportRecord::with_statement_line(
+                    "line-def",
+                    Some(&txn),
+                    "C:\\statements\\march.pdf",
+                    "2026-03-02T00:00:00",
+                    "COFFEE SHOP",
+                    -500,
+                )],
+            )
+            .expect("import");
+
+        let run = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                -500,
+                99_500,
+                99_500,
+                0,
+                true,
+                1,
+                0,
+                500,
+                std::slice::from_ref(&txn),
+            )
+            .expect("run");
+        assert_eq!(run.run_id(), "recon-1");
+        let lines = store.statement_lines_for_reconciliation_run("recon-1");
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].memo(), "COFFEE SHOP");
+    }
+
+    let graph = open_raw_graph(&path);
+    let run_nodes: Vec<_> = graph
+        .scan_nodes_by_label("LedgerReconciliationRun")
+        .collect();
+    let reconciles_statement_line_edges: usize = run_nodes
+        .iter()
+        .map(|node_id| {
+            graph
+                .get_outgoing_edges_with_label(*node_id, "RECONCILES_STMT_LINE")
+                .len()
+        })
+        .sum();
+    let statement_line_count = graph.scan_nodes_by_label("LedgerStatementLine").count();
+
+    assert_eq!(run_nodes.len(), 1);
+    assert_eq!(statement_line_count, 1);
+    assert_eq!(reconciles_statement_line_edges, 1);
 
     cleanup_store_path(&path);
 }
