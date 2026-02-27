@@ -10,7 +10,8 @@ use crate::{
     model::{
         AsOf, EDGE_HAS_POSTING, EDGE_SUPERSEDES, LABEL_LEDGER_CORRECTION, PROP_ACCOUNT,
         PROP_AMOUNT_CENTS, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_ORDINAL,
-        PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID, StoredBudgetTarget, StoredCorrection,
+        PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID, StoredAnalyticsArtifactManifest, StoredBudgetTarget,
+        StoredCorrection, StoredImportBatch, StoredImportRecord, StoredReconciliationRun,
         StoredTransaction,
     },
     parse_posting, required_edge_i64_property, required_node_i64_property,
@@ -56,6 +57,52 @@ impl AletheiaStore {
         self.budget_targets.values()
     }
 
+    #[must_use]
+    pub fn analytics_artifact(
+        &self,
+        artifact_id: &str,
+    ) -> Option<&StoredAnalyticsArtifactManifest> {
+        self.analytics_artifacts.get(artifact_id)
+    }
+
+    pub fn analytics_artifacts(
+        &self,
+    ) -> impl Iterator<Item = &StoredAnalyticsArtifactManifest> + '_ {
+        self.analytics_artifacts.values()
+    }
+
+    #[must_use]
+    pub fn import_record_count(&self) -> usize {
+        self.import_records.len()
+    }
+
+    #[must_use]
+    pub fn has_import_record_content_hash(&self, content_hash_key: &str) -> bool {
+        self.import_records.contains_key(content_hash_key)
+    }
+
+    pub fn import_records(&self) -> impl Iterator<Item = &StoredImportRecord> + '_ {
+        self.import_records.values()
+    }
+
+    pub fn import_batches(&self) -> impl Iterator<Item = &StoredImportBatch> + '_ {
+        self.import_batches.values()
+    }
+
+    #[must_use]
+    pub fn reconciliation_run_count(&self) -> usize {
+        self.reconciliation_runs.len()
+    }
+
+    #[must_use]
+    pub fn reconciliation_run(&self, run_id: &str) -> Option<&StoredReconciliationRun> {
+        self.reconciliation_runs.get(run_id)
+    }
+
+    pub fn reconciliation_runs(&self) -> impl Iterator<Item = &StoredReconciliationRun> + '_ {
+        self.reconciliation_runs.values()
+    }
+
     /// Reconstructs transactions visible at a bi-temporal point in time.
     ///
     /// # Errors
@@ -68,6 +115,20 @@ impl AletheiaStore {
         tx_time: Timestamp,
     ) -> Result<Vec<StoredTransaction>, StoreError> {
         self.transactions_at(AsOf::new(valid_time, tx_time))
+    }
+
+    /// Reconstructs transactions visible at explicit microsecond timestamps.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when historical reconstruction fails due to graph corruption
+    /// or storage query errors.
+    pub fn transactions_as_of_us(
+        &self,
+        valid_time_us: i64,
+        tx_time_us: i64,
+    ) -> Result<Vec<StoredTransaction>, StoreError> {
+        self.transactions_as_of(valid_time_us.into(), tx_time_us.into())
     }
 
     /// Reconstructs transactions visible at a bi-temporal point in time.

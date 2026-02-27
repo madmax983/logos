@@ -3,7 +3,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use aletheiadb::{AletheiaDB, AletheiaDBConfig, DurabilityMode, WalConfigBuilder, time};
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
-use logos_store_aletheia::AletheiaStore;
+use logos_store_aletheia::{AletheiaStore, model::NewImportRecord};
 
 fn temp_store_path(prefix: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -156,6 +156,114 @@ fn open_persists_budget_target_across_reopen() {
 }
 
 #[test]
+fn open_persists_analytics_artifact_manifest_across_reopen() {
+    let path = temp_store_path("persist-analytics-artifact");
+    let valid_time = time::from_secs(1_700_000_100);
+    let tx_time = time::from_secs(1_700_000_200);
+    let artifact_id;
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let manifest = store
+            .write_analytics_artifact_manifest(
+                "parquet",
+                "C:\\artifacts\\a.parquet",
+                "hash-a",
+                1,
+                42,
+                valid_time,
+                tx_time,
+                None,
+            )
+            .expect("write analytics artifact");
+        artifact_id = manifest.artifact_id().to_owned();
+    }
+
+    let reopened = AletheiaStore::open(&path).expect("reopen");
+    let manifest = reopened
+        .analytics_artifact(&artifact_id)
+        .expect("analytics artifact exists");
+    assert_eq!(manifest.artifact_kind(), "parquet");
+    assert_eq!(manifest.content_hash(), "hash-a");
+    assert_eq!(manifest.row_count(), 42);
+    assert_eq!(manifest.snapshot_valid_at(), valid_time);
+    assert_eq!(manifest.snapshot_tx_at(), tx_time);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn open_persists_import_record_content_hash_across_reopen() {
+    let path = temp_store_path("persist-import-record");
+    let hash_key = "9f3b24009f3b2400";
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        store
+            .write_import_batch(
+                "csv-row",
+                "inline:csv",
+                "batch-key-1",
+                0,
+                false,
+                false,
+                &[NewImportRecord::new(hash_key, None)],
+            )
+            .expect("write import batch");
+    }
+
+    let reopened = AletheiaStore::open(&path).expect("reopen");
+    assert!(reopened.has_import_record_content_hash(hash_key));
+    assert_eq!(reopened.import_record_count(), 1);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn open_persists_reconciliation_run_across_reopen() {
+    let path = temp_store_path("persist-reconciliation-run");
+    let txn_id;
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        txn_id = store
+            .write_transaction(
+                TransactionBuilder::new("paycheck")
+                    .posting(Posting::debit("assets:checking", 10_000))
+                    .posting(Posting::credit("income:salary", 10_000)),
+            )
+            .expect("write transaction");
+
+        let run = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                10_000,
+                110_000,
+                109_500,
+                -500,
+                false,
+                1,
+                10_000,
+                0,
+                std::slice::from_ref(&txn_id),
+            )
+            .expect("write reconciliation");
+        assert_eq!(run.run_id(), "recon-1");
+    }
+
+    let reopened = AletheiaStore::open(&path).expect("reopen");
+    assert_eq!(reopened.reconciliation_run_count(), 1);
+    let run = reopened
+        .reconciliation_run("recon-1")
+        .expect("reconciliation run exists");
+    assert_eq!(run.month_key(), "2026-03");
+    assert_eq!(run.checking_account(), "assets:checking");
+    assert_eq!(run.variance_cents(), -500);
+    assert_eq!(run.matched_transaction_count(), 1);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
 fn embedded_mapping_writes_transaction_and_posting_graph_entities() {
     let path = temp_store_path("mapping-transaction");
     {
@@ -220,6 +328,161 @@ fn embedded_mapping_writes_correction_supersedes_edge() {
 
     assert_eq!(correction_nodes.len(), 1);
     assert_eq!(supersedes_edges, 1);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn embedded_mapping_writes_analytics_artifact_lineage_edge() {
+    let path = temp_store_path("mapping-analytics-lineage");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let first = store
+            .write_analytics_artifact_manifest(
+                "parquet",
+                "C:\\artifacts\\base.parquet",
+                "hash-base",
+                1,
+                10,
+                time::from_secs(1_700_000_300),
+                time::from_secs(1_700_000_301),
+                None,
+            )
+            .expect("write first");
+        let second = store
+            .write_analytics_artifact_manifest(
+                "parquet",
+                "C:\\artifacts\\next.parquet",
+                "hash-next",
+                1,
+                11,
+                time::from_secs(1_700_000_400),
+                time::from_secs(1_700_000_401),
+                Some(first.artifact_id()),
+            )
+            .expect("write second");
+        assert_eq!(second.supersedes_artifact_id(), Some(first.artifact_id()));
+    }
+
+    let graph = open_raw_graph(&path);
+    let manifest_nodes: Vec<_> = graph
+        .scan_nodes_by_label("AnalyticsArtifactManifest")
+        .collect();
+    let derived_edges: usize = manifest_nodes
+        .iter()
+        .map(|node_id| {
+            graph
+                .get_outgoing_edges_with_label(*node_id, "DERIVED_FROM")
+                .len()
+        })
+        .sum();
+
+    assert_eq!(manifest_nodes.len(), 2);
+    assert_eq!(derived_edges, 1);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn embedded_mapping_writes_import_batch_and_record_graph_entities() {
+    let path = temp_store_path("mapping-import-batch");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let first_txn = store
+            .write_transaction(
+                TransactionBuilder::new("coffee")
+                    .posting(Posting::debit("expenses:food", 500))
+                    .posting(Posting::credit("assets:checking", 500)),
+            )
+            .expect("write");
+
+        store
+            .write_import_batch(
+                "pdf-statement",
+                "C:\\statements\\feb.pdf",
+                "batch-key-2",
+                1,
+                false,
+                true,
+                &[
+                    NewImportRecord::new("abc", Some(&first_txn)),
+                    NewImportRecord::new("def", None),
+                ],
+            )
+            .expect("write import batch");
+    }
+
+    let graph = open_raw_graph(&path);
+    let batch_nodes: Vec<_> = graph.scan_nodes_by_label("LedgerImportBatch").collect();
+    let record_count = graph.scan_nodes_by_label("LedgerImportRecord").count();
+    let has_record_edges: usize = batch_nodes
+        .iter()
+        .map(|node_id| {
+            graph
+                .get_outgoing_edges_with_label(*node_id, "HAS_IMPORT_RECORD")
+                .len()
+        })
+        .sum();
+
+    assert_eq!(batch_nodes.len(), 1);
+    assert_eq!(record_count, 2);
+    assert_eq!(has_record_edges, 2);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn embedded_mapping_writes_reconciliation_run_and_edges() {
+    let path = temp_store_path("mapping-reconciliation-run");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let txn_a = store
+            .write_transaction(
+                TransactionBuilder::new("paycheck")
+                    .posting(Posting::debit("assets:checking", 10_000))
+                    .posting(Posting::credit("income:salary", 10_000)),
+            )
+            .expect("txn a");
+        let txn_b = store
+            .write_transaction(
+                TransactionBuilder::new("groceries")
+                    .posting(Posting::debit("expenses:food", 2_500))
+                    .posting(Posting::credit("assets:checking", 2_500)),
+            )
+            .expect("txn b");
+        store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                7_500,
+                107_500,
+                107_500,
+                0,
+                true,
+                2,
+                10_000,
+                2_500,
+                &[txn_a, txn_b],
+            )
+            .expect("write run");
+    }
+
+    let graph = open_raw_graph(&path);
+    let run_nodes: Vec<_> = graph
+        .scan_nodes_by_label("LedgerReconciliationRun")
+        .collect();
+    let reconciles_edges: usize = run_nodes
+        .iter()
+        .map(|node_id| {
+            graph
+                .get_outgoing_edges_with_label(*node_id, "RECONCILES_TXN")
+                .len()
+        })
+        .sum();
+
+    assert_eq!(run_nodes.len(), 1);
+    assert_eq!(reconciles_edges, 2);
 
     cleanup_store_path(&path);
 }

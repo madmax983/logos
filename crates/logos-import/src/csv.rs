@@ -4,6 +4,9 @@ use core::fmt;
 pub enum ImportError {
     MissingColumns { expected: usize, found: usize },
     InvalidAmount,
+    FileReadFailed { path: String, message: String },
+    PdfTextExtractionFailed { path: String, message: String },
+    NoStatementRows { path: String },
 }
 
 impl fmt::Display for ImportError {
@@ -13,6 +16,15 @@ impl fmt::Display for ImportError {
                 write!(f, "missing columns: expected {expected}, found {found}")
             }
             Self::InvalidAmount => write!(f, "invalid amount in CSV row"),
+            Self::FileReadFailed { path, message } => {
+                write!(f, "failed reading import file '{path}': {message}")
+            }
+            Self::PdfTextExtractionFailed { path, message } => {
+                write!(f, "failed extracting text from PDF '{path}': {message}")
+            }
+            Self::NoStatementRows { path } => {
+                write!(f, "no statement rows parsed from '{path}'")
+            }
         }
     }
 }

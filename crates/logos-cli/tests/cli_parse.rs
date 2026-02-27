@@ -144,6 +144,30 @@ fn parses_help_for_txn_subcommand() {
 }
 
 #[test]
+fn parses_help_for_import_subcommand() {
+    let args = vec!["ledger", "help", "import"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "help.import");
+}
+
+#[test]
+fn parses_help_for_analytics_subcommand() {
+    let args = vec!["ledger", "help", "analytics"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "help.analytics");
+}
+
+#[test]
+fn parses_help_for_reconcile_subcommand() {
+    let args = vec!["ledger", "help", "reconcile"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "help.reconcile");
+}
+
+#[test]
 fn parses_txn_help_flag() {
     let args = vec!["ledger", "txn", "--help"];
     let parsed = logos_cli::parse_args(args).expect("parse");
@@ -157,6 +181,197 @@ fn parses_budget_help_flag() {
     let parsed = logos_cli::parse_args(args).expect("parse");
 
     assert_eq!(parsed.command_path(), "help.budget");
+}
+
+#[test]
+fn parses_import_help_flag() {
+    let args = vec!["ledger", "import", "--help"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "help.import");
+}
+
+#[test]
+fn parses_analytics_help_flag() {
+    let args = vec!["ledger", "analytics", "--help"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "help.analytics");
+}
+
+#[test]
+fn parses_reconcile_help_flag() {
+    let args = vec!["ledger", "reconcile", "--help"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "help.reconcile");
+}
+
+#[test]
+fn parses_analytics_snapshot_create_with_defaults() {
+    let args = vec!["ledger", "analytics", "snapshot", "create"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "analytics.snapshot.create");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Analytics(logos_cli::args::AnalyticsCommand::SnapshotCreate {
+            as_of_valid_time_us,
+            as_of_tx_time_us,
+            schema_version,
+            supersedes_artifact_id
+        }) if as_of_valid_time_us.is_none()
+            && as_of_tx_time_us.is_none()
+            && *schema_version == logos_cli::runtime::CliRuntime::default_analytics_schema_version()
+            && supersedes_artifact_id.is_none()
+    ));
+}
+
+#[test]
+fn parses_analytics_snapshot_create_with_explicit_flags() {
+    let args = vec![
+        "ledger",
+        "analytics",
+        "snapshot",
+        "create",
+        "--as-of-valid-us",
+        "1700000000000000",
+        "--as-of-tx-us",
+        "1700000000000500",
+        "--schema-version",
+        "3",
+        "--supersedes",
+        "artifact-9",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Analytics(logos_cli::args::AnalyticsCommand::SnapshotCreate {
+            as_of_valid_time_us,
+            as_of_tx_time_us,
+            schema_version,
+            supersedes_artifact_id
+        }) if *as_of_valid_time_us == Some(1_700_000_000_000_000)
+            && *as_of_tx_time_us == Some(1_700_000_000_000_500)
+            && *schema_version == 3
+            && supersedes_artifact_id.as_deref() == Some("artifact-9")
+    ));
+}
+
+#[test]
+fn parses_analytics_snapshot_list() {
+    let args = vec!["ledger", "analytics", "snapshot", "list"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+    assert_eq!(parsed.command_path(), "analytics.snapshot.list");
+}
+
+#[test]
+fn parses_analytics_snapshot_show() {
+    let args = vec![
+        "ledger",
+        "analytics",
+        "snapshot",
+        "show",
+        "--artifact-id",
+        "artifact-7",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+    assert_eq!(parsed.command_path(), "analytics.snapshot.show");
+}
+
+#[test]
+fn rejects_analytics_snapshot_show_without_artifact_id() {
+    let args = vec!["ledger", "analytics", "snapshot", "show"];
+    let err = logos_cli::parse_args(args).expect_err("missing artifact id");
+    assert_eq!(
+        err.to_string(),
+        "missing value for argument '--artifact-id'"
+    );
+}
+
+#[test]
+fn parses_import_pdf_with_default_value_flags() {
+    let args = vec!["ledger", "import", "pdf", "--file", "statement.pdf"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "import.pdf");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Import(logos_cli::args::ImportCommand::Pdf {
+            file_path,
+            account,
+            dry_run,
+            ocr
+        }) if file_path == "statement.pdf"
+            && account == "assets:checking"
+            && !*dry_run
+            && !*ocr
+    ));
+}
+
+#[test]
+fn parses_import_pdf_with_explicit_value_flags() {
+    let args = vec![
+        "ledger",
+        "import",
+        "pdf",
+        "--file",
+        "statement.pdf",
+        "--account",
+        "assets:brokerage",
+        "--dry-run",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "import.pdf");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Import(logos_cli::args::ImportCommand::Pdf {
+            file_path,
+            account,
+            dry_run,
+            ocr
+        }) if file_path == "statement.pdf"
+            && account == "assets:brokerage"
+            && *dry_run
+            && !*ocr
+    ));
+}
+
+#[test]
+fn parses_import_pdf_with_ocr_flag() {
+    let args = vec![
+        "ledger",
+        "import",
+        "pdf",
+        "--file",
+        "statement.pdf",
+        "--ocr",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "import.pdf");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Import(logos_cli::args::ImportCommand::Pdf {
+            file_path,
+            account,
+            dry_run,
+            ocr
+        }) if file_path == "statement.pdf"
+            && account == "assets:checking"
+            && !*dry_run
+            && *ocr
+    ));
+}
+
+#[test]
+fn rejects_import_pdf_when_missing_file_flag() {
+    let args = vec!["ledger", "import", "pdf"];
+    let err = logos_cli::parse_args(args).expect_err("missing file flag");
+
+    assert_eq!(err.to_string(), "missing value for argument '--file'");
 }
 
 #[test]
@@ -305,6 +520,162 @@ fn rejects_report_month_when_month_is_invalid() {
         err.to_string(),
         "invalid value '2026-00' for argument '--month'"
     );
+}
+
+#[test]
+fn parses_reconcile_month_with_defaults() {
+    let args = vec![
+        "ledger",
+        "reconcile",
+        "month",
+        "--opening-balance-cents",
+        "100000",
+        "--closing-balance-cents",
+        "107500",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "reconcile.month");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Reconcile(logos_cli::args::ReconcileCommand::Month {
+            checking_account,
+            month_key,
+            opening_balance_cents,
+            closing_balance_cents
+        }) if checking_account == "assets:checking"
+            && month_key.is_none()
+            && *opening_balance_cents == 100_000
+            && *closing_balance_cents == 107_500
+    ));
+}
+
+#[test]
+fn parses_reconcile_month_with_explicit_value_flags() {
+    let args = vec![
+        "ledger",
+        "reconcile",
+        "month",
+        "--month",
+        "2026-04",
+        "--checking-account",
+        "assets:brokerage",
+        "--opening-balance-cents",
+        "250000",
+        "--closing-balance-cents",
+        "260500",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "reconcile.month");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Reconcile(logos_cli::args::ReconcileCommand::Month {
+            checking_account,
+            month_key,
+            opening_balance_cents,
+            closing_balance_cents
+        }) if checking_account == "assets:brokerage"
+            && month_key.as_deref() == Some("2026-04")
+            && *opening_balance_cents == 250_000
+            && *closing_balance_cents == 260_500
+    ));
+}
+
+#[test]
+fn rejects_reconcile_month_when_missing_opening_balance() {
+    let args = vec![
+        "ledger",
+        "reconcile",
+        "month",
+        "--closing-balance-cents",
+        "100000",
+    ];
+    let err = logos_cli::parse_args(args).expect_err("missing opening balance");
+
+    assert_eq!(
+        err.to_string(),
+        "missing value for argument '--opening-balance-cents'"
+    );
+}
+
+#[test]
+fn rejects_reconcile_month_when_closing_balance_is_not_integer() {
+    let args = vec![
+        "ledger",
+        "reconcile",
+        "month",
+        "--opening-balance-cents",
+        "100000",
+        "--closing-balance-cents",
+        "ten",
+    ];
+    let err = logos_cli::parse_args(args).expect_err("invalid closing balance");
+
+    assert_eq!(
+        err.to_string(),
+        "invalid value 'ten' for argument '--closing-balance-cents'"
+    );
+}
+
+#[test]
+fn parses_reconcile_list_with_optional_filters() {
+    let args = vec![
+        "ledger",
+        "reconcile",
+        "list",
+        "--month",
+        "2026-04",
+        "--checking-account",
+        "assets:brokerage",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "reconcile.list");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Reconcile(logos_cli::args::ReconcileCommand::List {
+            month_key,
+            checking_account,
+        }) if month_key.as_deref() == Some("2026-04")
+            && checking_account.as_deref() == Some("assets:brokerage")
+    ));
+}
+
+#[test]
+fn parses_reconcile_list_without_filters() {
+    let args = vec!["ledger", "reconcile", "list"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "reconcile.list");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Reconcile(logos_cli::args::ReconcileCommand::List {
+            month_key,
+            checking_account,
+        }) if month_key.is_none() && checking_account.is_none()
+    ));
+}
+
+#[test]
+fn parses_reconcile_show_with_run_id() {
+    let args = vec!["ledger", "reconcile", "show", "--run-id", "recon-17"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "reconcile.show");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Reconcile(logos_cli::args::ReconcileCommand::Show { run_id })
+            if run_id == "recon-17"
+    ));
+}
+
+#[test]
+fn rejects_reconcile_show_without_run_id() {
+    let args = vec!["ledger", "reconcile", "show"];
+    let err = logos_cli::parse_args(args).expect_err("missing run id");
+
+    assert_eq!(err.to_string(), "missing value for argument '--run-id'");
 }
 
 #[test]

@@ -8,7 +8,9 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
+blake3 = "1.8.3"
 logos-core = { path = "../logos-core" }
 logos-import = { path = "../logos-import" }
 logos-reporting = { path = "../logos-reporting" }
 logos-store-aletheia = { path = "../logos-store-aletheia" }
+polars = { version = "0.46.0", features = ["parquet"] }
