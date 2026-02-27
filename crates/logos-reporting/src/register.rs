@@ -17,8 +17,16 @@ impl RegisterEntry {
 
 #[must_use]
 pub fn project_register_balance(opening_balance_cents: i64, entries: &[RegisterEntry]) -> i64 {
+    project_register_balance_iter(opening_balance_cents, entries.iter().copied())
+}
+
+#[must_use]
+pub fn project_register_balance_iter<I>(opening_balance_cents: i64, entries: I) -> i64
+where
+    I: IntoIterator<Item = RegisterEntry>,
+{
     entries
-        .iter()
+        .into_iter()
         .fold(opening_balance_cents, |balance, entry| {
             balance + entry.delta_cents()
         })

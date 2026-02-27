@@ -1,10 +1,18 @@
 use std::collections::HashSet;
+use std::env;
 use std::fmt;
+use std::path::{Path, PathBuf};
 
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
 use logos_import::{CsvMapping, ImportError, deterministic_fingerprint, parse_simple_csv_row};
-use logos_reporting::{RegisterEntry, project_register_balance};
+use logos_reporting::{
+    RegisterEntry, project_budget_variance, project_cashflow, project_register_balance,
+};
 use logos_store_aletheia::{AletheiaStore, StoreError};
+
+const LOGOS_DB_PATH_ENV: &str = "LOGOS_DB_PATH";
+const DEFAULT_DB_DIRECTORY: &str = ".logos";
+const DEFAULT_DB_NAME: &str = "ledger";
 
 #[derive(Debug)]
 pub enum RuntimeError {
@@ -35,6 +43,51 @@ impl From<ImportError> for RuntimeError {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MonthReport {
+    checking_balance: i64,
+    income: i64,
+    expense: i64,
+    cashflow: i64,
+}
+
+impl MonthReport {
+    #[must_use]
+    pub const fn new(
+        checking_balance_cents: i64,
+        income_cents: i64,
+        expense_cents: i64,
+        cashflow_cents: i64,
+    ) -> Self {
+        Self {
+            checking_balance: checking_balance_cents,
+            income: income_cents,
+            expense: expense_cents,
+            cashflow: cashflow_cents,
+        }
+    }
+
+    #[must_use]
+    pub const fn checking_balance_cents(&self) -> i64 {
+        self.checking_balance
+    }
+
+    #[must_use]
+    pub const fn income_cents(&self) -> i64 {
+        self.income
+    }
+
+    #[must_use]
+    pub const fn expense_cents(&self) -> i64 {
+        self.expense
+    }
+
+    #[must_use]
+    pub const fn cashflow_cents(&self) -> i64 {
+        self.cashflow
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct CliRuntime {
     store: AletheiaStore,
@@ -43,9 +96,54 @@ pub struct CliRuntime {
 }
 
 impl CliRuntime {
+    /// Creates a runtime backed by the default durable store path.
+    ///
+    /// `LOGOS_DB_PATH` overrides the location. Otherwise, the path defaults to:
+    /// - `${HOME}/.logos/ledger` on Unix-like systems
+    /// - `%USERPROFILE%\\.logos\\ledger` on Windows
+    /// - `./.logos/ledger` when no home directory is available
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when opening the embedded store fails.
+    pub fn new() -> Result<Self, RuntimeError> {
+        Self::open(Self::default_store_path())
+    }
+
+    /// Creates a runtime pinned to a specific durable store path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when opening the embedded store fails.
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, RuntimeError> {
+        Ok(Self {
+            store: AletheiaStore::open(path)?,
+            seen_fingerprints: HashSet::new(),
+            imported_records: 0,
+        })
+    }
+
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new_in_memory() -> Self {
         Self::default()
+    }
+
+    #[must_use]
+    pub fn default_store_path() -> PathBuf {
+        if let Some(path) = env::var_os(LOGOS_DB_PATH_ENV) {
+            return PathBuf::from(path);
+        }
+
+        if let Some(home) = env::var_os("HOME").or_else(|| env::var_os("USERPROFILE")) {
+            return PathBuf::from(home)
+                .join(DEFAULT_DB_DIRECTORY)
+                .join(DEFAULT_DB_NAME);
+        }
+
+        env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join(DEFAULT_DB_DIRECTORY)
+            .join(DEFAULT_DB_NAME)
     }
 
     /// Posts a balanced double-entry transaction and persists it.
@@ -82,6 +180,50 @@ impl CliRuntime {
             .collect();
 
         project_register_balance(0, &entries)
+    }
+
+    #[must_use]
+    pub fn budget_variance_for(&self, budget_cents: i64, expense_account_prefix: &str) -> i64 {
+        let actual_expense_cents: i64 = self
+            .store
+            .transactions()
+            .flat_map(|stored| stored.transaction().postings().iter())
+            .filter(|posting| posting.account().starts_with(expense_account_prefix))
+            .map(Posting::amount)
+            .filter(|amount| *amount > 0)
+            .sum();
+        project_budget_variance(budget_cents, actual_expense_cents)
+    }
+
+    #[must_use]
+    pub fn month_report_for(&self, checking_account: &str) -> MonthReport {
+        let checking_balance_cents = self.register_balance_for(checking_account);
+        let income_cents: i64 = self
+            .store
+            .transactions()
+            .flat_map(|stored| stored.transaction().postings().iter())
+            .filter(|posting| posting.account().starts_with("income:"))
+            .map(Posting::amount)
+            .filter(|amount| *amount < 0)
+            .map(i64::abs)
+            .sum();
+
+        let expense_cents: i64 = self
+            .store
+            .transactions()
+            .flat_map(|stored| stored.transaction().postings().iter())
+            .filter(|posting| posting.account().starts_with("expenses:"))
+            .map(Posting::amount)
+            .filter(|amount| *amount > 0)
+            .sum();
+
+        let cashflow_cents = project_cashflow(income_cents, expense_cents);
+        MonthReport::new(
+            checking_balance_cents,
+            income_cents,
+            expense_cents,
+            cashflow_cents,
+        )
     }
 
     /// Imports one CSV row with deterministic idempotency.

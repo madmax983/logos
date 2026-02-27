@@ -1,8 +1,19 @@
-use logos_core::{Correction, TransactionId};
+use std::collections::HashSet;
+
+use aletheiadb::{
+    AletheiaDB, EdgeId, Error as DbError, Node, NodeId, StorageError, TemporalError, Timestamp,
+};
+use logos_core::{Correction, TransactionBuilder, TransactionId};
 
 use crate::{
-    AletheiaStore,
-    model::{StoredCorrection, StoredTransaction},
+    AletheiaStore, StoreError, map_load_error,
+    model::{
+        AsOf, EDGE_HAS_POSTING, EDGE_SUPERSEDES, LABEL_LEDGER_CORRECTION, PROP_ACCOUNT,
+        PROP_AMOUNT_CENTS, PROP_DESCRIPTION, PROP_ORDINAL, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID,
+        StoredCorrection, StoredTransaction,
+    },
+    parse_posting, required_edge_i64_property, required_node_i64_property,
+    required_node_string_property,
 };
 
 impl AletheiaStore {
@@ -29,4 +40,205 @@ impl AletheiaStore {
     pub fn transactions(&self) -> impl Iterator<Item = &StoredTransaction> + '_ {
         self.transactions.values()
     }
+
+    /// Reconstructs transactions visible at a bi-temporal point in time.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when historical reconstruction fails due to graph corruption
+    /// or storage query errors.
+    pub fn transactions_as_of(
+        &self,
+        valid_time: Timestamp,
+        tx_time: Timestamp,
+    ) -> Result<Vec<StoredTransaction>, StoreError> {
+        self.transactions_at(AsOf::new(valid_time, tx_time))
+    }
+
+    /// Reconstructs transactions visible at a bi-temporal point in time.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when historical reconstruction fails due to graph corruption
+    /// or storage query errors.
+    pub fn transactions_at(&self, as_of: AsOf) -> Result<Vec<StoredTransaction>, StoreError> {
+        let Some(embedded) = self.embedded.as_ref() else {
+            return Ok(self.current_projection_without_superseded());
+        };
+
+        let superseded_ids = load_superseded_ids_at(&embedded.db, as_of)?;
+        let mut transactions = Vec::new();
+
+        for (txn_id, txn_node_id) in &embedded.transaction_nodes {
+            if superseded_ids.contains(txn_id) {
+                continue;
+            }
+
+            let Some(txn_node) = get_node_at_as_of(&embedded.db, *txn_node_id, as_of)? else {
+                continue;
+            };
+
+            let transaction = reconstruct_transaction_at_as_of(
+                &embedded.db,
+                *txn_node_id,
+                txn_id,
+                &txn_node,
+                as_of,
+            )?;
+            transactions.push(StoredTransaction::new(txn_id.clone(), transaction));
+        }
+
+        transactions.sort_by(|left, right| left.id().as_str().cmp(right.id().as_str()));
+        Ok(transactions)
+    }
+
+    fn current_projection_without_superseded(&self) -> Vec<StoredTransaction> {
+        let superseded_ids: HashSet<_> = self
+            .corrections
+            .iter()
+            .map(StoredCorrection::correction)
+            .map(|correction| correction.supersedes_id().clone())
+            .collect();
+
+        let mut transactions: Vec<_> = self
+            .transactions
+            .values()
+            .filter(|stored| !superseded_ids.contains(stored.id()))
+            .cloned()
+            .collect();
+        transactions.sort_by(|left, right| left.id().as_str().cmp(right.id().as_str()));
+        transactions
+    }
+}
+
+fn load_superseded_ids_at(
+    db: &AletheiaDB,
+    as_of: AsOf,
+) -> Result<HashSet<TransactionId>, StoreError> {
+    let mut superseded_ids = HashSet::new();
+    for correction_node_id in db.scan_nodes_by_label(LABEL_LEDGER_CORRECTION) {
+        let Some(correction_node) = get_node_at_as_of(db, correction_node_id, as_of)? else {
+            continue;
+        };
+
+        if !has_visible_supersedes_edge(db, correction_node_id, as_of)? {
+            continue;
+        }
+
+        let supersedes_txn_id =
+            required_node_string_property(&correction_node, PROP_SUPERSEDES_TXN_ID)?;
+        superseded_ids.insert(TransactionId::new(&supersedes_txn_id));
+    }
+
+    Ok(superseded_ids)
+}
+
+fn has_visible_supersedes_edge(
+    db: &AletheiaDB,
+    correction_node_id: NodeId,
+    as_of: AsOf,
+) -> Result<bool, StoreError> {
+    for edge_id in
+        db.get_outgoing_edges_at_time(correction_node_id, as_of.valid_time(), as_of.tx_time())
+    {
+        let Some(edge) = get_edge_at_as_of(db, edge_id, as_of)? else {
+            continue;
+        };
+
+        if edge.has_label_str(EDGE_SUPERSEDES) {
+            return Ok(true);
+        }
+    }
+
+    Ok(false)
+}
+
+fn reconstruct_transaction_at_as_of(
+    db: &AletheiaDB,
+    transaction_node_id: NodeId,
+    expected_id: &TransactionId,
+    transaction_node: &Node,
+    as_of: AsOf,
+) -> Result<logos_core::Transaction, StoreError> {
+    let expected_txn_id = expected_id.as_str();
+    let description = required_node_string_property(transaction_node, PROP_DESCRIPTION)?;
+
+    let mut postings = Vec::new();
+    for edge_id in
+        db.get_outgoing_edges_at_time(transaction_node_id, as_of.valid_time(), as_of.tx_time())
+    {
+        let Some(edge) = get_edge_at_as_of(db, edge_id, as_of)? else {
+            continue;
+        };
+        if !edge.has_label_str(EDGE_HAS_POSTING) {
+            continue;
+        }
+
+        let ordinal = required_edge_i64_property(&edge, PROP_ORDINAL)?;
+        let Some(posting_node) = get_node_at_as_of(db, edge.target, as_of)? else {
+            continue;
+        };
+
+        let posting_txn_id = required_node_string_property(&posting_node, PROP_TXN_ID)?;
+        if posting_txn_id != expected_txn_id {
+            return Err(StoreError::LoadFailed {
+                message: format!(
+                    "posting node {} references txn_id '{}' but parent transaction is '{}'",
+                    posting_node.id.as_u64(),
+                    posting_txn_id,
+                    expected_txn_id
+                ),
+            });
+        }
+
+        let account = required_node_string_property(&posting_node, PROP_ACCOUNT)?;
+        let amount_cents = required_node_i64_property(&posting_node, PROP_AMOUNT_CENTS)?;
+        let posting = parse_posting(expected_txn_id, &account, amount_cents)?;
+        postings.push((ordinal, edge.id.as_u64(), posting));
+    }
+
+    postings.sort_by_key(|(ordinal, edge_id, _)| (*ordinal, *edge_id));
+
+    let mut builder = TransactionBuilder::new(&description);
+    for (_, _, posting) in postings {
+        builder = builder.posting(posting);
+    }
+
+    builder.build().map_err(StoreError::Domain)
+}
+
+fn get_node_at_as_of(
+    db: &AletheiaDB,
+    node_id: NodeId,
+    as_of: AsOf,
+) -> Result<Option<Node>, StoreError> {
+    match db.get_node_at_time(node_id, as_of.valid_time(), as_of.tx_time()) {
+        Ok(node) => Ok(Some(node)),
+        Err(error) if is_node_not_visible(&error) => Ok(None),
+        Err(error) => Err(map_load_error("unable to read node at as-of time", error)),
+    }
+}
+
+fn get_edge_at_as_of(
+    db: &AletheiaDB,
+    edge_id: EdgeId,
+    as_of: AsOf,
+) -> Result<Option<aletheiadb::Edge>, StoreError> {
+    match db.get_edge_at_time(edge_id, as_of.valid_time(), as_of.tx_time()) {
+        Ok(edge) => Ok(Some(edge)),
+        Err(error) if is_edge_not_visible(&error) => Ok(None),
+        Err(error) => Err(map_load_error("unable to read edge at as-of time", error)),
+    }
+}
+
+const fn is_node_not_visible(error: &DbError) -> bool {
+    matches!(
+        error,
+        DbError::Storage(StorageError::NodeNotFound(_))
+            | DbError::Temporal(TemporalError::NodeNotFoundAtTime { .. })
+    )
+}
+
+const fn is_edge_not_visible(error: &DbError) -> bool {
+    matches!(error, DbError::Storage(StorageError::EdgeNotFound(_)))
 }
