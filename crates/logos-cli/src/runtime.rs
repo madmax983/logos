@@ -90,6 +90,30 @@ pub struct PdfImportSummary {
     dry_run: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MonthAutopilotRequest {
+    month_key: String,
+    checking_account: String,
+    opening_balance_cents: i64,
+    closing_balance_cents: i64,
+    statement_pdf_path: Option<PathBuf>,
+    enable_ocr: bool,
+    allow_variance: bool,
+    analytics_artifact_id: Option<String>,
+    confirm_close: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MonthAutopilotSummary {
+    month_key: String,
+    checking_account: String,
+    imported_count: usize,
+    duplicate_count: usize,
+    reconciliation_run: StoredReconciliationRun,
+    report: MonthReport,
+    close: StoredMonthClose,
+}
+
 impl PdfImportSummary {
     #[must_use]
     pub const fn new(imported_count: usize, duplicate_count: usize, dry_run: bool) -> Self {
@@ -113,6 +137,161 @@ impl PdfImportSummary {
     #[must_use]
     pub const fn dry_run(&self) -> bool {
         self.dry_run
+    }
+}
+
+impl MonthAutopilotRequest {
+    #[must_use]
+    pub fn new(
+        month_key: &str,
+        checking_account: &str,
+        opening_balance_cents: i64,
+        closing_balance_cents: i64,
+    ) -> Self {
+        Self {
+            month_key: month_key.to_owned(),
+            checking_account: checking_account.to_owned(),
+            opening_balance_cents,
+            closing_balance_cents,
+            statement_pdf_path: None,
+            enable_ocr: false,
+            allow_variance: false,
+            analytics_artifact_id: None,
+            confirm_close: false,
+        }
+    }
+
+    #[must_use]
+    pub fn with_statement_pdf(mut self, path: impl AsRef<Path>) -> Self {
+        self.statement_pdf_path = Some(path.as_ref().to_path_buf());
+        self
+    }
+
+    #[must_use]
+    pub const fn with_ocr(mut self, enable_ocr: bool) -> Self {
+        self.enable_ocr = enable_ocr;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_allow_variance(mut self, allow_variance: bool) -> Self {
+        self.allow_variance = allow_variance;
+        self
+    }
+
+    #[must_use]
+    pub fn with_analytics_artifact_id(mut self, artifact_id: &str) -> Self {
+        self.analytics_artifact_id = Some(artifact_id.to_owned());
+        self
+    }
+
+    #[must_use]
+    pub const fn with_confirm_close(mut self, confirm_close: bool) -> Self {
+        self.confirm_close = confirm_close;
+        self
+    }
+
+    #[must_use]
+    pub fn month_key(&self) -> &str {
+        &self.month_key
+    }
+
+    #[must_use]
+    pub fn checking_account(&self) -> &str {
+        &self.checking_account
+    }
+
+    #[must_use]
+    pub const fn opening_balance_cents(&self) -> i64 {
+        self.opening_balance_cents
+    }
+
+    #[must_use]
+    pub const fn closing_balance_cents(&self) -> i64 {
+        self.closing_balance_cents
+    }
+
+    #[must_use]
+    pub const fn statement_pdf_path(&self) -> Option<&PathBuf> {
+        self.statement_pdf_path.as_ref()
+    }
+
+    #[must_use]
+    pub const fn enable_ocr(&self) -> bool {
+        self.enable_ocr
+    }
+
+    #[must_use]
+    pub const fn allow_variance(&self) -> bool {
+        self.allow_variance
+    }
+
+    #[must_use]
+    pub fn analytics_artifact_id(&self) -> Option<&str> {
+        self.analytics_artifact_id.as_deref()
+    }
+
+    #[must_use]
+    pub const fn confirm_close(&self) -> bool {
+        self.confirm_close
+    }
+}
+
+impl MonthAutopilotSummary {
+    #[must_use]
+    pub fn new(
+        month_key: &str,
+        checking_account: &str,
+        imported_count: usize,
+        duplicate_count: usize,
+        reconciliation_run: StoredReconciliationRun,
+        report: MonthReport,
+        close: StoredMonthClose,
+    ) -> Self {
+        Self {
+            month_key: month_key.to_owned(),
+            checking_account: checking_account.to_owned(),
+            imported_count,
+            duplicate_count,
+            reconciliation_run,
+            report,
+            close,
+        }
+    }
+
+    #[must_use]
+    pub fn month_key(&self) -> &str {
+        &self.month_key
+    }
+
+    #[must_use]
+    pub fn checking_account(&self) -> &str {
+        &self.checking_account
+    }
+
+    #[must_use]
+    pub const fn imported_count(&self) -> usize {
+        self.imported_count
+    }
+
+    #[must_use]
+    pub const fn duplicate_count(&self) -> usize {
+        self.duplicate_count
+    }
+
+    #[must_use]
+    pub const fn reconciliation_run(&self) -> &StoredReconciliationRun {
+        &self.reconciliation_run
+    }
+
+    #[must_use]
+    pub const fn report(&self) -> &MonthReport {
+        &self.report
+    }
+
+    #[must_use]
+    pub const fn close(&self) -> &StoredMonthClose {
+        &self.close
     }
 }
 
@@ -566,6 +745,94 @@ impl CliRuntime {
         self.store
             .month_close_for_scope(month_key, checking_account)
             .cloned()
+    }
+
+    /// Runs the full month workflow with close-time safety checks.
+    ///
+    /// Workflow:
+    /// 1. optional statement PDF import
+    /// 2. reconciliation preview + variance gate
+    /// 3. reconciliation persistence
+    /// 4. month report projection
+    /// 5. immutable month close
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when confirmation is missing, scope is already closed,
+    /// variance safety checks fail, or any underlying import/store operation fails.
+    pub fn run_month_autopilot(
+        &mut self,
+        request: &MonthAutopilotRequest,
+    ) -> Result<MonthAutopilotSummary, RuntimeError> {
+        if !request.confirm_close() {
+            return Err(RuntimeError::Analytics {
+                message: "month autopilot requires --confirm-close to persist month close"
+                    .to_owned(),
+            });
+        }
+        if self
+            .month_close_for_scope(request.month_key(), request.checking_account())
+            .is_some()
+        {
+            return Err(RuntimeError::Analytics {
+                message: format!(
+                    "month scope '{}' for '{}' is already closed",
+                    request.month_key(),
+                    request.checking_account()
+                ),
+            });
+        }
+
+        let (imported_count, duplicate_count) = if let Some(path) = request.statement_pdf_path() {
+            let summary = self.import_pdf_statement(
+                path,
+                request.checking_account(),
+                false,
+                request.enable_ocr(),
+            )?;
+            (summary.imported_count(), summary.duplicate_count())
+        } else {
+            (0, 0)
+        };
+
+        let preview = self.reconcile_month_for(
+            request.checking_account(),
+            request.month_key(),
+            request.opening_balance_cents(),
+            request.closing_balance_cents(),
+        );
+        if preview.variance_cents() != 0 && !request.allow_variance() {
+            return Err(RuntimeError::Analytics {
+                message: format!(
+                    "month autopilot blocked close due to variance_cents={} (use --allow-variance to override)",
+                    preview.variance_cents()
+                ),
+            });
+        }
+
+        let run = self.reconcile_and_persist_month_for(
+            request.checking_account(),
+            request.month_key(),
+            request.opening_balance_cents(),
+            request.closing_balance_cents(),
+        )?;
+        let report = self.month_report_for(request.checking_account(), request.month_key());
+        let close = self.close_month(
+            request.month_key(),
+            request.checking_account(),
+            run.run_id(),
+            request.analytics_artifact_id(),
+        )?;
+
+        Ok(MonthAutopilotSummary::new(
+            request.month_key(),
+            request.checking_account(),
+            imported_count,
+            duplicate_count,
+            run,
+            report,
+            close,
+        ))
     }
 
     /// Projects a scenario-based RSU budget plan for a month scope.

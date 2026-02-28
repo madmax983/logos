@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use logos_cli::runtime::CliRuntime;
+use logos_cli::runtime::{CliRuntime, MonthAutopilotRequest};
 use logos_core::TransactionId;
 use logos_import::CsvMapping;
 
@@ -292,6 +292,74 @@ fn e2e_runtime_month_close_persists_and_blocks_duplicate_scope_close() {
     }
 
     cleanup_runtime_path(&path);
+}
+
+#[test]
+fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
+    let path = temp_runtime_path("month-autopilot");
+    let statement_path = temp_runtime_path("month-autopilot-statement")
+        .with_extension("pdf")
+        .to_string_lossy()
+        .to_string();
+    std::fs::write(
+        &statement_path,
+        "2026-02-01 COFFEE SHOP -12.34\n2026-02-02 PAYROLL 1000.00\n",
+    )
+    .expect("write statement");
+
+    {
+        let mut runtime = CliRuntime::open(&path).expect("open");
+        let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 198_766)
+            .with_statement_pdf(&statement_path)
+            .with_confirm_close(true);
+        let summary = runtime
+            .run_month_autopilot(&request)
+            .expect("autopilot succeeds");
+
+        assert_eq!(summary.month_key(), "2026-02");
+        assert_eq!(summary.checking_account(), "assets:checking");
+        assert_eq!(summary.imported_count(), 2);
+        assert_eq!(summary.duplicate_count(), 0);
+        assert_eq!(summary.reconciliation_run().variance_cents(), 0);
+        assert!(summary.reconciliation_run().reconciled());
+        assert_eq!(summary.report().checking_balance_cents(), 98_766);
+        assert_eq!(summary.report().income_cents(), 100_000);
+        assert_eq!(summary.report().expense_cents(), 1_234);
+        assert_eq!(summary.report().cashflow_cents(), 98_766);
+    }
+
+    {
+        let reopened = CliRuntime::open(&path).expect("reopen");
+        assert_eq!(reopened.reconciliation_run_count(), 1);
+        assert!(
+            reopened
+                .month_close_for_scope("2026-02", "assets:checking")
+                .is_some()
+        );
+    }
+
+    cleanup_file(Path::new(&statement_path));
+    cleanup_runtime_path(&path);
+}
+
+#[test]
+fn e2e_runtime_month_autopilot_requires_confirm_close() {
+    let mut runtime = CliRuntime::new_in_memory();
+    let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 100_000);
+
+    let err = runtime
+        .run_month_autopilot(&request)
+        .expect_err("confirm-close is required");
+    assert!(
+        err.to_string()
+            .contains("requires --confirm-close to persist month close")
+    );
+    assert_eq!(runtime.reconciliation_run_count(), 0);
+    assert!(
+        runtime
+            .month_close_for_scope("2026-02", "assets:checking")
+            .is_none()
+    );
 }
 
 #[test]

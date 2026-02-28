@@ -168,6 +168,14 @@ fn parses_help_for_reconcile_subcommand() {
 }
 
 #[test]
+fn parses_help_for_month_subcommand() {
+    let args = vec!["ledger", "help", "month"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "help.month");
+}
+
+#[test]
 fn parses_txn_help_flag() {
     let args = vec!["ledger", "txn", "--help"];
     let parsed = logos_cli::parse_args(args).expect("parse");
@@ -205,6 +213,14 @@ fn parses_reconcile_help_flag() {
     let parsed = logos_cli::parse_args(args).expect("parse");
 
     assert_eq!(parsed.command_path(), "help.reconcile");
+}
+
+#[test]
+fn parses_month_help_flag() {
+    let args = vec!["ledger", "month", "--help"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "help.month");
 }
 
 #[test]
@@ -739,6 +755,111 @@ fn rejects_reconcile_show_without_run_id() {
     let err = logos_cli::parse_args(args).expect_err("missing run id");
 
     assert_eq!(err.to_string(), "missing value for argument '--run-id'");
+}
+
+#[test]
+fn parses_month_autopilot_with_defaults() {
+    let args = vec![
+        "ledger",
+        "month",
+        "autopilot",
+        "--opening-balance-cents",
+        "100000",
+        "--closing-balance-cents",
+        "107500",
+        "--confirm-close",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "month.autopilot");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Month(logos_cli::args::MonthCommand::Autopilot {
+            month_key,
+            checking_account,
+            opening_balance_cents,
+            closing_balance_cents,
+            statement_pdf,
+            ocr,
+            allow_variance,
+            analytics_artifact_id,
+            confirm_close,
+        }) if month_key.is_none()
+            && checking_account == "assets:checking"
+            && *opening_balance_cents == 100_000
+            && *closing_balance_cents == 107_500
+            && statement_pdf.is_none()
+            && !*ocr
+            && !*allow_variance
+            && analytics_artifact_id.is_none()
+            && *confirm_close
+    ));
+}
+
+#[test]
+fn parses_month_autopilot_with_explicit_flags() {
+    let args = vec![
+        "ledger",
+        "month",
+        "autopilot",
+        "--month",
+        "2026-04",
+        "--checking-account",
+        "assets:brokerage",
+        "--opening-balance-cents",
+        "250000",
+        "--closing-balance-cents",
+        "260500",
+        "--statement-pdf",
+        "statement.pdf",
+        "--ocr",
+        "--allow-variance",
+        "--analytics-artifact-id",
+        "artifact-7",
+        "--confirm-close",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Month(logos_cli::args::MonthCommand::Autopilot {
+            month_key,
+            checking_account,
+            opening_balance_cents,
+            closing_balance_cents,
+            statement_pdf,
+            ocr,
+            allow_variance,
+            analytics_artifact_id,
+            confirm_close,
+        }) if month_key.as_deref() == Some("2026-04")
+            && checking_account == "assets:brokerage"
+            && *opening_balance_cents == 250_000
+            && *closing_balance_cents == 260_500
+            && statement_pdf.as_deref() == Some("statement.pdf")
+            && *ocr
+            && *allow_variance
+            && analytics_artifact_id.as_deref() == Some("artifact-7")
+            && *confirm_close
+    ));
+}
+
+#[test]
+fn rejects_month_autopilot_when_missing_opening_balance() {
+    let args = vec![
+        "ledger",
+        "month",
+        "autopilot",
+        "--closing-balance-cents",
+        "107500",
+        "--confirm-close",
+    ];
+    let err = logos_cli::parse_args(args).expect_err("missing opening balance");
+
+    assert_eq!(
+        err.to_string(),
+        "missing value for argument '--opening-balance-cents'"
+    );
 }
 
 #[test]

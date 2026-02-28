@@ -10,6 +10,7 @@ Commands:
   analytics snapshot ...            Manage immutable analytics artifacts
   import pdf ...                    Import statement rows from a PDF
   reconcile month                   Reconcile month against statement balances
+  month autopilot                   Run import/reconcile/report/close workflow
   close month                       Freeze a month scope with evidence links
   budget set                        Set a budget value
   report month                      Show the current month report
@@ -62,7 +63,16 @@ Subcommands:
   list [--month <YYYY-MM>] [--checking-account <name>]
                                      List reconciliation runs with optional filters
   show --run-id <id>
-                                     Show one reconciliation run by id
+                                      Show one reconciliation run by id
+";
+
+const MONTH_HELP_TEXT: &str = "\
+Usage: ledger month <subcommand> [options]
+
+Subcommands:
+  autopilot --opening-balance-cents <i64> --closing-balance-cents <i64> [--month <YYYY-MM>] [--checking-account <name>]
+            [--statement-pdf <path>] [--ocr] [--allow-variance] [--analytics-artifact-id <id>] --confirm-close
+                                      Import(optional) + reconcile + report + close with explicit close confirmation
 ";
 
 const CLOSE_HELP_TEXT: &str = "\
@@ -114,6 +124,7 @@ pub fn show(topic: HelpTopic) -> Result<(), CliError> {
         HelpTopic::Aletheia => ALETHEIA_HELP_TEXT,
         HelpTopic::Import => IMPORT_HELP_TEXT,
         HelpTopic::Reconcile => RECONCILE_HELP_TEXT,
+        HelpTopic::Month => MONTH_HELP_TEXT,
         HelpTopic::Close => CLOSE_HELP_TEXT,
     };
     println!("{text}");

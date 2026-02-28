@@ -4,6 +4,7 @@ pub mod budget;
 pub mod close;
 pub mod help;
 pub mod import;
+pub mod month;
 pub mod reconcile;
 pub mod report;
 pub mod txn;

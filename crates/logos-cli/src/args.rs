@@ -77,101 +77,174 @@ impl ParsedArgs {
     ///
     /// Returns parser-level validation errors for incomplete command payloads.
     pub fn execute(&self) -> Result<(), CliError> {
-        match &self.command {
-            Command::Help(topic) => commands::help::show(*topic),
-            Command::Aletheia(AletheiaCommand::Start) => commands::aletheia::start(),
-            Command::Aletheia(AletheiaCommand::Status) => commands::aletheia::status(),
-            Command::Txn(TxnCommand::Add {
-                description,
-                debit_account,
-                credit_account,
-                amount_cents,
-            }) => commands::txn::add(description, debit_account, credit_account, *amount_cents),
-            Command::Analytics(AnalyticsCommand::SnapshotCreate {
-                as_of_valid_time_us,
-                as_of_tx_time_us,
-                schema_version,
-                supersedes_artifact_id,
-            }) => commands::analytics::snapshot_create(
-                *as_of_valid_time_us,
-                *as_of_tx_time_us,
-                *schema_version,
-                supersedes_artifact_id.as_deref(),
-            ),
-            Command::Analytics(AnalyticsCommand::SnapshotList) => {
-                commands::analytics::snapshot_list()
-            }
-            Command::Analytics(AnalyticsCommand::SnapshotShow { artifact_id }) => {
-                commands::analytics::snapshot_show(artifact_id)
-            }
-            Command::Import(ImportCommand::Pdf {
-                file_path,
-                account,
-                dry_run,
-                ocr,
-            }) => commands::import::pdf(file_path, account, *dry_run, *ocr),
-            Command::Reconcile(ReconcileCommand::Month {
-                checking_account,
-                month_key,
-                opening_balance_cents,
-                closing_balance_cents,
-            }) => commands::reconcile::month(
-                checking_account,
-                month_key.as_deref(),
-                *opening_balance_cents,
-                *closing_balance_cents,
-            ),
-            Command::Reconcile(ReconcileCommand::List {
-                month_key,
-                checking_account,
-            }) => commands::reconcile::list(month_key.as_deref(), checking_account.as_deref()),
-            Command::Reconcile(ReconcileCommand::Show { run_id }) => {
-                commands::reconcile::show(run_id)
-            }
-            Command::Close(CloseCommand::Month {
-                month_key,
-                checking_account,
-                run_id,
-                analytics_artifact_id,
-            }) => commands::close::month(
-                month_key.as_deref(),
-                checking_account,
-                run_id,
-                analytics_artifact_id.as_deref(),
-            ),
-            Command::Budget(BudgetCommand::Set {
-                month_key,
-                budget_cents,
-                expense_account_prefix,
-            }) => {
-                commands::budget::set(month_key.as_deref(), *budget_cents, expense_account_prefix)
-            }
-            Command::Budget(BudgetCommand::RsuPlan {
-                month_key,
-                quarterly_units,
-                days_to_vest,
-                bear_price_cents,
-                base_price_cents,
-                bull_price_cents,
-                fixed_commitments_cents,
-                reserve_sweep_pct,
-                investing_sweep_pct,
-            }) => commands::budget::rsu_plan(
-                month_key.as_deref(),
-                *quarterly_units,
-                *days_to_vest,
-                *bear_price_cents,
-                *base_price_cents,
-                *bull_price_cents,
-                *fixed_commitments_cents,
-                *reserve_sweep_pct,
-                *investing_sweep_pct,
-            ),
-            Command::Report(ReportCommand::Month {
-                checking_account,
-                month_key,
-            }) => commands::report::month(checking_account, month_key.as_deref()),
+        execute_command(&self.command)
+    }
+}
+
+fn execute_command(command: &Command) -> Result<(), CliError> {
+    match command {
+        Command::Help(topic) => commands::help::show(*topic),
+        Command::Aletheia(command) => execute_aletheia_command(*command),
+        Command::Txn(command) => execute_txn_command(command),
+        Command::Analytics(command) => execute_analytics_command(command),
+        Command::Import(command) => execute_import_command(command),
+        Command::Reconcile(command) => execute_reconcile_command(command),
+        Command::Month(command) => execute_month_command(command),
+        Command::Close(command) => execute_close_command(command),
+        Command::Budget(command) => execute_budget_command(command),
+        Command::Report(command) => execute_report_command(command),
+    }
+}
+
+fn execute_aletheia_command(command: AletheiaCommand) -> Result<(), CliError> {
+    match command {
+        AletheiaCommand::Start => commands::aletheia::start(),
+        AletheiaCommand::Status => commands::aletheia::status(),
+    }
+}
+
+fn execute_txn_command(command: &TxnCommand) -> Result<(), CliError> {
+    match command {
+        TxnCommand::Add {
+            description,
+            debit_account,
+            credit_account,
+            amount_cents,
+        } => commands::txn::add(description, debit_account, credit_account, *amount_cents),
+    }
+}
+
+fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError> {
+    match command {
+        AnalyticsCommand::SnapshotCreate {
+            as_of_valid_time_us,
+            as_of_tx_time_us,
+            schema_version,
+            supersedes_artifact_id,
+        } => commands::analytics::snapshot_create(
+            *as_of_valid_time_us,
+            *as_of_tx_time_us,
+            *schema_version,
+            supersedes_artifact_id.as_deref(),
+        ),
+        AnalyticsCommand::SnapshotList => commands::analytics::snapshot_list(),
+        AnalyticsCommand::SnapshotShow { artifact_id } => {
+            commands::analytics::snapshot_show(artifact_id)
         }
+    }
+}
+
+fn execute_import_command(command: &ImportCommand) -> Result<(), CliError> {
+    match command {
+        ImportCommand::Pdf {
+            file_path,
+            account,
+            dry_run,
+            ocr,
+        } => commands::import::pdf(file_path, account, *dry_run, *ocr),
+    }
+}
+
+fn execute_reconcile_command(command: &ReconcileCommand) -> Result<(), CliError> {
+    match command {
+        ReconcileCommand::Month {
+            checking_account,
+            month_key,
+            opening_balance_cents,
+            closing_balance_cents,
+        } => commands::reconcile::month(
+            checking_account,
+            month_key.as_deref(),
+            *opening_balance_cents,
+            *closing_balance_cents,
+        ),
+        ReconcileCommand::List {
+            month_key,
+            checking_account,
+        } => commands::reconcile::list(month_key.as_deref(), checking_account.as_deref()),
+        ReconcileCommand::Show { run_id } => commands::reconcile::show(run_id),
+    }
+}
+
+fn execute_month_command(command: &MonthCommand) -> Result<(), CliError> {
+    match command {
+        MonthCommand::Autopilot {
+            month_key,
+            checking_account,
+            opening_balance_cents,
+            closing_balance_cents,
+            statement_pdf,
+            ocr,
+            allow_variance,
+            analytics_artifact_id,
+            confirm_close,
+        } => commands::month::autopilot(
+            month_key.as_deref(),
+            checking_account,
+            *opening_balance_cents,
+            *closing_balance_cents,
+            statement_pdf.as_deref(),
+            *ocr,
+            *allow_variance,
+            analytics_artifact_id.as_deref(),
+            *confirm_close,
+        ),
+    }
+}
+
+fn execute_close_command(command: &CloseCommand) -> Result<(), CliError> {
+    match command {
+        CloseCommand::Month {
+            month_key,
+            checking_account,
+            run_id,
+            analytics_artifact_id,
+        } => commands::close::month(
+            month_key.as_deref(),
+            checking_account,
+            run_id,
+            analytics_artifact_id.as_deref(),
+        ),
+    }
+}
+
+fn execute_budget_command(command: &BudgetCommand) -> Result<(), CliError> {
+    match command {
+        BudgetCommand::Set {
+            month_key,
+            budget_cents,
+            expense_account_prefix,
+        } => commands::budget::set(month_key.as_deref(), *budget_cents, expense_account_prefix),
+        BudgetCommand::RsuPlan {
+            month_key,
+            quarterly_units,
+            days_to_vest,
+            bear_price_cents,
+            base_price_cents,
+            bull_price_cents,
+            fixed_commitments_cents,
+            reserve_sweep_pct,
+            investing_sweep_pct,
+        } => commands::budget::rsu_plan(
+            month_key.as_deref(),
+            *quarterly_units,
+            *days_to_vest,
+            *bear_price_cents,
+            *base_price_cents,
+            *bull_price_cents,
+            *fixed_commitments_cents,
+            *reserve_sweep_pct,
+            *investing_sweep_pct,
+        ),
+    }
+}
+
+fn execute_report_command(command: &ReportCommand) -> Result<(), CliError> {
+    match command {
+        ReportCommand::Month {
+            checking_account,
+            month_key,
+        } => commands::report::month(checking_account, month_key.as_deref()),
     }
 }
 
@@ -221,6 +294,7 @@ pub enum Command {
     Analytics(AnalyticsCommand),
     Import(ImportCommand),
     Reconcile(ReconcileCommand),
+    Month(MonthCommand),
     Close(CloseCommand),
     Budget(BudgetCommand),
     Report(ReportCommand),
@@ -238,6 +312,7 @@ impl Command {
             Self::Help(HelpTopic::Analytics) => "help.analytics",
             Self::Help(HelpTopic::Import) => "help.import",
             Self::Help(HelpTopic::Reconcile) => "help.reconcile",
+            Self::Help(HelpTopic::Month) => "help.month",
             Self::Help(HelpTopic::Close) => "help.close",
             Self::Aletheia(AletheiaCommand::Start) => "aletheia.start",
             Self::Aletheia(AletheiaCommand::Status) => "aletheia.status",
@@ -249,6 +324,7 @@ impl Command {
             Self::Reconcile(ReconcileCommand::Month { .. }) => "reconcile.month",
             Self::Reconcile(ReconcileCommand::List { .. }) => "reconcile.list",
             Self::Reconcile(ReconcileCommand::Show { .. }) => "reconcile.show",
+            Self::Month(MonthCommand::Autopilot { .. }) => "month.autopilot",
             Self::Close(CloseCommand::Month { .. }) => "close.month",
             Self::Budget(BudgetCommand::Set { .. }) => "budget.set",
             Self::Budget(BudgetCommand::RsuPlan { .. }) => "budget.rsu-plan",
@@ -267,6 +343,7 @@ pub enum HelpTopic {
     Aletheia,
     Import,
     Reconcile,
+    Month,
     Close,
 }
 
@@ -324,6 +401,21 @@ pub enum ReconcileCommand {
     },
     Show {
         run_id: String,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MonthCommand {
+    Autopilot {
+        month_key: Option<String>,
+        checking_account: String,
+        opening_balance_cents: i64,
+        closing_balance_cents: i64,
+        statement_pdf: Option<String>,
+        ocr: bool,
+        allow_variance: bool,
+        analytics_artifact_id: Option<String>,
+        confirm_close: bool,
     },
 }
 
@@ -390,6 +482,7 @@ where
         "analytics" => parse_analytics(&values),
         "import" => parse_import(&values),
         "reconcile" => parse_reconcile(&values),
+        "month" => parse_month(&values),
         "close" => parse_close(&values),
         "budget" => parse_budget(&values),
         "report" => parse_report(&values),
@@ -653,6 +746,50 @@ fn parse_reconcile(args: &[String]) -> Result<ParsedArgs, CliError> {
     }
 }
 
+fn parse_month(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
+        command: "month".to_owned(),
+    })?;
+
+    match subcommand.as_str() {
+        "--help" | "-h" => Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Month),
+        }),
+        "autopilot" => {
+            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
+            let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?
+                .unwrap_or_else(|| DEFAULT_CHECKING_ACCOUNT.to_owned());
+            let opening_balance_cents =
+                parse_required_i64_flag(&args[2..], "--opening-balance-cents")?;
+            let closing_balance_cents =
+                parse_required_i64_flag(&args[2..], "--closing-balance-cents")?;
+            let statement_pdf = parse_optional_flag_value(&args[2..], "--statement-pdf")?;
+            let ocr = parse_flag_present(&args[2..], "--ocr");
+            let allow_variance = parse_flag_present(&args[2..], "--allow-variance");
+            let analytics_artifact_id =
+                parse_optional_flag_value(&args[2..], "--analytics-artifact-id")?;
+            let confirm_close = parse_flag_present(&args[2..], "--confirm-close");
+            Ok(ParsedArgs {
+                command: Command::Month(MonthCommand::Autopilot {
+                    month_key,
+                    checking_account,
+                    opening_balance_cents,
+                    closing_balance_cents,
+                    statement_pdf,
+                    ocr,
+                    allow_variance,
+                    analytics_artifact_id,
+                    confirm_close,
+                }),
+            })
+        }
+        _ => Err(CliError::UnknownSubcommand {
+            command: "month".to_owned(),
+            subcommand: subcommand.clone(),
+        }),
+    }
+}
+
 fn parse_close(args: &[String]) -> Result<ParsedArgs, CliError> {
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "close".to_owned(),
@@ -717,6 +854,7 @@ fn parse_help_topic(args: &[String]) -> Result<HelpTopic, CliError> {
         Some("aletheia") => Ok(HelpTopic::Aletheia),
         Some("import") => Ok(HelpTopic::Import),
         Some("reconcile") => Ok(HelpTopic::Reconcile),
+        Some("month") => Ok(HelpTopic::Month),
         Some("close") => Ok(HelpTopic::Close),
         Some(subcommand) => Err(CliError::UnknownSubcommand {
             command: "help".to_owned(),
