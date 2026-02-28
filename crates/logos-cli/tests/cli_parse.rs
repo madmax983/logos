@@ -19,6 +19,30 @@ fn parses_txn_add_command() {
 }
 
 #[test]
+fn parses_txn_correct_command() {
+    let args = vec![
+        "ledger",
+        "txn",
+        "correct",
+        "--supersedes-id",
+        "txn-7",
+        "--reason",
+        "fix memo",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "txn.correct");
+}
+
+#[test]
+fn rejects_txn_correct_when_missing_reason() {
+    let args = vec!["ledger", "txn", "correct", "--supersedes-id", "txn-7"];
+    let err = logos_cli::parse_args(args).expect_err("missing reason");
+
+    assert_eq!(err.to_string(), "missing value for argument '--reason'");
+}
+
+#[test]
 fn rejects_txn_add_when_missing_debit_account_flag() {
     let args = vec![
         "ledger",
@@ -388,6 +412,104 @@ fn rejects_import_pdf_when_missing_file_flag() {
     let err = logos_cli::parse_args(args).expect_err("missing file flag");
 
     assert_eq!(err.to_string(), "missing value for argument '--file'");
+}
+
+#[test]
+fn parses_import_csv_with_defaults() {
+    let args = vec!["ledger", "import", "csv", "--file", "statement.csv"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "import.csv");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Import(logos_cli::args::ImportCommand::Csv {
+            file_path,
+            source_id,
+            timestamp_idx,
+            amount_idx,
+            memo_idx,
+            account_idx,
+            category_idx,
+            skip_header,
+            dry_run,
+        }) if file_path == "statement.csv"
+            && source_id.is_none()
+            && *timestamp_idx == 0
+            && *amount_idx == 1
+            && *memo_idx == 2
+            && *account_idx == 3
+            && *category_idx == 4
+            && !*skip_header
+            && !*dry_run
+    ));
+}
+
+#[test]
+fn parses_import_csv_with_explicit_mapping_flags() {
+    let args = vec![
+        "ledger",
+        "import",
+        "csv",
+        "--file",
+        "statement.csv",
+        "--source-id",
+        "chase.csv",
+        "--timestamp-idx",
+        "1",
+        "--amount-idx",
+        "3",
+        "--memo-idx",
+        "4",
+        "--account-idx",
+        "6",
+        "--category-idx",
+        "7",
+        "--skip-header",
+        "--dry-run",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Import(logos_cli::args::ImportCommand::Csv {
+            file_path,
+            source_id,
+            timestamp_idx,
+            amount_idx,
+            memo_idx,
+            account_idx,
+            category_idx,
+            skip_header,
+            dry_run,
+        }) if file_path == "statement.csv"
+            && source_id.as_deref() == Some("chase.csv")
+            && *timestamp_idx == 1
+            && *amount_idx == 3
+            && *memo_idx == 4
+            && *account_idx == 6
+            && *category_idx == 7
+            && *skip_header
+            && *dry_run
+    ));
+}
+
+#[test]
+fn rejects_import_csv_when_mapping_index_is_not_integer() {
+    let args = vec![
+        "ledger",
+        "import",
+        "csv",
+        "--file",
+        "statement.csv",
+        "--amount-idx",
+        "x",
+    ];
+    let err = logos_cli::parse_args(args).expect_err("invalid csv amount idx");
+
+    assert_eq!(
+        err.to_string(),
+        "invalid value 'x' for argument '--amount-idx'"
+    );
 }
 
 #[test]

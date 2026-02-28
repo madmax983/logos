@@ -13,6 +13,12 @@ trait TxnPoster {
         credit_account: &str,
         amount_cents: i64,
     ) -> Result<TransactionId, RuntimeError>;
+
+    fn apply_correction(
+        &mut self,
+        supersedes_id: TransactionId,
+        reason: &str,
+    ) -> Result<(), RuntimeError>;
 }
 
 impl TxnPoster for CliRuntime {
@@ -30,6 +36,14 @@ impl TxnPoster for CliRuntime {
             credit_account,
             amount_cents,
         )
+    }
+
+    fn apply_correction(
+        &mut self,
+        supersedes_id: TransactionId,
+        reason: &str,
+    ) -> Result<(), RuntimeError> {
+        Self::apply_correction(self, supersedes_id, reason)
     }
 }
 
@@ -56,6 +70,21 @@ pub fn add(
         &mut runtime,
     )?;
     println!("txn.add wrote {}", transaction_id.as_str());
+    Ok(())
+}
+
+/// Handles `ledger txn correct`.
+///
+/// # Errors
+///
+/// Returns an error when correction validation or runtime persistence fails.
+pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
+    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+        command: "txn.correct".to_owned(),
+        message: format!("runtime initialization failed: {err}"),
+    })?;
+    apply_correction(supersedes_id, reason, &mut runtime)?;
+    println!("txn.correct supersedes_id={supersedes_id}");
     Ok(())
 }
 
@@ -95,9 +124,33 @@ fn post_double_entry(
         })
 }
 
+fn apply_correction(
+    supersedes_id: &str,
+    reason: &str,
+    runtime: &mut impl TxnPoster,
+) -> Result<(), CliError> {
+    if supersedes_id.trim().is_empty() {
+        return Err(CliError::MissingArgValue {
+            flag: "--supersedes-id".to_owned(),
+        });
+    }
+    if reason.trim().is_empty() {
+        return Err(CliError::MissingArgValue {
+            flag: "--reason".to_owned(),
+        });
+    }
+
+    runtime
+        .apply_correction(TransactionId::new(supersedes_id), reason)
+        .map_err(|err| CliError::CommandRuntimeFailed {
+            command: "txn.correct".to_owned(),
+            message: err.to_string(),
+        })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{TxnPoster, post_double_entry};
+    use super::{TxnPoster, apply_correction, post_double_entry};
     use crate::runtime::RuntimeError;
     use logos_core::TransactionId;
     use logos_import::ImportError;
@@ -105,10 +158,13 @@ mod tests {
     #[derive(Debug, Default)]
     struct FakePoster {
         calls: usize,
+        correction_calls: usize,
         description: String,
         debit_account: String,
         credit_account: String,
         amount_cents: i64,
+        correction_supersedes_id: Option<TransactionId>,
+        correction_reason: String,
         fail_with_runtime_error: bool,
     }
 
@@ -134,6 +190,25 @@ mod tests {
             }
 
             Ok(TransactionId::new("txn-test-1"))
+        }
+
+        fn apply_correction(
+            &mut self,
+            supersedes_id: TransactionId,
+            reason: &str,
+        ) -> Result<(), RuntimeError> {
+            self.correction_calls += 1;
+            self.correction_supersedes_id = Some(supersedes_id);
+            self.correction_reason = reason.to_owned();
+
+            if self.fail_with_runtime_error {
+                return Err(RuntimeError::Import(ImportError::MissingColumns {
+                    expected: 5,
+                    found: 2,
+                }));
+            }
+
+            Ok(())
         }
     }
 
@@ -210,6 +285,57 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "command 'txn.add' failed at runtime: missing columns: expected 5, found 2"
+        );
+    }
+
+    #[test]
+    fn apply_correction_posts_runtime_payload() {
+        let mut poster = FakePoster::default();
+        apply_correction("txn-7", "fix memo", &mut poster).expect("apply correction");
+
+        assert_eq!(poster.correction_calls, 1);
+        assert_eq!(
+            poster
+                .correction_supersedes_id
+                .as_ref()
+                .map(TransactionId::as_str),
+            Some("txn-7")
+        );
+        assert_eq!(poster.correction_reason, "fix memo");
+    }
+
+    #[test]
+    fn apply_correction_rejects_empty_supersedes_id() {
+        let mut poster = FakePoster::default();
+        let err = apply_correction("   ", "fix memo", &mut poster).expect_err("missing id");
+
+        assert_eq!(
+            err.to_string(),
+            "missing value for argument '--supersedes-id'"
+        );
+        assert_eq!(poster.correction_calls, 0);
+    }
+
+    #[test]
+    fn apply_correction_rejects_empty_reason() {
+        let mut poster = FakePoster::default();
+        let err = apply_correction("txn-7", "   ", &mut poster).expect_err("missing reason");
+
+        assert_eq!(err.to_string(), "missing value for argument '--reason'");
+        assert_eq!(poster.correction_calls, 0);
+    }
+
+    #[test]
+    fn apply_correction_maps_runtime_error_to_cli_error() {
+        let mut poster = FakePoster {
+            fail_with_runtime_error: true,
+            ..FakePoster::default()
+        };
+        let err = apply_correction("txn-9", "fix memo", &mut poster).expect_err("runtime error");
+
+        assert_eq!(
+            err.to_string(),
+            "command 'txn.correct' failed at runtime: missing columns: expected 5, found 2"
         );
     }
 }

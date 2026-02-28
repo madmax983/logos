@@ -111,6 +111,10 @@ fn execute_txn_command(command: &TxnCommand) -> Result<(), CliError> {
             credit_account,
             amount_cents,
         } => commands::txn::add(description, debit_account, credit_account, *amount_cents),
+        TxnCommand::Correct {
+            supersedes_id,
+            reason,
+        } => commands::txn::correct(supersedes_id, reason),
     }
 }
 
@@ -142,6 +146,27 @@ fn execute_import_command(command: &ImportCommand) -> Result<(), CliError> {
             dry_run,
             ocr,
         } => commands::import::pdf(file_path, account, *dry_run, *ocr),
+        ImportCommand::Csv {
+            file_path,
+            source_id,
+            timestamp_idx,
+            amount_idx,
+            memo_idx,
+            account_idx,
+            category_idx,
+            skip_header,
+            dry_run,
+        } => commands::import::csv(
+            file_path,
+            source_id.as_deref(),
+            *timestamp_idx,
+            *amount_idx,
+            *memo_idx,
+            *account_idx,
+            *category_idx,
+            *skip_header,
+            *dry_run,
+        ),
     }
 }
 
@@ -317,10 +342,12 @@ impl Command {
             Self::Aletheia(AletheiaCommand::Start) => "aletheia.start",
             Self::Aletheia(AletheiaCommand::Status) => "aletheia.status",
             Self::Txn(TxnCommand::Add { .. }) => "txn.add",
+            Self::Txn(TxnCommand::Correct { .. }) => "txn.correct",
             Self::Analytics(AnalyticsCommand::SnapshotCreate { .. }) => "analytics.snapshot.create",
             Self::Analytics(AnalyticsCommand::SnapshotList) => "analytics.snapshot.list",
             Self::Analytics(AnalyticsCommand::SnapshotShow { .. }) => "analytics.snapshot.show",
             Self::Import(ImportCommand::Pdf { .. }) => "import.pdf",
+            Self::Import(ImportCommand::Csv { .. }) => "import.csv",
             Self::Reconcile(ReconcileCommand::Month { .. }) => "reconcile.month",
             Self::Reconcile(ReconcileCommand::List { .. }) => "reconcile.list",
             Self::Reconcile(ReconcileCommand::Show { .. }) => "reconcile.show",
@@ -361,6 +388,10 @@ pub enum TxnCommand {
         credit_account: String,
         amount_cents: i64,
     },
+    Correct {
+        supersedes_id: String,
+        reason: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -384,6 +415,17 @@ pub enum ImportCommand {
         account: String,
         dry_run: bool,
         ocr: bool,
+    },
+    Csv {
+        file_path: String,
+        source_id: Option<String>,
+        timestamp_idx: usize,
+        amount_idx: usize,
+        memo_idx: usize,
+        account_idx: usize,
+        category_idx: usize,
+        skip_header: bool,
+        dry_run: bool,
     },
 }
 
@@ -512,6 +554,16 @@ fn parse_txn(args: &[String]) -> Result<ParsedArgs, CliError> {
                     debit_account,
                     credit_account,
                     amount_cents,
+                }),
+            })
+        }
+        "correct" => {
+            let supersedes_id = parse_flag_value(&args[2..], "--supersedes-id")?;
+            let reason = parse_flag_value(&args[2..], "--reason")?;
+            Ok(ParsedArgs {
+                command: Command::Txn(TxnCommand::Correct {
+                    supersedes_id,
+                    reason,
                 }),
             })
         }
@@ -660,6 +712,30 @@ fn parse_import(args: &[String]) -> Result<ParsedArgs, CliError> {
                     account,
                     dry_run,
                     ocr,
+                }),
+            })
+        }
+        "csv" => {
+            let file_path = parse_flag_value(&args[2..], "--file")?;
+            let source_id = parse_optional_flag_value(&args[2..], "--source-id")?;
+            let timestamp_idx = parse_optional_usize_flag(&args[2..], "--timestamp-idx", 0)?;
+            let amount_idx = parse_optional_usize_flag(&args[2..], "--amount-idx", 1)?;
+            let memo_idx = parse_optional_usize_flag(&args[2..], "--memo-idx", 2)?;
+            let account_idx = parse_optional_usize_flag(&args[2..], "--account-idx", 3)?;
+            let category_idx = parse_optional_usize_flag(&args[2..], "--category-idx", 4)?;
+            let skip_header = parse_flag_present(&args[2..], "--skip-header");
+            let dry_run = parse_flag_present(&args[2..], "--dry-run");
+            Ok(ParsedArgs {
+                command: Command::Import(ImportCommand::Csv {
+                    file_path,
+                    source_id,
+                    timestamp_idx,
+                    amount_idx,
+                    memo_idx,
+                    account_idx,
+                    category_idx,
+                    skip_header,
+                    dry_run,
                 }),
             })
         }
@@ -950,6 +1026,21 @@ fn parse_optional_u8_flag(args: &[String], flag: &str, default_value: u8) -> Res
             flag: flag.to_owned(),
             value,
         })
+    })
+}
+
+fn parse_optional_usize_flag(
+    args: &[String],
+    flag: &str,
+    default_value: usize,
+) -> Result<usize, CliError> {
+    parse_optional_flag_value(args, flag)?.map_or(Ok(default_value), |value| {
+        value
+            .parse::<usize>()
+            .map_err(|_| CliError::InvalidArgValue {
+                flag: flag.to_owned(),
+                value,
+            })
     })
 }
 

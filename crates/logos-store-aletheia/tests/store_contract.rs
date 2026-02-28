@@ -364,6 +364,40 @@ fn open_persists_month_close_across_reopen() {
 }
 
 #[test]
+fn atomic_reconcile_and_close_rejects_unknown_transaction_without_partial_persist() {
+    let path = temp_store_path("atomic-reconcile-close");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let err = store
+            .write_reconciliation_run_and_month_close(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                10_000,
+                110_000,
+                110_000,
+                0,
+                true,
+                1,
+                10_000,
+                0,
+                &[TransactionId::new("txn-missing")],
+                None,
+            )
+            .expect_err("unknown transaction must fail");
+        assert!(err.to_string().contains("txn-missing"));
+        assert_eq!(store.reconciliation_run_count(), 0);
+        assert_eq!(store.month_close_count(), 0);
+    }
+
+    let reopened = AletheiaStore::open(&path).expect("reopen");
+    assert_eq!(reopened.reconciliation_run_count(), 0);
+    assert_eq!(reopened.month_close_count(), 0);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
 fn embedded_mapping_writes_transaction_and_posting_graph_entities() {
     let path = temp_store_path("mapping-transaction");
     {

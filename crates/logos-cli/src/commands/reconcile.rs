@@ -17,7 +17,7 @@ pub fn month(
         message: format!("runtime initialization failed: {err}"),
     })?;
     let resolved_month_key =
-        month_key.map_or_else(CliRuntime::current_month_key_utc, str::to_owned);
+        month_key.map_or_else(CliRuntime::current_month_key_local, str::to_owned);
     let run = runtime
         .reconcile_and_persist_month_for(
             checking_account,

@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use blake3::Hasher;
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, Utc};
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
 use logos_import::{
     CsvMapping, ImportError, ImportRecord, deterministic_fingerprint, parse_pdf_statement_file,
@@ -84,11 +85,14 @@ pub struct MonthReconciliation {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PdfImportSummary {
+pub struct ImportSummary {
     imported_count: usize,
     duplicate_count: usize,
     dry_run: bool,
 }
+
+pub type PdfImportSummary = ImportSummary;
+pub type CsvImportSummary = ImportSummary;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthAutopilotRequest {
@@ -114,7 +118,7 @@ pub struct MonthAutopilotSummary {
     close: StoredMonthClose,
 }
 
-impl PdfImportSummary {
+impl ImportSummary {
     #[must_use]
     pub const fn new(imported_count: usize, duplicate_count: usize, dry_run: bool) -> Self {
         Self {
@@ -480,15 +484,28 @@ impl CliRuntime {
         credit_account: &str,
         amount_cents: i64,
     ) -> Result<TransactionId, RuntimeError> {
-        let builder = TransactionBuilder::new(description)
-            .posting(Posting::debit(debit_account, amount_cents))
-            .posting(Posting::credit(credit_account, amount_cents));
+        let builder = build_double_entry(description, debit_account, credit_account, amount_cents);
         Ok(self.store.write_transaction(builder)?)
     }
 
     #[must_use]
     pub fn transaction_exists(&self, id: &TransactionId) -> bool {
         self.store.has_transaction(id)
+    }
+
+    /// Returns transactions visible at a bi-temporal as-of point (valid-time, tx-time).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when underlying as-of query execution fails.
+    pub fn transactions_as_of_us(
+        &self,
+        as_of_valid_time_us: i64,
+        as_of_tx_time_us: i64,
+    ) -> Result<Vec<StoredTransaction>, RuntimeError> {
+        self.store
+            .transactions_as_of_us(as_of_valid_time_us, as_of_tx_time_us)
+            .map_err(RuntimeError::from)
     }
 
     #[must_use]
@@ -809,20 +826,25 @@ impl CliRuntime {
                 ),
             });
         }
-
-        let run = self.reconcile_and_persist_month_for(
-            request.checking_account(),
+        let reconciled_txn_ids = self
+            .reconciliation_transaction_ids_for(request.checking_account(), request.month_key());
+        let matched_postings = i64::try_from(preview.matched_postings()).unwrap_or(i64::MAX);
+        let (run, close) = self.store.write_reconciliation_run_and_month_close(
             request.month_key(),
+            request.checking_account(),
             request.opening_balance_cents(),
+            preview.ledger_delta_cents(),
+            preview.expected_closing_balance_cents(),
             request.closing_balance_cents(),
-        )?;
-        let report = self.month_report_for(request.checking_account(), request.month_key());
-        let close = self.close_month(
-            request.month_key(),
-            request.checking_account(),
-            run.run_id(),
+            preview.variance_cents(),
+            preview.is_reconciled(),
+            matched_postings,
+            preview.inflow_cents(),
+            preview.outflow_cents(),
+            &reconciled_txn_ids,
             request.analytics_artifact_id(),
         )?;
+        let report = self.month_report_for(request.checking_account(), request.month_key());
 
         Ok(MonthAutopilotSummary::new(
             request.month_key(),
@@ -867,6 +889,11 @@ impl CliRuntime {
         .map_err(|message| RuntimeError::Analytics { message })?;
         project_rsu_budget_plan(month_key, &input)
             .map_err(|message| RuntimeError::Analytics { message })
+    }
+
+    #[must_use]
+    pub fn current_month_key_local() -> String {
+        Local::now().format("%Y-%m").to_string()
     }
 
     #[must_use]
@@ -916,6 +943,89 @@ impl CliRuntime {
         )?;
         self.imported_records = self.imported_records.saturating_add(1);
         Ok(true)
+    }
+
+    /// Imports transaction rows from a CSV statement file.
+    ///
+    /// When `dry_run` is true, rows are parsed and deduplicated but not posted.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when file IO, row parsing, or posting fails.
+    pub fn import_csv_statement(
+        &mut self,
+        path: impl AsRef<Path>,
+        mapping: &CsvMapping,
+        dry_run: bool,
+        skip_header: bool,
+    ) -> Result<CsvImportSummary, RuntimeError> {
+        let source_uri = path.as_ref().display().to_string();
+        let csv_text = fs::read_to_string(&path).map_err(|err| ImportError::FileReadFailed {
+            path: source_uri.clone(),
+            message: err.to_string(),
+        })?;
+
+        let mut imported_count = 0_usize;
+        let mut duplicate_count = 0_usize;
+        let mut seen_in_call: HashSet<String> = HashSet::new();
+        let mut imported_records = Vec::new();
+        let mut imported_keys = Vec::new();
+
+        for (line_idx, row) in csv_text.lines().enumerate() {
+            if skip_header && line_idx == 0 {
+                continue;
+            }
+            if row.trim().is_empty() {
+                continue;
+            }
+
+            let record = parse_simple_csv_row(row, mapping)?;
+            let content_hash_key = import_content_hash_key(deterministic_fingerprint(&record));
+            let seen_previously = self.store.has_import_record_content_hash(&content_hash_key);
+            let seen_in_batch = !seen_in_call.insert(content_hash_key.clone());
+            if seen_previously || seen_in_batch {
+                duplicate_count = duplicate_count.saturating_add(1);
+                continue;
+            }
+
+            imported_count = imported_count.saturating_add(1);
+            if dry_run {
+                continue;
+            }
+
+            let txn_id = self.post_import_record(&record)?;
+            imported_records.push(NewImportRecord::with_statement_line(
+                &content_hash_key,
+                Some(&txn_id),
+                &source_uri,
+                record.timestamp(),
+                record.memo(),
+                record.amount_cents(),
+            ));
+            imported_keys.push(content_hash_key);
+            self.imported_records = self.imported_records.saturating_add(1);
+        }
+
+        if !dry_run {
+            let batch_key =
+                import_batch_key("csv-statement", &source_uri, dry_run, false, &imported_keys);
+            let duplicate_count = i64::try_from(duplicate_count).unwrap_or(i64::MAX);
+            self.store.write_import_batch(
+                "csv-statement",
+                &source_uri,
+                &batch_key,
+                duplicate_count,
+                dry_run,
+                false,
+                &imported_records,
+            )?;
+        }
+
+        Ok(CsvImportSummary::new(
+            imported_count,
+            duplicate_count,
+            dry_run,
+        ))
     }
 
     /// Imports transaction rows from a PDF statement.
@@ -1110,22 +1220,26 @@ impl CliRuntime {
 
     fn post_import_record(&mut self, record: &ImportRecord) -> Result<TransactionId, RuntimeError> {
         let amount = record.amount_cents();
+        let valid_from = parse_import_timestamp(record.timestamp()).map(Into::into);
         if amount > 0 {
-            return self.post_double_entry(
-                record.memo(),
-                record.account(),
-                record.category(),
-                amount,
-            );
+            let builder =
+                build_double_entry(record.memo(), record.account(), record.category(), amount);
+            return self
+                .store
+                .write_transaction_with_valid_time(builder, valid_from)
+                .map_err(RuntimeError::from);
         }
 
         let debit_amount = amount.checked_abs().ok_or(ImportError::InvalidAmount)?;
-        self.post_double_entry(
+        let builder = build_double_entry(
             record.memo(),
             record.category(),
             record.account(),
             debit_amount,
-        )
+        );
+        self.store
+            .write_transaction_with_valid_time(builder, valid_from)
+            .map_err(RuntimeError::from)
     }
 
     fn expense_total_for_month(&self, month_key: &str, expense_account_prefix: &str) -> i64 {
@@ -1315,6 +1429,40 @@ fn write_rows_to_parquet(
             ),
         })?;
     Ok(())
+}
+
+fn build_double_entry(
+    description: &str,
+    debit_account: &str,
+    credit_account: &str,
+    amount_cents: i64,
+) -> TransactionBuilder {
+    TransactionBuilder::new(description)
+        .posting(Posting::debit(debit_account, amount_cents))
+        .posting(Posting::credit(credit_account, amount_cents))
+}
+
+fn parse_import_timestamp(timestamp: &str) -> Option<i64> {
+    let trimmed = timestamp.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    if let Ok(dt) = DateTime::parse_from_rfc3339(trimmed) {
+        return Some(dt.timestamp_micros());
+    }
+    if let Ok(dt) = NaiveDateTime::parse_from_str(trimmed, "%Y-%m-%dT%H:%M:%S") {
+        return Some(DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc).timestamp_micros());
+    }
+    if let Ok(date) = NaiveDate::parse_from_str(trimmed, "%Y-%m-%d") {
+        let date_time = date.and_hms_opt(0, 0, 0)?;
+        return Some(DateTime::<Utc>::from_naive_utc_and_offset(date_time, Utc).timestamp_micros());
+    }
+    if let Ok(micros) = trimmed.parse::<i64>() {
+        return Some(micros);
+    }
+
+    None
 }
 
 fn transaction_in_month(stored: &StoredTransaction, month_key: &str) -> bool {

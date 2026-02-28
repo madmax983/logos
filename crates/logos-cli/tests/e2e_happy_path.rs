@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use chrono::DateTime;
 use logos_cli::runtime::{CliRuntime, MonthAutopilotRequest};
 use logos_core::TransactionId;
 use logos_import::CsvMapping;
@@ -23,6 +24,12 @@ fn cleanup_file(path: &Path) {
     if path.exists() {
         let _ = std::fs::remove_file(path);
     }
+}
+
+fn timestamp_micros(iso8601: &str) -> i64 {
+    DateTime::parse_from_rfc3339(iso8601)
+        .expect("parse timestamp")
+        .timestamp_micros()
 }
 
 #[test]
@@ -502,6 +509,102 @@ fn e2e_pdf_import_dry_run_does_not_post_transactions() {
     assert_eq!(runtime.register_balance_for("assets:checking"), 0);
 
     cleanup_file(Path::new(&statement_path));
+}
+
+#[test]
+fn e2e_csv_import_posts_transactions_and_deduplicates() {
+    let mut runtime = CliRuntime::new_in_memory();
+    let csv_path = temp_runtime_path("csv-import")
+        .with_extension("csv")
+        .to_string_lossy()
+        .to_string();
+    std::fs::write(
+        &csv_path,
+        "timestamp,amount,memo,account,category\n2026-02-01T00:00:00,-1234,COFFEE SHOP,assets:checking,expenses:food\n2026-02-02T00:00:00,100000,PAYROLL,assets:checking,income:salary\n",
+    )
+    .expect("write csv");
+    let mapping = CsvMapping {
+        source_id: "checking.csv".to_owned(),
+        ..CsvMapping::default()
+    };
+
+    let summary = runtime
+        .import_csv_statement(&csv_path, &mapping, false, true)
+        .expect("csv import");
+    assert_eq!(summary.imported_count(), 2);
+    assert_eq!(summary.duplicate_count(), 0);
+    assert_eq!(runtime.register_balance_for("assets:checking"), 98_766);
+
+    let duplicate_summary = runtime
+        .import_csv_statement(&csv_path, &mapping, false, true)
+        .expect("csv reimport");
+    assert_eq!(duplicate_summary.imported_count(), 0);
+    assert_eq!(duplicate_summary.duplicate_count(), 2);
+
+    cleanup_file(Path::new(&csv_path));
+}
+
+#[test]
+fn e2e_import_backdates_valid_time_from_statement_timestamp() {
+    let ledger_path = temp_runtime_path("csv-valid-time-ledger");
+    let mut runtime = CliRuntime::open(&ledger_path).expect("open runtime");
+    let csv_path = temp_runtime_path("csv-valid-time")
+        .with_extension("csv")
+        .to_string_lossy()
+        .to_string();
+    std::fs::write(
+        &csv_path,
+        "timestamp,amount,memo,account,category\n2026-02-01T00:00:00,-1234,COFFEE SHOP,assets:checking,expenses:food\n",
+    )
+    .expect("write csv");
+    let mapping = CsvMapping::default();
+
+    runtime
+        .import_csv_statement(&csv_path, &mapping, false, true)
+        .expect("import csv");
+
+    let tx_now_us = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_micros();
+    let tx_now_us = i64::try_from(tx_now_us).unwrap_or(i64::MAX);
+    let before_valid_us = timestamp_micros("2026-01-31T23:59:59Z");
+    let at_valid_us = timestamp_micros("2026-02-01T00:00:00Z");
+
+    let before = runtime
+        .transactions_as_of_us(before_valid_us, tx_now_us)
+        .expect("as-of before");
+    assert!(before.is_empty());
+
+    let at = runtime
+        .transactions_as_of_us(at_valid_us, tx_now_us)
+        .expect("as-of at");
+    assert_eq!(at.len(), 1);
+
+    cleanup_file(Path::new(&csv_path));
+    cleanup_runtime_path(&ledger_path);
+}
+
+#[test]
+fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
+    let mut runtime = CliRuntime::new_in_memory();
+    runtime
+        .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
+        .expect("post");
+    let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 110_000)
+        .with_analytics_artifact_id("artifact-missing")
+        .with_confirm_close(true);
+
+    let err = runtime
+        .run_month_autopilot(&request)
+        .expect_err("autopilot should fail");
+    assert!(err.to_string().contains("unknown artifact"));
+    assert_eq!(runtime.reconciliation_run_count(), 0);
+    assert!(
+        runtime
+            .month_close_for_scope("2026-02", "assets:checking")
+            .is_none()
+    );
 }
 
 #[test]

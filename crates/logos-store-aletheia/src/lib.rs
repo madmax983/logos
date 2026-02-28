@@ -822,6 +822,183 @@ impl AletheiaStore {
         Ok(statement_line_ids)
     }
 
+    #[allow(clippy::too_many_lines)]
+    pub(crate) fn persist_reconciliation_run_and_month_close_graph(
+        &mut self,
+        run: &StoredReconciliationRun,
+        close: &StoredMonthClose,
+        reconciled_txn_ids: &[TransactionId],
+    ) -> Result<Vec<String>, StoreError> {
+        let statement_line_ids = collect_statement_line_ids_for_transactions(
+            &self.statement_line_ids_by_txn,
+            reconciled_txn_ids,
+        );
+
+        let Some(embedded) = self.embedded.as_mut() else {
+            return Ok(statement_line_ids);
+        };
+
+        if close.reconciliation_run_id() != run.run_id() {
+            return Err(StoreError::PersistFailed {
+                message: format!(
+                    "month close '{}' references reconciliation run '{}' but payload run is '{}'",
+                    close.close_id(),
+                    close.reconciliation_run_id(),
+                    run.run_id()
+                ),
+            });
+        }
+
+        let mut tx = embedded.db.write_transaction().map_err(|err| {
+            map_persist_error(
+                "unable to start reconciliation + month close write transaction",
+                err,
+            )
+        })?;
+        let run_node = tx
+            .create_node(
+                LABEL_LEDGER_RECONCILIATION_RUN,
+                PropertyMapBuilder::new()
+                    .insert(PROP_RECONCILIATION_RUN_ID, run.run_id())
+                    .insert(PROP_MONTH_KEY, run.month_key())
+                    .insert(PROP_RECONCILIATION_CHECKING_ACCOUNT, run.checking_account())
+                    .insert(
+                        PROP_RECONCILIATION_OPENING_BALANCE_CENTS,
+                        run.opening_balance_cents(),
+                    )
+                    .insert(
+                        PROP_RECONCILIATION_LEDGER_DELTA_CENTS,
+                        run.ledger_delta_cents(),
+                    )
+                    .insert(
+                        PROP_RECONCILIATION_EXPECTED_CLOSING_BALANCE_CENTS,
+                        run.expected_closing_balance_cents(),
+                    )
+                    .insert(
+                        PROP_RECONCILIATION_STATEMENT_CLOSING_BALANCE_CENTS,
+                        run.statement_closing_balance_cents(),
+                    )
+                    .insert(PROP_RECONCILIATION_VARIANCE_CENTS, run.variance_cents())
+                    .insert(PROP_RECONCILIATION_RECONCILED, i64::from(run.reconciled()))
+                    .insert(PROP_RECONCILIATION_MATCHED_POSTINGS, run.matched_postings())
+                    .insert(
+                        PROP_RECONCILIATION_MATCHED_TRANSACTION_COUNT,
+                        run.matched_transaction_count(),
+                    )
+                    .insert(PROP_RECONCILIATION_INFLOW_CENTS, run.inflow_cents())
+                    .insert(PROP_RECONCILIATION_OUTFLOW_CENTS, run.outflow_cents())
+                    .insert(
+                        PROP_RECONCILIATION_CREATED_AT_US,
+                        run.created_at().wallclock(),
+                    )
+                    .build(),
+            )
+            .map_err(|err| {
+                map_persist_error("unable to create LedgerReconciliationRun node", err)
+            })?;
+
+        for txn_id in reconciled_txn_ids {
+            let txn_node = embedded
+                .transaction_nodes
+                .get(txn_id)
+                .copied()
+                .ok_or_else(|| StoreError::UnknownTransaction {
+                    transaction_id: txn_id.clone(),
+                })?;
+            tx.create_edge(
+                run_node,
+                txn_node,
+                EDGE_RECONCILES_TXN,
+                PropertyMapBuilder::new().build(),
+            )
+            .map_err(|err| map_persist_error("unable to create RECONCILES_TXN edge", err))?;
+        }
+
+        for line_id in &statement_line_ids {
+            let line_node = embedded
+                .statement_line_nodes
+                .get(line_id)
+                .copied()
+                .ok_or_else(|| StoreError::PersistFailed {
+                    message: format!(
+                        "reconciliation run '{}' references unknown statement line '{}'",
+                        run.run_id(),
+                        line_id
+                    ),
+                })?;
+            tx.create_edge(
+                run_node,
+                line_node,
+                EDGE_RECONCILES_STMT_LINE,
+                PropertyMapBuilder::new().build(),
+            )
+            .map_err(|err| map_persist_error("unable to create RECONCILES_STMT_LINE edge", err))?;
+        }
+
+        let close_node = tx
+            .create_node(
+                LABEL_LEDGER_MONTH_CLOSE,
+                PropertyMapBuilder::new()
+                    .insert(PROP_MONTH_CLOSE_ID, close.close_id())
+                    .insert(PROP_MONTH_KEY, close.month_key())
+                    .insert(
+                        PROP_RECONCILIATION_CHECKING_ACCOUNT,
+                        close.checking_account(),
+                    )
+                    .insert(
+                        PROP_MONTH_CLOSE_RECONCILIATION_RUN_ID,
+                        close.reconciliation_run_id(),
+                    )
+                    .insert(
+                        PROP_MONTH_CLOSE_ANALYTICS_ARTIFACT_ID,
+                        close.analytics_artifact_id().unwrap_or(""),
+                    )
+                    .insert(PROP_MONTH_CLOSE_CLOSED_AT_US, close.closed_at().wallclock())
+                    .build(),
+            )
+            .map_err(|err| map_persist_error("unable to create LedgerMonthClose node", err))?;
+        tx.create_edge(
+            close_node,
+            run_node,
+            EDGE_CLOSES_RECONCILIATION_RUN,
+            PropertyMapBuilder::new().build(),
+        )
+        .map_err(|err| map_persist_error("unable to create CLOSES_RECONCILIATION_RUN edge", err))?;
+
+        if let Some(artifact_id) = close.analytics_artifact_id() {
+            let artifact_node = embedded
+                .analytics_artifact_nodes
+                .get(artifact_id)
+                .copied()
+                .ok_or_else(|| StoreError::UnknownArtifact {
+                    artifact_id: artifact_id.to_owned(),
+                })?;
+            tx.create_edge(
+                close_node,
+                artifact_node,
+                EDGE_CLOSES_ANALYTICS_ARTIFACT,
+                PropertyMapBuilder::new().build(),
+            )
+            .map_err(|err| {
+                map_persist_error("unable to create CLOSES_ANALYTICS_ARTIFACT edge", err)
+            })?;
+        }
+
+        tx.commit().map_err(|err| {
+            map_persist_error(
+                "unable to commit embedded reconciliation + month close write",
+                err,
+            )
+        })?;
+        embedded
+            .reconciliation_run_nodes
+            .insert(run.run_id().to_owned(), run_node);
+        embedded
+            .month_close_nodes
+            .insert(close.close_id().to_owned(), close_node);
+        Ok(statement_line_ids)
+    }
+
     pub(crate) fn persist_month_close_graph(
         &mut self,
         close: &StoredMonthClose,

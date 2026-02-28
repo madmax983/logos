@@ -24,7 +24,7 @@ pub fn month(checking_account: &str, month_key: Option<&str>) -> Result<(), CliE
         message: format!("runtime initialization failed: {err}"),
     })?;
     let resolved_month_key =
-        month_key.map_or_else(CliRuntime::current_month_key_utc, str::to_owned);
+        month_key.map_or_else(CliRuntime::current_month_key_local, str::to_owned);
     let output = render_month_output(&runtime, checking_account, &resolved_month_key);
     println!("{output}");
     Ok(())

@@ -36,7 +36,7 @@ pub fn set(
         message: format!("runtime initialization failed: {err}"),
     })?;
     let resolved_month_key =
-        month_key.map_or_else(CliRuntime::current_month_key_utc, str::to_owned);
+        month_key.map_or_else(CliRuntime::current_month_key_local, str::to_owned);
     runtime
         .set_budget_target_for_month(&resolved_month_key, expense_account_prefix, budget_cents)
         .map_err(|err| CliError::CommandRuntimeFailed {
@@ -75,7 +75,7 @@ pub fn rsu_plan(
         message: format!("runtime initialization failed: {err}"),
     })?;
     let resolved_month_key =
-        month_key.map_or_else(CliRuntime::current_month_key_utc, str::to_owned);
+        month_key.map_or_else(CliRuntime::current_month_key_local, str::to_owned);
     let plan = runtime
         .plan_rsu_budget_for_month(
             &resolved_month_key,

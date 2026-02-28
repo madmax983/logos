@@ -357,6 +357,112 @@ impl AletheiaStore {
         Ok(run)
     }
 
+    /// Atomically writes reconciliation and month close evidence in one append-only unit.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when metadata is invalid, references are unknown, scope is already closed,
+    /// or a single embedded transaction cannot be committed.
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_reconciliation_run_and_month_close(
+        &mut self,
+        month_key: &str,
+        checking_account: &str,
+        opening_balance_cents: i64,
+        ledger_delta_cents: i64,
+        expected_closing_balance_cents: i64,
+        statement_closing_balance_cents: i64,
+        variance_cents: i64,
+        reconciled: bool,
+        matched_postings: i64,
+        inflow_cents: i64,
+        outflow_cents: i64,
+        reconciled_txn_ids: &[TransactionId],
+        analytics_artifact_id: Option<&str>,
+    ) -> Result<(StoredReconciliationRun, StoredMonthClose), StoreError> {
+        if month_key.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "month_key must not be empty".to_owned(),
+            });
+        }
+        if checking_account.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "checking_account must not be empty".to_owned(),
+            });
+        }
+        if matched_postings < 0 {
+            return Err(StoreError::PersistFailed {
+                message: format!("matched_postings must be non-negative, got {matched_postings}"),
+            });
+        }
+        if inflow_cents < 0 {
+            return Err(StoreError::PersistFailed {
+                message: format!("inflow_cents must be non-negative, got {inflow_cents}"),
+            });
+        }
+        if outflow_cents < 0 {
+            return Err(StoreError::PersistFailed {
+                message: format!("outflow_cents must be non-negative, got {outflow_cents}"),
+            });
+        }
+        if let Some(artifact_id) = analytics_artifact_id {
+            if !self.analytics_artifacts.contains_key(artifact_id) {
+                return Err(StoreError::UnknownArtifact {
+                    artifact_id: artifact_id.to_owned(),
+                });
+            }
+        }
+        let scope_key = (month_key.to_owned(), checking_account.to_owned());
+        if let Some(existing_close_id) = self.month_close_by_scope.get(&scope_key) {
+            return Err(StoreError::PersistFailed {
+                message: format!(
+                    "month '{month_key}' for account '{checking_account}' is already closed by '{existing_close_id}'"
+                ),
+            });
+        }
+
+        let matched_transaction_count = i64::try_from(reconciled_txn_ids.len()).unwrap_or(i64::MAX);
+        let run_id = self.next_reconciliation_run_id();
+        let created_at = aletheiadb::time::now();
+        let run = StoredReconciliationRun::new(
+            &run_id,
+            month_key,
+            checking_account,
+            opening_balance_cents,
+            ledger_delta_cents,
+            expected_closing_balance_cents,
+            statement_closing_balance_cents,
+            variance_cents,
+            reconciled,
+            matched_postings,
+            matched_transaction_count,
+            inflow_cents,
+            outflow_cents,
+            created_at,
+        );
+
+        let close_id = self.next_month_close_id();
+        let closed_at = aletheiadb::time::now();
+        let close = StoredMonthClose::new(
+            &close_id,
+            month_key,
+            checking_account,
+            run.run_id(),
+            analytics_artifact_id,
+            closed_at,
+        );
+
+        let statement_line_ids = self.persist_reconciliation_run_and_month_close_graph(
+            &run,
+            &close,
+            reconciled_txn_ids,
+        )?;
+        self.persist_reconciliation_run(run.clone());
+        self.persist_reconciliation_statement_line_ids(run.run_id(), statement_line_ids);
+        self.persist_month_close(close.clone());
+        Ok((run, close))
+    }
+
     /// Writes an immutable month-close record that links to reconciliation and optional analytics evidence.
     ///
     /// # Errors

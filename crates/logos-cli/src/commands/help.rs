@@ -7,8 +7,10 @@ Commands:
   help [command]                    Show general or command help
   aletheia <subcommand>             Manage local AletheiaDB instance
   txn add ...                       Add a transaction
+  txn correct ...                   Append correction metadata for an existing transaction
   analytics snapshot ...            Manage immutable analytics artifacts
   import pdf ...                    Import statement rows from a PDF
+  import csv ...                    Import statement rows from a CSV file
   reconcile month                   Reconcile month against statement balances
   month autopilot                   Run import/reconcile/report/close workflow
   close month                       Freeze a month scope with evidence links
@@ -21,6 +23,7 @@ Usage: ledger txn <subcommand> [options]
 
 Subcommands:
   add --description <text> --debit-account <name> --credit-account <name> --amount-cents <i64>
+  correct --supersedes-id <txn-id> --reason <text>
 
 Environment:
   LOGOS_DB_PATH                    Override embedded ledger store path
@@ -51,7 +54,10 @@ Usage: ledger import <subcommand> [options]
 
 Subcommands:
   pdf --file <path> --account <name> [--dry-run] [--ocr]
-                                      Import statement rows from PDF text, optionally OCR scanned pages
+                                       Import statement rows from PDF text, optionally OCR scanned pages
+  csv --file <path> [--source-id <id>] [--timestamp-idx <usize>] [--amount-idx <usize>] [--memo-idx <usize>]
+      [--account-idx <usize>] [--category-idx <usize>] [--skip-header] [--dry-run]
+                                       Import statement rows from CSV and persist imported statement evidence
 ";
 
 const RECONCILE_HELP_TEXT: &str = "\
