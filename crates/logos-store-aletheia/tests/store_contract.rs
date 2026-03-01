@@ -1093,7 +1093,10 @@ fn write_reconciliation_run_and_month_close_fails_with_unknown_artifact() {
         Some("unknown-artifact-id"),
     );
     assert!(res.is_err());
-    assert!(matches!(res.unwrap_err(), StoreError::UnknownArtifact { .. }));
+    assert!(matches!(
+        res.unwrap_err(),
+        StoreError::UnknownArtifact { .. }
+    ));
 
     cleanup_store_path(&path);
 }
