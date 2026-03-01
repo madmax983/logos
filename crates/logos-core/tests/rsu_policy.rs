@@ -1,4 +1,4 @@
-use logos_core::{AllocationPolicy, HaircutTierTable, forecast_value_cents};
+use logos_core::{forecast_value_cents, AllocationPolicy, HaircutTierTable};
 
 #[test]
 fn conservative_haircut_tiers_are_selected_by_horizon() {

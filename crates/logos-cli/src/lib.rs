@@ -1,8 +1,8 @@
-pub mod args;
-pub mod commands;
-pub mod runtime;
+pub(crate) mod args;
+pub(crate) mod commands;
+pub(crate) mod runtime;
 
-pub use args::{CliError, ParsedArgs, parse_args};
+pub use args::{parse_args, CliError, ParsedArgs};
 
 /// Runs the CLI using the provided process arguments.
 ///

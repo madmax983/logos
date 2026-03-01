@@ -1,0 +1,3 @@
+**Leaky Abstractions in logos-store-aletheia**
+**Tangle:** `logos-store-aletheia` exposed `model`, `read`, and `write` modules as `pub mod`. This leaked the internal structure of the store, allowing downstream crates to depend on implementation details. Downstream crates used paths like `logos_store_aletheia::model::StoredTransaction`.
+**Blueprint:** Converted `pub mod` to `pub(crate) mod` (or private `mod`) for internal modules across the workspace (`logos-store-aletheia`, `logos-tui`, `logos-cli`, `logos-reporting`, `logos-import`). Used `pub use` at the crate roots to explicitly export only necessary types, creating a clear Facade pattern and updating all call sites to use the top-level exports.

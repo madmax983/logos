@@ -150,7 +150,7 @@ fn apply_correction(
 
 #[cfg(test)]
 mod tests {
-    use super::{TxnPoster, apply_correction, post_double_entry};
+    use super::{apply_correction, post_double_entry, TxnPoster};
     use crate::runtime::RuntimeError;
     use logos_core::TransactionId;
     use logos_import::ImportError;

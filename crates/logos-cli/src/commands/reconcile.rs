@@ -1,5 +1,5 @@
 use crate::{args::CliError, runtime::CliRuntime};
-use logos_store_aletheia::model::StoredReconciliationRun;
+use logos_store_aletheia::StoredReconciliationRun;
 
 /// Handles `ledger reconcile month`.
 ///
@@ -152,7 +152,7 @@ fn render_list_output(
 #[cfg(test)]
 mod tests {
     use super::{render_list_output, render_month_output, render_show_output};
-    use logos_store_aletheia::model::StoredReconciliationRun;
+    use logos_store_aletheia::StoredReconciliationRun;
 
     #[test]
     fn render_month_output_is_deterministic() {

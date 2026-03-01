@@ -47,7 +47,7 @@ fn render_month_output(
 
 #[cfg(test)]
 mod tests {
-    use super::{ReportRuntime, render_month_output};
+    use super::{render_month_output, ReportRuntime};
     use crate::runtime::MonthReport;
 
     struct FakeReportRuntime {

@@ -146,8 +146,8 @@ const fn scenario_name(key: ScenarioKey) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::{BudgetRuntime, render_budget_set_output, render_rsu_plan_output};
-    use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
+    use super::{render_budget_set_output, render_rsu_plan_output, BudgetRuntime};
+    use logos_reporting::{project_rsu_budget_plan, RsuBudgetPlanInput, ScenarioPriceInputs};
 
     struct FakeBudgetRuntime {
         variance_cents: i64,

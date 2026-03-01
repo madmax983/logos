@@ -1,4 +1,4 @@
-use logos_core::{HaircutTierTable, forecast_value_cents};
+use logos_core::{forecast_value_cents, HaircutTierTable};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScenarioKey {

@@ -89,7 +89,7 @@ pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
 
 fn render_snapshot_manifest(
     prefix: &str,
-    manifest: &logos_store_aletheia::model::StoredAnalyticsArtifactManifest,
+    manifest: &logos_store_aletheia::StoredAnalyticsArtifactManifest,
 ) -> String {
     let supersedes = manifest.supersedes_artifact_id().unwrap_or("");
     format!(
@@ -110,7 +110,7 @@ fn render_snapshot_manifest(
 #[cfg(test)]
 mod tests {
     use super::render_snapshot_manifest;
-    use logos_store_aletheia::model::StoredAnalyticsArtifactManifest;
+    use logos_store_aletheia::StoredAnalyticsArtifactManifest;
 
     #[test]
     fn render_snapshot_manifest_is_deterministic() {

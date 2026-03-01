@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use aletheiadb::{AletheiaDB, AletheiaDBConfig, DurabilityMode, WalConfigBuilder, time};
+use aletheiadb::{time, AletheiaDB, AletheiaDBConfig, DurabilityMode, WalConfigBuilder};
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
-use logos_store_aletheia::{AletheiaStore, StoreError, model::NewImportRecord};
+use logos_store_aletheia::{AletheiaStore, NewImportRecord, StoreError};
 
 fn temp_store_path(prefix: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -865,11 +865,10 @@ fn write_reconciliation_run_fails_with_negative_values() {
         std::slice::from_ref(&txn_id),
     );
     assert!(res.is_err());
-    assert!(
-        res.unwrap_err()
-            .to_string()
-            .contains("matched_postings must be non-negative")
-    );
+    assert!(res
+        .unwrap_err()
+        .to_string()
+        .contains("matched_postings must be non-negative"));
 
     // Negative inflow_cents
     let res = store.write_reconciliation_run(
@@ -887,11 +886,10 @@ fn write_reconciliation_run_fails_with_negative_values() {
         std::slice::from_ref(&txn_id),
     );
     assert!(res.is_err());
-    assert!(
-        res.unwrap_err()
-            .to_string()
-            .contains("inflow_cents must be non-negative")
-    );
+    assert!(res
+        .unwrap_err()
+        .to_string()
+        .contains("inflow_cents must be non-negative"));
 
     // Negative outflow_cents
     let res = store.write_reconciliation_run(
@@ -909,11 +907,10 @@ fn write_reconciliation_run_fails_with_negative_values() {
         std::slice::from_ref(&txn_id),
     );
     assert!(res.is_err());
-    assert!(
-        res.unwrap_err()
-            .to_string()
-            .contains("outflow_cents must be non-negative")
-    );
+    assert!(res
+        .unwrap_err()
+        .to_string()
+        .contains("outflow_cents must be non-negative"));
 
     cleanup_store_path(&path);
 }
@@ -947,11 +944,10 @@ fn write_reconciliation_run_and_month_close_fails_with_negative_values() {
         None,
     );
     assert!(res.is_err());
-    assert!(
-        res.unwrap_err()
-            .to_string()
-            .contains("matched_postings must be non-negative")
-    );
+    assert!(res
+        .unwrap_err()
+        .to_string()
+        .contains("matched_postings must be non-negative"));
 
     // Negative inflow_cents
     let res = store.write_reconciliation_run_and_month_close(
@@ -970,11 +966,10 @@ fn write_reconciliation_run_and_month_close_fails_with_negative_values() {
         None,
     );
     assert!(res.is_err());
-    assert!(
-        res.unwrap_err()
-            .to_string()
-            .contains("inflow_cents must be non-negative")
-    );
+    assert!(res
+        .unwrap_err()
+        .to_string()
+        .contains("inflow_cents must be non-negative"));
 
     // Negative outflow_cents
     let res = store.write_reconciliation_run_and_month_close(
@@ -993,11 +988,10 @@ fn write_reconciliation_run_and_month_close_fails_with_negative_values() {
         None,
     );
     assert!(res.is_err());
-    assert!(
-        res.unwrap_err()
-            .to_string()
-            .contains("outflow_cents must be non-negative")
-    );
+    assert!(res
+        .unwrap_err()
+        .to_string()
+        .contains("outflow_cents must be non-negative"));
 
     cleanup_store_path(&path);
 }
@@ -1093,7 +1087,10 @@ fn write_reconciliation_run_and_month_close_fails_with_unknown_artifact() {
         Some("unknown-artifact-id"),
     );
     assert!(res.is_err());
-    assert!(matches!(res.unwrap_err(), StoreError::UnknownArtifact { .. }));
+    assert!(matches!(
+        res.unwrap_err(),
+        StoreError::UnknownArtifact { .. }
+    ));
 
     cleanup_store_path(&path);
 }

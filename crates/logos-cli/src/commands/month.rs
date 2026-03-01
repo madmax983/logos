@@ -79,7 +79,7 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
 mod tests {
     use super::render_autopilot_output;
     use crate::runtime::{MonthAutopilotSummary, MonthReport};
-    use logos_store_aletheia::model::{StoredMonthClose, StoredReconciliationRun};
+    use logos_store_aletheia::{StoredMonthClose, StoredReconciliationRun};
 
     #[test]
     fn render_autopilot_output_is_deterministic() {

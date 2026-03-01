@@ -4,11 +4,11 @@ use aletheiadb::Timestamp;
 use logos_core::{Correction, TransactionBuilder, TransactionId};
 
 use crate::{
-    AletheiaStore, StoreError,
     model::{
         NewImportRecord, StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredImportBatch,
         StoredImportRecord, StoredMonthClose, StoredReconciliationRun, StoredStatementLine,
     },
+    AletheiaStore, StoreError,
 };
 
 impl AletheiaStore {

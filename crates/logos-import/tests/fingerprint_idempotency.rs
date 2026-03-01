@@ -1,4 +1,4 @@
-use logos_import::{ImportRecord, deterministic_fingerprint};
+use logos_import::{deterministic_fingerprint, ImportRecord};
 
 #[test]
 fn same_record_produces_same_fingerprint() {

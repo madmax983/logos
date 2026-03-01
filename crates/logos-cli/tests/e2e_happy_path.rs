@@ -338,11 +338,9 @@ fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
     {
         let reopened = CliRuntime::open(&path).expect("reopen");
         assert_eq!(reopened.reconciliation_run_count(), 1);
-        assert!(
-            reopened
-                .month_close_for_scope("2026-02", "assets:checking")
-                .is_some()
-        );
+        assert!(reopened
+            .month_close_for_scope("2026-02", "assets:checking")
+            .is_some());
     }
 
     cleanup_file(Path::new(&statement_path));
@@ -357,16 +355,13 @@ fn e2e_runtime_month_autopilot_requires_confirm_close() {
     let err = runtime
         .run_month_autopilot(&request)
         .expect_err("confirm-close is required");
-    assert!(
-        err.to_string()
-            .contains("requires --confirm-close to persist month close")
-    );
+    assert!(err
+        .to_string()
+        .contains("requires --confirm-close to persist month close"));
     assert_eq!(runtime.reconciliation_run_count(), 0);
-    assert!(
-        runtime
-            .month_close_for_scope("2026-02", "assets:checking")
-            .is_none()
-    );
+    assert!(runtime
+        .month_close_for_scope("2026-02", "assets:checking")
+        .is_none());
 }
 
 #[test]
@@ -600,11 +595,9 @@ fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
         .expect_err("autopilot should fail");
     assert!(err.to_string().contains("unknown artifact"));
     assert_eq!(runtime.reconciliation_run_count(), 0);
-    assert!(
-        runtime
-            .month_close_for_scope("2026-02", "assets:checking")
-            .is_none()
-    );
+    assert!(runtime
+        .month_close_for_scope("2026-02", "assets:checking")
+        .is_none());
 }
 
 #[test]
@@ -641,11 +634,9 @@ fn e2e_analytics_snapshot_manifest_and_parquet_persist_across_reopen() {
     let reopened = CliRuntime::open(&ledger_path).expect("reopen");
     let manifests = reopened.list_analytics_snapshots();
     assert_eq!(manifests.len(), 2);
-    assert!(
-        manifests
-            .iter()
-            .any(|manifest| manifest.supersedes_artifact_id().is_some())
-    );
+    assert!(manifests
+        .iter()
+        .any(|manifest| manifest.supersedes_artifact_id().is_some()));
 
     cleanup_runtime_path(&root);
 }

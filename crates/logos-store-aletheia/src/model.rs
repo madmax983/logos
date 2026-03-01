@@ -1,4 +1,4 @@
-use aletheiadb::{Timestamp, time};
+use aletheiadb::{time, Timestamp};
 use logos_core::{Correction, Transaction, TransactionId};
 
 pub(crate) const LABEL_LEDGER_TRANSACTION: &str = "LedgerTransaction";

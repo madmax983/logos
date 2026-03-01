@@ -1,4 +1,4 @@
-use logos_import::{CsvMapping, parse_simple_csv_row};
+use logos_import::{parse_simple_csv_row, CsvMapping};
 
 #[test]
 fn csv_row_is_mapped_into_import_record() {

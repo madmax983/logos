@@ -9,19 +9,19 @@ use blake3::Hasher;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, Utc};
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
 use logos_import::{
-    CsvMapping, ImportError, ImportRecord, deterministic_fingerprint, parse_pdf_statement_file,
-    parse_simple_csv_row,
+    deterministic_fingerprint, parse_pdf_statement_file, parse_simple_csv_row, CsvMapping,
+    ImportError, ImportRecord,
 };
 use logos_reporting::{
-    RegisterEntry, RsuBudgetPlan, RsuBudgetPlanInput, ScenarioPriceInputs, project_budget_variance,
-    project_cashflow, project_register_balance, project_rsu_budget_plan,
+    project_budget_variance, project_cashflow, project_register_balance, project_rsu_budget_plan,
+    RegisterEntry, RsuBudgetPlan, RsuBudgetPlanInput, ScenarioPriceInputs,
 };
 use logos_store_aletheia::{
-    AletheiaStore, StoreError,
     model::{
         NewImportRecord, StoredAnalyticsArtifactManifest, StoredMonthClose,
         StoredReconciliationRun, StoredStatementLine, StoredTransaction,
     },
+    AletheiaStore, StoreError,
 };
 use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
 
@@ -558,7 +558,7 @@ impl CliRuntime {
     ) -> Option<i64> {
         self.store
             .budget_target(month_key, expense_account_prefix)
-            .map(logos_store_aletheia::model::StoredBudgetTarget::budget_cents)
+            .map(logos_store_aletheia::StoredBudgetTarget::budget_cents)
     }
 
     #[must_use]
