@@ -78,3 +78,57 @@ impl Category {
         &self.name
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_normalize_category_group_id_from_name() {
+        let cases = vec![
+            ("Needs", "needs"),
+            (" Wants ", "wants"),
+            ("True Expenses", "true-expenses"),
+            ("  Debt Payments  ", "debt-payments"),
+            ("My-Custom-Category", "my-custom-category"),
+        ];
+
+        for (input, expected) in cases {
+            let id = CategoryGroupId::from_name(input);
+            assert_eq!(
+                id.0, expected,
+                "Expected '{input}' to normalize to '{expected}'"
+            );
+        }
+    }
+
+    #[test]
+    fn should_create_category_group_successfully() -> Result<(), &'static str> {
+        let group = CategoryGroup::new(" True Expenses ")?;
+        assert_eq!(group.name(), "True Expenses");
+        assert_eq!(group.id().0, "true-expenses");
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_error_when_category_group_name_is_empty() {
+        assert!(CategoryGroup::new("").is_err());
+        assert!(CategoryGroup::new("   ").is_err());
+    }
+
+    #[test]
+    fn should_create_category_successfully() -> Result<(), &'static str> {
+        let group_id = CategoryGroupId::from_name("Needs");
+        let category = Category::new(group_id.clone(), " Rent ")?;
+        assert_eq!(category.name(), "Rent");
+        assert_eq!(category.group_id(), &group_id);
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_error_when_category_name_is_empty() {
+        let group_id = CategoryGroupId::from_name("Needs");
+        assert!(Category::new(group_id.clone(), "").is_err());
+        assert!(Category::new(group_id, "   ").is_err());
+    }
+}
