@@ -2,7 +2,7 @@ use logos_core::domain::rsu::{AllocationPolicy, HaircutTierTable, forecast_value
 
 #[test]
 fn test_haircut_tier_table() {
-    let table = HaircutTierTable::conservative_defaults();
+    let table = HaircutTierTable::default();
     assert_eq!(table.haircut_for_days(29), 25);
     assert_eq!(table.haircut_for_days(30), 40); // Test the < 30 boundary
     assert_eq!(table.haircut_for_days(90), 40);
@@ -20,7 +20,7 @@ fn test_allocation_policy() {
 
 #[test]
 fn test_forecast_value_cents() {
-    let table = HaircutTierTable::conservative_defaults();
+    let table = HaircutTierTable::default();
     // 30 days -> 40% haircut -> 60% retained
     // 10 units @ 10000 cents = 100000 cents
     // 60% of 100000 = 60000

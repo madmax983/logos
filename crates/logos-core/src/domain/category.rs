@@ -5,6 +5,8 @@
 //! This structure helps organize expenses logically and is the foundation
 //! for the envelope budgeting feature.
 
+use crate::error::DomainError;
+
 /// A normalized identifier for a [`CategoryGroup`].
 ///
 /// It is derived from the group's name by converting to lowercase, trimming
@@ -46,10 +48,10 @@ impl CategoryGroup {
     /// # Errors
     ///
     /// Returns an error when `name` is empty after trimming.
-    pub fn new(name: &str) -> Result<Self, &'static str> {
+    pub fn new(name: &str) -> Result<Self, DomainError> {
         let trimmed = name.trim();
         if trimmed.is_empty() {
-            return Err("category group name cannot be empty");
+            return Err(DomainError::EmptyCategoryGroupName);
         }
 
         Ok(Self {
@@ -84,10 +86,10 @@ impl Category {
     /// # Errors
     ///
     /// Returns an error when `name` is empty after trimming.
-    pub fn new(group_id: CategoryGroupId, name: &str) -> Result<Self, &'static str> {
+    pub fn new(group_id: CategoryGroupId, name: &str) -> Result<Self, DomainError> {
         let trimmed = name.trim();
         if trimmed.is_empty() {
-            return Err("category name cannot be empty");
+            return Err(DomainError::EmptyCategoryName);
         }
 
         Ok(Self {
@@ -131,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn should_create_category_group_successfully() -> Result<(), &'static str> {
+    fn should_create_category_group_successfully() -> Result<(), DomainError> {
         let group = CategoryGroup::new(" True Expenses ")?;
         assert_eq!(group.name(), "True Expenses");
         assert_eq!(group.id().0, "true-expenses");
@@ -140,12 +142,18 @@ mod tests {
 
     #[test]
     fn should_return_error_when_category_group_name_is_empty() {
-        assert!(CategoryGroup::new("").is_err());
-        assert!(CategoryGroup::new("   ").is_err());
+        assert_eq!(
+            CategoryGroup::new(""),
+            Err(DomainError::EmptyCategoryGroupName)
+        );
+        assert_eq!(
+            CategoryGroup::new("   "),
+            Err(DomainError::EmptyCategoryGroupName)
+        );
     }
 
     #[test]
-    fn should_create_category_successfully() -> Result<(), &'static str> {
+    fn should_create_category_successfully() -> Result<(), DomainError> {
         let group_id = CategoryGroupId::from_name("Needs");
         let category = Category::new(group_id.clone(), " Rent ")?;
         assert_eq!(category.name(), "Rent");
@@ -156,7 +164,13 @@ mod tests {
     #[test]
     fn should_return_error_when_category_name_is_empty() {
         let group_id = CategoryGroupId::from_name("Needs");
-        assert!(Category::new(group_id.clone(), "").is_err());
-        assert!(Category::new(group_id, "   ").is_err());
+        assert_eq!(
+            Category::new(group_id.clone(), ""),
+            Err(DomainError::EmptyCategoryName)
+        );
+        assert_eq!(
+            Category::new(group_id, "   "),
+            Err(DomainError::EmptyCategoryName)
+        );
     }
 }

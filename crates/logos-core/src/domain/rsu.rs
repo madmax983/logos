@@ -17,21 +17,22 @@ pub struct HaircutTierTable {
     long: u8,
 }
 
-impl HaircutTierTable {
+impl Default for HaircutTierTable {
     /// Creates a table with default conservative haircut tiers.
     ///
     /// * **Short** (< 30 days): 25% discount
     /// * **Medium** (<= 90 days): 40% discount
     /// * **Long** (> 90 days): 55% discount
-    #[must_use]
-    pub const fn conservative_defaults() -> Self {
+    fn default() -> Self {
         Self {
             short: 25,
             medium: 40,
             long: 55,
         }
     }
+}
 
+impl HaircutTierTable {
     /// Returns the haircut percentage for a given number of days to vest.
     ///
     /// ## Examples
@@ -39,7 +40,7 @@ impl HaircutTierTable {
     /// ```
     /// use logos_core::domain::rsu::HaircutTierTable;
     ///
-    /// let tiers = HaircutTierTable::conservative_defaults();
+    /// let tiers = HaircutTierTable::default();
     /// assert_eq!(tiers.haircut_for_days(15), 25);
     /// assert_eq!(tiers.haircut_for_days(60), 40);
     /// assert_eq!(tiers.haircut_for_days(120), 55);
@@ -129,7 +130,7 @@ impl AllocationPolicy {
 /// ```
 /// use logos_core::domain::rsu::{HaircutTierTable, forecast_value_cents};
 ///
-/// let tiers = HaircutTierTable::conservative_defaults();
+/// let tiers = HaircutTierTable::default();
 /// // 100 units at $10.00 (1000 cents) vesting in 15 days (short tier, 25% haircut).
 /// // Gross = $1000. Retained = 75%. Result = $750 (75000 cents).
 /// let safe_value = forecast_value_cents(1000, 100, 15, &tiers);

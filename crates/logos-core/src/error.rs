@@ -2,6 +2,8 @@ use core::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DomainError {
+    EmptyCategoryGroupName,
+    EmptyCategoryName,
     EmptyTransactionDescription,
     EmptyCorrectionReason,
     CorrectionCannotSupersedeSelf,
@@ -12,6 +14,12 @@ pub enum DomainError {
 impl fmt::Display for DomainError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::EmptyCategoryGroupName => {
+                write!(f, "category group name cannot be empty")
+            }
+            Self::EmptyCategoryName => {
+                write!(f, "category name cannot be empty")
+            }
             Self::EmptyTransactionDescription => {
                 write!(f, "transaction description cannot be empty")
             }
