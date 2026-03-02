@@ -45,22 +45,52 @@ pub fn snapshot_list() -> Result<(), CliError> {
         message: format!("runtime initialization failed: {err}"),
     })?;
     let manifests = runtime.list_analytics_snapshots();
+    println!("{}", render_snapshot_manifest_list(&manifests));
+    Ok(())
+}
+
+fn render_snapshot_manifest_list(
+    manifests: &[logos_store_aletheia::model::StoredAnalyticsArtifactManifest],
+) -> String {
     if manifests.is_empty() {
-        println!("analytics.snapshot.list empty=true count=0");
-        return Ok(());
+        return "analytics.snapshot.list empty=true count=0".to_owned();
     }
 
-    println!(
-        "analytics.snapshot.list empty=false count={}",
-        manifests.len()
-    );
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Artifact ID",
+        "Kind",
+        "Schema",
+        "Rows",
+        "Hash",
+        "URI",
+        "Valid US",
+        "Tx US",
+        "Created US",
+        "Supersedes",
+    ]);
+
     for manifest in manifests {
-        println!(
-            "{}",
-            render_snapshot_manifest("analytics.snapshot.item", &manifest)
-        );
+        let supersedes = manifest.supersedes_artifact_id().unwrap_or("");
+        table.add_row(vec![
+            manifest.artifact_id().to_owned(),
+            manifest.artifact_kind().to_owned(),
+            manifest.schema_version().to_string(),
+            manifest.row_count().to_string(),
+            manifest.content_hash().to_owned(),
+            manifest.artifact_uri().to_owned(),
+            manifest.snapshot_valid_at().wallclock().to_string(),
+            manifest.snapshot_tx_at().wallclock().to_string(),
+            manifest.created_at().wallclock().to_string(),
+            supersedes.to_owned(),
+        ]);
     }
-    Ok(())
+
+    format!(
+        "analytics.snapshot.list empty=false count={}\n{table}",
+        manifests.len()
+    )
 }
 
 /// Handles `ledger analytics snapshot show`.
@@ -91,26 +121,66 @@ fn render_snapshot_manifest(
     prefix: &str,
     manifest: &logos_store_aletheia::model::StoredAnalyticsArtifactManifest,
 ) -> String {
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Artifact ID",
+        "Kind",
+        "Schema",
+        "Rows",
+        "Hash",
+        "URI",
+        "Valid US",
+        "Tx US",
+        "Created US",
+        "Supersedes",
+    ]);
+
     let supersedes = manifest.supersedes_artifact_id().unwrap_or("");
-    format!(
-        "{prefix} artifact_id={} kind={} schema_version={} row_count={} hash={} uri={} valid_us={} tx_us={} created_us={} supersedes={}",
-        manifest.artifact_id(),
-        manifest.artifact_kind(),
-        manifest.schema_version(),
-        manifest.row_count(),
-        manifest.content_hash(),
-        manifest.artifact_uri(),
-        manifest.snapshot_valid_at().wallclock(),
-        manifest.snapshot_tx_at().wallclock(),
-        manifest.created_at().wallclock(),
-        supersedes
-    )
+    table.add_row(vec![
+        manifest.artifact_id().to_owned(),
+        manifest.artifact_kind().to_owned(),
+        manifest.schema_version().to_string(),
+        manifest.row_count().to_string(),
+        manifest.content_hash().to_owned(),
+        manifest.artifact_uri().to_owned(),
+        manifest.snapshot_valid_at().wallclock().to_string(),
+        manifest.snapshot_tx_at().wallclock().to_string(),
+        manifest.created_at().wallclock().to_string(),
+        supersedes.to_owned(),
+    ]);
+
+    format!("{prefix}\n{table}")
 }
 
 #[cfg(test)]
 mod tests {
-    use super::render_snapshot_manifest;
+    use super::{render_snapshot_manifest, render_snapshot_manifest_list};
     use logos_store_aletheia::model::StoredAnalyticsArtifactManifest;
+
+    #[test]
+    fn render_snapshot_manifest_list_is_deterministic() {
+        let manifests = vec![StoredAnalyticsArtifactManifest::new(
+            "artifact-8",
+            "parquet",
+            "C:\\artifacts\\def.parquet",
+            "cafebabe",
+            3,
+            21,
+            1_800_000_000_i64.into(),
+            1_800_000_001_i64.into(),
+            1_800_000_002_i64.into(),
+            Some("artifact-7"),
+            "valid:1800000000000000|tx:1800000001000000",
+        )];
+        let output = render_snapshot_manifest_list(&manifests);
+        let expected = "analytics.snapshot.list empty=false count=1\n┌─────────────┬─────────┬────────┬──────┬──────────┬────────────────────────┬────────────┬────────────┬────────────┬────────────┐
+│ Artifact ID │ Kind    │ Schema │ Rows │ Hash     │ URI                    │ Valid US   │ Tx US      │ Created US │ Supersedes │
+╞═════════════╪═════════╪════════╪══════╪══════════╪════════════════════════╪════════════╪════════════╪════════════╪════════════╡
+│ artifact-8  │ parquet │ 3      │ 21   │ cafebabe │ C:\\artifacts\\def.parquet │ 1800000000 │ 1800000001 │ 1800000002 │ artifact-7 │
+└─────────────┴─────────┴────────┴──────┴──────────┴────────────────────────┴────────────┴────────────┴────────────┴────────────┘";
+        assert_eq!(output, expected);
+    }
 
     #[test]
     fn render_snapshot_manifest_is_deterministic() {
@@ -128,9 +198,11 @@ mod tests {
             "valid:1700000000000000|tx:1700000001000000",
         );
         let output = render_snapshot_manifest("analytics.snapshot.show", &manifest);
-        assert_eq!(
-            output,
-            "analytics.snapshot.show artifact_id=artifact-7 kind=parquet schema_version=2 row_count=19 hash=deadbeef uri=C:\\artifacts\\abc.parquet valid_us=1700000000 tx_us=1700000001 created_us=1700000002 supersedes=artifact-6"
-        );
+        let expected = "analytics.snapshot.show\n┌─────────────┬─────────┬────────┬──────┬──────────┬────────────────────────┬────────────┬────────────┬────────────┬────────────┐
+│ Artifact ID │ Kind    │ Schema │ Rows │ Hash     │ URI                    │ Valid US   │ Tx US      │ Created US │ Supersedes │
+╞═════════════╪═════════╪════════╪══════╪══════════╪════════════════════════╪════════════╪════════════╪════════════╪════════════╡
+│ artifact-7  │ parquet │ 2      │ 19   │ deadbeef │ C:\\artifacts\\abc.parquet │ 1700000000 │ 1700000001 │ 1700000002 │ artifact-6 │
+└─────────────┴─────────┴────────┴──────┴──────────┴────────────────────────┴────────────┴────────────┴────────────┴────────────┘";
+        assert_eq!(output, expected);
     }
 }
