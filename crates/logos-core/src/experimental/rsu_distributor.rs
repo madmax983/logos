@@ -2,33 +2,27 @@ use crate::domain::rsu::AllocationPolicy;
 use crate::domain::transaction::{Posting, Transaction, TransactionBuilder};
 use crate::error::DomainError;
 
+/// Configuration for `RsuAutoDistributor`, preventing positional string arguments.
+#[derive(Debug, Clone)]
+pub struct RsuDistributorConfig {
+    pub rsu_asset: String,
+    pub tax_reserve: String,
+    pub smoothing_buffer: String,
+    pub goals: String,
+    pub discretionary: String,
+}
+
 /// Automatically distributes vested RSU funds across target accounts
 /// according to an `AllocationPolicy`.
 #[derive(Debug, Clone)]
 pub struct RsuAutoDistributor {
-    rsu_asset: String,
-    tax_reserve: String,
-    smoothing_buffer: String,
-    goals: String,
-    discretionary: String,
+    config: RsuDistributorConfig,
 }
 
 impl RsuAutoDistributor {
     #[must_use]
-    pub fn new(
-        rsu_asset: &str,
-        tax_reserve: &str,
-        smoothing_buffer: &str,
-        goals: &str,
-        discretionary: &str,
-    ) -> Self {
-        Self {
-            rsu_asset: rsu_asset.to_owned(),
-            tax_reserve: tax_reserve.to_owned(),
-            smoothing_buffer: smoothing_buffer.to_owned(),
-            goals: goals.to_owned(),
-            discretionary: discretionary.to_owned(),
-        }
+    pub const fn new(config: RsuDistributorConfig) -> Self {
+        Self { config }
     }
 
     /// Distributes a gross vest amount across the configured accounts, ensuring perfectly balanced transactions.
@@ -50,11 +44,17 @@ impl RsuAutoDistributor {
         let tax_cents = gross_vest_cents - smoothing_cents - goals_cents - discretionary_cents;
 
         TransactionBuilder::new(description)
-            .posting(Posting::credit(&self.rsu_asset, gross_vest_cents))
-            .posting(Posting::debit(&self.tax_reserve, tax_cents))
-            .posting(Posting::debit(&self.smoothing_buffer, smoothing_cents))
-            .posting(Posting::debit(&self.goals, goals_cents))
-            .posting(Posting::debit(&self.discretionary, discretionary_cents))
+            .posting(Posting::credit(&self.config.rsu_asset, gross_vest_cents))
+            .posting(Posting::debit(&self.config.tax_reserve, tax_cents))
+            .posting(Posting::debit(
+                &self.config.smoothing_buffer,
+                smoothing_cents,
+            ))
+            .posting(Posting::debit(&self.config.goals, goals_cents))
+            .posting(Posting::debit(
+                &self.config.discretionary,
+                discretionary_cents,
+            ))
             .build()
     }
 }
@@ -66,13 +66,14 @@ mod tests {
     #[test]
     fn test_perfect_distribution() {
         let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
-        let distributor = RsuAutoDistributor::new(
-            "assets:rsu",
-            "assets:tax",
-            "assets:buffer",
-            "assets:goals",
-            "assets:checking",
-        );
+        let config = RsuDistributorConfig {
+            rsu_asset: "assets:rsu".to_owned(),
+            tax_reserve: "assets:tax".to_owned(),
+            smoothing_buffer: "assets:buffer".to_owned(),
+            goals: "assets:goals".to_owned(),
+            discretionary: "assets:checking".to_owned(),
+        };
+        let distributor = RsuAutoDistributor::new(config);
 
         let tx = distributor
             .distribute_rsu_vest("Vest 1", 10000, &policy)
@@ -94,13 +95,14 @@ mod tests {
     #[test]
     fn test_imperfect_distribution_sweeps_to_tax() {
         let policy = AllocationPolicy::new(33, 33, 33, 1).unwrap();
-        let distributor = RsuAutoDistributor::new(
-            "assets:rsu",
-            "assets:tax",
-            "assets:buffer",
-            "assets:goals",
-            "assets:checking",
-        );
+        let config = RsuDistributorConfig {
+            rsu_asset: "assets:rsu".to_owned(),
+            tax_reserve: "assets:tax".to_owned(),
+            smoothing_buffer: "assets:buffer".to_owned(),
+            goals: "assets:goals".to_owned(),
+            discretionary: "assets:checking".to_owned(),
+        };
+        let distributor = RsuAutoDistributor::new(config);
 
         // 100 cents * 33% = 33 cents each, 1 cent for discretionary = 100 cents total.
         // Wait, let's pick a number that leaves remainders.
