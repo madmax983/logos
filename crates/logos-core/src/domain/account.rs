@@ -1,13 +1,58 @@
+//! Account types and their double-entry accounting behavior.
+//!
+//! This module defines the primary categories of accounts used in `logos`
+//! and their fundamental properties, such as their normal balance signs.
+//! Understanding these categories is essential for correct transaction balancing
+//! and reporting.
+
+/// Represents the five fundamental account types in double-entry bookkeeping.
+///
+/// Every account in the ledger belongs to one of these types. The type
+/// determines whether an increase in the account's value is recorded as a
+/// debit (positive) or a credit (negative).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AccountType {
+    /// Resources owned by the entity (e.g., checking accounts, cash).
+    /// Increased by debits, decreased by credits.
     Asset,
+    /// Obligations owed to others (e.g., credit cards, loans).
+    /// Increased by credits, decreased by debits.
     Liability,
+    /// The residual interest after liabilities are deducted from assets.
+    /// Increased by credits, decreased by debits.
     Equity,
+    /// Revenue earned from operations (e.g., salary, interest).
+    /// Increased by credits, decreased by debits.
     Income,
+    /// Costs incurred during operations (e.g., groceries, rent).
+    /// Increased by debits, decreased by credits.
     Expense,
 }
 
 impl AccountType {
+    /// Returns the "normal balance" sign for the account type.
+    ///
+    /// In double-entry bookkeeping, the normal balance is the type of entry
+    /// (debit or credit) that increases the account's balance. In `logos`:
+    ///
+    /// * **Debits are positive (+1)**
+    /// * **Credits are negative (-1)**
+    ///
+    /// Therefore, accounts that are normally increased by debits (Assets, Expenses)
+    /// have a normal balance sign of `1`. Accounts normally increased by credits
+    /// (Liabilities, Equity, Income) have a normal balance sign of `-1`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::account::AccountType;
+    ///
+    /// // Assets are increased by debits (positive values)
+    /// assert_eq!(AccountType::Asset.normal_balance_sign(), 1);
+    ///
+    /// // Liabilities are increased by credits (negative values)
+    /// assert_eq!(AccountType::Liability.normal_balance_sign(), -1);
+    /// ```
     #[must_use]
     pub const fn normal_balance_sign(self) -> i8 {
         match self {
