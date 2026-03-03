@@ -45,5 +45,5 @@ impl BudgetMonth {
 
 #[must_use]
 pub const fn rollover_end_balance(start: i64, assigned: i64, spent: i64) -> i64 {
-    start + assigned - spent
+    start.saturating_add(assigned).saturating_sub(spent)
 }
