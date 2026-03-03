@@ -289,12 +289,12 @@ fn parse_month_key(flag: &str, value: String) -> Result<String, CliError> {
         });
     }
 
-    let month = value[5..7]
-        .parse::<u8>()
-        .map_err(|_| CliError::InvalidArgValue {
+    let Ok(month) = value[5..7].parse::<u8>() else {
+        return Err(CliError::InvalidArgValue {
             flag: flag.to_owned(),
             value: value.clone(),
-        })?;
+        });
+    };
     if !(1..=12).contains(&month) {
         return Err(CliError::InvalidArgValue {
             flag: flag.to_owned(),
@@ -972,39 +972,57 @@ fn parse_optional_i64_flag(
     flag: &str,
     default_value: i64,
 ) -> Result<i64, CliError> {
-    parse_optional_flag_value(args, flag)?.map_or(Ok(default_value), |value| {
-        value.parse::<i64>().map_err(|_| CliError::InvalidArgValue {
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(default_value);
+    };
+
+    let Ok(parsed) = value.parse::<i64>() else {
+        return Err(CliError::InvalidArgValue {
             flag: flag.to_owned(),
             value,
-        })
-    })
+        });
+    };
+
+    Ok(parsed)
 }
 
 fn parse_optional_i64_value(args: &[String], flag: &str) -> Result<Option<i64>, CliError> {
-    parse_optional_flag_value(args, flag)?
-        .map(|value| {
-            value.parse::<i64>().map_err(|_| CliError::InvalidArgValue {
-                flag: flag.to_owned(),
-                value,
-            })
-        })
-        .transpose()
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(None);
+    };
+
+    let Ok(parsed) = value.parse::<i64>() else {
+        return Err(CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value,
+        });
+    };
+
+    Ok(Some(parsed))
 }
 
 fn parse_required_i64_flag(args: &[String], flag: &str) -> Result<i64, CliError> {
     let value = parse_flag_value(args, flag)?;
-    value.parse::<i64>().map_err(|_| CliError::InvalidArgValue {
-        flag: flag.to_owned(),
-        value,
-    })
+    let Ok(parsed) = value.parse::<i64>() else {
+        return Err(CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value,
+        });
+    };
+
+    Ok(parsed)
 }
 
 fn parse_required_u32_flag(args: &[String], flag: &str) -> Result<u32, CliError> {
     let value = parse_flag_value(args, flag)?;
-    value.parse::<u32>().map_err(|_| CliError::InvalidArgValue {
-        flag: flag.to_owned(),
-        value,
-    })
+    let Ok(parsed) = value.parse::<u32>() else {
+        return Err(CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value,
+        });
+    };
+
+    Ok(parsed)
 }
 
 fn parse_optional_u16_flag(
@@ -1012,21 +1030,33 @@ fn parse_optional_u16_flag(
     flag: &str,
     default_value: u16,
 ) -> Result<u16, CliError> {
-    parse_optional_flag_value(args, flag)?.map_or(Ok(default_value), |value| {
-        value.parse::<u16>().map_err(|_| CliError::InvalidArgValue {
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(default_value);
+    };
+
+    let Ok(parsed) = value.parse::<u16>() else {
+        return Err(CliError::InvalidArgValue {
             flag: flag.to_owned(),
             value,
-        })
-    })
+        });
+    };
+
+    Ok(parsed)
 }
 
 fn parse_optional_u8_flag(args: &[String], flag: &str, default_value: u8) -> Result<u8, CliError> {
-    parse_optional_flag_value(args, flag)?.map_or(Ok(default_value), |value| {
-        value.parse::<u8>().map_err(|_| CliError::InvalidArgValue {
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(default_value);
+    };
+
+    let Ok(parsed) = value.parse::<u8>() else {
+        return Err(CliError::InvalidArgValue {
             flag: flag.to_owned(),
             value,
-        })
-    })
+        });
+    };
+
+    Ok(parsed)
 }
 
 fn parse_optional_usize_flag(
@@ -1034,20 +1064,28 @@ fn parse_optional_usize_flag(
     flag: &str,
     default_value: usize,
 ) -> Result<usize, CliError> {
-    parse_optional_flag_value(args, flag)?.map_or(Ok(default_value), |value| {
-        value
-            .parse::<usize>()
-            .map_err(|_| CliError::InvalidArgValue {
-                flag: flag.to_owned(),
-                value,
-            })
-    })
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(default_value);
+    };
+
+    let Ok(parsed) = value.parse::<usize>() else {
+        return Err(CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value,
+        });
+    };
+
+    Ok(parsed)
 }
 
 fn parse_amount_cents(args: &[String]) -> Result<i64, CliError> {
     let value = parse_flag_value(args, "--amount-cents")?;
-    value.parse::<i64>().map_err(|_| CliError::InvalidArgValue {
-        flag: "--amount-cents".to_owned(),
-        value,
-    })
+    let Ok(parsed) = value.parse::<i64>() else {
+        return Err(CliError::InvalidArgValue {
+            flag: "--amount-cents".to_owned(),
+            value,
+        });
+    };
+
+    Ok(parsed)
 }

@@ -3,7 +3,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use aletheiadb::{AletheiaDB, AletheiaDBConfig, DurabilityMode, WalConfigBuilder, time};
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
-use logos_store_aletheia::{AletheiaStore, model::NewImportRecord};
+use logos_store_aletheia::{AletheiaStore, StoreError, model::NewImportRecord};
 
 fn temp_store_path(prefix: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -44,7 +44,7 @@ fn balanced_transaction_write_succeeds() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).expect("credit")),
         )
         .expect("write");
 
@@ -59,7 +59,7 @@ fn unbalanced_transaction_is_rejected_before_persistence() {
         .write_transaction(
             TransactionBuilder::new("bad")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 9_000)),
+                .posting(Posting::credit("income:salary", 9_000).expect("credit")),
         )
         .expect_err("must reject");
 
@@ -74,7 +74,7 @@ fn correction_append_links_superseded_transaction() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).expect("credit")),
         )
         .expect("write");
 
@@ -96,7 +96,7 @@ fn open_persists_transaction_across_reopen() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000)),
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
             )
             .expect("write");
         assert!(store.has_transaction(&id));
@@ -119,7 +119,7 @@ fn open_persists_correction_chain_across_reopen() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000)),
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
             )
             .expect("write");
         let correction = Correction::new(persisted_id.clone(), "fix memo").expect("correction");
@@ -227,7 +227,7 @@ fn open_persists_statement_line_evidence_across_reopen() {
             .write_transaction(
                 TransactionBuilder::new("coffee")
                     .posting(Posting::debit("expenses:food", 500))
-                    .posting(Posting::credit("assets:checking", 500)),
+                    .posting(Posting::credit("assets:checking", 500).expect("credit")),
             )
             .expect("write txn");
 
@@ -277,7 +277,7 @@ fn open_persists_reconciliation_run_across_reopen() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000)),
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
             )
             .expect("write transaction");
 
@@ -323,7 +323,7 @@ fn open_persists_month_close_across_reopen() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000)),
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
             )
             .expect("txn");
         run_id = store
@@ -406,7 +406,7 @@ fn embedded_mapping_writes_transaction_and_posting_graph_entities() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000)),
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
             )
             .expect("write");
     }
@@ -440,7 +440,7 @@ fn embedded_mapping_writes_correction_supersedes_edge() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000)),
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
             )
             .expect("write");
 
@@ -526,7 +526,7 @@ fn embedded_mapping_writes_import_batch_and_record_graph_entities() {
             .write_transaction(
                 TransactionBuilder::new("coffee")
                     .posting(Posting::debit("expenses:food", 500))
-                    .posting(Posting::credit("assets:checking", 500)),
+                    .posting(Posting::credit("assets:checking", 500).expect("credit")),
             )
             .expect("write");
 
@@ -574,14 +574,14 @@ fn embedded_mapping_writes_reconciliation_run_and_edges() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000)),
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
             )
             .expect("txn a");
         let txn_b = store
             .write_transaction(
                 TransactionBuilder::new("groceries")
                     .posting(Posting::debit("expenses:food", 2_500))
-                    .posting(Posting::credit("assets:checking", 2_500)),
+                    .posting(Posting::credit("assets:checking", 2_500).expect("credit")),
             )
             .expect("txn b");
         store
@@ -630,7 +630,7 @@ fn embedded_mapping_links_reconciliation_run_to_statement_lines() {
             .write_transaction(
                 TransactionBuilder::new("coffee")
                     .posting(Posting::debit("expenses:food", 500))
-                    .posting(Posting::credit("assets:checking", 500)),
+                    .posting(Posting::credit("assets:checking", 500).expect("credit")),
             )
             .expect("txn");
 
@@ -705,7 +705,7 @@ fn embedded_mapping_writes_month_close_edges() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000)),
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
             )
             .expect("txn");
         let run = store
@@ -784,7 +784,7 @@ fn transactions_as_of_respects_backdated_valid_time() {
             .write_transaction_with_valid_time(
                 TransactionBuilder::new("backdated")
                     .posting(Posting::debit("assets:checking", 7_500))
-                    .posting(Posting::credit("income:salary", 7_500)),
+                    .posting(Posting::credit("income:salary", 7_500).expect("credit")),
                 Some(backdated_valid_time),
             )
             .expect("write backdated");
@@ -812,7 +812,7 @@ fn transactions_as_of_hides_superseded_after_correction_tx_time() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000)),
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
             )
             .expect("write");
 
@@ -833,6 +833,270 @@ fn transactions_as_of_hides_superseded_after_correction_tx_time() {
             .expect("query after correction tx");
         assert!(!after_correction.iter().any(|txn| txn.id() == &txn_id));
     }
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_reconciliation_run_fails_with_negative_values() {
+    let path = temp_store_path("reconciliation-negative");
+    let mut store = AletheiaStore::open(&path).expect("open");
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(Posting::debit("assets:checking", 10_000))
+                .posting(Posting::credit("income:salary", 10_000)),
+        )
+        .expect("write txn");
+
+    // Negative matched_postings
+    let res = store.write_reconciliation_run(
+        "2026-03",
+        "assets:checking",
+        100_000,
+        10_000,
+        110_000,
+        109_500,
+        -500,
+        false,
+        -1, // matched_postings < 0
+        10_000,
+        0,
+        std::slice::from_ref(&txn_id),
+    );
+    assert!(res.is_err());
+    assert!(
+        res.unwrap_err()
+            .to_string()
+            .contains("matched_postings must be non-negative")
+    );
+
+    // Negative inflow_cents
+    let res = store.write_reconciliation_run(
+        "2026-03",
+        "assets:checking",
+        100_000,
+        10_000,
+        110_000,
+        109_500,
+        -500,
+        false,
+        1,
+        -1, // inflow_cents < 0
+        0,
+        std::slice::from_ref(&txn_id),
+    );
+    assert!(res.is_err());
+    assert!(
+        res.unwrap_err()
+            .to_string()
+            .contains("inflow_cents must be non-negative")
+    );
+
+    // Negative outflow_cents
+    let res = store.write_reconciliation_run(
+        "2026-03",
+        "assets:checking",
+        100_000,
+        10_000,
+        110_000,
+        109_500,
+        -500,
+        false,
+        1,
+        10_000,
+        -1, // outflow_cents < 0
+        std::slice::from_ref(&txn_id),
+    );
+    assert!(res.is_err());
+    assert!(
+        res.unwrap_err()
+            .to_string()
+            .contains("outflow_cents must be non-negative")
+    );
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_reconciliation_run_and_month_close_fails_with_negative_values() {
+    let path = temp_store_path("reconciliation-close-negative");
+    let mut store = AletheiaStore::open(&path).expect("open");
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(Posting::debit("assets:checking", 10_000))
+                .posting(Posting::credit("income:salary", 10_000)),
+        )
+        .expect("write txn");
+
+    // Negative matched_postings
+    let res = store.write_reconciliation_run_and_month_close(
+        "2026-03",
+        "assets:checking",
+        100_000,
+        10_000,
+        110_000,
+        109_500,
+        -500,
+        false,
+        -1, // matched_postings < 0
+        10_000,
+        0,
+        std::slice::from_ref(&txn_id),
+        None,
+    );
+    assert!(res.is_err());
+    assert!(
+        res.unwrap_err()
+            .to_string()
+            .contains("matched_postings must be non-negative")
+    );
+
+    // Negative inflow_cents
+    let res = store.write_reconciliation_run_and_month_close(
+        "2026-03",
+        "assets:checking",
+        100_000,
+        10_000,
+        110_000,
+        109_500,
+        -500,
+        false,
+        1,
+        -1, // inflow_cents < 0
+        0,
+        std::slice::from_ref(&txn_id),
+        None,
+    );
+    assert!(res.is_err());
+    assert!(
+        res.unwrap_err()
+            .to_string()
+            .contains("inflow_cents must be non-negative")
+    );
+
+    // Negative outflow_cents
+    let res = store.write_reconciliation_run_and_month_close(
+        "2026-03",
+        "assets:checking",
+        100_000,
+        10_000,
+        110_000,
+        109_500,
+        -500,
+        false,
+        1,
+        10_000,
+        -1, // outflow_cents < 0
+        std::slice::from_ref(&txn_id),
+        None,
+    );
+    assert!(res.is_err());
+    assert!(
+        res.unwrap_err()
+            .to_string()
+            .contains("outflow_cents must be non-negative")
+    );
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_reconciliation_run_succeeds_with_zero_values() {
+    let path = temp_store_path("reconciliation-zero");
+    let mut store = AletheiaStore::open(&path).expect("open");
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(Posting::debit("assets:checking", 10_000))
+                .posting(Posting::credit("income:salary", 10_000)),
+        )
+        .expect("write txn");
+
+    let res = store.write_reconciliation_run(
+        "2026-03",
+        "assets:checking",
+        100_000,
+        10_000,
+        110_000,
+        109_500,
+        -500,
+        false,
+        0, // matched_postings == 0
+        0, // inflow_cents == 0
+        0, // outflow_cents == 0
+        std::slice::from_ref(&txn_id),
+    );
+    assert!(res.is_ok());
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_reconciliation_run_and_month_close_succeeds_with_zero_values() {
+    let path = temp_store_path("reconciliation-close-zero");
+    let mut store = AletheiaStore::open(&path).expect("open");
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(Posting::debit("assets:checking", 10_000))
+                .posting(Posting::credit("income:salary", 10_000)),
+        )
+        .expect("write txn");
+
+    let res = store.write_reconciliation_run_and_month_close(
+        "2026-03",
+        "assets:checking",
+        100_000,
+        10_000,
+        110_000,
+        109_500,
+        -500,
+        false,
+        0, // matched_postings == 0
+        0, // inflow_cents == 0
+        0, // outflow_cents == 0
+        std::slice::from_ref(&txn_id),
+        None,
+    );
+    assert!(res.is_ok());
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_reconciliation_run_and_month_close_fails_with_unknown_artifact() {
+    let path = temp_store_path("reconciliation-close-unknown-artifact");
+    let mut store = AletheiaStore::open(&path).expect("open");
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(Posting::debit("assets:checking", 10_000))
+                .posting(Posting::credit("income:salary", 10_000)),
+        )
+        .expect("write txn");
+
+    let res = store.write_reconciliation_run_and_month_close(
+        "2026-03",
+        "assets:checking",
+        100_000,
+        10_000,
+        110_000,
+        109_500,
+        -500,
+        false,
+        1,
+        10_000,
+        0,
+        std::slice::from_ref(&txn_id),
+        Some("unknown-artifact-id"),
+    );
+    assert!(res.is_err());
+    assert!(matches!(
+        res.unwrap_err(),
+        StoreError::UnknownArtifact { .. }
+    ));
 
     cleanup_store_path(&path);
 }

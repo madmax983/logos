@@ -80,40 +80,79 @@ fn render_month_output(
     opening_balance_cents: i64,
     run: &StoredReconciliationRun,
 ) -> String {
-    format!(
-        "reconcile.month run_id={} month={month_key} checking_account={checking_account} opening_balance_cents={opening_balance_cents} ledger_delta_cents={} expected_closing_balance_cents={} statement_closing_balance_cents={} variance_cents={} reconciled={} matched_postings={} matched_transactions={} inflow_cents={} outflow_cents={} created_at_us={}",
-        run.run_id(),
-        run.ledger_delta_cents(),
-        run.expected_closing_balance_cents(),
-        run.statement_closing_balance_cents(),
-        run.variance_cents(),
-        run.reconciled(),
-        run.matched_postings(),
-        run.matched_transaction_count(),
-        run.inflow_cents(),
-        run.outflow_cents(),
-        run.created_at().wallclock()
-    )
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Run ID",
+        "Month",
+        "Account",
+        "Opening",
+        "Ledger Δ",
+        "Expected Closing",
+        "Statement Closing",
+        "Variance",
+        "Reconciled",
+        "Matched Postings",
+        "Matched Txns",
+        "Inflow",
+        "Outflow",
+        "Created At",
+    ]);
+    table.add_row(vec![
+        run.run_id().to_owned(),
+        month_key.to_owned(),
+        checking_account.to_owned(),
+        opening_balance_cents.to_string(),
+        run.ledger_delta_cents().to_string(),
+        run.expected_closing_balance_cents().to_string(),
+        run.statement_closing_balance_cents().to_string(),
+        run.variance_cents().to_string(),
+        run.reconciled().to_string(),
+        run.matched_postings().to_string(),
+        run.matched_transaction_count().to_string(),
+        run.inflow_cents().to_string(),
+        run.outflow_cents().to_string(),
+        run.created_at().wallclock().to_string(),
+    ]);
+    table.to_string()
 }
 
 fn render_show_output(run: &StoredReconciliationRun) -> String {
-    format!(
-        "reconcile.show run_id={} month={} checking_account={} opening_balance_cents={} ledger_delta_cents={} expected_closing_balance_cents={} statement_closing_balance_cents={} variance_cents={} reconciled={} matched_postings={} matched_transactions={} inflow_cents={} outflow_cents={} created_at_us={}",
-        run.run_id(),
-        run.month_key(),
-        run.checking_account(),
-        run.opening_balance_cents(),
-        run.ledger_delta_cents(),
-        run.expected_closing_balance_cents(),
-        run.statement_closing_balance_cents(),
-        run.variance_cents(),
-        run.reconciled(),
-        run.matched_postings(),
-        run.matched_transaction_count(),
-        run.inflow_cents(),
-        run.outflow_cents(),
-        run.created_at().wallclock()
-    )
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Run ID",
+        "Month",
+        "Account",
+        "Opening",
+        "Ledger Δ",
+        "Expected Closing",
+        "Statement Closing",
+        "Variance",
+        "Reconciled",
+        "Matched Postings",
+        "Matched Txns",
+        "Inflow",
+        "Outflow",
+        "Created At",
+    ]);
+    table.add_row(vec![
+        run.run_id().to_owned(),
+        run.month_key().to_owned(),
+        run.checking_account().to_owned(),
+        run.opening_balance_cents().to_string(),
+        run.ledger_delta_cents().to_string(),
+        run.expected_closing_balance_cents().to_string(),
+        run.statement_closing_balance_cents().to_string(),
+        run.variance_cents().to_string(),
+        run.reconciled().to_string(),
+        run.matched_postings().to_string(),
+        run.matched_transaction_count().to_string(),
+        run.inflow_cents().to_string(),
+        run.outflow_cents().to_string(),
+        run.created_at().wallclock().to_string(),
+    ]);
+    table.to_string()
 }
 
 fn render_list_output(
@@ -129,24 +168,34 @@ fn render_list_output(
         );
     }
 
-    let mut lines = Vec::with_capacity(runs.len() + 1);
-    lines.push(format!(
-        "reconcile.list filter_month={filter_month} filter_checking_account={filter_account} count={}",
-        runs.len()
-    ));
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Run ID",
+        "Month",
+        "Account",
+        "Variance",
+        "Reconciled",
+        "Matched Txns",
+        "Created At",
+    ]);
+
     for run in runs {
-        lines.push(format!(
-            "reconcile.item run_id={} month={} checking_account={} variance_cents={} reconciled={} matched_transactions={} created_at_us={}",
-            run.run_id(),
-            run.month_key(),
-            run.checking_account(),
-            run.variance_cents(),
-            run.reconciled(),
-            run.matched_transaction_count(),
-            run.created_at().wallclock()
-        ));
+        table.add_row(vec![
+            run.run_id().to_owned(),
+            run.month_key().to_owned(),
+            run.checking_account().to_owned(),
+            run.variance_cents().to_string(),
+            run.reconciled().to_string(),
+            run.matched_transaction_count().to_string(),
+            run.created_at().wallclock().to_string(),
+        ]);
     }
-    lines.join("\n")
+
+    format!(
+        "reconcile.list filter_month={filter_month} filter_checking_account={filter_account} count={}\n{table}",
+        runs.len()
+    )
 }
 
 #[cfg(test)]
@@ -174,10 +223,12 @@ mod tests {
         );
         let output = render_month_output("assets:checking", "2026-03", 100_000, &run);
 
-        assert_eq!(
-            output,
-            "reconcile.month run_id=recon-7 month=2026-03 checking_account=assets:checking opening_balance_cents=100000 ledger_delta_cents=7500 expected_closing_balance_cents=107500 statement_closing_balance_cents=106000 variance_cents=-1500 reconciled=false matched_postings=2 matched_transactions=2 inflow_cents=10000 outflow_cents=2500 created_at_us=1700000111"
-        );
+        let expected = "┌─────────┬─────────┬─────────────────┬─────────┬──────────┬──────────────────┬───────────────────┬──────────┬────────────┬──────────────────┬──────────────┬────────┬─────────┬────────────┐
+│ Run ID  │ Month   │ Account         │ Opening │ Ledger Δ │ Expected Closing │ Statement Closing │ Variance │ Reconciled │ Matched Postings │ Matched Txns │ Inflow │ Outflow │ Created At │
+╞═════════╪═════════╪═════════════════╪═════════╪══════════╪══════════════════╪═══════════════════╪══════════╪════════════╪══════════════════╪══════════════╪════════╪═════════╪════════════╡
+│ recon-7 │ 2026-03 │ assets:checking │ 100000  │ 7500     │ 107500           │ 106000            │ -1500    │ false      │ 2                │ 2            │ 10000  │ 2500    │ 1700000111 │
+└─────────┴─────────┴─────────────────┴─────────┴──────────┴──────────────────┴───────────────────┴──────────┴────────────┴──────────────────┴──────────────┴────────┴─────────┴────────────┘";
+        assert_eq!(output, expected);
     }
 
     #[test]
@@ -199,10 +250,12 @@ mod tests {
             1_700_000_222_i64.into(),
         );
         let output = render_show_output(&run);
-        assert_eq!(
-            output,
-            "reconcile.show run_id=recon-8 month=2026-04 checking_account=assets:checking opening_balance_cents=200000 ledger_delta_cents=12000 expected_closing_balance_cents=212000 statement_closing_balance_cents=212500 variance_cents=500 reconciled=false matched_postings=3 matched_transactions=2 inflow_cents=15000 outflow_cents=3000 created_at_us=1700000222"
-        );
+        let expected = "┌─────────┬─────────┬─────────────────┬─────────┬──────────┬──────────────────┬───────────────────┬──────────┬────────────┬──────────────────┬──────────────┬────────┬─────────┬────────────┐
+│ Run ID  │ Month   │ Account         │ Opening │ Ledger Δ │ Expected Closing │ Statement Closing │ Variance │ Reconciled │ Matched Postings │ Matched Txns │ Inflow │ Outflow │ Created At │
+╞═════════╪═════════╪═════════════════╪═════════╪══════════╪══════════════════╪═══════════════════╪══════════╪════════════╪══════════════════╪══════════════╪════════╪═════════╪════════════╡
+│ recon-8 │ 2026-04 │ assets:checking │ 200000  │ 12000    │ 212000           │ 212500            │ 500      │ false      │ 3                │ 2            │ 15000  │ 3000    │ 1700000222 │
+└─────────┴─────────┴─────────────────┴─────────┴──────────┴──────────────────┴───────────────────┴──────────┴────────────┴──────────────────┴──────────────┴────────┴─────────┴────────────┘";
+        assert_eq!(output, expected);
     }
 
     #[test]
@@ -243,9 +296,13 @@ mod tests {
         ];
 
         let output = render_list_output(Some("2026-05"), Some("assets:checking"), &runs);
-        assert_eq!(
-            output,
-            "reconcile.list filter_month=2026-05 filter_checking_account=assets:checking count=2\nreconcile.item run_id=recon-9 month=2026-05 checking_account=assets:checking variance_cents=0 reconciled=true matched_transactions=2 created_at_us=1700000333\nreconcile.item run_id=recon-10 month=2026-05 checking_account=assets:checking variance_cents=-500 reconciled=false matched_transactions=1 created_at_us=1700000444"
-        );
+        let expected = "reconcile.list filter_month=2026-05 filter_checking_account=assets:checking count=2\n┌──────────┬─────────┬─────────────────┬──────────┬────────────┬──────────────┬────────────┐
+│ Run ID   │ Month   │ Account         │ Variance │ Reconciled │ Matched Txns │ Created At │
+╞══════════╪═════════╪═════════════════╪══════════╪════════════╪══════════════╪════════════╡
+│ recon-9  │ 2026-05 │ assets:checking │ 0        │ true       │ 2            │ 1700000333 │
+├──────────┼─────────┼─────────────────┼──────────┼────────────┼──────────────┼────────────┤
+│ recon-10 │ 2026-05 │ assets:checking │ -500     │ false      │ 1            │ 1700000444 │
+└──────────┴─────────┴─────────────────┴──────────┴────────────┴──────────────┴────────────┘";
+        assert_eq!(output, expected);
     }
 }

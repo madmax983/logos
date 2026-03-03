@@ -1,5 +1,41 @@
+//! Core double-entry accounting structures for `logos`.
+//!
+//! The `transaction` module contains the fundamental structures for recording
+//! financial events. In `logos`, all amounts are represented in **cents** to
+//! avoid floating-point precision issues.
+//!
+//! **Critical Concept:**
+//! - **Debits** are always **positive** values.
+//! - **Credits** are always **negative** values.
+//!
+//! A [`Transaction`] must always balance to zero before it can be created. This
+//! invariant is enforced via the [`TransactionBuilder`].
+
 use crate::error::DomainError;
 
+/// A single line item within a [`Transaction`].
+///
+/// A posting affects a single account and has a monetary amount. In double-entry
+/// accounting, postings can be debits or credits. This struct ensures consistency
+/// by storing amounts with a strict sign convention.
+///
+/// ## Sign Convention
+/// * **Debits** are strictly **positive** values (e.g. `1000` = +$10.00).
+/// * **Credits** are strictly **negative** values (e.g. `-1000` = -$10.00).
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::transaction::Posting;
+///
+/// // Create a debit posting for $10.00 (1000 cents).
+/// let d = Posting::debit("assets:checking", 1000);
+/// assert_eq!(d.amount(), 1000);
+///
+/// // Create a credit posting for $10.00 (represented as -1000 cents internally).
+/// let c = Posting::credit("income:salary", 1000);
+/// assert_eq!(c.amount(), -1000);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Posting {
     account: String,
@@ -7,6 +43,7 @@ pub struct Posting {
 }
 
 impl Posting {
+    /// Creates a debit posting. The amount should be passed as a positive number.
     #[must_use]
     pub fn debit(account: &str, amount: i64) -> Self {
         Self {
@@ -15,12 +52,17 @@ impl Posting {
         }
     }
 
-    #[must_use]
-    pub fn credit(account: &str, amount: i64) -> Self {
-        Self {
+    /// Creates a credit posting, negating the provided amount.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if negating `amount` causes an arithmetic overflow.
+    pub fn credit(account: &str, amount: i64) -> Result<Self, DomainError> {
+        let amount = amount.checked_neg().ok_or(DomainError::AmountOverflow)?;
+        Ok(Self {
             account: account.to_owned(),
-            amount: -amount,
-        }
+            amount,
+        })
     }
 
     #[must_use]
@@ -34,6 +76,11 @@ impl Posting {
     }
 }
 
+/// A balanced double-entry financial transaction.
+///
+/// Transactions cannot be instantiated directly; you must use a
+/// [`TransactionBuilder`] to guarantee that the sum of all its [`Posting`]
+/// amounts equals zero.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Transaction {
     description: String,
@@ -52,6 +99,38 @@ impl Transaction {
     }
 }
 
+/// A builder for creating valid, balanced [`Transaction`]s.
+///
+/// To prevent corrupted ledger states, all transactions must balance. The builder
+/// accumulates postings and enforces that their total sum equals exactly `0` when
+/// [`build`](Self::build) is called.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+///
+/// // A successful balanced transaction:
+/// let txn = TransactionBuilder::new("Buy groceries")
+///     .posting(Posting::debit("expenses:food", 5000))
+///     .posting(Posting::credit("assets:checking", 5000))
+///     .build()
+///     .expect("Transaction should balance");
+///
+/// assert_eq!(txn.postings().len(), 2);
+/// ```
+///
+/// Unbalanced transactions will return a `DomainError`:
+///
+/// ```
+/// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+///
+/// let result = TransactionBuilder::new("Oops")
+///     .posting(Posting::debit("expenses:food", 5000))
+///     .build(); // Missing the credit!
+///
+/// assert!(result.is_err());
+/// ```
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TransactionBuilder {
     description: String,
@@ -59,6 +138,7 @@ pub struct TransactionBuilder {
 }
 
 impl TransactionBuilder {
+    /// Initiates a new transaction builder with the given description.
     #[must_use]
     pub fn new(description: &str) -> Self {
         Self {
@@ -67,6 +147,7 @@ impl TransactionBuilder {
         }
     }
 
+    /// Adds a [`Posting`] to the transaction.
     #[must_use]
     pub fn posting(mut self, posting: Posting) -> Self {
         self.postings.push(posting);
@@ -83,7 +164,13 @@ impl TransactionBuilder {
             return Err(DomainError::EmptyTransactionDescription);
         }
 
-        let total: i64 = self.postings.iter().map(Posting::amount).sum();
+        let mut total = 0_i64;
+        for posting in &self.postings {
+            total = total
+                .checked_add(posting.amount())
+                .ok_or(DomainError::AmountOverflow)?;
+        }
+
         if total != 0 {
             return Err(DomainError::UnbalancedTransaction { total });
         }
@@ -92,5 +179,40 @@ impl TransactionBuilder {
             description: self.description,
             postings: self.postings,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_return_error_when_posting_credit_negates_min_value() {
+        let result = Posting::credit("income:salary", i64::MIN);
+        assert_eq!(result, Err(DomainError::AmountOverflow));
+    }
+
+    #[test]
+    fn should_return_error_when_transaction_sum_overflows_positive() {
+        let builder = TransactionBuilder::new("overflow")
+            .posting(Posting::debit("assets:checking", i64::MAX))
+            .posting(Posting::debit("assets:checking", 2))
+            .posting(Posting::credit("income:salary", i64::MAX).expect("credit"))
+            .posting(Posting::credit("income:salary", 2).expect("credit"));
+
+        let result = builder.build();
+        assert_eq!(result, Err(DomainError::AmountOverflow));
+    }
+
+    #[test]
+    fn should_return_error_when_transaction_sum_overflows_negative() {
+        let builder = TransactionBuilder::new("underflow")
+            .posting(Posting::credit("income:salary", i64::MAX).expect("credit"))
+            .posting(Posting::credit("income:salary", 2).expect("credit"))
+            .posting(Posting::debit("assets:checking", i64::MAX))
+            .posting(Posting::debit("assets:checking", 2));
+
+        let result = builder.build();
+        assert_eq!(result, Err(DomainError::AmountOverflow));
     }
 }
