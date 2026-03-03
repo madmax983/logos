@@ -5,6 +5,27 @@
 //! Understanding these categories is essential for correct transaction balancing
 //! and reporting.
 
+/// A strongly-typed identifier for an account in the ledger.
+///
+/// Wraps a String to enforce domain boundaries and prevent stringly-typed
+/// parameter mix-ups.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct AccountId(String);
+
+impl AccountId {
+    /// Creates a new `AccountId`, trimming whitespace.
+    #[must_use]
+    pub fn new(id: &str) -> Self {
+        Self(id.trim().to_owned())
+    }
+
+    /// Returns the string representation.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
 /// Represents the five fundamental account types in double-entry bookkeeping.
 ///
 /// Every account in the ledger belongs to one of these types. The type

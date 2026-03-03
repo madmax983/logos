@@ -33,6 +33,12 @@ impl Default for HaircutTierTable {
 }
 
 impl HaircutTierTable {
+    /// Creates a table with default conservative haircut tiers.
+    #[must_use]
+    pub fn conservative_defaults() -> Self {
+        Self::default()
+    }
+
     /// Returns the haircut percentage for a given number of days to vest.
     ///
     /// ## Examples

@@ -1,3 +1,4 @@
+use crate::domain::account::AccountId;
 use crate::domain::rsu::AllocationPolicy;
 use crate::domain::transaction::{Posting, Transaction, TransactionBuilder};
 use crate::error::DomainError;
@@ -5,11 +6,11 @@ use crate::error::DomainError;
 /// Configuration for `RsuAutoDistributor`, preventing positional string arguments.
 #[derive(Debug, Clone)]
 pub struct RsuDistributorConfig {
-    pub rsu_asset: String,
-    pub tax_reserve: String,
-    pub smoothing_buffer: String,
-    pub goals: String,
-    pub discretionary: String,
+    pub rsu_asset: AccountId,
+    pub tax_reserve: AccountId,
+    pub smoothing_buffer: AccountId,
+    pub goals: AccountId,
+    pub discretionary: AccountId,
 }
 
 /// Automatically distributes vested RSU funds across target accounts
@@ -44,15 +45,18 @@ impl RsuAutoDistributor {
         let tax_cents = gross_vest_cents - smoothing_cents - goals_cents - discretionary_cents;
 
         TransactionBuilder::new(description)
-            .posting(Posting::credit(&self.config.rsu_asset, gross_vest_cents))
-            .posting(Posting::debit(&self.config.tax_reserve, tax_cents))
+            .posting(Posting::credit(
+                self.config.rsu_asset.as_str(),
+                gross_vest_cents,
+            ))
+            .posting(Posting::debit(self.config.tax_reserve.as_str(), tax_cents))
             .posting(Posting::debit(
-                &self.config.smoothing_buffer,
+                self.config.smoothing_buffer.as_str(),
                 smoothing_cents,
             ))
-            .posting(Posting::debit(&self.config.goals, goals_cents))
+            .posting(Posting::debit(self.config.goals.as_str(), goals_cents))
             .posting(Posting::debit(
-                &self.config.discretionary,
+                self.config.discretionary.as_str(),
                 discretionary_cents,
             ))
             .build()
@@ -67,11 +71,11 @@ mod tests {
     fn test_perfect_distribution() {
         let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
         let config = RsuDistributorConfig {
-            rsu_asset: "assets:rsu".to_owned(),
-            tax_reserve: "assets:tax".to_owned(),
-            smoothing_buffer: "assets:buffer".to_owned(),
-            goals: "assets:goals".to_owned(),
-            discretionary: "assets:checking".to_owned(),
+            rsu_asset: AccountId::new("assets:rsu"),
+            tax_reserve: AccountId::new("assets:tax"),
+            smoothing_buffer: AccountId::new("assets:buffer"),
+            goals: AccountId::new("assets:goals"),
+            discretionary: AccountId::new("assets:checking"),
         };
         let distributor = RsuAutoDistributor::new(config);
 
@@ -96,11 +100,11 @@ mod tests {
     fn test_imperfect_distribution_sweeps_to_tax() {
         let policy = AllocationPolicy::new(33, 33, 33, 1).unwrap();
         let config = RsuDistributorConfig {
-            rsu_asset: "assets:rsu".to_owned(),
-            tax_reserve: "assets:tax".to_owned(),
-            smoothing_buffer: "assets:buffer".to_owned(),
-            goals: "assets:goals".to_owned(),
-            discretionary: "assets:checking".to_owned(),
+            rsu_asset: AccountId::new("assets:rsu"),
+            tax_reserve: AccountId::new("assets:tax"),
+            smoothing_buffer: AccountId::new("assets:buffer"),
+            goals: AccountId::new("assets:goals"),
+            discretionary: AccountId::new("assets:checking"),
         };
         let distributor = RsuAutoDistributor::new(config);
 
