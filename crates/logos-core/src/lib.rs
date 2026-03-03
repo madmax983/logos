@@ -1,7 +1,8 @@
 pub mod domain;
 pub mod error;
+pub mod planning;
 
-pub use domain::account::AccountType;
+pub use domain::account::{AccountId, AccountType};
 pub use domain::budget::{BudgetMonth, rollover_end_balance};
 pub use domain::category::{Category, CategoryGroup, CategoryGroupId};
 pub use domain::correction::{Correction, TransactionId};

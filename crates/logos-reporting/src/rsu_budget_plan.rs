@@ -214,7 +214,7 @@ pub fn project_rsu_budget_plan(
         return Err("month_key must not be empty".to_owned());
     }
 
-    let tiers = HaircutTierTable::conservative_defaults();
+    let tiers = HaircutTierTable::default();
     let bear_monthly = monthly_income(
         input.scenario_prices.bear,
         input.quarterly_units,
@@ -298,5 +298,108 @@ fn scenario_projection(
         reserve_sweep_cents,
         investing_sweep_cents,
         available_after_sweeps_cents,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_scenario_budget_projection_accessors() {
+        let proj = ScenarioBudgetProjection {
+            scenario: ScenarioKey::Base,
+            monthly_income_cents: 100,
+            surplus_cents: 200,
+            reserve_sweep_cents: 300,
+            investing_sweep_cents: 400,
+            available_after_sweeps_cents: 500,
+        };
+        assert_eq!(proj.scenario(), ScenarioKey::Base);
+        assert_eq!(proj.monthly_income_cents(), 100);
+        assert_eq!(proj.surplus_cents(), 200);
+        assert_eq!(proj.reserve_sweep_cents(), 300);
+        assert_eq!(proj.investing_sweep_cents(), 400);
+        assert_eq!(proj.available_after_sweeps_cents(), 500);
+    }
+
+    #[test]
+    fn test_rsu_budget_plan_accessors() {
+        let bear_proj = ScenarioBudgetProjection {
+            scenario: ScenarioKey::Bear,
+            monthly_income_cents: 0,
+            surplus_cents: 0,
+            reserve_sweep_cents: 0,
+            investing_sweep_cents: 0,
+            available_after_sweeps_cents: 0,
+        };
+        let base_proj = ScenarioBudgetProjection { scenario: ScenarioKey::Base, ..bear_proj };
+        let bull_proj = ScenarioBudgetProjection { scenario: ScenarioKey::Bull, ..bear_proj };
+
+        let plan = RsuBudgetPlan {
+            month_key: "2024-01".to_owned(),
+            conservative_budget_cents: 10,
+            fixed_commitments_cents: 20,
+            baseline_remaining_cents: 30,
+            reserve_sweep_pct: 40,
+            investing_sweep_pct: 50,
+            scenarios: [bear_proj, base_proj, bull_proj],
+        };
+
+        assert_eq!(plan.month_key(), "2024-01");
+        assert_eq!(plan.conservative_budget_cents(), 10);
+        assert_eq!(plan.fixed_commitments_cents(), 20);
+        assert_eq!(plan.baseline_remaining_cents(), 30);
+        assert_eq!(plan.reserve_sweep_pct(), 40);
+        assert_eq!(plan.investing_sweep_pct(), 50);
+
+        assert_eq!(plan.scenario(ScenarioKey::Bear).unwrap().scenario(), ScenarioKey::Bear);
+        assert_eq!(plan.bear().unwrap().scenario(), ScenarioKey::Bear);
+        assert_eq!(plan.base().unwrap().scenario(), ScenarioKey::Base);
+        assert_eq!(plan.bull().unwrap().scenario(), ScenarioKey::Bull);
+
+        let sc = plan.scenarios();
+        assert_eq!(sc.len(), 3);
+        assert_eq!(sc[0].scenario(), ScenarioKey::Bear);
+    }
+
+    #[test]
+    fn test_scenario_projection_sweeps() {
+        let proj = scenario_projection(
+            ScenarioKey::Base,
+            1000,
+            200, // surplus = 800
+            10,  // 10% = 80
+            20,  // 20% = 160
+        );
+        assert_eq!(proj.surplus_cents(), 800);
+        assert_eq!(proj.reserve_sweep_cents(), 80);
+        assert_eq!(proj.investing_sweep_cents(), 160);
+        assert_eq!(proj.available_after_sweeps_cents(), 1000 - 80 - 160); // 760
+    }
+
+    #[test]
+    fn test_monthly_income_math() {
+        let tiers = HaircutTierTable::default();
+        let val = monthly_income(1000, 300, 0, tiers);
+        assert_eq!(val, 75000);
+    }
+
+    #[test]
+    fn test_project_rsu_budget_plan() {
+        let prices = ScenarioPriceInputs::new(100, 200, 300).unwrap();
+        let input = RsuBudgetPlanInput::new(
+            300,
+            0,
+            prices,
+            5000,
+            10,
+            20
+        ).unwrap();
+
+        let plan = project_rsu_budget_plan("2024-01", &input).unwrap();
+
+        assert_eq!(plan.conservative_budget_cents(), 7500);
+        assert_eq!(plan.baseline_remaining_cents(), 7500 - 5000); // 2500
     }
 }

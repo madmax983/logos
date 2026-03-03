@@ -1,3 +1,14 @@
+//! Envelope budgeting and rollover calculations.
+//!
+//! The `budget` module provides structures for managing month-scoped envelopes.
+//! In envelope budgeting, money from a previous month rolls over into the next.
+//! This ensures that unspent funds remain available, and overspending must be
+//! explicitly covered.
+
+/// Represents a single envelope's budget state for a specific month.
+///
+/// Contains the rolled-over start balance, the amount newly assigned to the
+/// envelope during the month, and the total amount spent.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BudgetMonth {
     month_key: String,
@@ -37,12 +48,35 @@ impl BudgetMonth {
         self.spent
     }
 
+    /// Calculates the final balance of the envelope at the end of the month.
+    ///
+    /// This value will become the `start_balance` for the next month.
     #[must_use]
     pub const fn end_balance(&self) -> i64 {
         rollover_end_balance(self.start_balance, self.assigned, self.spent)
     }
 }
 
+/// Calculates the rolling envelope balance for the end of a period.
+///
+/// Funds available in the envelope equal the starting balance plus any newly
+/// assigned funds. Subtracting the spent amount yields the final rollover balance.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::budget::rollover_end_balance;
+///
+/// // Start with $100 (10000 cents), assign $50 (5000 cents), spend $120 (12000 cents).
+/// // Remaining balance should be $30 (3000 cents).
+/// let end = rollover_end_balance(10000, 5000, 12000);
+/// assert_eq!(end, 3000);
+///
+/// // Overspending results in a negative rollover balance.
+/// // Start with $0, assign $0, spend $10.
+/// let overspent = rollover_end_balance(0, 0, 1000);
+/// assert_eq!(overspent, -1000);
+/// ```
 #[must_use]
 pub const fn rollover_end_balance(start: i64, assigned: i64, spent: i64) -> i64 {
     start + assigned - spent

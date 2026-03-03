@@ -14,4 +14,5 @@ logos-core = { path = "../logos-core" }
 logos-import = { path = "../logos-import" }
 logos-reporting = { path = "../logos-reporting" }
 logos-store-aletheia = { path = "../logos-store-aletheia" }
+comfy-table = "7.1"
 polars = { version = "0.46.0", features = ["parquet"] }

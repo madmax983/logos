@@ -2,7 +2,7 @@ use logos_core::{AllocationPolicy, HaircutTierTable, forecast_value_cents};
 
 #[test]
 fn conservative_haircut_tiers_are_selected_by_horizon() {
-    let tiers = HaircutTierTable::conservative_defaults();
+    let tiers = HaircutTierTable::default();
 
     assert_eq!(tiers.haircut_for_days(10), 25);
     assert_eq!(tiers.haircut_for_days(45), 40);
@@ -18,7 +18,7 @@ fn allocation_policy_must_sum_to_one_hundred_percent() {
 #[test]
 fn rsu_forecast_is_planning_only_and_does_not_mutate_ledger_balance() {
     let posted_balance_cents = 250_000_i64;
-    let tiers = HaircutTierTable::conservative_defaults();
+    let tiers = HaircutTierTable::default();
 
     let projected = forecast_value_cents(12_345, 100, 15, &tiers);
 

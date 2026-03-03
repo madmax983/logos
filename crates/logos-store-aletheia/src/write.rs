@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use aletheiadb::Timestamp;
+use crate::Timestamp;
 use logos_core::{Correction, TransactionBuilder, TransactionId};
 
 use crate::{

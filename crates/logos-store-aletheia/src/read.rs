@@ -226,19 +226,17 @@ impl AletheiaStore {
     }
 
     fn current_projection_without_superseded(&self) -> Vec<StoredTransaction> {
-        let superseded_ids: HashSet<_> = self
-            .corrections
-            .iter()
-            .map(StoredCorrection::correction)
-            .map(|correction| correction.supersedes_id().clone())
-            .collect();
+        let mut superseded_ids = HashSet::with_capacity(self.corrections.len());
+        for stored in &self.corrections {
+            superseded_ids.insert(stored.correction().supersedes_id());
+        }
 
-        let mut transactions: Vec<_> = self
-            .transactions
-            .values()
-            .filter(|stored| !superseded_ids.contains(stored.id()))
-            .cloned()
-            .collect();
+        let mut transactions = Vec::with_capacity(self.transactions.len());
+        for stored in self.transactions.values() {
+            if !superseded_ids.contains(stored.id()) {
+                transactions.push(stored.clone());
+            }
+        }
         transactions.sort_by(|left, right| left.id().as_str().cmp(right.id().as_str()));
         transactions
     }
