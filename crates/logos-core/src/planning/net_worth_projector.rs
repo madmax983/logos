@@ -1,5 +1,5 @@
 use crate::domain::rsu::{HaircutTierTable, forecast_value_cents};
-use crate::experimental::fire::UpcomingVest;
+use crate::planning::fire::UpcomingVest;
 
 /// Represents a single month's snapshot in a net worth projection timeline.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,6 +1,6 @@
 pub mod domain;
 pub mod error;
-pub mod experimental;
+pub mod planning;
 
 pub use domain::account::{AccountId, AccountType};
 pub use domain::budget::{BudgetMonth, rollover_end_balance};

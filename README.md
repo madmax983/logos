@@ -14,6 +14,9 @@ Implemented foundations:
 - core projections in `logos-reporting`
 - read-only TUI app/view skeleton in `logos-tui`
 - Verus spine proofs in `logos-proof`
+- financial planning primitives in `logos-core::planning` (`RsuAutoDistributor`, `FireSimulator`, `NetWorthProjector`)
+
+See [docs/financial-planning.md](docs/financial-planning.md) for details on auto distribution, FIRE progress modeling, and net worth projection.
 
 ## Tooling
 
