@@ -2,6 +2,10 @@
 
 Forward-looking personal finance CLI/TUI with strict double-entry, budget envelopes, RSU planning policy, and `logos-proof` Verus invariants.
 
+## Prerequisites
+
+**⚠️ Important:** To build or run this workspace locally, you *must* have the source code for `aletheiadb` located exactly at `/tmp/gallifreydb`. The `logos-store-aletheia` crate currently has a hardcoded local path dependency on it. If this directory is missing or empty, all `cargo` commands (including `check`, `build`, `run`, and `test`) will immediately fail with `failed to load manifest for dependency`.
+
 ## Current Status
 
 Implemented foundations:
