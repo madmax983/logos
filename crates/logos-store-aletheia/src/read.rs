@@ -194,7 +194,8 @@ impl AletheiaStore {
         };
 
         let superseded_ids = load_superseded_ids_at(&embedded.db, as_of)?;
-        let mut transactions = Vec::new();
+        // Pre-allocate transactions vector based on exact node count to prevent multiple heap reallocations.
+        let mut transactions = Vec::with_capacity(embedded.transaction_nodes.len());
 
         for (txn_id, txn_node_id) in &embedded.transaction_nodes {
             if superseded_ids.contains(txn_id) {
@@ -246,8 +247,10 @@ fn load_superseded_ids_at(
     db: &AletheiaDB,
     as_of: AsOf,
 ) -> Result<HashSet<TransactionId>, StoreError> {
-    let mut superseded_ids = HashSet::new();
-    for correction_node_id in db.scan_nodes_by_label(LABEL_LEDGER_CORRECTION) {
+    let correction_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_CORRECTION);
+    // Pre-allocate hash set based on known correction node count to eliminate runtime hashing reallocations.
+    let mut superseded_ids = HashSet::with_capacity(correction_node_ids.len());
+    for correction_node_id in correction_node_ids {
         let Some(correction_node) = get_node_at_as_of(db, correction_node_id, as_of)? else {
             continue;
         };
