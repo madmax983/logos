@@ -162,4 +162,30 @@ mod tests {
         // 600k / 1.2M = 50%
         assert_eq!(sim.fire_progress_pct(), 50);
     }
+
+    #[test]
+    fn test_fire_progress_edge_cases() {
+        // 1. fire_num == 0
+        let sim_zero_expenses = FireSimulator::new(0);
+        assert_eq!(sim_zero_expenses.fire_number_cents(), 0);
+        assert_eq!(sim_zero_expenses.fire_progress_pct(), 100);
+
+        // 2. safe_withdrawal_rate_pct == 0
+        let mut sim_zero_swr = FireSimulator::new(500_000);
+        sim_zero_swr.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 0,
+        });
+        assert_eq!(sim_zero_swr.fire_number_cents(), i64::MAX);
+        assert_eq!(sim_zero_swr.fire_progress_pct(), 0);
+
+        // 3. nw <= 0
+        let mut sim_negative_nw = FireSimulator::new(500_000);
+        sim_negative_nw.add_assets_liabilities(0, 10_000_000); // -100k NW
+        assert_eq!(sim_negative_nw.fire_progress_pct(), 0);
+
+        // 4. pct exceeds 100
+        let mut sim_exceeds = FireSimulator::new(500_000); // fire_num = 1.5M
+        sim_exceeds.add_assets_liabilities(200_000_000, 0); // 2M NW
+        assert_eq!(sim_exceeds.fire_progress_pct(), 100);
+    }
 }
