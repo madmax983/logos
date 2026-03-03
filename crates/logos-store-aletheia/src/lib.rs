@@ -2094,7 +2094,7 @@ fn parse_posting(txn_id: &str, account: &str, amount_cents: i64) -> Result<Posti
                 "transaction '{txn_id}' contains posting '{account}' with unsupported amount {amount_cents}"
             ),
         })?;
-    Ok(Posting::credit(account, credit_amount))
+    Posting::credit(account, credit_amount).map_err(|e| map_load_error("posting credit", e))
 }
 
 fn map_load_error(context: &str, error: impl fmt::Display) -> StoreError {

@@ -37,6 +37,7 @@ const DEFAULT_ANALYTICS_SCHEMA_VERSION: i64 = 1;
 pub enum RuntimeError {
     Store(StoreError),
     Import(ImportError),
+    Domain(logos_core::DomainError),
     Analytics { message: String },
 }
 
@@ -45,6 +46,7 @@ impl fmt::Display for RuntimeError {
         match self {
             Self::Store(err) => write!(f, "{err}"),
             Self::Import(err) => write!(f, "{err}"),
+            Self::Domain(err) => write!(f, "domain error: {err}"),
             Self::Analytics { message } => write!(f, "{message}"),
         }
     }
@@ -61,6 +63,12 @@ impl From<StoreError> for RuntimeError {
 impl From<ImportError> for RuntimeError {
     fn from(value: ImportError) -> Self {
         Self::Import(value)
+    }
+}
+
+impl From<logos_core::DomainError> for RuntimeError {
+    fn from(value: logos_core::DomainError) -> Self {
+        Self::Domain(value)
     }
 }
 
@@ -484,7 +492,7 @@ impl CliRuntime {
         credit_account: &str,
         amount_cents: i64,
     ) -> Result<TransactionId, RuntimeError> {
-        let builder = build_double_entry(description, debit_account, credit_account, amount_cents);
+        let builder = build_double_entry(description, debit_account, credit_account, amount_cents)?;
         Ok(self.store.write_transaction(builder)?)
     }
 
@@ -1223,7 +1231,7 @@ impl CliRuntime {
         let valid_from = parse_import_timestamp(record.timestamp()).map(Into::into);
         if amount > 0 {
             let builder =
-                build_double_entry(record.memo(), record.account(), record.category(), amount);
+                build_double_entry(record.memo(), record.account(), record.category(), amount)?;
             return self
                 .store
                 .write_transaction_with_valid_time(builder, valid_from)
@@ -1236,7 +1244,7 @@ impl CliRuntime {
             record.category(),
             record.account(),
             debit_amount,
-        );
+        )?;
         self.store
             .write_transaction_with_valid_time(builder, valid_from)
             .map_err(RuntimeError::from)
@@ -1436,10 +1444,10 @@ fn build_double_entry(
     debit_account: &str,
     credit_account: &str,
     amount_cents: i64,
-) -> TransactionBuilder {
-    TransactionBuilder::new(description)
+) -> Result<TransactionBuilder, RuntimeError> {
+    Ok(TransactionBuilder::new(description)
         .posting(Posting::debit(debit_account, amount_cents))
-        .posting(Posting::credit(credit_account, amount_cents))
+        .posting(Posting::credit(credit_account, amount_cents)?))
 }
 
 fn parse_import_timestamp(timestamp: &str) -> Option<i64> {
