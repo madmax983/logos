@@ -170,11 +170,23 @@ fn valid_month_day(month: u32, day: u32) -> bool {
 }
 
 fn parse_amount_cents_token(token: &str) -> Option<i64> {
-    let mut cleaned = token.trim_matches(|c: char| matches!(c, ',' | ';'));
+    let cleaned = token.trim_matches(|c: char| matches!(c, ',' | ';'));
     if cleaned.is_empty() {
         return None;
     }
 
+    let (negative, numeric_part) = strip_amount_sign_and_currency(cleaned);
+
+    let sanitized: String = numeric_part.chars().filter(|ch| *ch != ',').collect();
+    if sanitized.is_empty() {
+        return None;
+    }
+
+    let cents = parse_cents_from_sanitized(&sanitized)?;
+    Some(if negative { -cents } else { cents })
+}
+
+fn strip_amount_sign_and_currency(mut cleaned: &str) -> (bool, &str) {
     let mut negative = false;
     if let Some(inner) = cleaned
         .strip_prefix('(')
@@ -192,16 +204,14 @@ fn parse_amount_cents_token(token: &str) -> Option<i64> {
     if let Some(value) = cleaned.strip_prefix('$') {
         cleaned = value;
     }
+    (negative, cleaned)
+}
 
-    let sanitized: String = cleaned.chars().filter(|ch| *ch != ',').collect();
-    if sanitized.is_empty() {
-        return None;
-    }
-
+fn parse_cents_from_sanitized(sanitized: &str) -> Option<i64> {
     let (whole_text, frac_text) = if let Some((whole, frac)) = sanitized.split_once('.') {
         (whole, frac)
     } else {
-        (sanitized.as_str(), "")
+        (sanitized, "")
     };
     if whole_text.is_empty() || frac_text.len() > 2 {
         return None;
@@ -216,8 +226,7 @@ fn parse_amount_cents_token(token: &str) -> Option<i64> {
         frac_text.parse::<i64>().ok()?
     };
 
-    let cents = whole.checked_mul(100)?.checked_add(frac)?;
-    Some(if negative { -cents } else { cents })
+    whole.checked_mul(100)?.checked_add(frac)
 }
 
 fn extract_pdf_text(path: &Path, bytes: &[u8]) -> Result<String, ImportError> {
@@ -242,7 +251,20 @@ fn extract_pdf_text_with_ocr(path: &Path) -> Result<String, String> {
     let stem = temp_ocr_stem("logos-pdf-ocr");
     let png_path = stem.with_extension("png");
 
-    let pdftoppm_output = Command::new("pdftoppm")
+    run_pdftoppm(path, &stem)?;
+    let text_result = run_tesseract(&png_path);
+
+    cleanup_file_if_exists(&png_path);
+
+    let text = text_result?;
+    if text.trim().is_empty() {
+        return Err("OCR produced no textual content".to_owned());
+    }
+    Ok(text)
+}
+
+fn run_pdftoppm(path: &Path, stem: &Path) -> Result<(), String> {
+    let output = Command::new("pdftoppm")
         .arg("-f")
         .arg("1")
         .arg("-singlefile")
@@ -250,7 +272,7 @@ fn extract_pdf_text_with_ocr(path: &Path) -> Result<String, String> {
         .arg("300")
         .arg("-png")
         .arg(path)
-        .arg(&stem)
+        .arg(stem)
         .output()
         .map_err(|err| {
             if err.kind() == ErrorKind::NotFound {
@@ -259,13 +281,18 @@ fn extract_pdf_text_with_ocr(path: &Path) -> Result<String, String> {
                 format!("pdftoppm launch failed: {err}")
             }
         })?;
-    if !pdftoppm_output.status.success() {
-        let stderr = String::from_utf8_lossy(&pdftoppm_output.stderr);
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(format!("pdftoppm failed: {}", stderr.trim().to_owned()));
     }
 
-    let tesseract_output = Command::new("tesseract")
-        .arg(&png_path)
+    Ok(())
+}
+
+fn run_tesseract(png_path: &Path) -> Result<String, String> {
+    let output = Command::new("tesseract")
+        .arg(png_path)
         .arg("stdout")
         .output()
         .map_err(|err| {
@@ -276,18 +303,12 @@ fn extract_pdf_text_with_ocr(path: &Path) -> Result<String, String> {
             }
         })?;
 
-    cleanup_file_if_exists(&png_path);
-
-    if !tesseract_output.status.success() {
-        let stderr = String::from_utf8_lossy(&tesseract_output.stderr);
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(format!("tesseract failed: {}", stderr.trim().to_owned()));
     }
 
-    let text = String::from_utf8_lossy(&tesseract_output.stdout).into_owned();
-    if text.trim().is_empty() {
-        return Err("OCR produced no textual content".to_owned());
-    }
-    Ok(text)
+    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
 fn temp_ocr_stem(prefix: &str) -> PathBuf {
