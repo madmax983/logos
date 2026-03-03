@@ -1,7 +1,5 @@
-use crate::{
-    args::CliError,
-    runtime::{CliRuntime, MonthAutopilotRequest, MonthAutopilotSummary},
-};
+use crate::args::CliError;
+use logos_app::{CliRuntime, MonthAutopilotRequest, MonthAutopilotSummary};
 
 /// Handles `ledger month autopilot`.
 ///
@@ -20,9 +18,11 @@ pub fn autopilot(
     analytics_artifact_id: Option<&str>,
     confirm_close: bool,
 ) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "month.autopilot".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+    let mut runtime = CliRuntime::new().map_err(|err: logos_app::RuntimeError| {
+        CliError::CommandRuntimeFailed {
+            command: "month.autopilot".to_owned(),
+            message: format!("runtime initialization failed: {err}"),
+        }
     })?;
     let resolved_month_key =
         month_key.map_or_else(CliRuntime::current_month_key_local, str::to_owned);
@@ -51,10 +51,12 @@ pub fn autopilot(
     let summary =
         runtime
             .run_month_autopilot(&request)
-            .map_err(|err| CliError::CommandRuntimeFailed {
-                command: "month.autopilot".to_owned(),
-                message: err.to_string(),
-            })?;
+            .map_err(
+                |err: logos_app::RuntimeError| CliError::CommandRuntimeFailed {
+                    command: "month.autopilot".to_owned(),
+                    message: err.to_string(),
+                },
+            )?;
     println!("{}", render_autopilot_output(&summary));
     Ok(())
 }
@@ -78,7 +80,7 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
 #[cfg(test)]
 mod tests {
     use super::render_autopilot_output;
-    use crate::runtime::{MonthAutopilotSummary, MonthReport};
+    use logos_app::{MonthAutopilotSummary, MonthReport};
     use logos_store_aletheia::model::{StoredMonthClose, StoredReconciliationRun};
 
     #[test]

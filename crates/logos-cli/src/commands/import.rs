@@ -1,7 +1,8 @@
 use logos_import::CsvMapping;
 use std::path::Path;
 
-use crate::{args::CliError, runtime::CliRuntime};
+use crate::args::CliError;
+use logos_app::CliRuntime;
 
 /// Handles `ledger import pdf`.
 ///
@@ -9,16 +10,20 @@ use crate::{args::CliError, runtime::CliRuntime};
 ///
 /// Returns an error when runtime initialization or import execution fails.
 pub fn pdf(file_path: &str, account: &str, dry_run: bool, ocr: bool) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "import.pdf".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+    let mut runtime = CliRuntime::new().map_err(|err: logos_app::RuntimeError| {
+        CliError::CommandRuntimeFailed {
+            command: "import.pdf".to_owned(),
+            message: format!("runtime initialization failed: {err}"),
+        }
     })?;
     let summary = runtime
         .import_pdf_statement(Path::new(file_path), account, dry_run, ocr)
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "import.pdf".to_owned(),
-            message: err.to_string(),
-        })?;
+        .map_err(
+            |err: logos_app::RuntimeError| CliError::CommandRuntimeFailed {
+                command: "import.pdf".to_owned(),
+                message: err.to_string(),
+            },
+        )?;
 
     println!(
         "{}",
@@ -51,9 +56,11 @@ pub fn csv(
     skip_header: bool,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "import.csv".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+    let mut runtime = CliRuntime::new().map_err(|err: logos_app::RuntimeError| {
+        CliError::CommandRuntimeFailed {
+            command: "import.csv".to_owned(),
+            message: format!("runtime initialization failed: {err}"),
+        }
     })?;
     let source_id = source_id.map_or_else(
         || {
@@ -75,10 +82,12 @@ pub fn csv(
     };
     let summary = runtime
         .import_csv_statement(Path::new(file_path), &mapping, dry_run, skip_header)
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "import.csv".to_owned(),
-            message: err.to_string(),
-        })?;
+        .map_err(
+            |err: logos_app::RuntimeError| CliError::CommandRuntimeFailed {
+                command: "import.csv".to_owned(),
+                message: err.to_string(),
+            },
+        )?;
 
     println!(
         "{}",

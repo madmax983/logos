@@ -1,0 +1,3 @@
+**[Extract Application Layer from CLI]**
+**Tangle:** The `logos-tui` presentation crate was depending on the `logos-cli` presentation crate to reuse `CliRuntime`. This created an architectural smell ("The Sprawl") where UI components were crossing presentation boundaries and taking an unnecessary dependency on CLI implementation details.
+**Blueprint:** Extracted the runtime orchestration logic out of `logos-cli` into a shared `logos-app` workspace crate. Now both `logos-cli` and `logos-tui` depend cleanly on `logos-app`, enforcing a strictly unidirectional dependency graph from Presentation -> Application -> Domain/Infrastructure.

@@ -1,4 +1,5 @@
-use crate::{args::CliError, runtime::CliRuntime};
+use crate::args::CliError;
+use logos_app::CliRuntime;
 use logos_store_aletheia::model::StoredMonthClose;
 
 /// Handles `ledger close month`.
@@ -12,9 +13,11 @@ pub fn month(
     run_id: &str,
     analytics_artifact_id: Option<&str>,
 ) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "close.month".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+    let mut runtime = CliRuntime::new().map_err(|err: logos_app::RuntimeError| {
+        CliError::CommandRuntimeFailed {
+            command: "close.month".to_owned(),
+            message: format!("runtime initialization failed: {err}"),
+        }
     })?;
     let resolved_month_key = if let Some(explicit_month) = month_key {
         explicit_month.to_owned()
@@ -36,10 +39,12 @@ pub fn month(
             run_id,
             analytics_artifact_id,
         )
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "close.month".to_owned(),
-            message: err.to_string(),
-        })?;
+        .map_err(
+            |err: logos_app::RuntimeError| CliError::CommandRuntimeFailed {
+                command: "close.month".to_owned(),
+                message: err.to_string(),
+            },
+        )?;
 
     println!(
         "{}",

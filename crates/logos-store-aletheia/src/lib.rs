@@ -5,7 +5,7 @@ use std::path::Path;
 
 use aletheiadb::{
     AletheiaDB, AletheiaDBConfig, DurabilityMode, Edge, Node, NodeId, PropertyMapBuilder,
-    Timestamp, WalConfigBuilder, WriteOps,
+    Timestamp, WalConfigBuilder,
 };
 use logos_core::{Correction, DomainError, Posting, TransactionBuilder, TransactionId};
 

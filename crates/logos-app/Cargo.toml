@@ -1,5 +1,5 @@
 [package]
-name = "logos-cli"
+name = "logos-app"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -11,7 +11,6 @@ workspace = true
 blake3 = "1.8.3"
 chrono = { version = "0.4.42", default-features = true, features = ["clock"] }
 logos-core = { path = "../logos-core" }
-logos-app = { path = "../logos-app" }
 logos-import = { path = "../logos-import" }
 logos-reporting = { path = "../logos-reporting" }
 logos-store-aletheia = { path = "../logos-store-aletheia" }

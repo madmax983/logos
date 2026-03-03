@@ -1,5 +1,8 @@
 [workspace]
 members = [
+    "crates/aletheiadb",
+    "crates/logos-app",
+    "crates/logos-app",
     "crates/logos-core",
     "crates/logos-cli",
     "crates/logos-store-aletheia",

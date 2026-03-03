@@ -1,9 +1,7 @@
 use logos_core::TransactionId;
 
-use crate::{
-    args::CliError,
-    runtime::{CliRuntime, RuntimeError},
-};
+use crate::args::CliError;
+use logos_app::{CliRuntime, RuntimeError};
 
 trait TxnPoster {
     fn post_double_entry(
@@ -58,9 +56,11 @@ pub fn add(
     credit_account: &str,
     amount_cents: i64,
 ) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "txn.add".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+    let mut runtime = CliRuntime::new().map_err(|err: logos_app::RuntimeError| {
+        CliError::CommandRuntimeFailed {
+            command: "txn.add".to_owned(),
+            message: format!("runtime initialization failed: {err}"),
+        }
     })?;
     let transaction_id = post_double_entry(
         description,
@@ -79,9 +79,11 @@ pub fn add(
 ///
 /// Returns an error when correction validation or runtime persistence fails.
 pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "txn.correct".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+    let mut runtime = CliRuntime::new().map_err(|err: logos_app::RuntimeError| {
+        CliError::CommandRuntimeFailed {
+            command: "txn.correct".to_owned(),
+            message: format!("runtime initialization failed: {err}"),
+        }
     })?;
     apply_correction(supersedes_id, reason, &mut runtime)?;
     println!("txn.correct supersedes_id={supersedes_id}");
@@ -118,10 +120,12 @@ fn post_double_entry(
 
     runtime
         .post_double_entry(description, debit_account, credit_account, amount_cents)
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "txn.add".to_owned(),
-            message: err.to_string(),
-        })
+        .map_err(
+            |err: logos_app::RuntimeError| CliError::CommandRuntimeFailed {
+                command: "txn.add".to_owned(),
+                message: err.to_string(),
+            },
+        )
 }
 
 fn apply_correction(
@@ -142,16 +146,18 @@ fn apply_correction(
 
     runtime
         .apply_correction(TransactionId::new(supersedes_id), reason)
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "txn.correct".to_owned(),
-            message: err.to_string(),
-        })
+        .map_err(
+            |err: logos_app::RuntimeError| CliError::CommandRuntimeFailed {
+                command: "txn.correct".to_owned(),
+                message: err.to_string(),
+            },
+        )
 }
 
 #[cfg(test)]
 mod tests {
     use super::{TxnPoster, apply_correction, post_double_entry};
-    use crate::runtime::RuntimeError;
+    use logos_app::RuntimeError;
     use logos_core::TransactionId;
     use logos_import::ImportError;
 

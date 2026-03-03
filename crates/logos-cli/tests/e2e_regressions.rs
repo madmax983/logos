@@ -1,4 +1,4 @@
-use logos_cli::runtime::CliRuntime;
+use logos_app::CliRuntime;
 
 #[test]
 fn e2e_correction_tracks_latest_superseded_transaction() {

@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use logos_cli::runtime::CliRuntime;
+use logos_app::CliRuntime;
 use logos_tui::{App, View};
 
 fn main() {

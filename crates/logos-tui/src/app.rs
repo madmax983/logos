@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use logos_cli::runtime::CliRuntime;
+use logos_app::CliRuntime;
 
 use crate::ui::{budget, home, reconcile, register, rsu};
 

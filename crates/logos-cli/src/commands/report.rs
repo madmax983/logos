@@ -1,7 +1,5 @@
-use crate::{
-    args::CliError,
-    runtime::{CliRuntime, MonthReport},
-};
+use crate::args::CliError;
+use logos_app::{CliRuntime, MonthReport};
 
 trait ReportRuntime {
     fn month_report_for(&self, checking_account: &str, month_key: &str) -> MonthReport;
@@ -19,9 +17,11 @@ impl ReportRuntime for CliRuntime {
 ///
 /// Returns an error when runtime initialization fails.
 pub fn month(checking_account: &str, month_key: Option<&str>) -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "report.month".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+    let runtime = CliRuntime::new().map_err(|err: logos_app::RuntimeError| {
+        CliError::CommandRuntimeFailed {
+            command: "report.month".to_owned(),
+            message: format!("runtime initialization failed: {err}"),
+        }
     })?;
     let resolved_month_key =
         month_key.map_or_else(CliRuntime::current_month_key_local, str::to_owned);
@@ -48,7 +48,7 @@ fn render_month_output(
 #[cfg(test)]
 mod tests {
     use super::{ReportRuntime, render_month_output};
-    use crate::runtime::MonthReport;
+    use logos_app::MonthReport;
 
     struct FakeReportRuntime {
         report: MonthReport,

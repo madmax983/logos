@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use chrono::DateTime;
-use logos_cli::runtime::{CliRuntime, MonthAutopilotRequest};
+use logos_app::{CliRuntime, MonthAutopilotRequest};
 use logos_core::TransactionId;
 use logos_import::CsvMapping;
 

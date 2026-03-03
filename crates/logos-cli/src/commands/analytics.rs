@@ -1,4 +1,5 @@
-use crate::{args::CliError, runtime::CliRuntime};
+use crate::args::CliError;
+use logos_app::CliRuntime;
 
 /// Handles `ledger analytics snapshot create`.
 ///
@@ -11,9 +12,11 @@ pub fn snapshot_create(
     schema_version: i64,
     supersedes_artifact_id: Option<&str>,
 ) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "analytics.snapshot.create".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+    let mut runtime = CliRuntime::new().map_err(|err: logos_app::RuntimeError| {
+        CliError::CommandRuntimeFailed {
+            command: "analytics.snapshot.create".to_owned(),
+            message: format!("runtime initialization failed: {err}"),
+        }
     })?;
     let manifest = runtime
         .create_analytics_snapshot(
@@ -22,10 +25,12 @@ pub fn snapshot_create(
             schema_version,
             supersedes_artifact_id,
         )
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "analytics.snapshot.create".to_owned(),
-            message: err.to_string(),
-        })?;
+        .map_err(
+            |err: logos_app::RuntimeError| CliError::CommandRuntimeFailed {
+                command: "analytics.snapshot.create".to_owned(),
+                message: err.to_string(),
+            },
+        )?;
 
     println!(
         "{}",
@@ -40,9 +45,11 @@ pub fn snapshot_create(
 ///
 /// Returns an error when runtime initialization fails.
 pub fn snapshot_list() -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "analytics.snapshot.list".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+    let runtime = CliRuntime::new().map_err(|err: logos_app::RuntimeError| {
+        CliError::CommandRuntimeFailed {
+            command: "analytics.snapshot.list".to_owned(),
+            message: format!("runtime initialization failed: {err}"),
+        }
     })?;
     let manifests = runtime.list_analytics_snapshots();
     if manifests.is_empty() {
@@ -69,9 +76,11 @@ pub fn snapshot_list() -> Result<(), CliError> {
 ///
 /// Returns an error when runtime initialization fails or the manifest id is missing.
 pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "analytics.snapshot.show".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+    let runtime = CliRuntime::new().map_err(|err: logos_app::RuntimeError| {
+        CliError::CommandRuntimeFailed {
+            command: "analytics.snapshot.show".to_owned(),
+            message: format!("runtime initialization failed: {err}"),
+        }
     })?;
     let Some(manifest) = runtime.get_analytics_snapshot(artifact_id) else {
         return Err(CliError::CommandRuntimeFailed {

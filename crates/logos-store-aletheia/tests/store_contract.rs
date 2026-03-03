@@ -158,8 +158,8 @@ fn open_persists_budget_target_across_reopen() {
 #[test]
 fn open_persists_analytics_artifact_manifest_across_reopen() {
     let path = temp_store_path("persist-analytics-artifact");
-    let valid_time = time::from_secs(1_700_000_100);
-    let tx_time = time::from_secs(1_700_000_200);
+    let valid_time = aletheiadb::Timestamp::from(1_700_000_100 * 1_000_000);
+    let tx_time = aletheiadb::Timestamp::from(1_700_000_200 * 1_000_000);
     let artifact_id;
     {
         let mut store = AletheiaStore::open(&path).expect("open");
@@ -412,8 +412,11 @@ fn embedded_mapping_writes_transaction_and_posting_graph_entities() {
     }
 
     let graph = open_raw_graph(&path);
-    let transaction_nodes: Vec<_> = graph.scan_nodes_by_label("LedgerTransaction").collect();
-    let posting_count = graph.scan_nodes_by_label("LedgerPosting").count();
+    let transaction_nodes: Vec<_> = graph
+        .scan_nodes_by_label("LedgerTransaction")
+        .into_iter()
+        .collect();
+    let posting_count = graph.scan_nodes_by_label("LedgerPosting").len();
 
     let has_posting_edges: usize = transaction_nodes
         .iter()
@@ -450,7 +453,10 @@ fn embedded_mapping_writes_correction_supersedes_edge() {
     }
 
     let graph = open_raw_graph(&path);
-    let correction_nodes: Vec<_> = graph.scan_nodes_by_label("LedgerCorrection").collect();
+    let correction_nodes: Vec<_> = graph
+        .scan_nodes_by_label("LedgerCorrection")
+        .into_iter()
+        .collect();
     let supersedes_edges: usize = correction_nodes
         .iter()
         .map(|node_id| {
@@ -478,8 +484,8 @@ fn embedded_mapping_writes_analytics_artifact_lineage_edge() {
                 "hash-base",
                 1,
                 10,
-                time::from_secs(1_700_000_300),
-                time::from_secs(1_700_000_301),
+                aletheiadb::Timestamp::from(1_700_000_300 * 1_000_000),
+                aletheiadb::Timestamp::from(1_700_000_301 * 1_000_000),
                 None,
             )
             .expect("write first");
@@ -490,8 +496,8 @@ fn embedded_mapping_writes_analytics_artifact_lineage_edge() {
                 "hash-next",
                 1,
                 11,
-                time::from_secs(1_700_000_400),
-                time::from_secs(1_700_000_401),
+                aletheiadb::Timestamp::from(1_700_000_400 * 1_000_000),
+                aletheiadb::Timestamp::from(1_700_000_401 * 1_000_000),
                 Some(first.artifact_id()),
             )
             .expect("write second");
@@ -501,6 +507,7 @@ fn embedded_mapping_writes_analytics_artifact_lineage_edge() {
     let graph = open_raw_graph(&path);
     let manifest_nodes: Vec<_> = graph
         .scan_nodes_by_label("AnalyticsArtifactManifest")
+        .into_iter()
         .collect();
     let derived_edges: usize = manifest_nodes
         .iter()
@@ -547,8 +554,11 @@ fn embedded_mapping_writes_import_batch_and_record_graph_entities() {
     }
 
     let graph = open_raw_graph(&path);
-    let batch_nodes: Vec<_> = graph.scan_nodes_by_label("LedgerImportBatch").collect();
-    let record_count = graph.scan_nodes_by_label("LedgerImportRecord").count();
+    let batch_nodes: Vec<_> = graph
+        .scan_nodes_by_label("LedgerImportBatch")
+        .into_iter()
+        .collect();
+    let record_count = graph.scan_nodes_by_label("LedgerImportRecord").len();
     let has_record_edges: usize = batch_nodes
         .iter()
         .map(|node_id| {
@@ -605,6 +615,7 @@ fn embedded_mapping_writes_reconciliation_run_and_edges() {
     let graph = open_raw_graph(&path);
     let run_nodes: Vec<_> = graph
         .scan_nodes_by_label("LedgerReconciliationRun")
+        .into_iter()
         .collect();
     let reconciles_edges: usize = run_nodes
         .iter()
@@ -678,6 +689,7 @@ fn embedded_mapping_links_reconciliation_run_to_statement_lines() {
     let graph = open_raw_graph(&path);
     let run_nodes: Vec<_> = graph
         .scan_nodes_by_label("LedgerReconciliationRun")
+        .into_iter()
         .collect();
     let reconciles_statement_line_edges: usize = run_nodes
         .iter()
@@ -687,7 +699,7 @@ fn embedded_mapping_links_reconciliation_run_to_statement_lines() {
                 .len()
         })
         .sum();
-    let statement_line_count = graph.scan_nodes_by_label("LedgerStatementLine").count();
+    let statement_line_count = graph.scan_nodes_by_label("LedgerStatementLine").len();
 
     assert_eq!(run_nodes.len(), 1);
     assert_eq!(statement_line_count, 1);
@@ -731,8 +743,8 @@ fn embedded_mapping_writes_month_close_edges() {
                 "hash-close",
                 1,
                 2,
-                time::from_secs(1_700_000_500),
-                time::from_secs(1_700_000_501),
+                aletheiadb::Timestamp::from(1_700_000_500 * 1_000_000),
+                aletheiadb::Timestamp::from(1_700_000_501 * 1_000_000),
                 None,
             )
             .expect("artifact");
@@ -748,7 +760,10 @@ fn embedded_mapping_writes_month_close_edges() {
     }
 
     let graph = open_raw_graph(&path);
-    let close_nodes: Vec<_> = graph.scan_nodes_by_label("LedgerMonthClose").collect();
+    let close_nodes: Vec<_> = graph
+        .scan_nodes_by_label("LedgerMonthClose")
+        .into_iter()
+        .collect();
     let closes_run_edges: usize = close_nodes
         .iter()
         .map(|node_id| {
@@ -776,8 +791,8 @@ fn embedded_mapping_writes_month_close_edges() {
 #[test]
 fn transactions_as_of_respects_backdated_valid_time() {
     let path = temp_store_path("asof-valid-time");
-    let backdated_valid_time = time::from_secs(1_700_000_000);
-    let just_before_backdated = time::from_secs(1_699_999_999);
+    let backdated_valid_time = aletheiadb::Timestamp::from(1_700_000_000 * 1_000_000);
+    let just_before_backdated = aletheiadb::Timestamp::from(1_699_999_999 * 1_000_000);
     {
         let mut store = AletheiaStore::open(&path).expect("open");
         store

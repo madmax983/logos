@@ -9,4 +9,4 @@ workspace = true
 
 [dependencies]
 logos-core = { path = "../logos-core" }
-aletheiadb = { path = "../../../gallifreydb" }
+aletheiadb = { path = "../aletheiadb" }
