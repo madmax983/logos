@@ -2,7 +2,14 @@ use logos_import::{CsvMapping, parse_simple_csv_row};
 
 #[test]
 fn csv_row_is_mapped_into_import_record() {
-    let mapping = CsvMapping::default();
+    let mapping = CsvMapping {
+        timestamp_idx: 0,
+        amount_idx: 1,
+        memo_idx: 2,
+        account_idx: 3,
+        category_idx: 4,
+        source_id: "test_source".to_string(),
+    };
     let line = "2026-02-01T09:30:00,12345,RSU sale,assets:checking,income:rsu";
 
     let record = parse_simple_csv_row(line, &mapping).expect("parsed");
@@ -12,4 +19,29 @@ fn csv_row_is_mapped_into_import_record() {
     assert_eq!(record.memo(), "RSU sale");
     assert_eq!(record.account(), "assets:checking");
     assert_eq!(record.category(), "income:rsu");
+}
+
+#[test]
+fn csv_row_maps_source_id_and_bounds_checking() {
+    let mapping = CsvMapping {
+        timestamp_idx: 0,
+        amount_idx: 1,
+        memo_idx: 2,
+        account_idx: 3,
+        category_idx: 4,
+        source_id: "test".to_string(),
+    };
+    let line = "2026-02-01T09:30:00,12345,RSU sale,assets:checking,income:rsu";
+
+    let record = parse_simple_csv_row(line, &mapping).expect("parsed");
+
+    // Explicitly test the source id doesn't match an arbitrary string
+    assert_ne!(record.source_id(), "");
+    assert_ne!(record.source_id(), "xyzzy");
+
+    assert_eq!(record.source_id(), "test");
+
+    // Now pass something with fewer columns, it should error
+    let short_line = "2026-02-01T09:30:00,12345,RSU sale,assets:checking";
+    assert!(parse_simple_csv_row(short_line, &mapping).is_err());
 }
