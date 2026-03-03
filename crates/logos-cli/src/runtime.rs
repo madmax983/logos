@@ -1333,8 +1333,17 @@ fn current_time_us() -> i64 {
         .unwrap_or(0)
 }
 
+/// Extracts `SnapshotPostingRow`s from a list of transactions.
+///
+/// **Performance Optimization**: Pre-calculates the exact number of postings across all
+/// transactions to pre-allocate the `rows` vector. This avoids multiple intermediate
+/// heap reallocations when processing large ledgers.
 fn snapshot_rows(transactions: Vec<StoredTransaction>) -> Vec<SnapshotPostingRow> {
-    let mut rows = Vec::new();
+    let capacity: usize = transactions
+        .iter()
+        .map(|stored| stored.transaction().postings().len())
+        .sum();
+    let mut rows = Vec::with_capacity(capacity);
     for stored in transactions {
         for (index, posting) in stored.transaction().postings().iter().enumerate() {
             let posting_ordinal = i64::try_from(index).unwrap_or(i64::MAX);
