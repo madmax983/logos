@@ -1,6 +1,29 @@
+//! FIRE (Financial Independence, Retire Early) forecasting models.
+//!
+//! This module provides a simulator to project whether a user is on track
+//! to achieve financial independence. It uses current liquid assets, liabilities,
+//! expected future equity vests (via [`UpcomingVest`]), and a safe withdrawal rate
+//! to compute a target "FIRE number" and measure progress towards it.
+//!
+//! The simulator discounts future unvested equity according to the risk "haircut"
+//! policy defined in the [`rsu`](crate::domain::rsu) module.
+
 use crate::domain::rsu::{HaircutTierTable, forecast_value_cents};
 
 /// Configuration for the FIRE Simulator.
+///
+/// Defines the parameters used to calculate the target FIRE number, such as the
+/// safe withdrawal rate.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::experimental::fire::FireConfig;
+///
+/// let config = FireConfig {
+///     safe_withdrawal_rate_pct: 3, // 3% Safe Withdrawal Rate
+/// };
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FireConfig {
     /// Safe withdrawal rate as a percentage (e.g., 4 for 4%)
@@ -16,6 +39,22 @@ impl Default for FireConfig {
 }
 
 /// Represents an upcoming RSU vest to be included in the FIRE calculation.
+///
+/// Upcoming vests are not counted at full market value due to price volatility
+/// and vesting risk. The simulator applies a "haircut" discount to forecast a
+/// conservative safe value based on how many days remain until the vest date.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::experimental::fire::UpcomingVest;
+///
+/// let vest = UpcomingVest {
+///     avg_close_price_cents: 10_000, // $100.00
+///     units: 50,
+///     days_to_vest: 45,
+/// };
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UpcomingVest {
     pub avg_close_price_cents: i64,
@@ -24,6 +63,26 @@ pub struct UpcomingVest {
 }
 
 /// A simulator to calculate FIRE (Financial Independence, Retire Early) metrics.
+///
+/// The simulator combines current net worth with the conservative forecasted value
+/// of unvested equity to calculate a "Safe Net Worth". It then compares this against
+/// the required "FIRE Number" to compute overall progress.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::experimental::fire::{FireSimulator, UpcomingVest};
+///
+/// // Create a simulator for a user with $4,000/month expenses
+/// let mut sim = FireSimulator::new(400_000); // 400,000 cents
+///
+/// // Add their current liquid assets and liabilities
+/// sim.add_assets_liabilities(50_000_000, 10_000_000); // $500k assets, $100k debt
+///
+/// // The user's FIRE Number is derived from their monthly expenses
+/// // 4000 * 12 = 48,000/year. 48,000 / 0.04 (default 4% SWR) = $1,200,000
+/// assert_eq!(sim.fire_number_cents(), 120_000_000); // 1.2M in cents
+/// ```
 #[derive(Debug, Clone)]
 pub struct FireSimulator {
     config: FireConfig,
@@ -35,6 +94,10 @@ pub struct FireSimulator {
 }
 
 impl FireSimulator {
+    /// Initializes a new simulator with default settings and the given monthly expenses.
+    ///
+    /// By default, the simulator uses a conservative 4% Safe Withdrawal Rate and
+    /// default haircut tiers for unvested equity.
     #[must_use]
     pub fn new(monthly_expenses_cents: i64) -> Self {
         Self {
@@ -47,19 +110,29 @@ impl FireSimulator {
         }
     }
 
+    /// Overrides the default simulation configuration (e.g., changing the SWR).
     pub const fn set_config(&mut self, config: FireConfig) {
         self.config = config;
     }
 
+    /// Adds existing liquid assets and liabilities to the calculation.
+    ///
+    /// The values should be passed as positive absolute values in cents.
+    /// They are accumulated; calling this multiple times adds to the total.
     pub const fn add_assets_liabilities(&mut self, assets_cents: i64, liabilities_cents: i64) {
         self.liquid_assets_cents += assets_cents;
         self.liabilities_cents += liabilities_cents;
     }
 
+    /// Appends an unvested equity grant to the calculation.
     pub fn add_upcoming_vest(&mut self, vest: UpcomingVest) {
         self.upcoming_vests.push(vest);
     }
 
+    /// Calculates the total required capital to support the configured monthly expenses
+    /// indefinitely, based on the Safe Withdrawal Rate (SWR).
+    ///
+    /// Formula: `(Monthly Expenses * 12) / SWR`
     #[must_use]
     pub fn fire_number_cents(&self) -> i64 {
         if self.config.safe_withdrawal_rate_pct == 0 {
@@ -69,6 +142,10 @@ impl FireSimulator {
         yearly_expenses.saturating_mul(100) / i64::from(self.config.safe_withdrawal_rate_pct)
     }
 
+    /// Calculates the user's total safe capital.
+    ///
+    /// This combines current net worth (liquid assets - liabilities) with the
+    /// conservatively forecasted "safe" value of all upcoming equity vests.
     #[must_use]
     pub fn safe_net_worth_cents(&self) -> i64 {
         let base_nw = self
@@ -89,6 +166,8 @@ impl FireSimulator {
         base_nw.saturating_add(rsu_value)
     }
 
+    /// Computes the overall progress toward financial independence as a percentage
+    /// from 0 to 100.
     #[must_use]
     pub fn fire_progress_pct(&self) -> u8 {
         let fire_num = self.fire_number_cents();
