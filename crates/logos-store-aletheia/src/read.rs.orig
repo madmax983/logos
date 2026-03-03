@@ -225,8 +225,6 @@ impl AletheiaStore {
         Ok(transactions)
     }
 
-    /// Projects the current state of transactions, excluding those that have been superseded.
-    /// ⚡ Bolt: Uses a `HashSet<&TransactionId>` to avoid heap allocations when collecting superseded ids.
     fn current_projection_without_superseded(&self) -> Vec<StoredTransaction> {
         let superseded_ids: HashSet<_> = self
             .corrections
