@@ -10,3 +10,5 @@ workspace = true
 [dependencies]
 logos-core = { path = "../logos-core" }
 logos-cli = { path = "../logos-cli" }
+comfy-table = "7.2.2"
+crossterm = "0.29.0"
