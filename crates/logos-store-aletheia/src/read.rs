@@ -6,16 +6,16 @@ use aletheiadb::{
 use logos_core::{Correction, TransactionBuilder, TransactionId};
 
 use crate::{
-    map_load_error,
+    AletheiaStore, StoreError, map_load_error,
     model::{
-        AsOf, StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredCorrection,
-        StoredImportBatch, StoredImportRecord, StoredMonthClose, StoredReconciliationRun,
-        StoredStatementLine, StoredTransaction, EDGE_HAS_POSTING, EDGE_SUPERSEDES,
-        LABEL_LEDGER_CORRECTION, PROP_ACCOUNT, PROP_AMOUNT_CENTS, PROP_DESCRIPTION,
-        PROP_EFFECTIVE_AT_US, PROP_ORDINAL, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID,
+        AsOf, EDGE_HAS_POSTING, EDGE_SUPERSEDES, LABEL_LEDGER_CORRECTION, PROP_ACCOUNT,
+        PROP_AMOUNT_CENTS, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_ORDINAL,
+        PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID, StoredAnalyticsArtifactManifest, StoredBudgetTarget,
+        StoredCorrection, StoredImportBatch, StoredImportRecord, StoredMonthClose,
+        StoredReconciliationRun, StoredStatementLine, StoredTransaction,
     },
     parse_posting, required_edge_i64_property, required_node_i64_property,
-    required_node_string_property, AletheiaStore, StoreError,
+    required_node_string_property,
 };
 
 impl AletheiaStore {
@@ -228,14 +228,14 @@ impl AletheiaStore {
 
     /// Projects the current state of transactions, excluding those that have been superseded.
     fn current_projection_without_superseded(&self) -> Vec<StoredTransaction> {
-        let mut superseded_ids = HashSet::with_capacity(self.corrections.len());
+        let superseded_ids: HashSet<_> = self
             .corrections
             .iter()
             .map(StoredCorrection::correction)
             .map(logos_core::Correction::supersedes_id)
             .collect();
 
-        let mut transactions = Vec::with_capacity(self.transactions.len());
+        let mut transactions: Vec<_> = self
             .transactions
             .values()
             .filter(|stored| !superseded_ids.contains(&stored.id()))
@@ -250,10 +250,8 @@ fn load_superseded_ids_at(
     db: &AletheiaDB,
     as_of: AsOf,
 ) -> Result<HashSet<TransactionId>, StoreError> {
-    let correction_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_CORRECTION);
-    // Pre-allocate hash set based on known correction node count to eliminate runtime hashing reallocations.
-    let mut superseded_ids = HashSet::with_capacity(correction_node_ids.len());
-    for correction_node_id in correction_node_ids {
+    let mut superseded_ids = HashSet::new();
+    for correction_node_id in db.scan_nodes_by_label(LABEL_LEDGER_CORRECTION) {
         let Some(correction_node) = get_node_at_as_of(db, correction_node_id, as_of)? else {
             continue;
         };
