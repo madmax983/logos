@@ -1,9 +1,9 @@
+use logos_core::Posting;
 use logos_core::domain::account::AccountId;
 use logos_core::domain::rsu::AllocationPolicy;
 use logos_core::planning::fire::{FireSimulator, UpcomingVest};
 use logos_core::planning::net_worth_projector::NetWorthProjector;
 use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
-use logos_core::Posting;
 
 #[test]
 fn planning_rsu_distributor_builds_balanced_transaction() {
@@ -22,7 +22,10 @@ fn planning_rsu_distributor_builds_balanced_transaction() {
         .expect("tx");
 
     assert_eq!(tx.postings().len(), 5);
-    assert!(tx.postings().contains(&Posting::credit("assets:rsu", 10_000).unwrap()));
+    assert!(
+        tx.postings()
+            .contains(&Posting::credit("assets:rsu", 10_000).unwrap())
+    );
     assert!(tx.postings().contains(&Posting::debit("assets:tax", 4_000)));
 }
 
