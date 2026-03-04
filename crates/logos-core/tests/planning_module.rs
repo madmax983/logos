@@ -22,7 +22,7 @@ fn planning_rsu_distributor_builds_balanced_transaction() {
         .expect("tx");
 
     assert_eq!(tx.postings().len(), 5);
-    assert!(tx.postings().contains(&Posting::credit("assets:rsu", 10_000)));
+    assert!(tx.postings().contains(&Posting::credit("assets:rsu", 10_000).unwrap()));
     assert!(tx.postings().contains(&Posting::debit("assets:tax", 4_000)));
 }
 

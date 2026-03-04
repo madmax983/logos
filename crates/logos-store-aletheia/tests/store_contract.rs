@@ -53,6 +53,109 @@ fn balanced_transaction_write_succeeds() {
 }
 
 #[test]
+fn test_store_returns_correct_counts_and_has_transaction() {
+    let mut store = AletheiaStore::new();
+    assert_eq!(store.correction_count(), 0);
+    assert!(!store.has_transaction(&TransactionId::new("non-existent")));
+
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("txn1")
+                .posting(Posting::debit("assets:checking", 100))
+                .posting(Posting::credit("income:salary", 100).unwrap()),
+        )
+        .expect("write txn");
+
+    assert!(store.has_transaction(&txn_id));
+
+    store
+        .write_correction(Correction::new(txn_id.clone(), "fix memo").unwrap())
+        .expect("write correction");
+
+    assert_eq!(store.correction_count(), 1);
+
+    store
+        .write_correction(Correction::new(txn_id, "fix memo again").unwrap())
+        .expect("write correction 2");
+
+    assert_eq!(store.correction_count(), 2);
+}
+
+#[test]
+fn test_transactions_iterator_yields_all_items() {
+    let mut store = AletheiaStore::new();
+    assert_eq!(store.transactions().count(), 0);
+
+    store
+        .write_transaction(
+            TransactionBuilder::new("txn1")
+                .posting(Posting::debit("assets:checking", 100))
+                .posting(Posting::credit("income:salary", 100).unwrap()),
+        )
+        .expect("write txn 1");
+
+    store
+        .write_transaction(
+            TransactionBuilder::new("txn2")
+                .posting(Posting::debit("assets:checking", 200))
+                .posting(Posting::credit("income:salary", 200).unwrap()),
+        )
+        .expect("write txn 2");
+
+    assert_eq!(store.transactions().count(), 2);
+}
+
+#[test]
+fn test_budget_targets_iterator_yields_all_items() {
+    let mut store = AletheiaStore::new();
+    assert_eq!(store.budget_targets().count(), 0);
+
+    store
+        .write_budget_target("2026-03", "expenses:food", 250_000)
+        .expect("write budget target 1");
+
+    store
+        .write_budget_target("2026-04", "expenses:food", 300_000)
+        .expect("write budget target 2");
+
+    assert_eq!(store.budget_targets().count(), 2);
+}
+
+#[test]
+fn test_analytics_artifacts_iterator_yields_all_items() {
+    let mut store = AletheiaStore::new();
+    assert_eq!(store.analytics_artifacts().count(), 0);
+
+    let first = store
+        .write_analytics_artifact_manifest(
+            "parquet",
+            "C:\\artifacts\\base.parquet",
+            "hash-base",
+            1,
+            10,
+            time::from_secs(1_700_000_300),
+            time::from_secs(1_700_000_301),
+            None,
+        )
+        .expect("write first");
+
+    store
+        .write_analytics_artifact_manifest(
+            "parquet",
+            "C:\\artifacts\\next.parquet",
+            "hash-next",
+            1,
+            11,
+            time::from_secs(1_700_000_400),
+            time::from_secs(1_700_000_401),
+            Some(first.artifact_id()),
+        )
+        .expect("write second");
+
+    assert_eq!(store.analytics_artifacts().count(), 2);
+}
+
+#[test]
 fn unbalanced_transaction_is_rejected_before_persistence() {
     let mut store = AletheiaStore::new();
     let err = store
@@ -845,7 +948,7 @@ fn write_reconciliation_run_fails_with_negative_values() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write txn");
 
@@ -926,7 +1029,7 @@ fn write_reconciliation_run_and_month_close_fails_with_negative_values() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write txn");
 
@@ -1010,7 +1113,7 @@ fn write_reconciliation_run_succeeds_with_zero_values() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write txn");
 
@@ -1041,7 +1144,7 @@ fn write_reconciliation_run_and_month_close_succeeds_with_zero_values() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write txn");
 
@@ -1073,7 +1176,7 @@ fn write_reconciliation_run_and_month_close_fails_with_unknown_artifact() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write txn");
 
