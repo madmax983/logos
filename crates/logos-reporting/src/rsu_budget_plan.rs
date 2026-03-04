@@ -333,8 +333,14 @@ mod tests {
             investing_sweep_cents: 0,
             available_after_sweeps_cents: 0,
         };
-        let base_proj = ScenarioBudgetProjection { scenario: ScenarioKey::Base, ..bear_proj };
-        let bull_proj = ScenarioBudgetProjection { scenario: ScenarioKey::Bull, ..bear_proj };
+        let base_proj = ScenarioBudgetProjection {
+            scenario: ScenarioKey::Base,
+            ..bear_proj
+        };
+        let bull_proj = ScenarioBudgetProjection {
+            scenario: ScenarioKey::Bull,
+            ..bear_proj
+        };
 
         let plan = RsuBudgetPlan {
             month_key: "2024-01".to_owned(),
@@ -353,7 +359,10 @@ mod tests {
         assert_eq!(plan.reserve_sweep_pct(), 40);
         assert_eq!(plan.investing_sweep_pct(), 50);
 
-        assert_eq!(plan.scenario(ScenarioKey::Bear).unwrap().scenario(), ScenarioKey::Bear);
+        assert_eq!(
+            plan.scenario(ScenarioKey::Bear).unwrap().scenario(),
+            ScenarioKey::Bear
+        );
         assert_eq!(plan.bear().unwrap().scenario(), ScenarioKey::Bear);
         assert_eq!(plan.base().unwrap().scenario(), ScenarioKey::Base);
         assert_eq!(plan.bull().unwrap().scenario(), ScenarioKey::Bull);
@@ -388,14 +397,7 @@ mod tests {
     #[test]
     fn test_project_rsu_budget_plan() {
         let prices = ScenarioPriceInputs::new(100, 200, 300).unwrap();
-        let input = RsuBudgetPlanInput::new(
-            300,
-            0,
-            prices,
-            5000,
-            10,
-            20
-        ).unwrap();
+        let input = RsuBudgetPlanInput::new(300, 0, prices, 5000, 10, 20).unwrap();
 
         let plan = project_rsu_budget_plan("2024-01", &input).unwrap();
 
