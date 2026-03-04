@@ -229,18 +229,20 @@ impl AletheiaStore {
     /// Projects the current state of transactions, excluding those that have been superseded.
     fn current_projection_without_superseded(&self) -> Vec<StoredTransaction> {
         let mut superseded_ids = HashSet::with_capacity(self.corrections.len());
-            .corrections
-            .iter()
-            .map(StoredCorrection::correction)
-            .map(logos_core::Correction::supersedes_id)
-            .collect();
+        superseded_ids.extend(
+            self.corrections
+                .iter()
+                .map(StoredCorrection::correction)
+                .map(logos_core::Correction::supersedes_id)
+        );
 
-        let mut transactions = Vec::with_capacity(self.transactions.len());
-            .transactions
-            .values()
-            .filter(|stored| !superseded_ids.contains(&stored.id()))
-            .cloned()
-            .collect();
+        let mut transactions: Vec<StoredTransaction> = Vec::with_capacity(self.transactions.len());
+        transactions.extend(
+            self.transactions
+                .values()
+                .filter(|stored| !superseded_ids.contains(&stored.id()))
+                .cloned()
+        );
         transactions.sort_by(|left, right| left.id().as_str().cmp(right.id().as_str()));
         transactions
     }
@@ -252,7 +254,7 @@ fn load_superseded_ids_at(
 ) -> Result<HashSet<TransactionId>, StoreError> {
     let correction_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_CORRECTION);
     // Pre-allocate hash set based on known correction node count to eliminate runtime hashing reallocations.
-    let mut superseded_ids = HashSet::with_capacity(correction_node_ids.len());
+    let mut superseded_ids = HashSet::with_capacity(correction_node_ids.size_hint().1.unwrap_or(0));
     for correction_node_id in correction_node_ids {
         let Some(correction_node) = get_node_at_as_of(db, correction_node_id, as_of)? else {
             continue;

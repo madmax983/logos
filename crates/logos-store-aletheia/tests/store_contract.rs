@@ -44,7 +44,7 @@ fn balanced_transaction_write_succeeds() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write");
 
@@ -74,7 +74,7 @@ fn correction_append_links_superseded_transaction() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write");
 
@@ -96,7 +96,7 @@ fn open_persists_transaction_across_reopen() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
             )
             .expect("write");
         assert!(store.has_transaction(&id));
@@ -119,7 +119,7 @@ fn open_persists_correction_chain_across_reopen() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
             )
             .expect("write");
         let correction = Correction::new(persisted_id.clone(), "fix memo").expect("correction");
@@ -277,7 +277,7 @@ fn open_persists_reconciliation_run_across_reopen() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
             )
             .expect("write transaction");
 
@@ -323,7 +323,7 @@ fn open_persists_month_close_across_reopen() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
             )
             .expect("txn");
         run_id = store
@@ -406,7 +406,7 @@ fn embedded_mapping_writes_transaction_and_posting_graph_entities() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
             )
             .expect("write");
     }
@@ -440,7 +440,7 @@ fn embedded_mapping_writes_correction_supersedes_edge() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
             )
             .expect("write");
 
@@ -574,7 +574,7 @@ fn embedded_mapping_writes_reconciliation_run_and_edges() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
             )
             .expect("txn a");
         let txn_b = store
@@ -705,7 +705,7 @@ fn embedded_mapping_writes_month_close_edges() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
             )
             .expect("txn");
         let run = store
@@ -812,7 +812,7 @@ fn transactions_as_of_hides_superseded_after_correction_tx_time() {
             .write_transaction(
                 TransactionBuilder::new("paycheck")
                     .posting(Posting::debit("assets:checking", 10_000))
-                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
             )
             .expect("write");
 
@@ -845,7 +845,7 @@ fn write_reconciliation_run_fails_with_negative_values() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write txn");
 
@@ -926,7 +926,7 @@ fn write_reconciliation_run_and_month_close_fails_with_negative_values() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write txn");
 
@@ -1010,7 +1010,7 @@ fn write_reconciliation_run_succeeds_with_zero_values() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write txn");
 
@@ -1041,7 +1041,7 @@ fn write_reconciliation_run_and_month_close_succeeds_with_zero_values() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write txn");
 
@@ -1073,7 +1073,7 @@ fn write_reconciliation_run_and_month_close_fails_with_unknown_artifact() {
         .write_transaction(
             TransactionBuilder::new("paycheck")
                 .posting(Posting::debit("assets:checking", 10_000))
-                .posting(Posting::credit("income:salary", 10_000)),
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
         )
         .expect("write txn");
 
