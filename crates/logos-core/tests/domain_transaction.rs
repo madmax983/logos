@@ -10,7 +10,7 @@ fn test_posting_account() {
 fn test_transaction_description() {
     let txn = TransactionBuilder::new("Buy groceries")
         .posting(Posting::debit("expenses:food", 5000))
-        .posting(Posting::credit("assets:checking", 5000))
+        .posting(Posting::credit("assets:checking", 5000).expect("credit"))
         .build()
         .expect("Transaction should balance");
 
