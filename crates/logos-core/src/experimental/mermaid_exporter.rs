@@ -29,7 +29,7 @@ impl MermaidSankeyExporter {
     /// transaction to determine flow.
     #[must_use]
     pub fn export_sankey(&self) -> String {
-        let mut flows: HashMap<(String, String), i64> = HashMap::new();
+        let mut flows: HashMap<(&str, &str), i64> = HashMap::new();
 
         for tx in &self.transactions {
             let (credits, debits): (Vec<&Posting>, Vec<&Posting>) =
@@ -59,7 +59,7 @@ impl MermaidSankeyExporter {
                     let flow_amount = raw_flow.round() as i64;
 
                     if flow_amount > 0 {
-                        let key = (credit.account().to_string(), debit.account().to_string());
+                        let key = (credit.account(), debit.account());
                         *flows.entry(key).or_insert(0) += flow_amount;
                     }
                 }
@@ -117,8 +117,8 @@ income:salary,assets:checking,5000.00
 
         let tx = TransactionBuilder::new("Split")
             .posting(Posting::credit("income:salary", 100_000).unwrap())
-            .posting(Posting::debit("assets:checking", 70000))
-            .posting(Posting::debit("assets:savings", 30000))
+            .posting(Posting::debit("assets:checking", 70_000))
+            .posting(Posting::debit("assets:savings", 30_000))
             .build()
             .unwrap();
 
@@ -139,8 +139,8 @@ income:salary,assets:savings,300.00
         let mut exporter = MermaidSankeyExporter::new();
 
         let tx = TransactionBuilder::new("Pool")
-            .posting(Posting::credit("assets:checking", 60000).unwrap())
-            .posting(Posting::credit("assets:savings", 40000).unwrap())
+            .posting(Posting::credit("assets:checking", 60_000).unwrap())
+            .posting(Posting::credit("assets:savings", 40_000).unwrap())
             .posting(Posting::debit("expenses:rent", 100_000))
             .build()
             .unwrap();
