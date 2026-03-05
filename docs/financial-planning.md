@@ -78,6 +78,25 @@ Model details:
 - Progress is clamped to `0..=100`.
 - If withdrawal rate is `0`, FIRE number is treated as `i64::MAX` and progress resolves to `0`.
 
+Example:
+
+```rust
+use logos_core::planning::fire::{FireSimulator, UpcomingVest};
+
+let mut sim = FireSimulator::new(400_000); // $4k/mo expenses
+
+sim.add_assets_liabilities(35_000_000, 5_000_000); // $350k assets, $50k liabs
+
+// Add a vest using correct unit pricing
+sim.add_upcoming_vest(UpcomingVest {
+    avg_close_price_cents: 100_00,
+    units: 100,
+    days_to_vest: 60,
+});
+
+assert_eq!(sim.fire_progress_pct(), 25);
+```
+
 ## Net Worth Projector
 
 `NetWorthProjector` simulates month-by-month net worth and milestone crossing dates.
