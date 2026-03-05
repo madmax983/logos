@@ -1,3 +1,9 @@
+//! FIRE (Financial Independence, Retire Early) Simulation Module
+//!
+//! Provides primitives to project progress toward financial independence
+//! by incorporating current expenses, base net worth, and upcoming RSU
+//! vests (adjusted for risk via haircut tiers).
+
 use crate::domain::rsu::{HaircutTierTable, forecast_value_cents};
 
 /// Configuration for the FIRE Simulator.
@@ -16,14 +22,58 @@ impl Default for FireConfig {
 }
 
 /// Represents an upcoming RSU vest to be included in the FIRE calculation.
+///
+/// # Examples
+/// ```
+/// use logos_core::planning::fire::UpcomingVest;
+///
+/// let vest = UpcomingVest {
+///     avg_close_price_cents: 100_000, // $1,000.00
+///     units: 500,                     // 500 shares
+///     days_to_vest: 60,               // vesting in 60 days
+/// };
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UpcomingVest {
+    /// The average close price per unit in integer cents.
     pub avg_close_price_cents: i64,
+    /// The number of units scheduled to vest.
     pub units: u32,
+    /// The number of days until the vest date.
     pub days_to_vest: u16,
 }
 
 /// A simulator to calculate FIRE (Financial Independence, Retire Early) metrics.
+///
+/// The `FireSimulator` computes target retirement numbers based on a safe
+/// withdrawal rate and monthly expenses. It also factors in risk-adjusted
+/// upcoming RSU vests to determine a "safe" net worth and the resulting
+/// progress percentage.
+///
+/// # Examples
+/// ```
+/// use logos_core::planning::fire::{FireConfig, FireSimulator, UpcomingVest};
+///
+/// // Create a simulator for $5,000 monthly expenses ($60,000/yr).
+/// // The default Safe Withdrawal Rate is 4%, yielding a $1,500,000 FIRE number.
+/// let mut sim = FireSimulator::new(500_000);
+///
+/// // Add current assets and liabilities: $200k assets, $50k liabilities = $150k Base Net Worth
+/// sim.add_assets_liabilities(20_000_000, 5_000_000);
+///
+/// // Add an upcoming RSU vest: 500 units @ $1000 ($500k gross), vesting in 60 days.
+/// // At 60 days, the default haircut tier retains 60%, adding $300k safe value.
+/// // Total Safe Net Worth = $150k (base) + $300k (RSUs) = $450k.
+/// sim.add_upcoming_vest(UpcomingVest {
+///     avg_close_price_cents: 100_000,
+///     units: 500,
+///     days_to_vest: 60,
+/// });
+///
+/// assert_eq!(sim.fire_number_cents(), 150_000_000);
+/// assert_eq!(sim.safe_net_worth_cents(), 45_000_000);
+/// assert_eq!(sim.fire_progress_pct(), 30); // $450k / $1.5M = 30%
+/// ```
 #[derive(Debug, Clone)]
 pub struct FireSimulator {
     config: FireConfig,
@@ -35,6 +85,9 @@ pub struct FireSimulator {
 }
 
 impl FireSimulator {
+    /// Creates a new `FireSimulator` with the given monthly expenses.
+    ///
+    /// By default, this uses a 4% safe withdrawal rate and standard haircut tiers.
     #[must_use]
     pub fn new(monthly_expenses_cents: i64) -> Self {
         Self {
@@ -47,19 +100,26 @@ impl FireSimulator {
         }
     }
 
+    /// Updates the configuration, such as changing the safe withdrawal rate.
     pub const fn set_config(&mut self, config: FireConfig) {
         self.config = config;
     }
 
+    /// Adds base liquid assets and liabilities to the calculation.
+    /// This directly increases the base net worth by `assets_cents - liabilities_cents`.
     pub const fn add_assets_liabilities(&mut self, assets_cents: i64, liabilities_cents: i64) {
         self.liquid_assets_cents += assets_cents;
         self.liabilities_cents += liabilities_cents;
     }
 
+    /// Registers an upcoming RSU vest to be included in the safe net worth.
     pub fn add_upcoming_vest(&mut self, vest: UpcomingVest) {
         self.upcoming_vests.push(vest);
     }
 
+    /// Calculates the target FIRE number in cents.
+    ///
+    /// Returns `i64::MAX` if the safe withdrawal rate is configured to 0.
     #[must_use]
     pub fn fire_number_cents(&self) -> i64 {
         if self.config.safe_withdrawal_rate_pct == 0 {
@@ -69,6 +129,10 @@ impl FireSimulator {
         yearly_expenses.saturating_mul(100) / i64::from(self.config.safe_withdrawal_rate_pct)
     }
 
+    /// Computes the risk-adjusted "safe" net worth in cents.
+    ///
+    /// The safe net worth is the sum of liquid assets minus liabilities,
+    /// plus the sum of all upcoming vests scaled by their respective haircut tiers.
     #[must_use]
     pub fn safe_net_worth_cents(&self) -> i64 {
         let base_nw = self
@@ -89,6 +153,7 @@ impl FireSimulator {
         base_nw.saturating_add(rsu_value)
     }
 
+    /// Returns the progress towards the FIRE number as an integer percentage from 0 to 100.
     #[must_use]
     pub fn fire_progress_pct(&self) -> u8 {
         let fire_num = self.fire_number_cents();

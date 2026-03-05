@@ -224,9 +224,9 @@ mod tests {
         let output = render_month_output("assets:checking", "2026-03", 100_000, &run);
 
         let expected = "┌─────────┬─────────┬─────────────────┬─────────┬──────────┬──────────────────┬───────────────────┬──────────┬────────────┬──────────────────┬──────────────┬────────┬─────────┬────────────┐
-│ Run ID  │ Month   │ Account         │ Opening │ Ledger Δ │ Expected Closing │ Statement Closing │ Variance │ Reconciled │ Matched Postings │ Matched Txns │ Inflow │ Outflow │ Created At │
+│ Run ID  ┆ Month   ┆ Account         ┆ Opening ┆ Ledger Δ ┆ Expected Closing ┆ Statement Closing ┆ Variance ┆ Reconciled ┆ Matched Postings ┆ Matched Txns ┆ Inflow ┆ Outflow ┆ Created At │
 ╞═════════╪═════════╪═════════════════╪═════════╪══════════╪══════════════════╪═══════════════════╪══════════╪════════════╪══════════════════╪══════════════╪════════╪═════════╪════════════╡
-│ recon-7 │ 2026-03 │ assets:checking │ 100000  │ 7500     │ 107500           │ 106000            │ -1500    │ false      │ 2                │ 2            │ 10000  │ 2500    │ 1700000111 │
+│ recon-7 ┆ 2026-03 ┆ assets:checking ┆ 100000  ┆ 7500     ┆ 107500           ┆ 106000            ┆ -1500    ┆ false      ┆ 2                ┆ 2            ┆ 10000  ┆ 2500    ┆ 1700000111 │
 └─────────┴─────────┴─────────────────┴─────────┴──────────┴──────────────────┴───────────────────┴──────────┴────────────┴──────────────────┴──────────────┴────────┴─────────┴────────────┘";
         assert_eq!(output, expected);
     }
@@ -251,9 +251,9 @@ mod tests {
         );
         let output = render_show_output(&run);
         let expected = "┌─────────┬─────────┬─────────────────┬─────────┬──────────┬──────────────────┬───────────────────┬──────────┬────────────┬──────────────────┬──────────────┬────────┬─────────┬────────────┐
-│ Run ID  │ Month   │ Account         │ Opening │ Ledger Δ │ Expected Closing │ Statement Closing │ Variance │ Reconciled │ Matched Postings │ Matched Txns │ Inflow │ Outflow │ Created At │
+│ Run ID  ┆ Month   ┆ Account         ┆ Opening ┆ Ledger Δ ┆ Expected Closing ┆ Statement Closing ┆ Variance ┆ Reconciled ┆ Matched Postings ┆ Matched Txns ┆ Inflow ┆ Outflow ┆ Created At │
 ╞═════════╪═════════╪═════════════════╪═════════╪══════════╪══════════════════╪═══════════════════╪══════════╪════════════╪══════════════════╪══════════════╪════════╪═════════╪════════════╡
-│ recon-8 │ 2026-04 │ assets:checking │ 200000  │ 12000    │ 212000           │ 212500            │ 500      │ false      │ 3                │ 2            │ 15000  │ 3000    │ 1700000222 │
+│ recon-8 ┆ 2026-04 ┆ assets:checking ┆ 200000  ┆ 12000    ┆ 212000           ┆ 212500            ┆ 500      ┆ false      ┆ 3                ┆ 2            ┆ 15000  ┆ 3000    ┆ 1700000222 │
 └─────────┴─────────┴─────────────────┴─────────┴──────────┴──────────────────┴───────────────────┴──────────┴────────────┴──────────────────┴──────────────┴────────┴─────────┴────────────┘";
         assert_eq!(output, expected);
     }
@@ -297,11 +297,11 @@ mod tests {
 
         let output = render_list_output(Some("2026-05"), Some("assets:checking"), &runs);
         let expected = "reconcile.list filter_month=2026-05 filter_checking_account=assets:checking count=2\n┌──────────┬─────────┬─────────────────┬──────────┬────────────┬──────────────┬────────────┐
-│ Run ID   │ Month   │ Account         │ Variance │ Reconciled │ Matched Txns │ Created At │
+│ Run ID   ┆ Month   ┆ Account         ┆ Variance ┆ Reconciled ┆ Matched Txns ┆ Created At │
 ╞══════════╪═════════╪═════════════════╪══════════╪════════════╪══════════════╪════════════╡
-│ recon-9  │ 2026-05 │ assets:checking │ 0        │ true       │ 2            │ 1700000333 │
-├──────────┼─────────┼─────────────────┼──────────┼────────────┼──────────────┼────────────┤
-│ recon-10 │ 2026-05 │ assets:checking │ -500     │ false      │ 1            │ 1700000444 │
+│ recon-9  ┆ 2026-05 ┆ assets:checking ┆ 0        ┆ true       ┆ 2            ┆ 1700000333 │
+├╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ recon-10 ┆ 2026-05 ┆ assets:checking ┆ -500     ┆ false      ┆ 1            ┆ 1700000444 │
 └──────────┴─────────┴─────────────────┴──────────┴────────────┴──────────────┴────────────┘";
         assert_eq!(output, expected);
     }

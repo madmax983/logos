@@ -9,3 +9,7 @@
 ## 2025-02-28 - [Envelope Budgeting Rollover]
 **Confusion:** The meaning of `rollover_end_balance` in `BudgetMonth` wasn't obvious, especially regarding how overspending carries forward.
 **Clarification:** Added module documentation and doctests demonstrating that the ending balance becomes the next month's starting balance, and negative balances (overspending) carry over until covered.
+
+## 2025-03-01 - [UpcomingVest API Change]
+**Confusion:** Users (and existing documentation) assumed `UpcomingVest` accepted a single `gross_value_cents` field, causing compilation failures.
+**Clarification:** Added explicit struct documentation and doctests showing the required `avg_close_price_cents`, `units`, and `days_to_vest` fields. Added missing example to `docs/financial-planning.md`.
