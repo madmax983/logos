@@ -97,8 +97,8 @@ mod tests {
         let mut exporter = MermaidSankeyExporter::new();
 
         let tx = TransactionBuilder::new("Salary")
-            .posting(Posting::credit("income:salary", 500000).unwrap())
-            .posting(Posting::debit("assets:checking", 500000))
+            .posting(Posting::credit("income:salary", 500_000).unwrap())
+            .posting(Posting::debit("assets:checking", 500_000))
             .build()
             .unwrap();
 
@@ -118,7 +118,7 @@ income:salary,assets:checking,5000.00
         let mut exporter = MermaidSankeyExporter::new();
 
         let tx = TransactionBuilder::new("Split")
-            .posting(Posting::credit("income:salary", 100000).unwrap())
+            .posting(Posting::credit("income:salary", 100_000).unwrap())
             .posting(Posting::debit("assets:checking", 70000))
             .posting(Posting::debit("assets:savings", 30000))
             .build()
@@ -143,7 +143,7 @@ income:salary,assets:savings,300.00
         let tx = TransactionBuilder::new("Pool")
             .posting(Posting::credit("assets:checking", 60000).unwrap())
             .posting(Posting::credit("assets:savings", 40000).unwrap())
-            .posting(Posting::debit("expenses:rent", 100000))
+            .posting(Posting::debit("expenses:rent", 100_000))
             .build()
             .unwrap();
 

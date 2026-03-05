@@ -33,3 +33,30 @@ proptest! {
 fn havoc_posting_credit_min_does_not_panic() {
     let _ = logos_core::domain::transaction::Posting::credit("test", i64::MIN);
 }
+
+use logos_core::domain::rsu::AllocationPolicy;
+use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
+use logos_core::domain::account::AccountId;
+
+proptest! {
+    #[test]
+    fn havoc_rsu_distribute_does_not_panic(
+        gross in any::<i64>(),
+        tax in 0..=100u8,
+        smooth in 0..=100u8,
+        goals in 0..=100u8,
+        disc in 0..=100u8
+    ) {
+        if let Ok(policy) = AllocationPolicy::new(tax, smooth, goals, disc) {
+            let config = RsuDistributorConfig {
+                rsu_asset: AccountId::new("assets:rsu"),
+                tax_reserve: AccountId::new("assets:tax"),
+                smoothing_buffer: AccountId::new("assets:buffer"),
+                goals: AccountId::new("assets:goals"),
+                discretionary: AccountId::new("assets:checking"),
+            };
+            let distributor = RsuAutoDistributor::new(config);
+            let _ = distributor.distribute_rsu_vest("Vest", gross, &policy);
+        }
+    }
+}
