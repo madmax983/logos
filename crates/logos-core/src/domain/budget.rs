@@ -80,6 +80,7 @@ impl BudgetMonth {
 /// assert_eq!(overspent, -1000);
 /// ```
 #[must_use]
+#[allow(clippy::cast_possible_truncation)]
 pub const fn rollover_end_balance(start: i64, assigned: i64, spent: i64) -> i64 {
     let end = start as i128 + assigned as i128 - spent as i128;
     if end > i64::MAX as i128 {

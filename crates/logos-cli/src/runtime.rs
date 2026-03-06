@@ -535,7 +535,12 @@ impl CliRuntime {
             .store
             .transactions()
             .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().as_str().starts_with(expense_account_prefix))
+            .filter(|posting| {
+                posting
+                    .account()
+                    .as_str()
+                    .starts_with(expense_account_prefix)
+            })
             .map(Posting::amount)
             .filter(|amount| *amount > 0)
             .sum();
@@ -1255,7 +1260,12 @@ impl CliRuntime {
             .transactions()
             .filter(|stored| transaction_in_month(stored, month_key))
             .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().as_str().starts_with(expense_account_prefix))
+            .filter(|posting| {
+                posting
+                    .account()
+                    .as_str()
+                    .starts_with(expense_account_prefix)
+            })
             .map(Posting::amount)
             .filter(|amount| *amount > 0)
             .sum()
@@ -1457,7 +1467,10 @@ fn build_double_entry(
     use logos_core::AccountId;
     Ok(TransactionBuilder::new(description)
         .posting(Posting::debit(AccountId::new(debit_account)?, amount_cents))
-        .posting(Posting::credit(AccountId::new(credit_account)?, amount_cents)?))
+        .posting(Posting::credit(
+            AccountId::new(credit_account)?,
+            amount_cents,
+        )?))
 }
 
 fn parse_import_timestamp(timestamp: &str) -> Option<i64> {

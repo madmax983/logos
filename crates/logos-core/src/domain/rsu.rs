@@ -33,6 +33,34 @@ impl Default for HaircutTierTable {
 }
 
 impl HaircutTierTable {
+    /// Creates a custom haircut tier table.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any percentage is greater than `100` or if
+    /// tiers are not non-decreasing by time horizon (`short <= medium <= long`).
+    pub fn new(short: u8, medium: u8, long: u8) -> Result<Self, DomainError> {
+        for (tier, percentage) in [("short", short), ("medium", medium), ("long", long)] {
+            if percentage > 100 {
+                return Err(DomainError::InvalidHaircutPercentage { tier, percentage });
+            }
+        }
+
+        if short > medium || medium > long {
+            return Err(DomainError::InvalidHaircutOrdering {
+                short,
+                medium,
+                long,
+            });
+        }
+
+        Ok(Self {
+            short,
+            medium,
+            long,
+        })
+    }
+
     /// Creates a table with default conservative haircut tiers.
     #[must_use]
     pub fn conservative_defaults() -> Self {
@@ -130,6 +158,7 @@ impl AllocationPolicy {
 ///
 /// This function calculates the gross value (average price * units) and then
 /// applies the appropriate discount (haircut) based on the time horizon.
+/// Invalid input (negative price) and arithmetic overflow fail closed to `0`.
 ///
 /// ## Examples
 ///
@@ -149,8 +178,71 @@ pub fn forecast_value_cents(
     days_to_vest: u16,
     tiers: &HaircutTierTable,
 ) -> i64 {
+    if avg_close_price_cents < 0 {
+        return 0;
+    }
+
     let haircut_pct = i64::from(tiers.haircut_for_days(days_to_vest));
     let retained_pct = 100_i64.saturating_sub(haircut_pct);
-    let gross = avg_close_price_cents.saturating_mul(i64::from(units));
-    gross.saturating_mul(retained_pct) / 100
+    let Some(gross) = avg_close_price_cents.checked_mul(i64::from(units)) else {
+        return 0;
+    };
+
+    gross
+        .checked_mul(retained_pct)
+        .map_or(0, |adjusted| adjusted / 100)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_create_valid_custom_haircut_tiers() {
+        let tiers = HaircutTierTable::new(20, 40, 60).expect("valid custom haircut tiers");
+        assert_eq!(tiers.haircut_for_days(1), 20);
+        assert_eq!(tiers.haircut_for_days(45), 40);
+        assert_eq!(tiers.haircut_for_days(180), 60);
+    }
+
+    #[test]
+    fn should_reject_haircut_percentage_above_100() {
+        assert_eq!(
+            HaircutTierTable::new(20, 40, 101),
+            Err(DomainError::InvalidHaircutPercentage {
+                tier: "long",
+                percentage: 101
+            })
+        );
+    }
+
+    #[test]
+    fn should_reject_non_monotonic_haircut_tiers() {
+        assert_eq!(
+            HaircutTierTable::new(50, 40, 60),
+            Err(DomainError::InvalidHaircutOrdering {
+                short: 50,
+                medium: 40,
+                long: 60
+            })
+        );
+    }
+
+    #[test]
+    fn should_forecast_expected_safe_value() {
+        let tiers = HaircutTierTable::default();
+        assert_eq!(forecast_value_cents(1_000, 100, 15, &tiers), 75_000);
+    }
+
+    #[test]
+    fn should_return_zero_for_negative_price_input() {
+        let tiers = HaircutTierTable::default();
+        assert_eq!(forecast_value_cents(-1_000, 100, 15, &tiers), 0);
+    }
+
+    #[test]
+    fn should_return_zero_when_forecast_overflows() {
+        let tiers = HaircutTierTable::default();
+        assert_eq!(forecast_value_cents(i64::MAX, 2, 15, &tiers), 0);
+    }
 }

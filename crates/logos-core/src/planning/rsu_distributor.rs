@@ -87,13 +87,25 @@ mod tests {
         assert_eq!(postings.len(), 5);
 
         // the source account is credited the gross amount
-        assert!(postings.contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 10000).unwrap()));
+        assert!(
+            postings
+                .contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 10000).unwrap())
+        );
 
         // the destinations are debited
         assert!(postings.contains(&Posting::debit(AccountId::new("assets:tax").unwrap(), 4000)));
-        assert!(postings.contains(&Posting::debit(AccountId::new("assets:buffer").unwrap(), 2000)));
-        assert!(postings.contains(&Posting::debit(AccountId::new("assets:goals").unwrap(), 3000)));
-        assert!(postings.contains(&Posting::debit(AccountId::new("assets:checking").unwrap(), 1000)));
+        assert!(postings.contains(&Posting::debit(
+            AccountId::new("assets:buffer").unwrap(),
+            2000
+        )));
+        assert!(postings.contains(&Posting::debit(
+            AccountId::new("assets:goals").unwrap(),
+            3000
+        )));
+        assert!(postings.contains(&Posting::debit(
+            AccountId::new("assets:checking").unwrap(),
+            1000
+        )));
     }
 
     #[test]
@@ -121,10 +133,15 @@ mod tests {
         // Remainder = 10 - 6 = 4 cents.
         // So tax gets 4 cents.
 
-        assert!(postings.contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 10).unwrap()));
+        assert!(
+            postings.contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 10).unwrap())
+        );
         assert!(postings.contains(&Posting::debit(AccountId::new("assets:tax").unwrap(), 4)));
         assert!(postings.contains(&Posting::debit(AccountId::new("assets:buffer").unwrap(), 3)));
         assert!(postings.contains(&Posting::debit(AccountId::new("assets:goals").unwrap(), 3)));
-        assert!(postings.contains(&Posting::debit(AccountId::new("assets:checking").unwrap(), 0)));
+        assert!(postings.contains(&Posting::debit(
+            AccountId::new("assets:checking").unwrap(),
+            0
+        )));
     }
 }

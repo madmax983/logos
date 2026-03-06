@@ -10,6 +10,8 @@ pub enum DomainError {
     EmptyCorrectionReason,
     CorrectionCannotSupersedeSelf,
     InvalidAllocationTotal { total: u16 },
+    InvalidHaircutPercentage { tier: &'static str, percentage: u8 },
+    InvalidHaircutOrdering { short: u8, medium: u8, long: u8 },
     UnbalancedTransaction { total: i64 },
     AmountOverflow,
 }
@@ -40,6 +42,22 @@ impl fmt::Display for DomainError {
             }
             Self::InvalidAllocationTotal { total } => {
                 write!(f, "allocation percentages must sum to 100, got {total}")
+            }
+            Self::InvalidHaircutPercentage { tier, percentage } => {
+                write!(
+                    f,
+                    "haircut percentage for {tier} tier must be in 0..=100, got {percentage}"
+                )
+            }
+            Self::InvalidHaircutOrdering {
+                short,
+                medium,
+                long,
+            } => {
+                write!(
+                    f,
+                    "haircut tiers must be non-decreasing by horizon (short <= medium <= long), got {short}, {medium}, {long}"
+                )
             }
             Self::UnbalancedTransaction { total } => {
                 write!(
@@ -113,6 +131,31 @@ mod tests {
         assert_eq!(
             DomainError::UnbalancedTransaction { total: -500 }.to_string(),
             "transaction must be balanced to zero, but total was -500"
+        );
+    }
+
+    #[test]
+    fn should_display_invalid_haircut_percentage() {
+        assert_eq!(
+            DomainError::InvalidHaircutPercentage {
+                tier: "long",
+                percentage: 120
+            }
+            .to_string(),
+            "haircut percentage for long tier must be in 0..=100, got 120"
+        );
+    }
+
+    #[test]
+    fn should_display_invalid_haircut_ordering() {
+        assert_eq!(
+            DomainError::InvalidHaircutOrdering {
+                short: 50,
+                medium: 40,
+                long: 60
+            }
+            .to_string(),
+            "haircut tiers must be non-decreasing by horizon (short <= medium <= long), got 50, 40, 60"
         );
     }
 }
