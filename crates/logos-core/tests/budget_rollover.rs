@@ -21,3 +21,15 @@ fn rollover_saturates_on_positive_overflow() {
     let end = logos_core::rollover_end_balance(i64::MAX, 1, -1);
     assert_eq!(end, i64::MAX);
 }
+
+#[test]
+fn rollover_preserves_value_when_positive_overflow_is_compensated() {
+    let end = logos_core::rollover_end_balance(i64::MAX, 1, 1);
+    assert_eq!(end, i64::MAX);
+}
+
+#[test]
+fn rollover_preserves_value_when_negative_overflow_is_compensated() {
+    let end = logos_core::rollover_end_balance(i64::MIN, -1, -1);
+    assert_eq!(end, i64::MIN);
+}

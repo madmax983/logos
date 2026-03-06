@@ -61,6 +61,8 @@ impl BudgetMonth {
 ///
 /// Funds available in the envelope equal the starting balance plus any newly
 /// assigned funds. Subtracting the spent amount yields the final rollover balance.
+/// If the exact result is outside `i64` bounds, the value is clamped to
+/// `i64::MIN`/`i64::MAX`.
 ///
 /// ## Examples
 ///
@@ -79,5 +81,12 @@ impl BudgetMonth {
 /// ```
 #[must_use]
 pub const fn rollover_end_balance(start: i64, assigned: i64, spent: i64) -> i64 {
-    start.saturating_add(assigned).saturating_sub(spent)
+    let end = start as i128 + assigned as i128 - spent as i128;
+    if end > i64::MAX as i128 {
+        i64::MAX
+    } else if end < i64::MIN as i128 {
+        i64::MIN
+    } else {
+        end as i64
+    }
 }

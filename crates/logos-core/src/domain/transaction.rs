@@ -33,7 +33,7 @@ use crate::error::DomainError;
 /// assert_eq!(d.amount(), 1000);
 ///
 /// // Create a credit posting for $10.00 (represented as -1000 cents internally).
-/// let c = Posting::credit("income:salary", 1000);
+/// let c = Posting::credit("income:salary", 1000).expect("credit should succeed");
 /// assert_eq!(c.amount(), -1000);
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -113,7 +113,7 @@ impl Transaction {
 /// // A successful balanced transaction:
 /// let txn = TransactionBuilder::new("Buy groceries")
 ///     .posting(Posting::debit("expenses:food", 5000))
-///     .posting(Posting::credit("assets:checking", 5000))
+///     .posting(Posting::credit("assets:checking", 5000).expect("credit should succeed"))
 ///     .build()
 ///     .expect("Transaction should balance");
 ///
