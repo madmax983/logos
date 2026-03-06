@@ -413,7 +413,7 @@ impl AletheiaStore {
                     LABEL_LEDGER_POSTING,
                     PropertyMapBuilder::new()
                         .insert(PROP_TXN_ID, id.as_str())
-                        .insert(PROP_ACCOUNT, posting.account())
+                        .insert(PROP_ACCOUNT, posting.account().as_str())
                         .insert(PROP_AMOUNT_CENTS, posting.amount())
                         .build(),
                     Some(effective_at),
@@ -2104,8 +2104,11 @@ fn required_edge_i64_property(edge: &Edge, key: &str) -> Result<i64, StoreError>
 }
 
 fn parse_posting(txn_id: &str, account: &str, amount_cents: i64) -> Result<Posting, StoreError> {
+    use logos_core::AccountId;
+    let account_id = AccountId::new(account).map_err(|e| map_load_error("invalid account id", e))?;
+
     if amount_cents >= 0 {
-        return Ok(Posting::debit(account, amount_cents));
+        return Ok(Posting::debit(account_id, amount_cents));
     }
 
     let credit_amount = amount_cents
@@ -2115,7 +2118,7 @@ fn parse_posting(txn_id: &str, account: &str, amount_cents: i64) -> Result<Posti
                 "transaction '{txn_id}' contains posting '{account}' with unsupported amount {amount_cents}"
             ),
         })?;
-    Posting::credit(account, credit_amount).map_err(|e| map_load_error("posting credit", e))
+    Posting::credit(account_id, credit_amount).map_err(|e| map_load_error("posting credit", e))
 }
 
 fn map_load_error(context: &str, error: impl fmt::Display) -> StoreError {

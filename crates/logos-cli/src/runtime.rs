@@ -522,7 +522,7 @@ impl CliRuntime {
             .store
             .transactions()
             .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account() == account)
+            .filter(|posting| posting.account().as_str() == account)
             .map(|posting| RegisterEntry::new(posting.amount()))
             .collect();
 
@@ -535,7 +535,7 @@ impl CliRuntime {
             .store
             .transactions()
             .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().starts_with(expense_account_prefix))
+            .filter(|posting| posting.account().as_str().starts_with(expense_account_prefix))
             .map(Posting::amount)
             .filter(|amount| *amount > 0)
             .sum();
@@ -587,7 +587,7 @@ impl CliRuntime {
             .transactions()
             .filter(|stored| transaction_in_month(stored, month_key))
             .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account() == checking_account)
+            .filter(|posting| posting.account().as_str() == checking_account)
             .map(Posting::amount)
             .sum();
 
@@ -596,7 +596,7 @@ impl CliRuntime {
             .transactions()
             .filter(|stored| transaction_in_month(stored, month_key))
             .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().starts_with("income:"))
+            .filter(|posting| posting.account().as_str().starts_with("income:"))
             .map(Posting::amount)
             .filter(|amount| *amount < 0)
             .map(i64::abs)
@@ -607,7 +607,7 @@ impl CliRuntime {
             .transactions()
             .filter(|stored| transaction_in_month(stored, month_key))
             .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().starts_with("expenses:"))
+            .filter(|posting| posting.account().as_str().starts_with("expenses:"))
             .map(Posting::amount)
             .filter(|amount| *amount > 0)
             .sum();
@@ -639,7 +639,7 @@ impl CliRuntime {
             .transactions()
             .filter(|stored| transaction_in_month(stored, month_key))
             .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account() == checking_account)
+            .filter(|posting| posting.account().as_str() == checking_account)
         {
             let amount = posting.amount();
             matched_postings = matched_postings.saturating_add(1);
@@ -1255,7 +1255,7 @@ impl CliRuntime {
             .transactions()
             .filter(|stored| transaction_in_month(stored, month_key))
             .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().starts_with(expense_account_prefix))
+            .filter(|posting| posting.account().as_str().starts_with(expense_account_prefix))
             .map(Posting::amount)
             .filter(|amount| *amount > 0)
             .sum()
@@ -1275,7 +1275,7 @@ impl CliRuntime {
                     .transaction()
                     .postings()
                     .iter()
-                    .any(|posting| posting.account() == checking_account)
+                    .any(|posting| posting.account().as_str() == checking_account)
             })
             .map(|stored| stored.id().clone())
             .collect();
@@ -1360,7 +1360,7 @@ fn snapshot_rows(transactions: Vec<StoredTransaction>) -> Vec<SnapshotPostingRow
                 description: stored.transaction().description().to_owned(),
                 effective_at_us: stored.effective_at().wallclock(),
                 posting_ordinal,
-                account: posting.account().to_owned(),
+                account: posting.account().as_str().to_owned(),
                 amount_cents: posting.amount(),
             });
         }
@@ -1454,9 +1454,10 @@ fn build_double_entry(
     credit_account: &str,
     amount_cents: i64,
 ) -> Result<TransactionBuilder, RuntimeError> {
+    use logos_core::AccountId;
     Ok(TransactionBuilder::new(description)
-        .posting(Posting::debit(debit_account, amount_cents))
-        .posting(Posting::credit(credit_account, amount_cents)?))
+        .posting(Posting::debit(AccountId::new(debit_account)?, amount_cents))
+        .posting(Posting::credit(AccountId::new(credit_account)?, amount_cents)?))
 }
 
 fn parse_import_timestamp(timestamp: &str) -> Option<i64> {

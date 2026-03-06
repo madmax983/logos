@@ -590,6 +590,7 @@ fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
     let mut runtime = CliRuntime::new_in_memory();
     let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 100_000)
         .with_analytics_artifact_id("artifact-missing")
+        .with_allow_variance(true)
         .with_confirm_close(true);
 
     let err = runtime

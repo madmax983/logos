@@ -46,17 +46,17 @@ impl RsuAutoDistributor {
 
         TransactionBuilder::new(description)
             .posting(Posting::credit(
-                self.config.rsu_asset.as_str(),
+                self.config.rsu_asset.clone(),
                 gross_vest_cents,
             )?)
-            .posting(Posting::debit(self.config.tax_reserve.as_str(), tax_cents))
+            .posting(Posting::debit(self.config.tax_reserve.clone(), tax_cents))
             .posting(Posting::debit(
-                self.config.smoothing_buffer.as_str(),
+                self.config.smoothing_buffer.clone(),
                 smoothing_cents,
             ))
-            .posting(Posting::debit(self.config.goals.as_str(), goals_cents))
+            .posting(Posting::debit(self.config.goals.clone(), goals_cents))
             .posting(Posting::debit(
-                self.config.discretionary.as_str(),
+                self.config.discretionary.clone(),
                 discretionary_cents,
             ))
             .build()
@@ -87,13 +87,13 @@ mod tests {
         assert_eq!(postings.len(), 5);
 
         // the source account is credited the gross amount
-        assert!(postings.contains(&Posting::credit("assets:rsu", 10000).unwrap()));
+        assert!(postings.contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 10000).unwrap()));
 
         // the destinations are debited
-        assert!(postings.contains(&Posting::debit("assets:tax", 4000)));
-        assert!(postings.contains(&Posting::debit("assets:buffer", 2000)));
-        assert!(postings.contains(&Posting::debit("assets:goals", 3000)));
-        assert!(postings.contains(&Posting::debit("assets:checking", 1000)));
+        assert!(postings.contains(&Posting::debit(AccountId::new("assets:tax").unwrap(), 4000)));
+        assert!(postings.contains(&Posting::debit(AccountId::new("assets:buffer").unwrap(), 2000)));
+        assert!(postings.contains(&Posting::debit(AccountId::new("assets:goals").unwrap(), 3000)));
+        assert!(postings.contains(&Posting::debit(AccountId::new("assets:checking").unwrap(), 1000)));
     }
 
     #[test]
@@ -121,10 +121,10 @@ mod tests {
         // Remainder = 10 - 6 = 4 cents.
         // So tax gets 4 cents.
 
-        assert!(postings.contains(&Posting::credit("assets:rsu", 10).unwrap()));
-        assert!(postings.contains(&Posting::debit("assets:tax", 4)));
-        assert!(postings.contains(&Posting::debit("assets:buffer", 3)));
-        assert!(postings.contains(&Posting::debit("assets:goals", 3)));
-        assert!(postings.contains(&Posting::debit("assets:checking", 0)));
+        assert!(postings.contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 10).unwrap()));
+        assert!(postings.contains(&Posting::debit(AccountId::new("assets:tax").unwrap(), 4)));
+        assert!(postings.contains(&Posting::debit(AccountId::new("assets:buffer").unwrap(), 3)));
+        assert!(postings.contains(&Posting::debit(AccountId::new("assets:goals").unwrap(), 3)));
+        assert!(postings.contains(&Posting::debit(AccountId::new("assets:checking").unwrap(), 0)));
     }
 }

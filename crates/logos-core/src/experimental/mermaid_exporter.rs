@@ -59,7 +59,7 @@ impl MermaidSankeyExporter {
                     let flow_amount = raw_flow.round() as i64;
 
                     if flow_amount > 0 {
-                        let key = (credit.account(), debit.account());
+                        let key = (credit.account().as_str(), debit.account().as_str());
                         *flows.entry(key).or_insert(0) += flow_amount;
                     }
                 }
@@ -87,6 +87,7 @@ impl MermaidSankeyExporter {
 
 #[cfg(test)]
 mod tests {
+    use crate::AccountId;
     use super::*;
     use crate::domain::transaction::TransactionBuilder;
 
@@ -95,8 +96,8 @@ mod tests {
         let mut exporter = MermaidSankeyExporter::new();
 
         let tx = TransactionBuilder::new("Salary")
-            .posting(Posting::credit("income:salary", 500_000).unwrap())
-            .posting(Posting::debit("assets:checking", 500_000))
+            .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 500_000).unwrap())
+            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 500_000))
             .build()
             .unwrap();
 
@@ -116,9 +117,9 @@ income:salary,assets:checking,5000.00
         let mut exporter = MermaidSankeyExporter::new();
 
         let tx = TransactionBuilder::new("Split")
-            .posting(Posting::credit("income:salary", 100_000).unwrap())
-            .posting(Posting::debit("assets:checking", 70_000))
-            .posting(Posting::debit("assets:savings", 30_000))
+            .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100_000).unwrap())
+            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 70_000))
+            .posting(Posting::debit(AccountId::new("assets:savings").unwrap(), 30_000))
             .build()
             .unwrap();
 
@@ -139,9 +140,9 @@ income:salary,assets:savings,300.00
         let mut exporter = MermaidSankeyExporter::new();
 
         let tx = TransactionBuilder::new("Pool")
-            .posting(Posting::credit("assets:checking", 60_000).unwrap())
-            .posting(Posting::credit("assets:savings", 40_000).unwrap())
-            .posting(Posting::debit("expenses:rent", 100_000))
+            .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 60_000).unwrap())
+            .posting(Posting::credit(AccountId::new("assets:savings").unwrap(), 40_000).unwrap())
+            .posting(Posting::debit(AccountId::new("expenses:rent").unwrap(), 100_000))
             .build()
             .unwrap();
 
@@ -163,11 +164,11 @@ assets:savings,expenses:rent,400.00
 
         // 60% from checking, 40% from savings
         let tx = TransactionBuilder::new("Complex")
-            .posting(Posting::credit("assets:checking", 6000).unwrap())
-            .posting(Posting::credit("assets:savings", 4000).unwrap())
+            .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 6000).unwrap())
+            .posting(Posting::credit(AccountId::new("assets:savings").unwrap(), 4000).unwrap())
             // Distributed to:
-            .posting(Posting::debit("expenses:food", 5000)) // 60% of 50 = 30 from checking, 20 from savings
-            .posting(Posting::debit("expenses:fun", 5000)) // 60% of 50 = 30 from checking, 20 from savings
+            .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000)) // 60% of 50 = 30 from checking, 20 from savings
+            .posting(Posting::debit(AccountId::new("expenses:fun").unwrap(), 5000)) // 60% of 50 = 30 from checking, 20 from savings
             .build()
             .unwrap();
 
@@ -190,14 +191,14 @@ assets:savings,expenses:fun,20.00
         let mut exporter = MermaidSankeyExporter::new();
 
         let tx1 = TransactionBuilder::new("T1")
-            .posting(Posting::credit("income", 100).unwrap())
-            .posting(Posting::debit("checking", 100))
+            .posting(Posting::credit(AccountId::new("income").unwrap(), 100).unwrap())
+            .posting(Posting::debit(AccountId::new("checking").unwrap(), 100))
             .build()
             .unwrap();
 
         let tx2 = TransactionBuilder::new("T2")
-            .posting(Posting::credit("income", 200).unwrap())
-            .posting(Posting::debit("checking", 200))
+            .posting(Posting::credit(AccountId::new("income").unwrap(), 200).unwrap())
+            .posting(Posting::debit(AccountId::new("checking").unwrap(), 200))
             .build()
             .unwrap();
 
