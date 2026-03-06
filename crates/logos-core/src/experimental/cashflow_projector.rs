@@ -62,10 +62,13 @@ impl CashflowProjector {
                 else {
                     continue;
                 };
+                let Ok(debit_posting) = Posting::debit(debit_account, template.amount_cents) else {
+                    continue;
+                };
 
                 let tx_res = TransactionBuilder::new(&template.description)
                     .posting(credit_posting)
-                    .posting(Posting::debit(debit_account, template.amount_cents))
+                    .posting(debit_posting)
                     .build();
 
                 if let Ok(tx) = tx_res {

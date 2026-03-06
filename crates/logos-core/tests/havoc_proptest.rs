@@ -15,7 +15,9 @@ proptest! {
     ) {
         let mut builder = TransactionBuilder::new("Test");
         for amt in amounts {
-            builder = builder.posting(Posting::debit(AccountId::new("test").unwrap(), amt));
+            if let Ok(posting) = Posting::debit(AccountId::new("test").unwrap(), amt) {
+                builder = builder.posting(posting);
+            }
         }
         let _ = builder.build();
     }

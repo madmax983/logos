@@ -44,22 +44,31 @@ impl RsuAutoDistributor {
         // The remaining amount goes to the tax reserve to ensure perfectly balanced transaction
         let tax_cents = gross_vest_cents - smoothing_cents - goals_cents - discretionary_cents;
 
-        TransactionBuilder::new(description)
-            .posting(Posting::credit(
-                self.config.rsu_asset.clone(),
-                gross_vest_cents,
-            )?)
-            .posting(Posting::debit(self.config.tax_reserve.clone(), tax_cents))
-            .posting(Posting::debit(
+        let mut builder = TransactionBuilder::new(description).posting(Posting::credit(
+            self.config.rsu_asset.clone(),
+            gross_vest_cents,
+        )?);
+
+        if tax_cents > 0 {
+            builder = builder.posting(Posting::debit(self.config.tax_reserve.clone(), tax_cents)?);
+        }
+        if smoothing_cents > 0 {
+            builder = builder.posting(Posting::debit(
                 self.config.smoothing_buffer.clone(),
                 smoothing_cents,
-            ))
-            .posting(Posting::debit(self.config.goals.clone(), goals_cents))
-            .posting(Posting::debit(
+            )?);
+        }
+        if goals_cents > 0 {
+            builder = builder.posting(Posting::debit(self.config.goals.clone(), goals_cents)?);
+        }
+        if discretionary_cents > 0 {
+            builder = builder.posting(Posting::debit(
                 self.config.discretionary.clone(),
                 discretionary_cents,
-            ))
-            .build()
+            )?);
+        }
+
+        builder.build()
     }
 }
 
@@ -93,19 +102,23 @@ mod tests {
         );
 
         // the destinations are debited
-        assert!(postings.contains(&Posting::debit(AccountId::new("assets:tax").unwrap(), 4000)));
-        assert!(postings.contains(&Posting::debit(
-            AccountId::new("assets:buffer").unwrap(),
-            2000
-        )));
-        assert!(postings.contains(&Posting::debit(
-            AccountId::new("assets:goals").unwrap(),
-            3000
-        )));
-        assert!(postings.contains(&Posting::debit(
-            AccountId::new("assets:checking").unwrap(),
-            1000
-        )));
+        assert!(
+            postings
+                .contains(&Posting::debit(AccountId::new("assets:tax").unwrap(), 4000).unwrap())
+        );
+        assert!(
+            postings
+                .contains(&Posting::debit(AccountId::new("assets:buffer").unwrap(), 2000).unwrap())
+        );
+        assert!(
+            postings
+                .contains(&Posting::debit(AccountId::new("assets:goals").unwrap(), 3000).unwrap())
+        );
+        assert!(
+            postings.contains(
+                &Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).unwrap()
+            )
+        );
     }
 
     #[test]
@@ -136,12 +149,16 @@ mod tests {
         assert!(
             postings.contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 10).unwrap())
         );
-        assert!(postings.contains(&Posting::debit(AccountId::new("assets:tax").unwrap(), 4)));
-        assert!(postings.contains(&Posting::debit(AccountId::new("assets:buffer").unwrap(), 3)));
-        assert!(postings.contains(&Posting::debit(AccountId::new("assets:goals").unwrap(), 3)));
-        assert!(postings.contains(&Posting::debit(
-            AccountId::new("assets:checking").unwrap(),
-            0
-        )));
+        assert!(
+            postings.contains(&Posting::debit(AccountId::new("assets:tax").unwrap(), 4).unwrap())
+        );
+        assert!(
+            postings
+                .contains(&Posting::debit(AccountId::new("assets:buffer").unwrap(), 3).unwrap())
+        );
+        assert!(
+            postings.contains(&Posting::debit(AccountId::new("assets:goals").unwrap(), 3).unwrap())
+        );
+        assert_eq!(postings.len(), 4);
     }
 }

@@ -26,10 +26,11 @@ fn planning_rsu_distributor_builds_balanced_transaction() {
         tx.postings()
             .contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 10_000).unwrap())
     );
-    assert!(tx.postings().contains(&Posting::debit(
-        AccountId::new("assets:tax").unwrap(),
-        4_000
-    )));
+    assert!(
+        tx.postings().contains(
+            &Posting::debit(AccountId::new("assets:tax").unwrap(), 4_000).expect("debit")
+        )
+    );
 }
 
 #[test]

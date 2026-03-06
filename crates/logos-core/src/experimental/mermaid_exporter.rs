@@ -97,10 +97,7 @@ mod tests {
 
         let tx = TransactionBuilder::new("Salary")
             .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 500_000).unwrap())
-            .posting(Posting::debit(
-                AccountId::new("assets:checking").unwrap(),
-                500_000,
-            ))
+            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 500_000).unwrap())
             .build()
             .unwrap();
 
@@ -121,14 +118,8 @@ income:salary,assets:checking,5000.00
 
         let tx = TransactionBuilder::new("Split")
             .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100_000).unwrap())
-            .posting(Posting::debit(
-                AccountId::new("assets:checking").unwrap(),
-                70_000,
-            ))
-            .posting(Posting::debit(
-                AccountId::new("assets:savings").unwrap(),
-                30_000,
-            ))
+            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 70_000).unwrap())
+            .posting(Posting::debit(AccountId::new("assets:savings").unwrap(), 30_000).unwrap())
             .build()
             .unwrap();
 
@@ -151,10 +142,7 @@ income:salary,assets:savings,300.00
         let tx = TransactionBuilder::new("Pool")
             .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 60_000).unwrap())
             .posting(Posting::credit(AccountId::new("assets:savings").unwrap(), 40_000).unwrap())
-            .posting(Posting::debit(
-                AccountId::new("expenses:rent").unwrap(),
-                100_000,
-            ))
+            .posting(Posting::debit(AccountId::new("expenses:rent").unwrap(), 100_000).unwrap())
             .build()
             .unwrap();
 
@@ -179,14 +167,8 @@ assets:savings,expenses:rent,400.00
             .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 6000).unwrap())
             .posting(Posting::credit(AccountId::new("assets:savings").unwrap(), 4000).unwrap())
             // Distributed to:
-            .posting(Posting::debit(
-                AccountId::new("expenses:food").unwrap(),
-                5000,
-            )) // 60% of 50 = 30 from checking, 20 from savings
-            .posting(Posting::debit(
-                AccountId::new("expenses:fun").unwrap(),
-                5000,
-            )) // 60% of 50 = 30 from checking, 20 from savings
+            .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000).unwrap()) // 60% of 50 = 30 from checking, 20 from savings
+            .posting(Posting::debit(AccountId::new("expenses:fun").unwrap(), 5000).unwrap()) // 60% of 50 = 30 from checking, 20 from savings
             .build()
             .unwrap();
 
@@ -210,13 +192,13 @@ assets:savings,expenses:fun,20.00
 
         let tx1 = TransactionBuilder::new("T1")
             .posting(Posting::credit(AccountId::new("income").unwrap(), 100).unwrap())
-            .posting(Posting::debit(AccountId::new("checking").unwrap(), 100))
+            .posting(Posting::debit(AccountId::new("checking").unwrap(), 100).unwrap())
             .build()
             .unwrap();
 
         let tx2 = TransactionBuilder::new("T2")
             .posting(Posting::credit(AccountId::new("income").unwrap(), 200).unwrap())
-            .posting(Posting::debit(AccountId::new("checking").unwrap(), 200))
+            .posting(Posting::debit(AccountId::new("checking").unwrap(), 200).unwrap())
             .build()
             .unwrap();
 
