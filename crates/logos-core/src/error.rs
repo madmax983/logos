@@ -7,11 +7,14 @@ pub enum DomainError {
     EmptyCategoryGroupName,
     EmptyCategoryName,
     EmptyTransactionDescription,
+    EmptyTransactionPostings,
     EmptyCorrectionReason,
     CorrectionCannotSupersedeSelf,
     InvalidAllocationTotal { total: u16 },
     InvalidHaircutPercentage { tier: &'static str, percentage: u8 },
     InvalidHaircutOrdering { short: u8, medium: u8, long: u8 },
+    InvalidDebitAmount { amount: i64 },
+    InvalidCreditAmount { amount: i64 },
     UnbalancedTransaction { total: i64 },
     AmountOverflow,
 }
@@ -33,6 +36,9 @@ impl fmt::Display for DomainError {
             }
             Self::EmptyTransactionDescription => {
                 write!(f, "transaction description cannot be empty")
+            }
+            Self::EmptyTransactionPostings => {
+                write!(f, "transaction must contain at least one posting")
             }
             Self::EmptyCorrectionReason => {
                 write!(f, "correction reason cannot be empty")
@@ -59,6 +65,12 @@ impl fmt::Display for DomainError {
                     "haircut tiers must be non-decreasing by horizon (short <= medium <= long), got {short}, {medium}, {long}"
                 )
             }
+            Self::InvalidDebitAmount { amount } => {
+                write!(f, "debit amount must be greater than zero, got {amount}")
+            }
+            Self::InvalidCreditAmount { amount } => {
+                write!(f, "credit amount must be greater than zero, got {amount}")
+            }
             Self::UnbalancedTransaction { total } => {
                 write!(
                     f,
@@ -83,6 +95,14 @@ mod tests {
         assert_eq!(
             DomainError::EmptyTransactionDescription.to_string(),
             "transaction description cannot be empty"
+        );
+    }
+
+    #[test]
+    fn should_display_empty_transaction_postings() {
+        assert_eq!(
+            DomainError::EmptyTransactionPostings.to_string(),
+            "transaction must contain at least one posting"
         );
     }
 
@@ -156,6 +176,22 @@ mod tests {
             }
             .to_string(),
             "haircut tiers must be non-decreasing by horizon (short <= medium <= long), got 50, 40, 60"
+        );
+    }
+
+    #[test]
+    fn should_display_invalid_debit_amount() {
+        assert_eq!(
+            DomainError::InvalidDebitAmount { amount: 0 }.to_string(),
+            "debit amount must be greater than zero, got 0"
+        );
+    }
+
+    #[test]
+    fn should_display_invalid_credit_amount() {
+        assert_eq!(
+            DomainError::InvalidCreditAmount { amount: -1 }.to_string(),
+            "credit amount must be greater than zero, got -1"
         );
     }
 }

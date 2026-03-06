@@ -31,7 +31,7 @@ use crate::error::DomainError;
 /// use logos_core::domain::account::AccountId;
 ///
 /// // Create a debit posting for $10.00 (1000 cents).
-/// let d = Posting::debit(AccountId::new("assets:checking").unwrap(), 1000);
+/// let d = Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).expect("debit should succeed");
 /// assert_eq!(d.amount(), 1000);
 ///
 /// // Create a credit posting for $10.00 (represented as -1000 cents internally).
@@ -45,18 +45,30 @@ pub struct Posting {
 }
 
 impl Posting {
-    /// Creates a debit posting. The amount should be passed as a positive number.
-    #[must_use]
-    pub const fn debit(account: AccountId, amount: i64) -> Self {
-        Self { account, amount }
+    /// Creates a debit posting.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when `amount` is not strictly positive.
+    pub fn debit(account: AccountId, amount: i64) -> Result<Self, DomainError> {
+        if amount <= 0 {
+            return Err(DomainError::InvalidDebitAmount { amount });
+        }
+
+        Ok(Self { account, amount })
     }
 
     /// Creates a credit posting, negating the provided amount.
     ///
     /// # Errors
     ///
+    /// Returns an error when `amount` is not strictly positive.
     /// Returns an error if negating `amount` causes an arithmetic overflow.
     pub fn credit(account: AccountId, amount: i64) -> Result<Self, DomainError> {
+        if amount <= 0 {
+            return Err(DomainError::InvalidCreditAmount { amount });
+        }
+
         let amount = amount.checked_neg().ok_or(DomainError::AmountOverflow)?;
         Ok(Self { account, amount })
     }
@@ -109,7 +121,7 @@ impl Transaction {
 ///
 /// // A successful balanced transaction:
 /// let txn = TransactionBuilder::new("Buy groceries")
-///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000))
+///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000).expect("debit should succeed"))
 ///     .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 5000).expect("credit should succeed"))
 ///     .build()
 ///     .expect("Transaction should balance");
@@ -124,7 +136,7 @@ impl Transaction {
 /// use logos_core::AccountId;
 ///
 /// let result = TransactionBuilder::new("Oops")
-///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000))
+///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000).expect("debit should succeed"))
 ///     .build(); // Missing the credit!
 ///
 /// assert!(result.is_err());
@@ -156,10 +168,15 @@ impl TransactionBuilder {
     ///
     /// # Errors
     ///
-    /// Returns an error when the description is empty or postings do not sum to zero.
+    /// Returns an error when the description is empty, there are no postings,
+    /// or postings do not sum to zero.
     pub fn build(self) -> Result<Transaction, DomainError> {
         if self.description.trim().is_empty() {
             return Err(DomainError::EmptyTransactionDescription);
+        }
+
+        if self.postings.is_empty() {
+            return Err(DomainError::EmptyTransactionPostings);
         }
 
         let mut total = 0_i64;
@@ -187,20 +204,52 @@ mod tests {
     #[test]
     fn should_return_error_when_posting_credit_negates_min_value() {
         let result = Posting::credit(AccountId::new("income:salary").unwrap(), i64::MIN);
-        assert_eq!(result, Err(DomainError::AmountOverflow));
+        assert_eq!(
+            result,
+            Err(DomainError::InvalidCreditAmount { amount: i64::MIN })
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_posting_debit_amount_is_non_positive() {
+        let account = AccountId::new("assets:checking").expect("account");
+        assert_eq!(
+            Posting::debit(account.clone(), 0),
+            Err(DomainError::InvalidDebitAmount { amount: 0 })
+        );
+        assert_eq!(
+            Posting::debit(account, -1),
+            Err(DomainError::InvalidDebitAmount { amount: -1 })
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_posting_credit_amount_is_non_positive() {
+        let account = AccountId::new("income:salary").expect("account");
+        assert_eq!(
+            Posting::credit(account.clone(), 0),
+            Err(DomainError::InvalidCreditAmount { amount: 0 })
+        );
+        assert_eq!(
+            Posting::credit(account, -1),
+            Err(DomainError::InvalidCreditAmount { amount: -1 })
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_transaction_has_no_postings() {
+        let result = TransactionBuilder::new("empty").build();
+        assert_eq!(result, Err(DomainError::EmptyTransactionPostings));
     }
 
     #[test]
     fn should_return_error_when_transaction_sum_overflows_positive() {
         let builder = TransactionBuilder::new("overflow")
-            .posting(Posting::debit(
-                AccountId::new("assets:checking").unwrap(),
-                i64::MAX,
-            ))
-            .posting(Posting::debit(
-                AccountId::new("assets:checking").unwrap(),
-                2,
-            ))
+            .posting(
+                Posting::debit(AccountId::new("assets:checking").unwrap(), i64::MAX)
+                    .expect("debit"),
+            )
+            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 2).expect("debit"))
             .posting(
                 Posting::credit(AccountId::new("income:salary").unwrap(), i64::MAX)
                     .expect("credit"),
@@ -219,14 +268,11 @@ mod tests {
                     .expect("credit"),
             )
             .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 2).expect("credit"))
-            .posting(Posting::debit(
-                AccountId::new("assets:checking").unwrap(),
-                i64::MAX,
-            ))
-            .posting(Posting::debit(
-                AccountId::new("assets:checking").unwrap(),
-                2,
-            ));
+            .posting(
+                Posting::debit(AccountId::new("assets:checking").unwrap(), i64::MAX)
+                    .expect("debit"),
+            )
+            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 2).expect("debit"));
 
         let result = builder.build();
         assert_eq!(result, Err(DomainError::AmountOverflow));
