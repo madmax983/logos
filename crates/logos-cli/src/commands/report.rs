@@ -36,13 +36,27 @@ fn render_month_output(
     month_key: &str,
 ) -> String {
     let report = runtime.month_report_for(checking_account, month_key);
-    format!(
-        "report.month month={month_key} checking_account={checking_account} checking_balance_cents={} income_cents={} expense_cents={} cashflow_cents={}",
-        report.checking_balance_cents(),
-        report.income_cents(),
-        report.expense_cents(),
-        report.cashflow_cents()
-    )
+
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Month",
+        "Checking Account",
+        "Balance",
+        "Income",
+        "Expense",
+        "Cashflow",
+    ]);
+    table.add_row(vec![
+        month_key.to_owned(),
+        checking_account.to_owned(),
+        report.checking_balance_cents().to_string(),
+        report.income_cents().to_string(),
+        report.expense_cents().to_string(),
+        report.cashflow_cents().to_string(),
+    ]);
+
+    format!("report.month\n{table}")
 }
 
 #[cfg(test)]
@@ -68,9 +82,7 @@ mod tests {
 
         let output = render_month_output(&runtime, "assets:checking", "2026-03");
 
-        assert_eq!(
-            output,
-            "report.month month=2026-03 checking_account=assets:checking checking_balance_cents=7500 income_cents=10000 expense_cents=2500 cashflow_cents=7500"
-        );
+        let expected = "report.month\n┌─────────┬──────────────────┬─────────┬────────┬─────────┬──────────┐\n│ Month   ┆ Checking Account ┆ Balance ┆ Income ┆ Expense ┆ Cashflow │\n╞═════════╪══════════════════╪═════════╪════════╪═════════╪══════════╡\n│ 2026-03 ┆ assets:checking  ┆ 7500    ┆ 10000  ┆ 2500    ┆ 7500     │\n└─────────┴──────────────────┴─────────┴────────┴─────────┴──────────┘";
+        assert_eq!(output, expected);
     }
 }
