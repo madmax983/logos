@@ -5,6 +5,8 @@
 //! Understanding these categories is essential for correct transaction balancing
 //! and reporting.
 
+use crate::error::DomainError;
+
 /// A strongly-typed identifier for an account in the ledger.
 ///
 /// Wraps a String to enforce domain boundaries and prevent stringly-typed
@@ -14,9 +16,17 @@ pub struct AccountId(String);
 
 impl AccountId {
     /// Creates a new `AccountId`, trimming whitespace.
-    #[must_use]
-    pub fn new(id: &str) -> Self {
-        Self(id.trim().to_owned())
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when `id` is empty after trimming.
+    pub fn new(id: &str) -> Result<Self, DomainError> {
+        let trimmed = id.trim();
+        if trimmed.is_empty() {
+            return Err(DomainError::EmptyAccountId);
+        }
+
+        Ok(Self(trimmed.to_owned()))
     }
 
     /// Returns the string representation.
@@ -86,6 +96,7 @@ impl AccountType {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::DomainError;
 
     #[test]
     fn should_return_positive_one_for_debit_normal_accounts() {
@@ -118,5 +129,17 @@ mod tests {
             -1,
             "Income should have a normal credit balance"
         );
+    }
+
+    #[test]
+    fn should_trim_account_id() {
+        let id = AccountId::new(" assets:checking ").expect("valid account id");
+        assert_eq!(id.as_str(), "assets:checking");
+    }
+
+    #[test]
+    fn should_reject_empty_account_id() {
+        assert_eq!(AccountId::new(""), Err(DomainError::EmptyAccountId));
+        assert_eq!(AccountId::new("   "), Err(DomainError::EmptyAccountId));
     }
 }

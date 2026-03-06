@@ -2,6 +2,7 @@ use core::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DomainError {
+    EmptyAccountId,
     EmptyCategoryGroupName,
     EmptyCategoryName,
     EmptyTransactionDescription,
@@ -15,6 +16,9 @@ pub enum DomainError {
 impl fmt::Display for DomainError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::EmptyAccountId => {
+                write!(f, "account id cannot be empty")
+            }
             Self::EmptyCategoryGroupName => {
                 write!(f, "category group name cannot be empty")
             }
@@ -57,6 +61,14 @@ mod tests {
         assert_eq!(
             DomainError::EmptyTransactionDescription.to_string(),
             "transaction description cannot be empty"
+        );
+    }
+
+    #[test]
+    fn should_display_empty_account_id() {
+        assert_eq!(
+            DomainError::EmptyAccountId.to_string(),
+            "account id cannot be empty"
         );
     }
 
