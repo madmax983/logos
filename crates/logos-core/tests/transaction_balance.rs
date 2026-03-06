@@ -1,10 +1,11 @@
+use logos_core::AccountId;
 use logos_core::{Posting, TransactionBuilder};
 
 #[test]
 fn balanced_transaction_is_accepted() {
     let txn = TransactionBuilder::new("paycheck")
-        .posting(Posting::debit("assets:checking", 10_000))
-        .posting(Posting::credit("income:salary", 10_000).expect("credit"))
+        .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000))
+        .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).expect("credit"))
         .build()
         .expect("balanced");
 
@@ -14,8 +15,8 @@ fn balanced_transaction_is_accepted() {
 #[test]
 fn unbalanced_transaction_is_rejected() {
     let err = TransactionBuilder::new("bad")
-        .posting(Posting::debit("assets:checking", 10_000))
-        .posting(Posting::credit("income:salary", 9_000).expect("credit"))
+        .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000))
+        .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 9_000).expect("credit"))
         .build()
         .expect_err("must fail");
 
@@ -25,8 +26,8 @@ fn unbalanced_transaction_is_rejected() {
 #[test]
 fn empty_transaction_description_is_rejected() {
     let err = TransactionBuilder::new("   ")
-        .posting(Posting::debit("assets:checking", 10_000))
-        .posting(Posting::credit("income:salary", 10_000).expect("credit"))
+        .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000))
+        .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).expect("credit"))
         .build()
         .expect_err("must fail");
 
