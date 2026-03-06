@@ -32,5 +32,6 @@ proptest! {
 
 #[test]
 fn havoc_posting_credit_min_does_not_panic() {
-    let _ = logos_core::domain::transaction::Posting::credit(AccountId::new("test").unwrap(), i64::MIN);
+    let _ =
+        logos_core::domain::transaction::Posting::credit(AccountId::new("test").unwrap(), i64::MIN);
 }

@@ -10,7 +10,10 @@ fn test_posting_account() {
 #[test]
 fn test_transaction_description() {
     let txn = TransactionBuilder::new("Buy groceries")
-        .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000))
+        .posting(Posting::debit(
+            AccountId::new("expenses:food").unwrap(),
+            5000,
+        ))
         .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 5000).unwrap())
         .build()
         .expect("Transaction should balance");

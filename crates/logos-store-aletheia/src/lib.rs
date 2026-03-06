@@ -2105,7 +2105,8 @@ fn required_edge_i64_property(edge: &Edge, key: &str) -> Result<i64, StoreError>
 
 fn parse_posting(txn_id: &str, account: &str, amount_cents: i64) -> Result<Posting, StoreError> {
     use logos_core::AccountId;
-    let account_id = AccountId::new(account).map_err(|e| map_load_error("invalid account id", e))?;
+    let account_id =
+        AccountId::new(account).map_err(|e| map_load_error("invalid account id", e))?;
 
     if amount_cents >= 0 {
         return Ok(Posting::debit(account_id, amount_cents));

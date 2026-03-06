@@ -47,11 +47,8 @@ pub struct Posting {
 impl Posting {
     /// Creates a debit posting. The amount should be passed as a positive number.
     #[must_use]
-    pub fn debit(account: AccountId, amount: i64) -> Self {
-        Self {
-            account,
-            amount,
-        }
+    pub const fn debit(account: AccountId, amount: i64) -> Self {
+        Self { account, amount }
     }
 
     /// Creates a credit posting, negating the provided amount.
@@ -61,14 +58,11 @@ impl Posting {
     /// Returns an error if negating `amount` causes an arithmetic overflow.
     pub fn credit(account: AccountId, amount: i64) -> Result<Self, DomainError> {
         let amount = amount.checked_neg().ok_or(DomainError::AmountOverflow)?;
-        Ok(Self {
-            account,
-            amount,
-        })
+        Ok(Self { account, amount })
     }
 
     #[must_use]
-    pub fn account(&self) -> &AccountId {
+    pub const fn account(&self) -> &AccountId {
         &self.account
     }
 
@@ -199,9 +193,18 @@ mod tests {
     #[test]
     fn should_return_error_when_transaction_sum_overflows_positive() {
         let builder = TransactionBuilder::new("overflow")
-            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), i64::MAX))
-            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 2))
-            .posting(Posting::credit(AccountId::new("income:salary").unwrap(), i64::MAX).expect("credit"))
+            .posting(Posting::debit(
+                AccountId::new("assets:checking").unwrap(),
+                i64::MAX,
+            ))
+            .posting(Posting::debit(
+                AccountId::new("assets:checking").unwrap(),
+                2,
+            ))
+            .posting(
+                Posting::credit(AccountId::new("income:salary").unwrap(), i64::MAX)
+                    .expect("credit"),
+            )
             .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 2).expect("credit"));
 
         let result = builder.build();
@@ -211,10 +214,19 @@ mod tests {
     #[test]
     fn should_return_error_when_transaction_sum_overflows_negative() {
         let builder = TransactionBuilder::new("underflow")
-            .posting(Posting::credit(AccountId::new("income:salary").unwrap(), i64::MAX).expect("credit"))
+            .posting(
+                Posting::credit(AccountId::new("income:salary").unwrap(), i64::MAX)
+                    .expect("credit"),
+            )
             .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 2).expect("credit"))
-            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), i64::MAX))
-            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 2));
+            .posting(Posting::debit(
+                AccountId::new("assets:checking").unwrap(),
+                i64::MAX,
+            ))
+            .posting(Posting::debit(
+                AccountId::new("assets:checking").unwrap(),
+                2,
+            ));
 
         let result = builder.build();
         assert_eq!(result, Err(DomainError::AmountOverflow));

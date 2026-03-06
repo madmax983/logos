@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Write;
 
+use crate::domain::account::AccountId;
 use crate::domain::transaction::{Posting, TransactionBuilder};
 
 /// Represents a template for a recurring transaction in cashflow projection.
@@ -51,22 +52,26 @@ impl CashflowProjector {
 
         for _ in 0..periods {
             for template in &self.recurring_templates {
-                // Ensure the transaction balances (ignoring error handling for brevity in simulation)
+                let Ok(credit_account) = AccountId::new(&template.credit_account) else {
+                    continue;
+                };
+                let Ok(debit_account) = AccountId::new(&template.debit_account) else {
+                    continue;
+                };
+                let Ok(credit_posting) = Posting::credit(credit_account, template.amount_cents)
+                else {
+                    continue;
+                };
+
                 let tx_res = TransactionBuilder::new(&template.description)
-                    .posting(
-                        Posting::credit(&template.credit_account, template.amount_cents)
-                            .unwrap_or_else(|_| Posting::debit(&template.credit_account, 0)),
-                    ) // fallback to 0 to balance if overflow
-                    .posting(Posting::debit(
-                        &template.debit_account,
-                        template.amount_cents,
-                    ))
+                    .posting(credit_posting)
+                    .posting(Posting::debit(debit_account, template.amount_cents))
                     .build();
 
                 if let Ok(tx) = tx_res {
                     for posting in tx.postings() {
                         *current_balances
-                            .entry(posting.account().to_owned())
+                            .entry(posting.account().as_str().to_owned())
                             .or_insert(0) += posting.amount();
                     }
                 }
