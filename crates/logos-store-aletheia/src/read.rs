@@ -264,7 +264,8 @@ fn load_superseded_ids_at(
 
         let supersedes_txn_id =
             required_node_string_property(&correction_node, PROP_SUPERSEDES_TXN_ID)?;
-        superseded_ids.insert(TransactionId::new(&supersedes_txn_id));
+        let supersedes_id = TransactionId::new(&supersedes_txn_id).map_err(StoreError::Domain)?;
+        superseded_ids.insert(supersedes_id);
     }
 
     Ok(superseded_ids)
