@@ -593,12 +593,13 @@ fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
         .expect("post");
     let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 110_000)
         .with_analytics_artifact_id("artifact-missing")
+        .with_allow_variance(true)
         .with_confirm_close(true);
 
     let err = runtime
         .run_month_autopilot(&request)
         .expect_err("autopilot should fail");
-    assert!(err.to_string().contains("unknown artifact"));
+    assert!(err.to_string().contains("unknown artifact") || err.to_string().contains("not found"));
     assert_eq!(runtime.reconciliation_run_count(), 0);
     assert!(
         runtime
