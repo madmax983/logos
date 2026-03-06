@@ -39,7 +39,9 @@ impl FireAscentSimulator {
             return String::from("Summit reached instantly: Expenses are zero!\n");
         }
         if fire_number == i64::MAX {
-            return String::from("The Summit is infinite (Safe Withdrawal Rate is 0%). The ascent is impossible.\n");
+            return String::from(
+                "The Summit is infinite (Safe Withdrawal Rate is 0%). The ascent is impossible.\n",
+            );
         }
 
         // Add milestones for the ascent (25%, 50%, 75%, 100%)
@@ -58,10 +60,11 @@ impl FireAscentSimulator {
         let (timeline, crossed_milestones) = ascent_projector.project_timeline(self.max_months);
 
         let mut output = String::new();
+        #[allow(clippy::cast_precision_loss)]
+        let summit_dollars = summit as f64 / 100.0;
         let _ = writeln!(
             output,
-            "🏔️  FIRE Ascent Simulation  🏔️\nTarget Summit: ${:.2}",
-            summit as f64 / 100.0
+            "🏔️  FIRE Ascent Simulation  🏔️\nTarget Summit: ${summit_dollars:.2}"
         );
         let _ = writeln!(output, "Maximum Duration: {} months\n", self.max_months);
 
@@ -81,13 +84,15 @@ impl FireAscentSimulator {
 
         // Let's refine the loop to just iterate through our predefined milestones and check if they were crossed
         for (target_cents, target_name) in milestone_names {
+            #[allow(clippy::cast_precision_loss)]
+            let target_dollars = target_cents as f64 / 100.0;
             if let Some(&(_, month)) = sorted_milestones.iter().find(|&&(c, _)| c == target_cents) {
                 let _ = writeln!(
                     output,
                     "[{:^10}] Reached {} at ${:.2}",
                     format!("Month {}", month),
                     target_name,
-                    target_cents as f64 / 100.0
+                    target_dollars
                 );
 
                 if target_cents == summit {
@@ -97,9 +102,7 @@ impl FireAscentSimulator {
             } else {
                 let _ = writeln!(
                     output,
-                    "[  PENDING ] {} at ${:.2} remains unreached.",
-                    target_name,
-                    target_cents as f64 / 100.0
+                    "[  PENDING ] {target_name} at ${target_dollars:.2} remains unreached."
                 );
             }
         }
@@ -111,11 +114,12 @@ impl FireAscentSimulator {
             let months = summit_month % 12;
             let _ = writeln!(
                 output,
-                "🎉 Ascent Successful! Summit reached in {} years and {} months.",
-                years, months
+                "🎉 Ascent Successful! Summit reached in {years} years and {months} months."
             );
         } else {
-            let final_nw = timeline.last().map(|m| m.net_worth_cents).unwrap_or(0);
+            let final_nw = timeline.last().map_or(0, |m| m.net_worth_cents);
+            #[allow(clippy::cast_precision_loss)]
+            let final_nw_dollars = final_nw as f64 / 100.0;
             #[allow(clippy::cast_precision_loss)]
             let progress_pct = (final_nw as f64 / summit as f64) * 100.0;
             let _ = writeln!(
@@ -125,13 +129,14 @@ impl FireAscentSimulator {
             );
             let _ = writeln!(
                 output,
-                "Final Net Worth: ${:.2} ({:.1}% of Summit)",
-                final_nw as f64 / 100.0,
-                progress_pct
+                "Final Net Worth: ${final_nw_dollars:.2} ({progress_pct:.1}% of Summit)",
             );
 
             if progress_pct < 0.0 {
-                 let _ = writeln!(output, "The mountain is too steep. Consider increasing savings or reducing expenses.");
+                let _ = writeln!(
+                    output,
+                    "The mountain is too steep. Consider increasing savings or reducing expenses."
+                );
             }
         }
 
