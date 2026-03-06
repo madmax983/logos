@@ -4,6 +4,8 @@ use core::fmt;
 pub enum ImportError {
     MissingColumns { expected: usize, found: usize },
     InvalidAmount,
+    InvalidAmountAtColumn { column: usize, value: String },
+    InvalidCsvRow { message: String },
     FileReadFailed { path: String, message: String },
     PdfTextExtractionFailed { path: String, message: String },
     NoStatementRows { path: String },
@@ -16,6 +18,10 @@ impl fmt::Display for ImportError {
                 write!(f, "missing columns: expected {expected}, found {found}")
             }
             Self::InvalidAmount => write!(f, "invalid amount in CSV row"),
+            Self::InvalidAmountAtColumn { column, value } => {
+                write!(f, "invalid amount in CSV row at column {column}: '{value}'")
+            }
+            Self::InvalidCsvRow { message } => write!(f, "invalid CSV row: {message}"),
             Self::FileReadFailed { path, message } => {
                 write!(f, "failed reading import file '{path}': {message}")
             }
@@ -115,13 +121,84 @@ impl ImportRecord {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CsvFieldState {
+    Unquoted,
+    Quoted,
+    AfterQuote,
+}
+
+fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
+    let mut columns = Vec::new();
+    let mut field = String::new();
+    let mut state = CsvFieldState::Unquoted;
+    let mut chars = row.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        match state {
+            CsvFieldState::Unquoted => match ch {
+                ',' => {
+                    columns.push(field);
+                    field = String::new();
+                }
+                '"' => {
+                    if field.trim().is_empty() {
+                        field.clear();
+                        state = CsvFieldState::Quoted;
+                    } else {
+                        return Err(ImportError::InvalidCsvRow {
+                            message: "unexpected quote in unquoted field".to_string(),
+                        });
+                    }
+                }
+                _ => field.push(ch),
+            },
+            CsvFieldState::Quoted => {
+                if ch == '"' {
+                    if matches!(chars.peek(), Some('"')) {
+                        let _ = chars.next();
+                        field.push('"');
+                    } else {
+                        state = CsvFieldState::AfterQuote;
+                    }
+                } else {
+                    field.push(ch);
+                }
+            }
+            CsvFieldState::AfterQuote => match ch {
+                ',' => {
+                    columns.push(field);
+                    field = String::new();
+                    state = CsvFieldState::Unquoted;
+                }
+                _ if ch.is_whitespace() => {}
+                _ => {
+                    return Err(ImportError::InvalidCsvRow {
+                        message: "unexpected characters after closing quote".to_string(),
+                    });
+                }
+            },
+        }
+    }
+
+    if state == CsvFieldState::Quoted {
+        return Err(ImportError::InvalidCsvRow {
+            message: "unterminated quoted field".to_string(),
+        });
+    }
+
+    columns.push(field);
+    Ok(columns)
+}
+
 /// Parses a single CSV row into an import record with deterministic field mapping.
 ///
 /// # Errors
 ///
-/// Returns an error when required columns are missing or amount parsing fails.
+/// Returns an error when CSV quoting is malformed, required columns are missing,
+/// or amount parsing fails.
 pub fn parse_simple_csv_row(row: &str, mapping: &CsvMapping) -> Result<ImportRecord, ImportError> {
-    let columns: Vec<&str> = row.split(',').collect();
+    let columns = parse_csv_columns(row)?;
     let needed = 1 + [
         mapping.timestamp_idx,
         mapping.amount_idx,
@@ -140,10 +217,14 @@ pub fn parse_simple_csv_row(row: &str, mapping: &CsvMapping) -> Result<ImportRec
         });
     }
 
-    let amount_cents = columns[mapping.amount_idx]
-        .trim()
-        .parse::<i64>()
-        .map_err(|_| ImportError::InvalidAmount)?;
+    let amount_value = columns[mapping.amount_idx].trim();
+    let amount_cents =
+        amount_value
+            .parse::<i64>()
+            .map_err(|_| ImportError::InvalidAmountAtColumn {
+                column: mapping.amount_idx,
+                value: amount_value.to_owned(),
+            })?;
 
     Ok(ImportRecord::new(
         &mapping.source_id,
