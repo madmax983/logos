@@ -10,25 +10,48 @@ use crate::error::DomainError;
 /// A normalized identifier for a [`CategoryGroup`].
 ///
 /// It is derived from the group's name by converting to lowercase, trimming
-/// whitespace, and replacing spaces with hyphens.
+/// whitespace, and replacing internal whitespace runs with hyphens.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CategoryGroupId(String);
 
 impl CategoryGroupId {
     /// Creates a normalized `CategoryGroupId` from a string.
     ///
+    /// Internal whitespace is collapsed to a single `-`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when `name` is empty after trimming and normalization.
+    ///
     /// ## Examples
     ///
     /// ```
     /// use logos_core::domain::category::CategoryGroupId;
     ///
-    /// let id = CategoryGroupId::from_name(" Living Expenses ");
-    /// // Internally stores "living-expenses"
+    /// let id = CategoryGroupId::from_name(" Living Expenses ")?;
+    /// assert_eq!(id.as_str(), "living-expenses");
+    /// # Ok::<(), logos_core::DomainError>(())
     /// ```
+    pub fn from_name(name: &str) -> Result<Self, DomainError> {
+        let mut normalized = String::new();
+
+        for segment in name.split_whitespace() {
+            if !normalized.is_empty() {
+                normalized.push('-');
+            }
+            normalized.push_str(&segment.to_ascii_lowercase());
+        }
+
+        if normalized.is_empty() {
+            return Err(DomainError::EmptyCategoryGroupName);
+        }
+
+        Ok(Self(normalized))
+    }
+
     #[must_use]
-    pub fn from_name(name: &str) -> Self {
-        let normalized = name.trim().to_ascii_lowercase().replace(' ', "-");
-        Self(normalized)
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
@@ -55,7 +78,7 @@ impl CategoryGroup {
         }
 
         Ok(Self {
-            id: CategoryGroupId::from_name(trimmed),
+            id: CategoryGroupId::from_name(trimmed)?,
             name: trimmed.to_owned(),
         })
     }
@@ -87,6 +110,10 @@ impl Category {
     ///
     /// Returns an error when `name` is empty after trimming.
     pub fn new(group_id: CategoryGroupId, name: &str) -> Result<Self, DomainError> {
+        if group_id.as_str().is_empty() {
+            return Err(DomainError::EmptyCategoryGroupName);
+        }
+
         let trimmed = name.trim();
         if trimmed.is_empty() {
             return Err(DomainError::EmptyCategoryName);
@@ -120,23 +147,38 @@ mod tests {
             (" Wants ", "wants"),
             ("True Expenses", "true-expenses"),
             ("  Debt Payments  ", "debt-payments"),
+            ("Recurring   Bills", "recurring-bills"),
+            ("Food\tDining", "food-dining"),
             ("My-Custom-Category", "my-custom-category"),
         ];
 
         for (input, expected) in cases {
-            let id = CategoryGroupId::from_name(input);
+            let id = CategoryGroupId::from_name(input).expect("valid category group id");
             assert_eq!(
-                id.0, expected,
+                id.as_str(),
+                expected,
                 "Expected '{input}' to normalize to '{expected}'"
             );
         }
     }
 
     #[test]
+    fn should_return_error_when_category_group_id_name_is_empty() {
+        assert_eq!(
+            CategoryGroupId::from_name(""),
+            Err(DomainError::EmptyCategoryGroupName)
+        );
+        assert_eq!(
+            CategoryGroupId::from_name("   \t  "),
+            Err(DomainError::EmptyCategoryGroupName)
+        );
+    }
+
+    #[test]
     fn should_create_category_group_successfully() -> Result<(), DomainError> {
         let group = CategoryGroup::new(" True Expenses ")?;
         assert_eq!(group.name(), "True Expenses");
-        assert_eq!(group.id().0, "true-expenses");
+        assert_eq!(group.id().as_str(), "true-expenses");
         Ok(())
     }
 
@@ -154,7 +196,7 @@ mod tests {
 
     #[test]
     fn should_create_category_successfully() -> Result<(), DomainError> {
-        let group_id = CategoryGroupId::from_name("Needs");
+        let group_id = CategoryGroupId::from_name("Needs")?;
         let category = Category::new(group_id.clone(), " Rent ")?;
         assert_eq!(category.name(), "Rent");
         assert_eq!(category.group_id(), &group_id);
@@ -162,8 +204,17 @@ mod tests {
     }
 
     #[test]
+    fn should_return_error_when_category_group_id_is_empty() {
+        let group_id = CategoryGroupId(String::new());
+        assert_eq!(
+            Category::new(group_id, "Rent"),
+            Err(DomainError::EmptyCategoryGroupName)
+        );
+    }
+
+    #[test]
     fn should_return_error_when_category_name_is_empty() {
-        let group_id = CategoryGroupId::from_name("Needs");
+        let group_id = CategoryGroupId::from_name("Needs").expect("valid category group id");
         assert_eq!(
             Category::new(group_id.clone(), ""),
             Err(DomainError::EmptyCategoryName)
