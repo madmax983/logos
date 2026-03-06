@@ -267,6 +267,7 @@ impl AletheiaStore {
     pub(crate) fn next_transaction_id(&mut self) -> TransactionId {
         self.next_id = self.next_id.saturating_add(1);
         TransactionId::new(&format!("txn-{}", self.next_id))
+            .expect("generated transaction id is always non-empty")
     }
 
     pub(crate) fn next_artifact_id(&mut self) -> String {
@@ -1154,7 +1155,7 @@ fn load_transactions(db: &AletheiaDB) -> Result<TransactionLoad, StoreError> {
 
         let txn_id_value = required_node_string_property(&txn_node, PROP_TXN_ID)?;
         let description = required_node_string_property(&txn_node, PROP_DESCRIPTION)?;
-        let txn_id = TransactionId::new(&txn_id_value);
+        let txn_id = TransactionId::new(&txn_id_value).map_err(StoreError::Domain)?;
         let effective_at = optional_node_i64_property(&txn_node, PROP_EFFECTIVE_AT_US)
             .map_or_else(aletheiadb::time::now, Into::into);
 
@@ -1239,7 +1240,7 @@ fn load_corrections(
         let supersedes_txn_id =
             required_node_string_property(&correction_node, PROP_SUPERSEDES_TXN_ID)?;
         let reason = required_node_string_property(&correction_node, PROP_REASON)?;
-        let supersedes_id = TransactionId::new(&supersedes_txn_id);
+        let supersedes_id = TransactionId::new(&supersedes_txn_id).map_err(StoreError::Domain)?;
         let expected_target = transaction_nodes
             .get(&supersedes_id)
             .copied()
@@ -1582,7 +1583,9 @@ fn parse_import_record_from_edge(
     let content_hash_key = required_node_string_property(&node, PROP_IMPORT_CONTENT_HASH_KEY)?;
     let imported_txn_id = optional_node_string_property(&node, PROP_IMPORT_IMPORTED_TXN_ID)
         .filter(|value| !value.is_empty())
-        .map(|value| TransactionId::new(&value));
+        .map(|value| TransactionId::new(&value))
+        .transpose()
+        .map_err(StoreError::Domain)?;
     let imported_at = required_node_i64_property(&node, PROP_IMPORT_IMPORTED_AT_US)?.into();
 
     Ok(StoredImportRecord::new(
@@ -1651,7 +1654,9 @@ fn load_statement_lines(
         let amount_cents = required_node_i64_property(&node, PROP_STATEMENT_AMOUNT_CENTS)?;
         let imported_txn_id = optional_node_string_property(&node, PROP_IMPORT_IMPORTED_TXN_ID)
             .filter(|value| !value.is_empty())
-            .map(|value| TransactionId::new(&value));
+            .map(|value| TransactionId::new(&value))
+            .transpose()
+            .map_err(StoreError::Domain)?;
         let imported_at = required_node_i64_property(&node, PROP_IMPORT_IMPORTED_AT_US)?.into();
 
         if let Some(txn_id) = &imported_txn_id {

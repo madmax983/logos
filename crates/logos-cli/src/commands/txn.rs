@@ -140,8 +140,13 @@ fn apply_correction(
         });
     }
 
+    let supersedes_id =
+        TransactionId::new(supersedes_id).map_err(|_| CliError::MissingArgValue {
+            flag: "--supersedes-id".to_owned(),
+        })?;
+
     runtime
-        .apply_correction(TransactionId::new(supersedes_id), reason)
+        .apply_correction(supersedes_id, reason)
         .map_err(|err| CliError::CommandRuntimeFailed {
             command: "txn.correct".to_owned(),
             message: err.to_string(),
@@ -189,7 +194,7 @@ mod tests {
                 }));
             }
 
-            Ok(TransactionId::new("txn-test-1"))
+            Ok(TransactionId::new("txn-test-1").expect("valid id"))
         }
 
         fn apply_correction(

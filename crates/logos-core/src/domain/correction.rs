@@ -12,9 +12,18 @@ use crate::error::DomainError;
 pub struct TransactionId(String);
 
 impl TransactionId {
-    #[must_use]
-    pub fn new(value: &str) -> Self {
-        Self(value.to_owned())
+    /// Creates a normalized transaction id.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when `value` is empty after trimming.
+    pub fn new(value: &str) -> Result<Self, DomainError> {
+        let trimmed = value.trim();
+        if trimmed.is_empty() {
+            return Err(DomainError::EmptyTransactionId);
+        }
+
+        Ok(Self(trimmed.to_owned()))
     }
 
     #[must_use]
@@ -38,15 +47,19 @@ impl Correction {
     ///
     /// A correction records the `TransactionId` that is being superseded,
     /// along with a mandatory reason explaining *why* the correction was made.
+    /// When the new transaction id is already known, prefer
+    /// [`Self::new_for_candidate`] to enforce the non-self-superseding invariant
+    /// at construction time.
     ///
     /// ## Examples
     ///
     /// ```
     /// use logos_core::domain::correction::{Correction, TransactionId};
     ///
-    /// let old_tx = TransactionId::new("tx-123");
-    /// let correction = Correction::new(old_tx, "Fixed wrong account").unwrap();
+    /// let old_tx = TransactionId::new("tx-123")?;
+    /// let correction = Correction::new(old_tx, "Fixed wrong account")?;
     /// assert_eq!(correction.reason(), "Fixed wrong account");
+    /// # Ok::<(), logos_core::DomainError>(())
     /// ```
     ///
     /// # Errors
@@ -56,17 +69,18 @@ impl Correction {
     /// ```
     /// use logos_core::domain::correction::{Correction, TransactionId};
     ///
-    /// let old_tx = TransactionId::new("tx-123");
+    /// let old_tx = TransactionId::new("tx-123").expect("valid id");
     /// assert!(Correction::new(old_tx, "   ").is_err());
     /// ```
     pub fn new(supersedes_id: TransactionId, reason: &str) -> Result<Self, DomainError> {
-        if reason.trim().is_empty() {
+        let trimmed_reason = reason.trim();
+        if trimmed_reason.is_empty() {
             return Err(DomainError::EmptyCorrectionReason);
         }
 
         Ok(Self {
             supersedes_id,
-            reason: reason.to_owned(),
+            reason: trimmed_reason.to_owned(),
         })
     }
 
@@ -80,6 +94,25 @@ impl Correction {
         &self.reason
     }
 
+    /// Creates a correction and validates it against the new transaction id.
+    ///
+    /// This helper makes the "not self-superseding" invariant explicit at
+    /// construction time whenever the candidate id is available.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when `reason` is empty after trimming, or when
+    /// `candidate_id` equals `supersedes_id`.
+    pub fn new_for_candidate(
+        supersedes_id: TransactionId,
+        candidate_id: &TransactionId,
+        reason: &str,
+    ) -> Result<Self, DomainError> {
+        let correction = Self::new(supersedes_id, reason)?;
+        correction.validate_not_self(candidate_id)?;
+        Ok(correction)
+    }
+
     /// Validates that a correction does not point to the new transaction's own ID.
     ///
     /// A transaction cannot supersede itself.
@@ -89,25 +122,26 @@ impl Correction {
     /// ```
     /// use logos_core::domain::correction::{Correction, TransactionId};
     ///
-    /// let old_tx = TransactionId::new("tx-123");
-    /// let new_tx = TransactionId::new("tx-456");
-    /// let correction = Correction::new(old_tx.clone(), "Typo").unwrap();
+    /// let old_tx = TransactionId::new("tx-123")?;
+    /// let new_tx = TransactionId::new("tx-456")?;
+    /// let correction = Correction::new(old_tx.clone(), "Typo")?;
     ///
     /// // Valid: new_tx != old_tx
-    /// assert!(correction.clone().validate_not_self(&new_tx).is_ok());
+    /// assert!(correction.validate_not_self(&new_tx).is_ok());
     ///
     /// // Invalid: A transaction cannot supersede its own ID.
     /// assert!(correction.validate_not_self(&old_tx).is_err());
+    /// # Ok::<(), logos_core::DomainError>(())
     /// ```
     ///
     /// # Errors
     ///
     /// Returns an error when `candidate_id` equals this correction's `supersedes_id`.
-    pub fn validate_not_self(self, candidate_id: &TransactionId) -> Result<Self, DomainError> {
+    pub fn validate_not_self(&self, candidate_id: &TransactionId) -> Result<(), DomainError> {
         if &self.supersedes_id == candidate_id {
             return Err(DomainError::CorrectionCannotSupersedeSelf);
         }
 
-        Ok(self)
+        Ok(())
     }
 }

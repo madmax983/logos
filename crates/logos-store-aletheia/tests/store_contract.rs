@@ -56,7 +56,7 @@ fn balanced_transaction_write_succeeds() {
 fn test_store_returns_correct_counts_and_has_transaction() {
     let mut store = AletheiaStore::new();
     assert_eq!(store.correction_count(), 0);
-    assert!(!store.has_transaction(&TransactionId::new("non-existent")));
+    assert!(!store.has_transaction(&TransactionId::new("non-existent").expect("id")));
 
     let txn_id = store
         .write_transaction(
@@ -206,7 +206,7 @@ fn open_persists_transaction_across_reopen() {
     }
 
     let reopened = AletheiaStore::open(&path).expect("reopen");
-    assert!(reopened.has_transaction(&TransactionId::new("txn-1")));
+    assert!(reopened.has_transaction(&TransactionId::new("txn-1").expect("id")));
     assert_eq!(reopened.transaction_count(), 1);
 
     cleanup_store_path(&path);
@@ -484,7 +484,7 @@ fn atomic_reconcile_and_close_rejects_unknown_transaction_without_partial_persis
                 1,
                 10_000,
                 0,
-                &[TransactionId::new("txn-missing")],
+                &[TransactionId::new("txn-missing").expect("id")],
                 None,
             )
             .expect_err("unknown transaction must fail");

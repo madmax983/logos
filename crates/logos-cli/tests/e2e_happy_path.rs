@@ -99,7 +99,7 @@ fn e2e_runtime_reopen_restores_persisted_transactions() {
     }
 
     let reopened = CliRuntime::open(&path).expect("reopen");
-    assert!(reopened.transaction_exists(&TransactionId::new("txn-1")));
+    assert!(reopened.transaction_exists(&TransactionId::new("txn-1").expect("id")));
     assert_eq!(reopened.register_balance_for("assets:checking"), 10_000);
 
     cleanup_runtime_path(&path);
@@ -588,17 +588,17 @@ fn e2e_import_backdates_valid_time_from_statement_timestamp() {
 #[test]
 fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
     let mut runtime = CliRuntime::new_in_memory();
-    runtime
-        .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
-        .expect("post");
-    let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 110_000)
+    let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 100_000)
         .with_analytics_artifact_id("artifact-missing")
         .with_confirm_close(true);
 
     let err = runtime
         .run_month_autopilot(&request)
         .expect_err("autopilot should fail");
-    assert!(err.to_string().contains("unknown artifact"));
+    assert!(
+        err.to_string().contains("unknown artifact"),
+        "unexpected error: {err}"
+    );
     assert_eq!(runtime.reconciliation_run_count(), 0);
     assert!(
         runtime
