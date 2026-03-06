@@ -71,11 +71,11 @@ mod tests {
     fn test_perfect_distribution() {
         let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
         let config = RsuDistributorConfig {
-            rsu_asset: AccountId::new("assets:rsu"),
-            tax_reserve: AccountId::new("assets:tax"),
-            smoothing_buffer: AccountId::new("assets:buffer"),
-            goals: AccountId::new("assets:goals"),
-            discretionary: AccountId::new("assets:checking"),
+            rsu_asset: AccountId::new("assets:rsu").expect("valid account id"),
+            tax_reserve: AccountId::new("assets:tax").expect("valid account id"),
+            smoothing_buffer: AccountId::new("assets:buffer").expect("valid account id"),
+            goals: AccountId::new("assets:goals").expect("valid account id"),
+            discretionary: AccountId::new("assets:checking").expect("valid account id"),
         };
         let distributor = RsuAutoDistributor::new(config);
 
@@ -100,11 +100,11 @@ mod tests {
     fn test_imperfect_distribution_sweeps_to_tax() {
         let policy = AllocationPolicy::new(33, 33, 33, 1).unwrap();
         let config = RsuDistributorConfig {
-            rsu_asset: AccountId::new("assets:rsu"),
-            tax_reserve: AccountId::new("assets:tax"),
-            smoothing_buffer: AccountId::new("assets:buffer"),
-            goals: AccountId::new("assets:goals"),
-            discretionary: AccountId::new("assets:checking"),
+            rsu_asset: AccountId::new("assets:rsu").expect("valid account id"),
+            tax_reserve: AccountId::new("assets:tax").expect("valid account id"),
+            smoothing_buffer: AccountId::new("assets:buffer").expect("valid account id"),
+            goals: AccountId::new("assets:goals").expect("valid account id"),
+            discretionary: AccountId::new("assets:checking").expect("valid account id"),
         };
         let distributor = RsuAutoDistributor::new(config);
 
