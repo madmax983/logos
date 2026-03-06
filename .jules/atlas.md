@@ -1,3 +1,3 @@
-**The Leaky Abstraction: Stringly Typed Accounts**
-**Tangle:** Accounts were represented as naked `String` types across `RsuDistributorConfig` and other configuration models, leading to weakly enforced domain boundaries and potential bugs (e.g. passing a category name instead of an account name or parameter mix-ups).
-**Blueprint:** Introduced the `AccountId(String)` New Type in the `domain::account` module to strongly type account references, specifically starting with configurations like `RsuDistributorConfig` to prevent stringly-typed configuration smells.
+**[The Stringly-Typed Posting]**
+**Tangle:** The `Posting` struct used raw `String` for its account field, creating a leaky abstraction and exposing it to stringly-typed configuration smells. `Posting::debit` and `Posting::credit` took `&str` instead of a strongly-typed domain entity.
+**Blueprint:** Replaced `String` and `&str` with the `AccountId` newtype across the `Posting` struct and its public API (`debit`, `credit`, `account`). Updated all call sites (exporters, CLIs, TUI, Aletheia store) to ensure proper creation and validation of `AccountId` before passing it to double-entry structures.

@@ -11,7 +11,6 @@
 //! A [`Transaction`] must always balance to zero before it can be created. This
 //! invariant is enforced via the [`TransactionBuilder`].
 
-use crate::domain::account::AccountId;
 use crate::error::DomainError;
 
 /// A single line item within a [`Transaction`].
@@ -28,28 +27,27 @@ use crate::error::DomainError;
 ///
 /// ```
 /// use logos_core::domain::transaction::Posting;
-/// use logos_core::domain::account::AccountId;
 ///
 /// // Create a debit posting for $10.00 (1000 cents).
-/// let d = Posting::debit(AccountId::new("assets:checking").unwrap(), 1000);
+/// let d = Posting::debit("assets:checking", 1000);
 /// assert_eq!(d.amount(), 1000);
 ///
 /// // Create a credit posting for $10.00 (represented as -1000 cents internally).
-/// let c = Posting::credit(AccountId::new("income:salary").unwrap(), 1000).expect("credit should succeed");
+/// let c = Posting::credit("income:salary", 1000).expect("credit should succeed");
 /// assert_eq!(c.amount(), -1000);
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Posting {
-    account: AccountId,
+    account: String,
     amount: i64,
 }
 
 impl Posting {
     /// Creates a debit posting. The amount should be passed as a positive number.
     #[must_use]
-    pub fn debit(account: AccountId, amount: i64) -> Self {
+    pub fn debit(account: &str, amount: i64) -> Self {
         Self {
-            account,
+            account: account.to_owned(),
             amount,
         }
     }
@@ -59,16 +57,16 @@ impl Posting {
     /// # Errors
     ///
     /// Returns an error if negating `amount` causes an arithmetic overflow.
-    pub fn credit(account: AccountId, amount: i64) -> Result<Self, DomainError> {
+    pub fn credit(account: &str, amount: i64) -> Result<Self, DomainError> {
         let amount = amount.checked_neg().ok_or(DomainError::AmountOverflow)?;
         Ok(Self {
-            account,
+            account: account.to_owned(),
             amount,
         })
     }
 
     #[must_use]
-    pub fn account(&self) -> &AccountId {
+    pub fn account(&self) -> &str {
         &self.account
     }
 
@@ -111,12 +109,11 @@ impl Transaction {
 ///
 /// ```
 /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
-/// use logos_core::AccountId;
 ///
 /// // A successful balanced transaction:
 /// let txn = TransactionBuilder::new("Buy groceries")
-///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000))
-///     .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 5000).expect("credit should succeed"))
+///     .posting(Posting::debit("expenses:food", 5000))
+///     .posting(Posting::credit("assets:checking", 5000).expect("credit should succeed"))
 ///     .build()
 ///     .expect("Transaction should balance");
 ///
@@ -127,10 +124,9 @@ impl Transaction {
 ///
 /// ```
 /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
-/// use logos_core::AccountId;
 ///
 /// let result = TransactionBuilder::new("Oops")
-///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000))
+///     .posting(Posting::debit("expenses:food", 5000))
 ///     .build(); // Missing the credit!
 ///
 /// assert!(result.is_err());
@@ -192,17 +188,17 @@ mod tests {
 
     #[test]
     fn should_return_error_when_posting_credit_negates_min_value() {
-        let result = Posting::credit(AccountId::new("income:salary").unwrap(), i64::MIN);
+        let result = Posting::credit("income:salary", i64::MIN);
         assert_eq!(result, Err(DomainError::AmountOverflow));
     }
 
     #[test]
     fn should_return_error_when_transaction_sum_overflows_positive() {
         let builder = TransactionBuilder::new("overflow")
-            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), i64::MAX))
-            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 2))
-            .posting(Posting::credit(AccountId::new("income:salary").unwrap(), i64::MAX).expect("credit"))
-            .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 2).expect("credit"));
+            .posting(Posting::debit("assets:checking", i64::MAX))
+            .posting(Posting::debit("assets:checking", 2))
+            .posting(Posting::credit("income:salary", i64::MAX).expect("credit"))
+            .posting(Posting::credit("income:salary", 2).expect("credit"));
 
         let result = builder.build();
         assert_eq!(result, Err(DomainError::AmountOverflow));
@@ -211,10 +207,10 @@ mod tests {
     #[test]
     fn should_return_error_when_transaction_sum_overflows_negative() {
         let builder = TransactionBuilder::new("underflow")
-            .posting(Posting::credit(AccountId::new("income:salary").unwrap(), i64::MAX).expect("credit"))
-            .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 2).expect("credit"))
-            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), i64::MAX))
-            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 2));
+            .posting(Posting::credit("income:salary", i64::MAX).expect("credit"))
+            .posting(Posting::credit("income:salary", 2).expect("credit"))
+            .posting(Posting::debit("assets:checking", i64::MAX))
+            .posting(Posting::debit("assets:checking", 2));
 
         let result = builder.build();
         assert_eq!(result, Err(DomainError::AmountOverflow));

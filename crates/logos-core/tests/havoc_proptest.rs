@@ -1,3 +1,4 @@
+use logos_core::AccountId;
 use logos_core::domain::budget::rollover_end_balance;
 use logos_core::domain::transaction::{Posting, TransactionBuilder};
 use proptest::prelude::*;
@@ -5,7 +6,7 @@ use proptest::prelude::*;
 proptest! {
     #[test]
     fn havoc_posting_credit_does_not_panic(amount in any::<i64>()) {
-        let _ = Posting::credit("test", amount);
+        let _ = Posting::credit(AccountId::new("test").unwrap(), amount);
     }
 
     #[test]
@@ -14,7 +15,7 @@ proptest! {
     ) {
         let mut builder = TransactionBuilder::new("Test");
         for amt in amounts {
-            builder = builder.posting(Posting::debit("test", amt));
+            builder = builder.posting(Posting::debit(AccountId::new("test").unwrap(), amt));
         }
         let _ = builder.build();
     }
@@ -31,5 +32,5 @@ proptest! {
 
 #[test]
 fn havoc_posting_credit_min_does_not_panic() {
-    let _ = logos_core::domain::transaction::Posting::credit("test", i64::MIN);
+    let _ = logos_core::domain::transaction::Posting::credit(AccountId::new("test").unwrap(), i64::MIN);
 }
