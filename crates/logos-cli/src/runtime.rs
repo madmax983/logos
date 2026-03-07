@@ -9,8 +9,8 @@ use blake3::Hasher;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, Utc};
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
 use logos_import::{
-    CsvMapping, ImportError, ImportRecord, deterministic_fingerprint, parse_pdf_statement_file,
-    parse_simple_csv_row,
+    CsvMapping, ImportError, ImportRecord, deterministic_fingerprint,
+    deterministic_fingerprint_legacy_v1, parse_pdf_statement_file, parse_simple_csv_row,
 };
 use logos_reporting::{
     RegisterEntry, RsuBudgetPlan, RsuBudgetPlanInput, ScenarioPriceInputs, project_budget_variance,
@@ -933,8 +933,12 @@ impl CliRuntime {
         mapping: &CsvMapping,
     ) -> Result<bool, RuntimeError> {
         let record = parse_simple_csv_row(row, mapping)?;
-        let content_hash_key = import_content_hash_key(deterministic_fingerprint(&record));
-        if self.store.has_import_record_content_hash(&content_hash_key) {
+        let (content_hash_key, legacy_content_hash_key) = import_content_hash_keys(&record);
+        if self.store.has_import_record_content_hash(&content_hash_key)
+            || self
+                .store
+                .has_import_record_content_hash(&legacy_content_hash_key)
+        {
             return Ok(false);
         }
 
@@ -993,8 +997,11 @@ impl CliRuntime {
             }
 
             let record = parse_simple_csv_row(row, mapping)?;
-            let content_hash_key = import_content_hash_key(deterministic_fingerprint(&record));
-            let seen_previously = self.store.has_import_record_content_hash(&content_hash_key);
+            let (content_hash_key, legacy_content_hash_key) = import_content_hash_keys(&record);
+            let seen_previously = self.store.has_import_record_content_hash(&content_hash_key)
+                || self
+                    .store
+                    .has_import_record_content_hash(&legacy_content_hash_key);
             let seen_in_batch = !seen_in_call.insert(content_hash_key.clone());
             if seen_previously || seen_in_batch {
                 duplicate_count = duplicate_count.saturating_add(1);
@@ -1064,8 +1071,11 @@ impl CliRuntime {
         let mut imported_keys = Vec::new();
 
         for record in records {
-            let content_hash_key = import_content_hash_key(deterministic_fingerprint(&record));
-            let seen_previously = self.store.has_import_record_content_hash(&content_hash_key);
+            let (content_hash_key, legacy_content_hash_key) = import_content_hash_keys(&record);
+            let seen_previously = self.store.has_import_record_content_hash(&content_hash_key)
+                || self
+                    .store
+                    .has_import_record_content_hash(&legacy_content_hash_key);
             let seen_in_batch = !seen_in_call.insert(content_hash_key.clone());
             if seen_previously || seen_in_batch {
                 duplicate_count = duplicate_count.saturating_add(1);
@@ -1305,8 +1315,16 @@ struct SnapshotPostingRow {
     amount_cents: i64,
 }
 
-fn import_content_hash_key(fingerprint: u64) -> String {
+fn import_content_hash_key_legacy_v1(fingerprint: u64) -> String {
     format!("{fingerprint:016x}")
+}
+
+fn import_content_hash_keys(record: &ImportRecord) -> (String, String) {
+    let content_hash_key = deterministic_fingerprint(record);
+    // Backward compatibility: detect duplicates imported before the v2 fingerprint rollout.
+    let legacy_content_hash_key =
+        import_content_hash_key_legacy_v1(deterministic_fingerprint_legacy_v1(record));
+    (content_hash_key, legacy_content_hash_key)
 }
 
 fn import_batch_key(
@@ -1466,7 +1484,10 @@ fn build_double_entry(
 ) -> Result<TransactionBuilder, RuntimeError> {
     use logos_core::AccountId;
     Ok(TransactionBuilder::new(description)
-        .posting(Posting::debit(AccountId::new(debit_account)?, amount_cents))
+        .posting(Posting::debit(
+            AccountId::new(debit_account)?,
+            amount_cents,
+        )?)
         .posting(Posting::credit(
             AccountId::new(credit_account)?,
             amount_cents,
