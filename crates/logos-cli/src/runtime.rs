@@ -1466,7 +1466,10 @@ fn build_double_entry(
 ) -> Result<TransactionBuilder, RuntimeError> {
     use logos_core::AccountId;
     Ok(TransactionBuilder::new(description)
-        .posting(Posting::debit(AccountId::new(debit_account)?, amount_cents))
+        .posting(Posting::debit(
+            AccountId::new(debit_account)?,
+            amount_cents,
+        )?)
         .posting(Posting::credit(
             AccountId::new(credit_account)?,
             amount_cents,

@@ -111,7 +111,7 @@ fn render_budget_set_output(
 }
 
 fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
-    let mut lines = vec![format!(
+    let summary = format!(
         "budget.rsu-plan month={} conservative_budget_cents={} fixed_commitments_cents={} baseline_remaining_cents={} reserve_sweep_pct={} investing_sweep_pct={}",
         plan.month_key(),
         plan.conservative_budget_cents(),
@@ -119,21 +119,33 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
         plan.baseline_remaining_cents(),
         plan.reserve_sweep_pct(),
         plan.investing_sweep_pct(),
-    )];
+    );
+
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Scenario",
+        "Monthly Income",
+        "Surplus",
+        "Reserve Sweep",
+        "Investing Sweep",
+        "Available",
+    ]);
+
     for key in [ScenarioKey::Bear, ScenarioKey::Base, ScenarioKey::Bull] {
         if let Some(scenario) = plan.scenario(key) {
-            lines.push(format!(
-                "budget.rsu-scenario scenario={} monthly_income_cents={} surplus_cents={} reserve_sweep_cents={} investing_sweep_cents={} available_after_sweeps_cents={}",
-                scenario_name(key),
-                scenario.monthly_income_cents(),
-                scenario.surplus_cents(),
-                scenario.reserve_sweep_cents(),
-                scenario.investing_sweep_cents(),
-                scenario.available_after_sweeps_cents()
-            ));
+            table.add_row(vec![
+                scenario_name(key).to_owned(),
+                scenario.monthly_income_cents().to_string(),
+                scenario.surplus_cents().to_string(),
+                scenario.reserve_sweep_cents().to_string(),
+                scenario.investing_sweep_cents().to_string(),
+                scenario.available_after_sweeps_cents().to_string(),
+            ]);
         }
     }
-    lines.join("\n")
+
+    format!("{summary}\n{table}")
 }
 
 const fn scenario_name(key: ScenarioKey) -> &'static str {
@@ -193,8 +205,14 @@ mod tests {
         let output = render_rsu_plan_output(&plan);
 
         assert!(output.contains("budget.rsu-plan month=2026-03"));
-        assert!(output.contains("budget.rsu-scenario scenario=bear"));
-        assert!(output.contains("budget.rsu-scenario scenario=base"));
-        assert!(output.contains("budget.rsu-scenario scenario=bull"));
+        assert!(output.contains(
+            "│ bear     ┆ 600000         ┆ 0       ┆ 0             ┆ 0               ┆ 600000    │"
+        ));
+        assert!(output.contains(
+            "│ base     ┆ 720000         ┆ 120000  ┆ 72000         ┆ 36000           ┆ 612000    │"
+        ));
+        assert!(output.contains(
+            "│ bull     ┆ 960000         ┆ 360000  ┆ 216000        ┆ 108000          ┆ 636000    │"
+        ));
     }
 }
