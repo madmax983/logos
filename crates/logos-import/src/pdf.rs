@@ -86,9 +86,7 @@ fn parse_statement_line(line: &str, source_id: &str, account: &str) -> Option<Im
     let date_index = tokens
         .iter()
         .position(|token| parse_date_token(token).is_some())?;
-    let amount_index = tokens
-        .iter()
-        .rposition(|token| parse_amount_cents_token(token).is_some())?;
+    let amount_index = select_amount_index(&tokens, date_index)?;
     if amount_index <= date_index + 1 {
         return None;
     }
@@ -116,6 +114,35 @@ fn parse_statement_line(line: &str, source_id: &str, account: &str) -> Option<Im
     ))
 }
 
+fn select_amount_index(tokens: &[&str], date_index: usize) -> Option<usize> {
+    let amount_indices: Vec<usize> = tokens
+        .iter()
+        .enumerate()
+        .skip(date_index + 1)
+        .filter_map(|(index, token)| parse_amount_cents_token(token).map(|_| index))
+        .collect();
+    let mut amount_index = *amount_indices.last()?;
+
+    // Common statements encode "... <txn amount> <running balance>" as adjacent columns.
+    if amount_indices.len() >= 2 {
+        let last = amount_indices[amount_indices.len() - 1];
+        let previous = amount_indices[amount_indices.len() - 2];
+        if last == previous + 1 && is_unsigned_amount_token(tokens[last]) {
+            amount_index = previous;
+        }
+    }
+
+    Some(amount_index)
+}
+
+fn is_unsigned_amount_token(token: &str) -> bool {
+    let cleaned = token.trim_matches(|c: char| matches!(c, ',' | ';'));
+    parse_amount_cents_token(cleaned).is_some()
+        && !cleaned.starts_with('-')
+        && !cleaned.starts_with('+')
+        && !cleaned.starts_with('(')
+}
+
 fn parse_date_token(token: &str) -> Option<String> {
     let cleaned = token.trim_matches(|c: char| matches!(c, ',' | ';'));
     if cleaned.is_empty() {
@@ -137,7 +164,7 @@ fn parse_iso_date(token: &str) -> Option<(u32, u32, u32)> {
     let year = parts.next()?.parse::<u32>().ok()?;
     let month = parts.next()?.parse::<u32>().ok()?;
     let day = parts.next()?.parse::<u32>().ok()?;
-    if parts.next().is_some() || !valid_month_day(month, day) {
+    if parts.next().is_some() || !valid_calendar_date(year, month, day) {
         return None;
     }
     Some((year, month, day))
@@ -158,15 +185,30 @@ fn parse_slash_date(token: &str) -> Option<(u32, u32, u32)> {
         year_raw
     };
 
-    if !valid_month_day(month, day) {
+    if !valid_calendar_date(year, month, day) {
         return None;
     }
 
     Some((year, month, day))
 }
 
-fn valid_month_day(month: u32, day: u32) -> bool {
-    (1..=12).contains(&month) && (1..=31).contains(&day)
+fn valid_calendar_date(year: u32, month: u32, day: u32) -> bool {
+    if year == 0 {
+        return false;
+    }
+
+    let max_day = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if is_leap_year(year) => 29,
+        2 => 28,
+        _ => return false,
+    };
+    (1..=max_day).contains(&day)
+}
+
+const fn is_leap_year(year: u32) -> bool {
+    (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
 
 fn parse_amount_cents_token(token: &str) -> Option<i64> {
@@ -249,12 +291,27 @@ fn extract_pdf_text(path: &Path, bytes: &[u8]) -> Result<String, ImportError> {
 
 fn extract_pdf_text_with_ocr(path: &Path) -> Result<String, String> {
     let stem = temp_ocr_stem("logos-pdf-ocr");
-    let png_path = stem.with_extension("png");
+    let png_paths = run_pdftoppm(path, &stem)?;
 
-    run_pdftoppm(path, &stem)?;
-    let text_result = run_tesseract(&png_path);
+    let text_result = (|| {
+        let mut text = String::new();
+        for png_path in &png_paths {
+            let page_text = run_tesseract(png_path)?;
+            let trimmed = page_text.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            if !text.is_empty() {
+                text.push('\n');
+            }
+            text.push_str(trimmed);
+        }
+        Ok::<String, String>(text)
+    })();
 
-    cleanup_file_if_exists(&png_path);
+    for png_path in &png_paths {
+        cleanup_file_if_exists(png_path);
+    }
 
     let text = text_result?;
     if text.trim().is_empty() {
@@ -263,11 +320,8 @@ fn extract_pdf_text_with_ocr(path: &Path) -> Result<String, String> {
     Ok(text)
 }
 
-fn run_pdftoppm(path: &Path, stem: &Path) -> Result<(), String> {
+fn run_pdftoppm(path: &Path, stem: &Path) -> Result<Vec<PathBuf>, String> {
     let output = Command::new("pdftoppm")
-        .arg("-f")
-        .arg("1")
-        .arg("-singlefile")
         .arg("-r")
         .arg("300")
         .arg("-png")
@@ -287,7 +341,7 @@ fn run_pdftoppm(path: &Path, stem: &Path) -> Result<(), String> {
         return Err(format!("pdftoppm failed: {}", stderr.trim().to_owned()));
     }
 
-    Ok(())
+    collect_ocr_page_images(stem)
 }
 
 fn run_tesseract(png_path: &Path) -> Result<String, String> {
@@ -312,11 +366,11 @@ fn run_tesseract(png_path: &Path) -> Result<String, String> {
 }
 
 fn temp_ocr_stem(prefix: &str) -> PathBuf {
-    let now_ms = SystemTime::now()
+    let now_ns = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_millis())
+        .map(|duration| duration.as_nanos())
         .unwrap_or(0);
-    std::env::temp_dir().join(format!("{prefix}-{}-{now_ms}", std::process::id()))
+    std::env::temp_dir().join(format!("{prefix}-{}-{now_ns}", std::process::id()))
 }
 
 fn cleanup_file_if_exists(path: &Path) {
@@ -338,6 +392,65 @@ fn extract_with_pdftotext(path: &Path) -> Option<String> {
     }
 
     Some(String::from_utf8_lossy(&output.stdout).into_owned())
+}
+
+fn collect_ocr_page_images(stem: &Path) -> Result<Vec<PathBuf>, String> {
+    let directory = stem
+        .parent()
+        .ok_or_else(|| "unable to resolve OCR temporary directory".to_owned())?;
+    let stem_name = stem
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or_else(|| "unable to resolve OCR temporary file stem".to_owned())?;
+    let prefix = format!("{stem_name}-");
+
+    let mut page_images = Vec::new();
+    let entries = fs::read_dir(directory)
+        .map_err(|err| format!("failed listing OCR temporary directory: {err}"))?;
+    for entry in entries {
+        let entry = entry.map_err(|err| format!("failed reading OCR temporary entry: {err}"))?;
+        let path = entry.path();
+        let Some(file_name) = path.file_name().and_then(|value| value.to_str()) else {
+            continue;
+        };
+        let is_png = Path::new(file_name)
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("png"));
+        if !is_png || !file_name.starts_with(&prefix) {
+            continue;
+        }
+        page_images.push(path);
+    }
+
+    page_images.sort_by(|left, right| {
+        let left_name = left
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default();
+        let right_name = right
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default();
+        let left_page = parse_pdftoppm_page_number(left_name, stem_name).unwrap_or(u32::MAX);
+        let right_page = parse_pdftoppm_page_number(right_name, stem_name).unwrap_or(u32::MAX);
+        left_page
+            .cmp(&right_page)
+            .then_with(|| left_name.cmp(right_name))
+    });
+
+    if page_images.is_empty() {
+        return Err("pdftoppm produced no PNG output".to_owned());
+    }
+    Ok(page_images)
+}
+
+fn parse_pdftoppm_page_number(file_name: &str, stem_name: &str) -> Option<u32> {
+    file_name
+        .strip_prefix(stem_name)?
+        .strip_prefix('-')?
+        .strip_suffix(".png")?
+        .parse::<u32>()
+        .ok()
 }
 
 fn extract_pdf_literal_strings(bytes: &[u8]) -> String {
@@ -395,7 +508,11 @@ fn extract_pdf_literal_strings(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_amount_cents_token, parse_date_token, parse_statement_text};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use super::{
+        collect_ocr_page_images, parse_amount_cents_token, parse_date_token, parse_statement_text,
+    };
 
     #[test]
     fn parses_date_token_variants() {
@@ -433,5 +550,70 @@ mod tests {
         assert_eq!(records[0].category(), "expenses:imported");
         assert_eq!(records[1].amount_cents(), 100_000);
         assert_eq!(records[1].category(), "income:imported");
+    }
+
+    #[test]
+    fn parses_statement_lines_with_trailing_balance_column() {
+        let text = "\
+2026-02-01 COFFEE SHOP -12.34 1,234.56
+2026-02-02 PAYROLL 1000.00 2,234.56";
+        let records = parse_statement_text(text, "stmt.pdf", "assets:checking");
+
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].memo(), "COFFEE SHOP");
+        assert_eq!(records[0].amount_cents(), -1_234);
+        assert_eq!(records[1].memo(), "PAYROLL");
+        assert_eq!(records[1].amount_cents(), 100_000);
+    }
+
+    #[test]
+    fn rejects_non_calendar_dates_and_accepts_leap_day() {
+        assert_eq!(parse_date_token("2026-02-31"), None);
+        assert_eq!(parse_date_token("02/29/2025"), None);
+        assert_eq!(
+            parse_date_token("2024-02-29").as_deref(),
+            Some("2024-02-29T00:00:00")
+        );
+        assert_eq!(
+            parse_date_token("02/29/2024").as_deref(),
+            Some("2024-02-29T00:00:00")
+        );
+    }
+
+    #[test]
+    fn collects_ocr_images_in_page_order() {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
+        let stem = std::env::temp_dir().join(format!("logos-import-ocr-pages-{nanos}"));
+        let page_10 = stem.with_file_name(format!(
+            "{}-10.png",
+            stem.file_name()
+                .and_then(|value| value.to_str())
+                .expect("stem")
+        ));
+        let page_2 = stem.with_file_name(format!(
+            "{}-2.png",
+            stem.file_name()
+                .and_then(|value| value.to_str())
+                .expect("stem")
+        ));
+        let page_1 = stem.with_file_name(format!(
+            "{}-1.png",
+            stem.file_name()
+                .and_then(|value| value.to_str())
+                .expect("stem")
+        ));
+        std::fs::write(&page_10, []).expect("write page 10");
+        std::fs::write(&page_2, []).expect("write page 2");
+        std::fs::write(&page_1, []).expect("write page 1");
+
+        let pages = collect_ocr_page_images(&stem).expect("collect pages");
+        assert_eq!(pages, vec![page_1.clone(), page_2.clone(), page_10.clone()]);
+
+        let _ = std::fs::remove_file(page_1);
+        let _ = std::fs::remove_file(page_2);
+        let _ = std::fs::remove_file(page_10);
     }
 }
