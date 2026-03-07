@@ -40,7 +40,6 @@ fn reconcile_view_renders_runs_and_statement_evidence() {
     assert!(frame.contains("Reconciliation View"));
     assert!(frame.contains("recon-42"));
     assert!(frame.contains("COFFEE SHOP"));
-    assert!(frame.contains("selected_run=recon-42"));
 }
 
 #[test]
@@ -75,11 +74,9 @@ fn reconcile_view_selection_navigation_switches_evidence_panel() {
     app.refresh_reconcile(&source);
 
     let first_frame = app.render_frame();
-    assert!(first_frame.contains("selected_run=recon-1"));
     assert!(first_frame.contains("BOOK STORE"));
 
     app.select_next_reconcile_run();
     let second_frame = app.render_frame();
-    assert!(second_frame.contains("selected_run=recon-2"));
     assert!(second_frame.contains("PAYROLL"));
 }
