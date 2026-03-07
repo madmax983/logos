@@ -1,3 +1,10 @@
+//! Net Worth Projection Module
+//!
+//! Provides a timeline simulator that projects net worth month-by-month.
+//! It accounts for a starting net worth, steady monthly savings, and upcoming
+//! RSU vests adjusted by risk (haircut tiers). The projector also tracks when
+//! specific financial milestones (like a FIRE number) are crossed.
+
 use crate::domain::rsu::{HaircutTierTable, forecast_value_cents};
 use crate::planning::fire::UpcomingVest;
 
@@ -18,6 +25,40 @@ pub struct ProjectedMonth {
 ///
 /// This provides a crystal ball to see *when* financial milestones (e.g., FIRE number)
 /// will be reached.
+///
+/// # Examples
+/// ```
+/// use logos_core::planning::fire::UpcomingVest;
+/// use logos_core::planning::net_worth_projector::NetWorthProjector;
+///
+/// // Start with $100k, saving $5k per month
+/// let mut projector = NetWorthProjector::new(100_000_00, 5_000_00);
+///
+/// // Add an upcoming vest of 100 units at $150/share ($15k gross) vesting in 45 days.
+/// // Assuming a default 40% haircut for 45 days, safe value is 60% ($9k).
+/// projector.add_upcoming_vest(UpcomingVest {
+///     avg_close_price_cents: 150_00,
+///     units: 100,
+///     days_to_vest: 45, // Vests in month 2
+/// });
+///
+/// // Set a milestone at $120k
+/// projector.add_milestone_cents(120_000_00);
+///
+/// // Project 3 months into the future
+/// let (timeline, milestones) = projector.project_timeline(3);
+///
+/// assert_eq!(timeline.len(), 3);
+/// // Month 1: 100k + 5k = 105k
+/// assert_eq!(timeline[0].net_worth_cents, 105_000_00);
+/// // Month 2: 105k + 5k + 9k (vest) = 119k
+/// assert_eq!(timeline[1].net_worth_cents, 119_000_00);
+/// // Month 3: 119k + 5k = 124k
+/// assert_eq!(timeline[2].net_worth_cents, 124_000_00);
+///
+/// // Milestone of 120k crossed in month 3
+/// assert_eq!(milestones, vec![(120_000_00, 3)]);
+/// ```
 #[derive(Debug, Clone)]
 pub struct NetWorthProjector {
     initial_net_worth_cents: i64,
@@ -28,6 +69,7 @@ pub struct NetWorthProjector {
 }
 
 impl NetWorthProjector {
+    /// Creates a new `NetWorthProjector` with a starting balance and a fixed monthly savings rate.
     #[must_use]
     pub fn new(initial_net_worth_cents: i64, monthly_savings_cents: i64) -> Self {
         Self {
@@ -39,14 +81,22 @@ impl NetWorthProjector {
         }
     }
 
+    /// Customizes the risk adjustment tiers for RSU vests.
     pub const fn set_haircut_tiers(&mut self, tiers: HaircutTierTable) {
         self.haircut_tiers = tiers;
     }
 
+    /// Adds an upcoming RSU vest to the timeline.
+    ///
+    /// The vest's safe value will be credited to the net worth in the month it vests,
+    /// assuming 30 days per month.
     pub fn add_upcoming_vest(&mut self, vest: UpcomingVest) {
         self.upcoming_vests.push(vest);
     }
 
+    /// Registers a financial milestone (e.g., FIRE target) in cents.
+    ///
+    /// The timeline projection will track the exact month when this milestone is crossed.
     pub fn add_milestone_cents(&mut self, milestone_cents: i64) {
         self.milestones_cents.push(milestone_cents);
     }
