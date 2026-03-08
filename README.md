@@ -13,7 +13,7 @@ Implemented foundations:
 - embedded durable Aletheia adapter contract in `logos-store-aletheia`
 - core projections in `logos-reporting`
 - read-only TUI app/view skeleton in `logos-tui`
-- Verus spine proofs in `logos-proof`
+- Verus spine proofs in `logos-proof` (transactions, corrections, budgets, RSU policy, import dedupe/idempotence)
 - financial planning primitives in `logos-core::planning` (`RsuAutoDistributor`, `FireSimulator`, `NetWorthProjector`)
 
 See [docs/financial-planning.md](docs/financial-planning.md) for details on auto distribution, FIRE progress modeling, and net worth projection.
@@ -35,6 +35,7 @@ Verus proofs:
 /path/to/verus/verus logos-proof/correction_invariants.verus
 /path/to/verus/verus logos-proof/budget_invariants.verus
 /path/to/verus/verus logos-proof/rsu_policy_invariants.verus
+/path/to/verus/verus logos-proof/import_invariants.verus
 ```
 
 ## Example Commands

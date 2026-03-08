@@ -1,0 +1,166 @@
+use vstd::prelude::*;
+
+verus! {
+
+spec fn bool_to_nat(flag: bool) -> nat {
+    if flag { 1nat } else { 0nat }
+}
+
+spec fn prefix_key_set(batch: Seq<int>, upto: nat) -> Set<int> {
+    Set::new(|key: int| exists|idx: int| 0 <= idx < upto && batch[idx] == key)
+}
+
+spec fn batch_key_set(batch: Seq<int>) -> Set<int> {
+    prefix_key_set(batch, batch.len())
+}
+
+spec fn is_duplicate(existing: Set<int>, batch: Seq<int>, idx: int) -> bool
+    recommends 0 <= idx < batch.len()
+{
+    existing.contains(batch[idx]) || prefix_key_set(batch, idx as nat).contains(batch[idx])
+}
+
+spec fn duplicate_count_upto(existing: Set<int>, batch: Seq<int>, upto: nat) -> nat
+    recommends upto <= batch.len()
+    decreases upto
+{
+    if upto == 0 {
+        0nat
+    } else {
+        let prev = (upto - 1) as nat;
+        let idx = prev as int;
+        duplicate_count_upto(existing, batch, prev) + bool_to_nat(is_duplicate(existing, batch, idx))
+    }
+}
+
+spec fn imported_count_upto(existing: Set<int>, batch: Seq<int>, upto: nat) -> nat
+    recommends upto <= batch.len()
+    decreases upto
+{
+    if upto == 0 {
+        0nat
+    } else {
+        let prev = (upto - 1) as nat;
+        let idx = prev as int;
+        imported_count_upto(existing, batch, prev) + bool_to_nat(!is_duplicate(existing, batch, idx))
+    }
+}
+
+spec fn imported_key_set(existing: Set<int>, batch: Seq<int>) -> Set<int> {
+    batch_key_set(batch).difference(existing)
+}
+
+spec fn existing_after_first_import(existing: Set<int>, batch: Seq<int>) -> Set<int> {
+    existing.union(imported_key_set(existing, batch))
+}
+
+proof fn bool_to_nat_partition(flag: bool)
+    ensures bool_to_nat(flag) + bool_to_nat(!flag) == 1nat
+{
+}
+
+proof fn batch_set_contains_index(batch: Seq<int>, idx: int)
+    requires
+        0 <= idx < batch.len(),
+    ensures
+        batch_key_set(batch).contains(batch[idx])
+{
+    assert(exists|i: int| 0 <= i < batch.len() && batch[i] == batch[idx]) by {
+        let i = idx;
+        assert(0 <= i < batch.len());
+        assert(batch[i] == batch[idx]);
+    };
+}
+
+proof fn import_counts_partition(existing: Set<int>, batch: Seq<int>, upto: nat)
+    requires
+        upto <= batch.len(),
+    ensures
+        imported_count_upto(existing, batch, upto) + duplicate_count_upto(existing, batch, upto)
+            == upto,
+    decreases upto
+{
+    if upto == 0 {
+    } else {
+        let prev = (upto - 1) as nat;
+        let idx = prev as int;
+        import_counts_partition(existing, batch, prev);
+        let dup = is_duplicate(existing, batch, idx);
+        bool_to_nat_partition(dup);
+
+        assert(
+            imported_count_upto(existing, batch, upto) + duplicate_count_upto(existing, batch, upto)
+                == imported_count_upto(existing, batch, prev)
+                    + bool_to_nat(!dup)
+                    + duplicate_count_upto(existing, batch, prev)
+                    + bool_to_nat(dup)
+        );
+        assert(imported_count_upto(existing, batch, prev) + duplicate_count_upto(existing, batch, prev) == prev);
+        assert(bool_to_nat(!dup) + bool_to_nat(dup) == 1nat);
+    }
+}
+
+proof fn first_import_covers_batch_keys(existing: Set<int>, batch: Seq<int>, idx: int)
+    requires
+        0 <= idx < batch.len(),
+    ensures
+        existing_after_first_import(existing, batch).contains(batch[idx])
+{
+    batch_set_contains_index(batch, idx);
+    if existing.contains(batch[idx]) {
+        assert(existing_after_first_import(existing, batch).contains(batch[idx]));
+    } else {
+        assert(batch_key_set(batch).contains(batch[idx]));
+        assert(!existing.contains(batch[idx]));
+        assert(imported_key_set(existing, batch).contains(batch[idx]));
+        assert(existing_after_first_import(existing, batch).contains(batch[idx]));
+    }
+}
+
+proof fn second_import_marks_every_row_duplicate(existing: Set<int>, batch: Seq<int>, idx: int)
+    requires
+        0 <= idx < batch.len(),
+    ensures
+        is_duplicate(existing_after_first_import(existing, batch), batch, idx)
+{
+    first_import_covers_batch_keys(existing, batch, idx);
+    assert(existing_after_first_import(existing, batch).contains(batch[idx]));
+}
+
+proof fn second_import_has_zero_new_records(existing: Set<int>, batch: Seq<int>, upto: nat)
+    requires
+        upto <= batch.len(),
+    ensures
+        imported_count_upto(existing_after_first_import(existing, batch), batch, upto) == 0nat,
+    decreases upto
+{
+    if upto == 0 {
+    } else {
+        let prev = (upto - 1) as nat;
+        let idx = prev as int;
+        second_import_has_zero_new_records(existing, batch, prev);
+        second_import_marks_every_row_duplicate(existing, batch, idx);
+        assert(is_duplicate(existing_after_first_import(existing, batch), batch, idx));
+        assert(bool_to_nat(!is_duplicate(existing_after_first_import(existing, batch), batch, idx)) == 0nat);
+    }
+}
+
+proof fn second_import_is_fully_duplicate(existing: Set<int>, batch: Seq<int>)
+    ensures
+        imported_count_upto(existing_after_first_import(existing, batch), batch, batch.len()) == 0nat,
+        duplicate_count_upto(existing_after_first_import(existing, batch), batch, batch.len())
+            == batch.len(),
+{
+    second_import_has_zero_new_records(existing, batch, batch.len());
+    import_counts_partition(existing_after_first_import(existing, batch), batch, batch.len());
+    assert(imported_count_upto(existing_after_first_import(existing, batch), batch, batch.len()) == 0nat);
+    assert(
+        imported_count_upto(existing_after_first_import(existing, batch), batch, batch.len())
+            + duplicate_count_upto(existing_after_first_import(existing, batch), batch, batch.len())
+            == batch.len()
+    );
+}
+
+}
+
+fn main() {}
