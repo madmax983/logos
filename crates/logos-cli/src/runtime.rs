@@ -1436,11 +1436,11 @@ fn write_rows_to_parquet(
     as_of_valid: i64,
     as_of_tx: i64,
 ) -> Result<(), RuntimeError> {
-    let txn_ids: Vec<String> = rows.iter().map(|row| row.txn_id.clone()).collect();
-    let descriptions: Vec<String> = rows.iter().map(|row| row.description.clone()).collect();
+    let txn_ids: Vec<&str> = rows.iter().map(|row| row.txn_id.as_str()).collect();
+    let descriptions: Vec<&str> = rows.iter().map(|row| row.description.as_str()).collect();
     let effective_at_values: Vec<i64> = rows.iter().map(|row| row.effective_at_us).collect();
     let posting_ordinals: Vec<i64> = rows.iter().map(|row| row.posting_ordinal).collect();
-    let accounts: Vec<String> = rows.iter().map(|row| row.account.clone()).collect();
+    let accounts: Vec<&str> = rows.iter().map(|row| row.account.as_str()).collect();
     let amounts: Vec<i64> = rows.iter().map(|row| row.amount_cents).collect();
     let snapshot_valid_values = vec![as_of_valid; rows.len()];
     let snapshot_tx_values = vec![as_of_tx; rows.len()];
