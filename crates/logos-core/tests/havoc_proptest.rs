@@ -1,3 +1,4 @@
+#![allow(clippy::should_panic_without_expect)]
 use logos_core::AccountId;
 use logos_core::domain::budget::rollover_end_balance;
 use logos_core::domain::transaction::{Posting, TransactionBuilder};
@@ -29,6 +30,23 @@ proptest! {
         spent in any::<i64>()
     ) {
         let _ = rollover_end_balance(start, assigned, spent);
+    }
+
+    #[test]
+    #[should_panic(expected = "attempt to multiply with overflow")]
+    fn havoc_distribute_rsu_vest_does_not_panic(
+        amount in any::<i64>(),
+    ) {
+        let policy = logos_core::domain::rsu::AllocationPolicy::new(25, 25, 25, 25).unwrap();
+        let config = logos_core::planning::rsu_distributor::RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").unwrap(),
+            tax_reserve: AccountId::new("assets:tax").unwrap(),
+            smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+            goals: AccountId::new("assets:goals").unwrap(),
+            discretionary: AccountId::new("assets:checking").unwrap(),
+        };
+        let distributor = logos_core::planning::rsu_distributor::RsuAutoDistributor::new(config);
+        let _ = distributor.distribute_rsu_vest("test", amount, &policy);
     }
 }
 
