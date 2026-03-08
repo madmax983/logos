@@ -386,3 +386,41 @@ fn optional_node_timestamp_property(node: &Node, key: &str) -> Option<Timestamp>
         .and_then(aletheiadb::PropertyValue::as_int)
         .map(Into::into)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use aletheiadb::{EdgeId, NodeId, StorageError, TemporalError, core::hlc::HybridTimestamp};
+
+    #[test]
+    fn test_is_edge_not_visible() {
+        let err = DbError::Storage(StorageError::EdgeNotFound(EdgeId::new(1).unwrap()));
+        assert!(is_edge_not_visible(&err));
+
+        let err2 = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
+        assert!(!is_edge_not_visible(&err2));
+    }
+
+    #[test]
+    fn test_is_node_not_visible() {
+        let err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
+        assert!(is_node_not_visible(&err));
+
+        let err2 = DbError::Temporal(TemporalError::NodeNotFoundAtTime {
+            node_id: NodeId::new(1).unwrap(),
+            valid_time: HybridTimestamp::new(0, 0).unwrap(),
+            transaction_time: HybridTimestamp::new(0, 0).unwrap(),
+        });
+        assert!(is_node_not_visible(&err2));
+
+        let err3 = DbError::Storage(StorageError::EdgeNotFound(EdgeId::new(1).unwrap()));
+        assert!(!is_node_not_visible(&err3));
+    }
+
+    #[test]
+    fn test_map_load_error() {
+        let err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
+        let mapped = map_load_error("test context", err);
+        assert!(mapped.to_string().contains("test context"));
+    }
+}
