@@ -1,4 +1,48 @@
+use comfy_table::Table;
+
+use crate::app::BudgetSnapshot;
+
 #[must_use]
-pub fn render() -> String {
-    "Budget View | Group -> Category | Rollover".to_owned()
+pub fn render(
+    month_key: &str,
+    expense_account_prefix: &str,
+    snapshot: Option<&BudgetSnapshot>,
+) -> String {
+    let mut lines = vec![
+        "Budget View".to_owned(),
+        format!("Month: {month_key} | Expense Prefix: {expense_account_prefix}"),
+        String::new(),
+    ];
+
+    let Some(snapshot) = snapshot else {
+        lines.push("(no budget data loaded)".to_owned());
+        return lines.join("\n");
+    };
+
+    let mut table = Table::new();
+    table.set_header(vec!["Field", "Value"]);
+    table.add_row(vec!["Month".to_owned(), snapshot.month_key().to_owned()]);
+    table.add_row(vec![
+        "Expense Prefix".to_owned(),
+        snapshot.expense_account_prefix().to_owned(),
+    ]);
+    table.add_row(vec![
+        "Target (Cents)".to_owned(),
+        snapshot
+            .budget_target_cents()
+            .map_or_else(|| "unconfigured".to_owned(), |value| value.to_string()),
+    ]);
+    table.add_row(vec![
+        "Actual Expense (Cents)".to_owned(),
+        snapshot.actual_expense_cents().to_string(),
+    ]);
+    table.add_row(vec![
+        "Variance (Cents)".to_owned(),
+        snapshot
+            .budget_variance_cents()
+            .map_or_else(|| "unconfigured".to_owned(), |value| value.to_string()),
+    ]);
+    lines.push(table.to_string());
+
+    lines.join("\n")
 }

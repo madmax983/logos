@@ -1,8 +1,16 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use logos_cli::runtime::CliRuntime;
 
 use crate::ui::{budget, home, reconcile, register, rsu};
+
+const DEFAULT_CHECKING_ACCOUNT: &str = "assets:checking";
+const DEFAULT_EXPENSE_ACCOUNT_PREFIX: &str = "expenses:";
+const DEFAULT_REGISTER_ACCOUNT: &str = "assets:checking";
+const DEFAULT_REGISTER_ENTRY_LIMIT: usize = 10;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum View {
@@ -11,6 +19,278 @@ pub enum View {
     Register,
     Rsu,
     Reconcile,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AppInput {
+    Char(char),
+    Next,
+    Prev,
+    NextView,
+    PrevView,
+    Backspace,
+    Submit,
+    Cancel,
+    Quit,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScopeFieldView {
+    label: &'static str,
+    value: String,
+    focused: bool,
+}
+
+impl ScopeFieldView {
+    #[must_use]
+    pub fn new(label: &'static str, value: impl Into<String>, focused: bool) -> Self {
+        Self {
+            label,
+            value: value.into(),
+            focused,
+        }
+    }
+
+    #[must_use]
+    pub const fn label(&self) -> &'static str {
+        self.label
+    }
+
+    #[must_use]
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+
+    #[must_use]
+    pub const fn focused(&self) -> bool {
+        self.focused
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HomeSnapshot {
+    month_key: String,
+    checking_account: String,
+    expense_account_prefix: String,
+    checking_balance_cents: i64,
+    income_cents: i64,
+    expense_cents: i64,
+    cashflow_cents: i64,
+    budget_target_cents: Option<i64>,
+    budget_variance_cents: Option<i64>,
+}
+
+impl HomeSnapshot {
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        month_key: &str,
+        checking_account: &str,
+        expense_account_prefix: &str,
+        checking_balance_cents: i64,
+        income_cents: i64,
+        expense_cents: i64,
+        cashflow_cents: i64,
+        budget_target_cents: Option<i64>,
+        budget_variance_cents: Option<i64>,
+    ) -> Self {
+        Self {
+            month_key: month_key.to_owned(),
+            checking_account: checking_account.to_owned(),
+            expense_account_prefix: expense_account_prefix.to_owned(),
+            checking_balance_cents,
+            income_cents,
+            expense_cents,
+            cashflow_cents,
+            budget_target_cents,
+            budget_variance_cents,
+        }
+    }
+
+    #[must_use]
+    pub fn month_key(&self) -> &str {
+        &self.month_key
+    }
+
+    #[must_use]
+    pub fn checking_account(&self) -> &str {
+        &self.checking_account
+    }
+
+    #[must_use]
+    pub fn expense_account_prefix(&self) -> &str {
+        &self.expense_account_prefix
+    }
+
+    #[must_use]
+    pub const fn checking_balance_cents(&self) -> i64 {
+        self.checking_balance_cents
+    }
+
+    #[must_use]
+    pub const fn income_cents(&self) -> i64 {
+        self.income_cents
+    }
+
+    #[must_use]
+    pub const fn expense_cents(&self) -> i64 {
+        self.expense_cents
+    }
+
+    #[must_use]
+    pub const fn cashflow_cents(&self) -> i64 {
+        self.cashflow_cents
+    }
+
+    #[must_use]
+    pub const fn budget_target_cents(&self) -> Option<i64> {
+        self.budget_target_cents
+    }
+
+    #[must_use]
+    pub const fn budget_variance_cents(&self) -> Option<i64> {
+        self.budget_variance_cents
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BudgetSnapshot {
+    month_key: String,
+    expense_account_prefix: String,
+    budget_target_cents: Option<i64>,
+    actual_expense_cents: i64,
+    budget_variance_cents: Option<i64>,
+}
+
+impl BudgetSnapshot {
+    #[must_use]
+    pub fn new(
+        month_key: &str,
+        expense_account_prefix: &str,
+        budget_target_cents: Option<i64>,
+        actual_expense_cents: i64,
+        budget_variance_cents: Option<i64>,
+    ) -> Self {
+        Self {
+            month_key: month_key.to_owned(),
+            expense_account_prefix: expense_account_prefix.to_owned(),
+            budget_target_cents,
+            actual_expense_cents,
+            budget_variance_cents,
+        }
+    }
+
+    #[must_use]
+    pub fn month_key(&self) -> &str {
+        &self.month_key
+    }
+
+    #[must_use]
+    pub fn expense_account_prefix(&self) -> &str {
+        &self.expense_account_prefix
+    }
+
+    #[must_use]
+    pub const fn budget_target_cents(&self) -> Option<i64> {
+        self.budget_target_cents
+    }
+
+    #[must_use]
+    pub const fn actual_expense_cents(&self) -> i64 {
+        self.actual_expense_cents
+    }
+
+    #[must_use]
+    pub const fn budget_variance_cents(&self) -> Option<i64> {
+        self.budget_variance_cents
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RegisterActivityRecord {
+    timestamp: String,
+    description: String,
+    amount_cents: i64,
+}
+
+impl RegisterActivityRecord {
+    #[must_use]
+    pub fn new(timestamp: &str, description: &str, amount_cents: i64) -> Self {
+        Self {
+            timestamp: timestamp.to_owned(),
+            description: description.to_owned(),
+            amount_cents,
+        }
+    }
+
+    #[must_use]
+    pub fn timestamp(&self) -> &str {
+        &self.timestamp
+    }
+
+    #[must_use]
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+
+    #[must_use]
+    pub const fn amount_cents(&self) -> i64 {
+        self.amount_cents
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RegisterSnapshot {
+    account: String,
+    balance_cents: i64,
+    activity: Vec<RegisterActivityRecord>,
+}
+
+impl RegisterSnapshot {
+    #[must_use]
+    pub fn new(account: &str, balance_cents: i64, activity: Vec<RegisterActivityRecord>) -> Self {
+        Self {
+            account: account.to_owned(),
+            balance_cents,
+            activity,
+        }
+    }
+
+    #[must_use]
+    pub fn account(&self) -> &str {
+        &self.account
+    }
+
+    #[must_use]
+    pub const fn balance_cents(&self) -> i64 {
+        self.balance_cents
+    }
+
+    #[must_use]
+    pub fn activity(&self) -> &[RegisterActivityRecord] {
+        &self.activity
+    }
+}
+
+pub trait HomeDataSource {
+    fn fetch_home_snapshot(
+        &self,
+        month_key: &str,
+        checking_account: &str,
+        expense_account_prefix: &str,
+    ) -> Option<HomeSnapshot>;
+}
+
+pub trait BudgetDataSource {
+    fn fetch_budget_snapshot(
+        &self,
+        month_key: &str,
+        expense_account_prefix: &str,
+    ) -> Option<BudgetSnapshot>;
+}
+
+pub trait RegisterDataSource {
+    fn fetch_register_snapshot(&self, account: &str) -> Option<RegisterSnapshot>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -160,6 +440,138 @@ impl ReconcileDataSource for CliRuntime {
     }
 }
 
+impl HomeDataSource for CliRuntime {
+    fn fetch_home_snapshot(
+        &self,
+        month_key: &str,
+        checking_account: &str,
+        expense_account_prefix: &str,
+    ) -> Option<HomeSnapshot> {
+        let report = self.month_report_for(checking_account, month_key);
+        let budget_target = self.budget_target_for_month(month_key, expense_account_prefix);
+        let budget_variance = budget_target.map(|budget_cents| {
+            self.budget_variance_for_month(month_key, budget_cents, expense_account_prefix)
+        });
+
+        Some(HomeSnapshot::new(
+            month_key,
+            checking_account,
+            expense_account_prefix,
+            report.checking_balance_cents(),
+            report.income_cents(),
+            report.expense_cents(),
+            report.cashflow_cents(),
+            budget_target,
+            budget_variance,
+        ))
+    }
+}
+
+impl BudgetDataSource for CliRuntime {
+    fn fetch_budget_snapshot(
+        &self,
+        month_key: &str,
+        expense_account_prefix: &str,
+    ) -> Option<BudgetSnapshot> {
+        let budget_target = self.budget_target_for_month(month_key, expense_account_prefix);
+        let budget_variance_cents = budget_target.map(|budget_cents| {
+            self.budget_variance_for_month(month_key, budget_cents, expense_account_prefix)
+        });
+        let actual_expense_cents = if let (Some(budget_cents), Some(variance_cents)) =
+            (budget_target, budget_variance_cents)
+        {
+            budget_cents - variance_cents
+        } else {
+            let now_us = current_time_us();
+            self.transactions_as_of_us(now_us, now_us)
+                .ok()?
+                .into_iter()
+                .filter(|stored| {
+                    month_key_from_wallclock_utc(stored.effective_at().wallclock()) == month_key
+                })
+                .flat_map(|stored| stored.transaction().postings().to_vec())
+                .filter(|posting| {
+                    posting
+                        .account()
+                        .as_str()
+                        .starts_with(expense_account_prefix)
+                })
+                .map(|posting| posting.amount())
+                .filter(|amount| *amount > 0)
+                .sum()
+        };
+
+        Some(BudgetSnapshot::new(
+            month_key,
+            expense_account_prefix,
+            budget_target,
+            actual_expense_cents,
+            budget_variance_cents,
+        ))
+    }
+}
+
+impl RegisterDataSource for CliRuntime {
+    fn fetch_register_snapshot(&self, account: &str) -> Option<RegisterSnapshot> {
+        let now_us = current_time_us();
+        let mut activity = self
+            .transactions_as_of_us(now_us, now_us)
+            .ok()?
+            .into_iter()
+            .flat_map(|stored| {
+                let effective_at_us = stored.effective_at().wallclock();
+                let timestamp = date_string_from_wallclock_utc(stored.effective_at().wallclock());
+                let description = stored.transaction().description().to_owned();
+                stored
+                    .transaction()
+                    .postings()
+                    .iter()
+                    .filter(|posting| posting.account().as_str() == account)
+                    .map(move |posting| {
+                        (
+                            effective_at_us,
+                            RegisterActivityRecord::new(&timestamp, &description, posting.amount()),
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        activity.sort_by(|left, right| right.0.cmp(&left.0));
+        let activity = activity
+            .into_iter()
+            .take(DEFAULT_REGISTER_ENTRY_LIMIT)
+            .map(|(_, record)| record)
+            .collect();
+
+        Some(RegisterSnapshot::new(
+            account,
+            self.register_balance_for(account),
+            activity,
+        ))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+struct HomeState {
+    month_key: String,
+    checking_account: String,
+    expense_account_prefix: String,
+    snapshot: Option<HomeSnapshot>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+struct BudgetState {
+    month_key: String,
+    expense_account_prefix: String,
+    snapshot: Option<BudgetSnapshot>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+struct RegisterState {
+    account: String,
+    snapshot: Option<RegisterSnapshot>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 struct ReconcileState {
     filter_month_key: Option<String>,
@@ -169,19 +581,104 @@ struct ReconcileState {
     evidence_by_run: HashMap<String, Vec<ReconcileStatementLineRecord>>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ScopeFieldKey {
+    HomeMonthKey,
+    HomeCheckingAccount,
+    HomeExpenseAccountPrefix,
+    BudgetMonthKey,
+    BudgetExpenseAccountPrefix,
+    RegisterAccount,
+    ReconcileMonthFilter,
+    ReconcileCheckingAccountFilter,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ScopeDraftField {
+    key: ScopeFieldKey,
+    label: &'static str,
+    value: String,
+}
+
+impl ScopeDraftField {
+    fn new(key: ScopeFieldKey, label: &'static str, value: impl Into<String>) -> Self {
+        Self {
+            key,
+            label,
+            value: value.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ScopeEditorState {
+    fields: Vec<ScopeDraftField>,
+    focused_field_idx: usize,
+}
+
+impl ScopeEditorState {
+    const fn new(fields: Vec<ScopeDraftField>) -> Self {
+        Self {
+            fields,
+            focused_field_idx: 0,
+        }
+    }
+
+    fn focused_field_mut(&mut self) -> Option<&mut ScopeDraftField> {
+        self.fields.get_mut(self.focused_field_idx)
+    }
+
+    fn select_next_field(&mut self) {
+        let field_count = self.fields.len();
+        if field_count > 0 {
+            self.focused_field_idx = (self.focused_field_idx + 1) % field_count;
+        }
+    }
+
+    fn select_previous_field(&mut self) {
+        let field_count = self.fields.len();
+        if field_count > 0 {
+            self.focused_field_idx = (self.focused_field_idx + field_count - 1) % field_count;
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
     view: View,
     exit_requested: bool,
+    home: HomeState,
+    budget: BudgetState,
+    register: RegisterState,
     reconcile: ReconcileState,
+    scope_editor: Option<ScopeEditorState>,
+    scope_error: Option<String>,
 }
 
 impl Default for App {
     fn default() -> Self {
+        let current_month_key = CliRuntime::current_month_key_local();
         Self {
             view: View::Home,
             exit_requested: false,
+            home: HomeState {
+                month_key: current_month_key.clone(),
+                checking_account: DEFAULT_CHECKING_ACCOUNT.to_owned(),
+                expense_account_prefix: DEFAULT_EXPENSE_ACCOUNT_PREFIX.to_owned(),
+                snapshot: None,
+            },
+            budget: BudgetState {
+                month_key: current_month_key,
+                expense_account_prefix: DEFAULT_EXPENSE_ACCOUNT_PREFIX.to_owned(),
+                snapshot: None,
+            },
+            register: RegisterState {
+                account: DEFAULT_REGISTER_ACCOUNT.to_owned(),
+                snapshot: None,
+            },
             reconcile: ReconcileState::default(),
+            scope_editor: None,
+            scope_error: None,
         }
     }
 }
@@ -206,8 +703,184 @@ impl App {
         self.view
     }
 
-    pub const fn set_view(&mut self, view: View) {
+    #[must_use]
+    pub fn home_month_key(&self) -> &str {
+        &self.home.month_key
+    }
+
+    #[must_use]
+    pub fn home_checking_account(&self) -> &str {
+        &self.home.checking_account
+    }
+
+    #[must_use]
+    pub fn home_expense_account_prefix(&self) -> &str {
+        &self.home.expense_account_prefix
+    }
+
+    #[must_use]
+    pub const fn home_snapshot(&self) -> Option<&HomeSnapshot> {
+        self.home.snapshot.as_ref()
+    }
+
+    #[must_use]
+    pub fn budget_month_key(&self) -> &str {
+        &self.budget.month_key
+    }
+
+    #[must_use]
+    pub fn budget_expense_account_prefix(&self) -> &str {
+        &self.budget.expense_account_prefix
+    }
+
+    #[must_use]
+    pub const fn budget_snapshot(&self) -> Option<&BudgetSnapshot> {
+        self.budget.snapshot.as_ref()
+    }
+
+    #[must_use]
+    pub fn register_account(&self) -> &str {
+        &self.register.account
+    }
+
+    #[must_use]
+    pub const fn register_snapshot(&self) -> Option<&RegisterSnapshot> {
+        self.register.snapshot.as_ref()
+    }
+
+    #[must_use]
+    pub fn reconcile_filter_month_key(&self) -> Option<&str> {
+        self.reconcile.filter_month_key.as_deref()
+    }
+
+    #[must_use]
+    pub fn reconcile_filter_checking_account(&self) -> Option<&str> {
+        self.reconcile.filter_checking_account.as_deref()
+    }
+
+    #[must_use]
+    pub const fn is_scope_editing(&self) -> bool {
+        self.scope_editor.is_some()
+    }
+
+    #[must_use]
+    pub fn scope_error_message(&self) -> Option<&str> {
+        self.scope_error.as_deref()
+    }
+
+    #[must_use]
+    pub fn scope_field_views(&self) -> Vec<ScopeFieldView> {
+        if let Some(editor) = &self.scope_editor {
+            return editor
+                .fields
+                .iter()
+                .enumerate()
+                .map(|(idx, field)| {
+                    ScopeFieldView::new(
+                        field.label,
+                        field.value.clone(),
+                        idx == editor.focused_field_idx,
+                    )
+                })
+                .collect();
+        }
+
+        match self.view {
+            View::Home => vec![
+                ScopeFieldView::new(
+                    "Month",
+                    self.home.snapshot.as_ref().map_or_else(
+                        || self.home.month_key.clone(),
+                        |snapshot| snapshot.month_key().to_owned(),
+                    ),
+                    false,
+                ),
+                ScopeFieldView::new(
+                    "Checking",
+                    self.home.snapshot.as_ref().map_or_else(
+                        || self.home.checking_account.clone(),
+                        |snapshot| snapshot.checking_account().to_owned(),
+                    ),
+                    false,
+                ),
+                ScopeFieldView::new(
+                    "Expenses",
+                    self.home.snapshot.as_ref().map_or_else(
+                        || self.home.expense_account_prefix.clone(),
+                        |snapshot| snapshot.expense_account_prefix().to_owned(),
+                    ),
+                    false,
+                ),
+            ],
+            View::Budget => vec![
+                ScopeFieldView::new(
+                    "Month",
+                    self.budget.snapshot.as_ref().map_or_else(
+                        || self.budget.month_key.clone(),
+                        |snapshot| snapshot.month_key().to_owned(),
+                    ),
+                    false,
+                ),
+                ScopeFieldView::new(
+                    "Expenses",
+                    self.budget.snapshot.as_ref().map_or_else(
+                        || self.budget.expense_account_prefix.clone(),
+                        |snapshot| snapshot.expense_account_prefix().to_owned(),
+                    ),
+                    false,
+                ),
+            ],
+            View::Register => vec![ScopeFieldView::new(
+                "Account",
+                self.register.snapshot.as_ref().map_or_else(
+                    || self.register.account.clone(),
+                    |snapshot| snapshot.account().to_owned(),
+                ),
+                false,
+            )],
+            View::Rsu => vec![ScopeFieldView::new("Forecast scope", "pending", false)],
+            View::Reconcile => vec![
+                ScopeFieldView::new(
+                    "Month Filter",
+                    self.reconcile
+                        .filter_month_key
+                        .clone()
+                        .unwrap_or_else(|| String::from("*")),
+                    false,
+                ),
+                ScopeFieldView::new(
+                    "Account Filter",
+                    self.reconcile
+                        .filter_checking_account
+                        .clone()
+                        .unwrap_or_else(|| String::from("*")),
+                    false,
+                ),
+            ],
+        }
+    }
+
+    pub fn set_view(&mut self, view: View) {
+        self.scope_editor = None;
+        self.scope_error = None;
         self.view = view;
+    }
+
+    pub fn refresh_home(&mut self, source: &impl HomeDataSource) {
+        self.home.snapshot = source.fetch_home_snapshot(
+            &self.home.month_key,
+            &self.home.checking_account,
+            &self.home.expense_account_prefix,
+        );
+    }
+
+    pub fn refresh_budget(&mut self, source: &impl BudgetDataSource) {
+        self.budget.snapshot = source
+            .fetch_budget_snapshot(&self.budget.month_key, &self.budget.expense_account_prefix);
+    }
+
+    pub fn refresh_register(&mut self, source: &impl RegisterDataSource) {
+        self.register.snapshot = source.fetch_register_snapshot(&self.register.account);
     }
 
     pub fn set_reconcile_filters(
@@ -251,6 +924,19 @@ impl App {
         self.reconcile.evidence_by_run = evidence_by_run;
     }
 
+    pub fn refresh_current_view(
+        &mut self,
+        source: &(impl HomeDataSource + BudgetDataSource + RegisterDataSource + ReconcileDataSource),
+    ) {
+        match self.view {
+            View::Home => self.refresh_home(source),
+            View::Budget => self.refresh_budget(source),
+            View::Register => self.refresh_register(source),
+            View::Rsu => {}
+            View::Reconcile => self.refresh_reconcile(source),
+        }
+    }
+
     pub fn select_next_reconcile_run(&mut self) {
         let Some(current_idx) = self.reconcile.selected_run_idx else {
             if !self.reconcile.runs.is_empty() {
@@ -279,26 +965,64 @@ impl App {
         }
     }
 
-    pub fn handle_key(&mut self, key: char) {
-        match key {
-            'h' => self.set_view(View::Home),
-            'b' => self.set_view(View::Budget),
-            'r' => self.set_view(View::Register),
-            's' => self.set_view(View::Rsu),
-            'c' => self.set_view(View::Reconcile),
-            'j' if self.view == View::Reconcile => self.select_next_reconcile_run(),
-            'k' if self.view == View::Reconcile => self.select_previous_reconcile_run(),
-            'q' => self.request_exit(),
-            _ => {}
+    pub fn handle_input(&mut self, input: AppInput) {
+        if input == AppInput::Quit {
+            self.request_exit();
+            return;
         }
+
+        if self.is_scope_editing() {
+            self.handle_scope_editor_input(input);
+            return;
+        }
+
+        match input {
+            AppInput::Char('h') => self.set_view(View::Home),
+            AppInput::Char('b') => self.set_view(View::Budget),
+            AppInput::Char('r') => self.set_view(View::Register),
+            AppInput::Char('s') => self.set_view(View::Rsu),
+            AppInput::Char('c') => self.set_view(View::Reconcile),
+            AppInput::Char('i') => self.enter_scope_editor(),
+            AppInput::NextView => self.select_next_view(),
+            AppInput::PrevView => self.select_previous_view(),
+            AppInput::Char('j') | AppInput::Next if self.view == View::Reconcile => {
+                self.select_next_reconcile_run();
+            }
+            AppInput::Char('k') | AppInput::Prev if self.view == View::Reconcile => {
+                self.select_previous_reconcile_run();
+            }
+            AppInput::Char('q') => self.request_exit(),
+            AppInput::Cancel
+            | AppInput::Backspace
+            | AppInput::Submit
+            | AppInput::Next
+            | AppInput::Prev
+            | AppInput::Quit
+            | AppInput::Char(_) => {}
+        }
+    }
+
+    pub fn handle_key(&mut self, key: char) {
+        self.handle_input(AppInput::Char(key));
     }
 
     #[must_use]
     pub fn render_frame(&self) -> String {
         match self.view {
-            View::Home => home::render(),
-            View::Budget => budget::render(),
-            View::Register => register::render(),
+            View::Home => home::render(
+                &self.home.month_key,
+                &self.home.checking_account,
+                &self.home.expense_account_prefix,
+                self.home.snapshot.as_ref(),
+            ),
+            View::Budget => budget::render(
+                &self.budget.month_key,
+                &self.budget.expense_account_prefix,
+                self.budget.snapshot.as_ref(),
+            ),
+            View::Register => {
+                register::render(&self.register.account, self.register.snapshot.as_ref())
+            }
             View::Rsu => rsu::render(),
             View::Reconcile => reconcile::render(
                 self.reconcile.filter_month_key.as_deref(),
@@ -327,4 +1051,333 @@ impl App {
             .get(run.run_id())
             .map_or(&[], Vec::as_slice)
     }
+
+    fn enter_scope_editor(&mut self) {
+        self.scope_error = None;
+        let fields = match self.view {
+            View::Home => vec![
+                ScopeDraftField::new(
+                    ScopeFieldKey::HomeMonthKey,
+                    "Month",
+                    self.home.month_key.clone(),
+                ),
+                ScopeDraftField::new(
+                    ScopeFieldKey::HomeCheckingAccount,
+                    "Checking",
+                    self.home.checking_account.clone(),
+                ),
+                ScopeDraftField::new(
+                    ScopeFieldKey::HomeExpenseAccountPrefix,
+                    "Expenses",
+                    self.home.expense_account_prefix.clone(),
+                ),
+            ],
+            View::Budget => vec![
+                ScopeDraftField::new(
+                    ScopeFieldKey::BudgetMonthKey,
+                    "Month",
+                    self.budget.month_key.clone(),
+                ),
+                ScopeDraftField::new(
+                    ScopeFieldKey::BudgetExpenseAccountPrefix,
+                    "Expenses",
+                    self.budget.expense_account_prefix.clone(),
+                ),
+            ],
+            View::Register => vec![ScopeDraftField::new(
+                ScopeFieldKey::RegisterAccount,
+                "Account",
+                self.register.account.clone(),
+            )],
+            View::Rsu => Vec::new(),
+            View::Reconcile => vec![
+                ScopeDraftField::new(
+                    ScopeFieldKey::ReconcileMonthFilter,
+                    "Month Filter",
+                    self.reconcile.filter_month_key.clone().unwrap_or_default(),
+                ),
+                ScopeDraftField::new(
+                    ScopeFieldKey::ReconcileCheckingAccountFilter,
+                    "Account Filter",
+                    self.reconcile
+                        .filter_checking_account
+                        .clone()
+                        .unwrap_or_default(),
+                ),
+            ],
+        };
+
+        if !fields.is_empty() {
+            self.scope_editor = Some(ScopeEditorState::new(fields));
+        }
+    }
+
+    fn handle_scope_editor_input(&mut self, input: AppInput) {
+        match input {
+            AppInput::Char(ch) if !ch.is_control() => {
+                self.scope_error = None;
+                if let Some(field) = self
+                    .scope_editor
+                    .as_mut()
+                    .and_then(ScopeEditorState::focused_field_mut)
+                {
+                    field.value.push(ch);
+                }
+            }
+            AppInput::Next => {
+                self.scope_error = None;
+                if let Some(editor) = &mut self.scope_editor {
+                    editor.select_next_field();
+                }
+            }
+            AppInput::Prev => {
+                self.scope_error = None;
+                if let Some(editor) = &mut self.scope_editor {
+                    editor.select_previous_field();
+                }
+            }
+            AppInput::Backspace => {
+                self.scope_error = None;
+                if let Some(field) = self
+                    .scope_editor
+                    .as_mut()
+                    .and_then(ScopeEditorState::focused_field_mut)
+                {
+                    field.value.pop();
+                }
+            }
+            AppInput::Submit => self.apply_scope_editor(),
+            AppInput::Cancel => {
+                self.scope_editor = None;
+                self.scope_error = None;
+            }
+            AppInput::NextView | AppInput::PrevView | AppInput::Quit | AppInput::Char(_) => {}
+        }
+    }
+
+    fn apply_scope_editor(&mut self) {
+        let Some(editor) = self.scope_editor.take() else {
+            return;
+        };
+
+        let normalized_fields = match normalized_scope_changes(&editor) {
+            Ok(fields) => fields,
+            Err(message) => {
+                self.scope_error = Some(message);
+                self.scope_editor = Some(editor);
+                return;
+            }
+        };
+
+        self.scope_error = None;
+        for (key, value) in normalized_fields {
+            match (key, value) {
+                (ScopeFieldKey::HomeMonthKey, Some(value)) => {
+                    self.home.month_key = value;
+                    self.home.snapshot = None;
+                }
+                (ScopeFieldKey::HomeCheckingAccount, Some(value)) => {
+                    self.home.checking_account = value;
+                    self.home.snapshot = None;
+                }
+                (ScopeFieldKey::HomeExpenseAccountPrefix, Some(value)) => {
+                    self.home.expense_account_prefix = value;
+                    self.home.snapshot = None;
+                }
+                (ScopeFieldKey::BudgetMonthKey, Some(value)) => {
+                    self.budget.month_key = value;
+                    self.budget.snapshot = None;
+                }
+                (ScopeFieldKey::BudgetExpenseAccountPrefix, Some(value)) => {
+                    self.budget.expense_account_prefix = value;
+                    self.budget.snapshot = None;
+                }
+                (ScopeFieldKey::RegisterAccount, Some(value)) => {
+                    self.register.account = value;
+                    self.register.snapshot = None;
+                }
+                (ScopeFieldKey::ReconcileMonthFilter, value) => {
+                    self.reconcile.filter_month_key = value;
+                    self.clear_reconcile_results();
+                }
+                (ScopeFieldKey::ReconcileCheckingAccountFilter, value) => {
+                    self.reconcile.filter_checking_account = value;
+                    self.clear_reconcile_results();
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn clear_reconcile_results(&mut self) {
+        self.reconcile.runs.clear();
+        self.reconcile.selected_run_idx = None;
+        self.reconcile.evidence_by_run.clear();
+    }
+
+    fn select_next_view(&mut self) {
+        let next = match self.view {
+            View::Home => View::Budget,
+            View::Budget => View::Register,
+            View::Register => View::Rsu,
+            View::Rsu => View::Reconcile,
+            View::Reconcile => View::Home,
+        };
+        self.set_view(next);
+    }
+
+    fn select_previous_view(&mut self) {
+        let previous = match self.view {
+            View::Home => View::Reconcile,
+            View::Budget => View::Home,
+            View::Register => View::Budget,
+            View::Rsu => View::Register,
+            View::Reconcile => View::Rsu,
+        };
+        self.set_view(previous);
+    }
+}
+
+fn normalized_scope_changes(
+    editor: &ScopeEditorState,
+) -> Result<Vec<(ScopeFieldKey, Option<String>)>, String> {
+    editor
+        .fields
+        .iter()
+        .map(|field| {
+            let normalized = match field.key {
+                ScopeFieldKey::HomeMonthKey | ScopeFieldKey::BudgetMonthKey => {
+                    Some(normalize_required_month(&field.value, field.label)?)
+                }
+                ScopeFieldKey::HomeCheckingAccount
+                | ScopeFieldKey::HomeExpenseAccountPrefix
+                | ScopeFieldKey::BudgetExpenseAccountPrefix
+                | ScopeFieldKey::RegisterAccount => {
+                    Some(normalize_required_scope(&field.value, field.label)?)
+                }
+                ScopeFieldKey::ReconcileMonthFilter => {
+                    normalize_optional_month(&field.value, field.label)?
+                }
+                ScopeFieldKey::ReconcileCheckingAccountFilter => {
+                    normalize_optional_scope(&field.value, field.label)?
+                }
+            };
+            Ok((field.key, normalized))
+        })
+        .collect()
+}
+
+fn normalize_required_scope(value: &str, label: &str) -> Result<String, String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Err(format!("{label} cannot be blank"));
+    }
+
+    if trimmed.chars().any(char::is_whitespace) {
+        return Err(format!("{label} cannot contain spaces"));
+    }
+
+    Ok(trimmed.to_owned())
+}
+
+fn normalize_optional_scope(value: &str, label: &str) -> Result<Option<String>, String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Ok(None);
+    }
+
+    if trimmed.chars().any(char::is_whitespace) {
+        return Err(format!("{label} cannot contain spaces"));
+    }
+
+    Ok(Some(trimmed.to_owned()))
+}
+
+fn normalize_required_month(value: &str, label: &str) -> Result<String, String> {
+    let trimmed = value.trim();
+    if is_valid_month_key(trimmed) {
+        Ok(trimmed.to_owned())
+    } else {
+        Err(format!("{label} must use YYYY-MM"))
+    }
+}
+
+fn normalize_optional_month(value: &str, label: &str) -> Result<Option<String>, String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Ok(None);
+    }
+
+    if is_valid_month_key(trimmed) {
+        Ok(Some(trimmed.to_owned()))
+    } else {
+        Err(format!("{label} must use YYYY-MM"))
+    }
+}
+
+fn is_valid_month_key(value: &str) -> bool {
+    let mut parts = value.split('-');
+    let Some(year) = parts.next() else {
+        return false;
+    };
+    let Some(month) = parts.next() else {
+        return false;
+    };
+
+    if parts.next().is_some() || year.len() != 4 || month.len() != 2 {
+        return false;
+    }
+
+    if !year.chars().all(|ch| ch.is_ascii_digit()) || !month.chars().all(|ch| ch.is_ascii_digit()) {
+        return false;
+    }
+
+    matches!(month.parse::<u8>(), Ok(1..=12))
+}
+
+fn current_time_us() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_micros())
+        .ok()
+        .and_then(|micros| i64::try_from(micros).ok())
+        .unwrap_or(0)
+}
+
+fn month_key_from_wallclock_utc(wallclock_us: i64) -> String {
+    let secs = wallclock_us.div_euclid(1_000_000);
+    let days = secs.div_euclid(86_400);
+    let (year, month, _) = civil_from_days(days);
+    format!("{year:04}-{month:02}")
+}
+
+fn date_string_from_wallclock_utc(wallclock_us: i64) -> String {
+    let secs = wallclock_us.div_euclid(1_000_000);
+    let days = secs.div_euclid(86_400);
+    let seconds_of_day = secs.rem_euclid(86_400);
+    let (year, month, day) = civil_from_days(days);
+    let hour = seconds_of_day.div_euclid(3_600);
+    let minute = seconds_of_day.rem_euclid(3_600).div_euclid(60);
+    let second = seconds_of_day.rem_euclid(60);
+    format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}")
+}
+
+fn civil_from_days(days_since_unix_epoch: i64) -> (i64, u32, u32) {
+    let z = days_since_unix_epoch + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let day_of_era = z - era * 146_097;
+    let year_of_era =
+        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let mut year = year_of_era + era * 400;
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let month_prime = (5 * day_of_year + 2) / 153;
+    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
+    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
+    if month <= 2 {
+        year += 1;
+    }
+
+    let month_u32 = u32::try_from(month).unwrap_or(1);
+    let day_u32 = u32::try_from(day).unwrap_or(1);
+    (year, month_u32, day_u32)
 }
