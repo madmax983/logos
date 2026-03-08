@@ -1,7 +1,7 @@
-use std::io::{self, Write};
+use std::io;
 
 use logos_cli::runtime::CliRuntime;
-use logos_tui::{App, View};
+use logos_tui::{App, terminal::TerminalSession};
 
 fn main() {
     if let Err(err) = run() {
@@ -13,34 +13,21 @@ fn main() {
 fn run() -> io::Result<()> {
     let mut app = App::new();
     let runtime = CliRuntime::new().ok();
+    let mut terminal = TerminalSession::enter()?;
 
     loop {
-        if app.view() == View::Reconcile {
-            if let Some(source) = runtime.as_ref() {
-                app.refresh_reconcile(source);
-            }
+        if let Some(source) = runtime.as_ref() {
+            app.refresh_current_view(source);
         }
 
-        println!("{}", app.render_frame());
-        if app.view() == View::Reconcile && runtime.is_none() {
-            println!("reconcile view unavailable: unable to initialize logos runtime");
-        }
+        terminal.draw(&app, runtime.is_some())?;
         if app.should_exit() {
             break;
         }
 
-        print!("key[h,b,r,s,c,j,k,q] > ");
-        io::stdout().flush()?;
-        let mut input = String::new();
-        if io::stdin().read_line(&mut input)? == 0 {
-            app.request_exit();
-            continue;
+        if let Some(input) = terminal.next_input()? {
+            app.handle_input(input);
         }
-
-        let Some(key) = input.trim().chars().next() else {
-            continue;
-        };
-        app.handle_key(key);
     }
 
     Ok(())
