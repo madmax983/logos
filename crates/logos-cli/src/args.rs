@@ -135,6 +135,7 @@ fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError>
         AnalyticsCommand::SnapshotShow { artifact_id } => {
             commands::analytics::snapshot_show(artifact_id)
         }
+        AnalyticsCommand::Sankey => commands::analytics::sankey(),
     }
 }
 
@@ -346,6 +347,7 @@ impl Command {
             Self::Analytics(AnalyticsCommand::SnapshotCreate { .. }) => "analytics.snapshot.create",
             Self::Analytics(AnalyticsCommand::SnapshotList) => "analytics.snapshot.list",
             Self::Analytics(AnalyticsCommand::SnapshotShow { .. }) => "analytics.snapshot.show",
+            Self::Analytics(AnalyticsCommand::Sankey) => "analytics.sankey",
             Self::Import(ImportCommand::Pdf { .. }) => "import.pdf",
             Self::Import(ImportCommand::Csv { .. }) => "import.csv",
             Self::Reconcile(ReconcileCommand::Month { .. }) => "reconcile.month",
@@ -406,6 +408,7 @@ pub enum AnalyticsCommand {
     SnapshotShow {
         artifact_id: String,
     },
+    Sankey,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -641,6 +644,9 @@ fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
             command: Command::Help(HelpTopic::Analytics),
         }),
         "snapshot" => parse_analytics_snapshot(args),
+        "sankey" => Ok(ParsedArgs {
+            command: Command::Analytics(AnalyticsCommand::Sankey),
+        }),
         _ => Err(CliError::UnknownSubcommand {
             command: "analytics".to_owned(),
             subcommand: subcommand.clone(),
