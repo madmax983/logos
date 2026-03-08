@@ -1,7 +1,33 @@
+//! Net worth projection and milestone tracking over time.
+//!
+//! This module contains primitives to simulate how a user's net worth will grow
+//! over a period of months, factoring in monthly cash savings and upcoming RSU vests.
+//! It also identifies exactly when specific financial milestones (like a FIRE number)
+//! will be achieved.
+
 use crate::domain::rsu::{HaircutTierTable, forecast_value_cents};
 use crate::planning::fire::UpcomingVest;
 
 /// Represents a single month's snapshot in a net worth projection timeline.
+///
+/// This struct holds the aggregated financial state at the end of a given month
+/// in the simulation.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::planning::net_worth_projector::ProjectedMonth;
+///
+/// let snapshot = ProjectedMonth {
+///     month_index: 3,
+///     net_worth_cents: 150_000_00, // $150k
+///     vested_value_cents: 10_000_00, // $10k vested this month
+///     saved_cents: 5_000_00, // $5k saved this month
+/// };
+///
+/// assert_eq!(snapshot.month_index, 3);
+/// assert_eq!(snapshot.net_worth_cents, 150_000_00);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectedMonth {
     /// The month index in the projection (0 is the current month).
@@ -17,7 +43,32 @@ pub struct ProjectedMonth {
 /// Projects net worth over time based on steady savings and upcoming RSU vests.
 ///
 /// This provides a crystal ball to see *when* financial milestones (e.g., FIRE number)
-/// will be reached.
+/// will be reached. The simulation runs forward month-by-month. It assumes that every month
+/// represents exactly 30 days when determining if a vest has occurred.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::planning::net_worth_projector::NetWorthProjector;
+/// use logos_core::planning::fire::UpcomingVest;
+///
+/// // Start with $100k net worth, saving $5k per month.
+/// let mut projector = NetWorthProjector::new(100_000_00, 5_000_00);
+///
+/// // Add a goal to track when we hit $150k.
+/// projector.add_milestone_cents(150_000_00);
+///
+/// // Add a $50k vest happening in 45 days (Month 2).
+/// projector.add_upcoming_vest(UpcomingVest {
+///     avg_close_price_cents: 10_000,
+///     units: 500, // 500 * $100 = $50k
+///     days_to_vest: 45,
+/// });
+///
+/// // Project 3 months into the future.
+/// let (timeline, milestones) = projector.project_timeline(3);
+/// assert_eq!(timeline.len(), 3);
+/// ```
 #[derive(Debug, Clone)]
 pub struct NetWorthProjector {
     initial_net_worth_cents: i64,
@@ -28,6 +79,16 @@ pub struct NetWorthProjector {
 }
 
 impl NetWorthProjector {
+    /// Creates a new `NetWorthProjector` to start simulating financial progress.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::planning::net_worth_projector::NetWorthProjector;
+    ///
+    /// // Simulate starting with $50k, adding $2k every month.
+    /// let projector = NetWorthProjector::new(50_000_00, 2_000_00);
+    /// ```
     #[must_use]
     pub fn new(initial_net_worth_cents: i64, monthly_savings_cents: i64) -> Self {
         Self {
@@ -39,23 +100,86 @@ impl NetWorthProjector {
         }
     }
 
+    /// Updates the `HaircutTierTable` used to discount future RSU vests.
+    ///
+    /// The projector uses these tiers to determine how much "safe" value
+    /// a future vest will add to the net worth.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::planning::net_worth_projector::NetWorthProjector;
+    /// use logos_core::HaircutTierTable;
+    ///
+    /// let mut projector = NetWorthProjector::new(50_000_00, 2_000_00);
+    /// let custom_tiers = HaircutTierTable::new(10, 20, 30).unwrap();
+    /// projector.set_haircut_tiers(custom_tiers);
+    /// ```
     pub const fn set_haircut_tiers(&mut self, tiers: HaircutTierTable) {
         self.haircut_tiers = tiers;
     }
 
+    /// Registers an `UpcomingVest` to be included in the projection timeline.
+    ///
+    /// Vests are applied in the month they are scheduled to occur, where each
+    /// month is modeled as a 30-day window.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::planning::net_worth_projector::NetWorthProjector;
+    /// use logos_core::planning::fire::UpcomingVest;
+    ///
+    /// let mut projector = NetWorthProjector::new(50_000_00, 2_000_00);
+    /// projector.add_upcoming_vest(UpcomingVest {
+    ///     avg_close_price_cents: 10_000, // $100 per share
+    ///     units: 100, // 100 shares
+    ///     days_to_vest: 60, // vests in 2 months
+    /// });
+    /// ```
     pub fn add_upcoming_vest(&mut self, vest: UpcomingVest) {
         self.upcoming_vests.push(vest);
     }
 
+    /// Adds a financial milestone target in cents to track in the projection.
+    ///
+    /// The projector will output the exact month when the net worth crosses this value.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::planning::net_worth_projector::NetWorthProjector;
+    ///
+    /// let mut projector = NetWorthProjector::new(50_000_00, 2_000_00);
+    /// projector.add_milestone_cents(100_000_00); // track when we hit $100k
+    /// ```
     pub fn add_milestone_cents(&mut self, milestone_cents: i64) {
         self.milestones_cents.push(milestone_cents);
     }
 
     /// Simulates net worth month-by-month for `months` iterations.
     ///
+    /// This is the core engine of the projector. It aggregates savings and safe
+    /// vest values into the total net worth, tracking milestones along the way.
+    ///
     /// Returns a tuple containing:
-    /// 1. A timeline of `ProjectedMonth` snapshots.
+    /// 1. A timeline of [`ProjectedMonth`] snapshots.
     /// 2. A vector of tuples `(milestone_cents, month_index)` indicating the month each milestone was crossed.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::planning::net_worth_projector::NetWorthProjector;
+    ///
+    /// let mut projector = NetWorthProjector::new(10_000, 1_000);
+    /// projector.add_milestone_cents(12_000); // Want to reach $120.00
+    ///
+    /// // After 3 months of saving $10.00/month, we will have $130.00.
+    /// let (timeline, milestones) = projector.project_timeline(3);
+    ///
+    /// assert_eq!(timeline.last().unwrap().net_worth_cents, 13_000);
+    /// assert_eq!(milestones[0], (12_000, 2)); // Crossed $120.00 in month 2
+    /// ```
     #[must_use]
     pub fn project_timeline(&self, months: u16) -> (Vec<ProjectedMonth>, Vec<(i64, u16)>) {
         let mut timeline = Vec::with_capacity(usize::from(months));
