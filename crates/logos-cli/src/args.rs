@@ -307,9 +307,11 @@ fn parse_month_key(flag: &str, value: String) -> Result<String, CliError> {
 }
 
 fn parse_optional_month_flag(args: &[String], flag: &str) -> Result<Option<String>, CliError> {
-    parse_optional_flag_value(args, flag)?
-        .map(|value| parse_month_key(flag, value))
-        .transpose()
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(None);
+    };
+
+    Ok(Some(parse_month_key(flag, value)?))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -992,6 +994,24 @@ fn parse_optional_parsed_flag<T: std::str::FromStr>(
     Ok(parsed)
 }
 
+fn parse_optional_parsed_value<T: std::str::FromStr>(
+    args: &[String],
+    flag: &str,
+) -> Result<Option<T>, CliError> {
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(None);
+    };
+
+    let Ok(parsed) = value.parse::<T>() else {
+        return Err(CliError::InvalidArgValue {
+            flag: flag.to_owned(),
+            value,
+        });
+    };
+
+    Ok(Some(parsed))
+}
+
 fn parse_required_parsed_flag<T: std::str::FromStr>(
     args: &[String],
     flag: &str,
@@ -1016,18 +1036,7 @@ fn parse_optional_i64_flag(
 }
 
 fn parse_optional_i64_value(args: &[String], flag: &str) -> Result<Option<i64>, CliError> {
-    let Some(value) = parse_optional_flag_value(args, flag)? else {
-        return Ok(None);
-    };
-
-    let Ok(parsed) = value.parse::<i64>() else {
-        return Err(CliError::InvalidArgValue {
-            flag: flag.to_owned(),
-            value,
-        });
-    };
-
-    Ok(Some(parsed))
+    parse_optional_parsed_value(args, flag)
 }
 
 fn parse_required_i64_flag(args: &[String], flag: &str) -> Result<i64, CliError> {
