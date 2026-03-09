@@ -145,3 +145,50 @@ impl Correction {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_return_error_when_transaction_id_is_empty() {
+        assert_eq!(TransactionId::new(""), Err(DomainError::EmptyTransactionId));
+        assert_eq!(
+            TransactionId::new("   "),
+            Err(DomainError::EmptyTransactionId)
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_correction_reason_is_empty() {
+        let old_tx = TransactionId::new("tx-123").expect("valid id");
+        assert_eq!(
+            Correction::new(old_tx.clone(), ""),
+            Err(DomainError::EmptyCorrectionReason)
+        );
+        assert_eq!(
+            Correction::new(old_tx, "   "),
+            Err(DomainError::EmptyCorrectionReason)
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_correction_supersedes_self_in_validate() {
+        let old_tx = TransactionId::new("tx-123").expect("valid id");
+        let correction = Correction::new(old_tx.clone(), "Typo").unwrap();
+
+        assert_eq!(
+            correction.validate_not_self(&old_tx),
+            Err(DomainError::CorrectionCannotSupersedeSelf)
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_correction_supersedes_self_in_new_for_candidate() {
+        let old_tx = TransactionId::new("tx-123").expect("valid id");
+        assert_eq!(
+            Correction::new_for_candidate(old_tx.clone(), &old_tx, "Typo"),
+            Err(DomainError::CorrectionCannotSupersedeSelf)
+        );
+    }
+}
