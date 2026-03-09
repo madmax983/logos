@@ -105,35 +105,70 @@ fn render_budget_set_output(
 ) -> String {
     let variance_cents =
         runtime.budget_variance_for_month(month_key, budget_cents, expense_account_prefix);
-    format!(
-        "budget.set month={month_key} budget_cents={budget_cents} actual_prefix={expense_account_prefix} variance_cents={variance_cents}"
-    )
+
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Month",
+        "Budget Cents",
+        "Actual Prefix",
+        "Variance Cents",
+    ]);
+    table.add_row(vec![
+        month_key.to_string(),
+        budget_cents.to_string(),
+        expense_account_prefix.to_string(),
+        variance_cents.to_string(),
+    ]);
+
+    format!("budget.set\n{table}")
 }
 
 fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
-    let mut lines = vec![format!(
-        "budget.rsu-plan month={} conservative_budget_cents={} fixed_commitments_cents={} baseline_remaining_cents={} reserve_sweep_pct={} investing_sweep_pct={}",
-        plan.month_key(),
-        plan.conservative_budget_cents(),
-        plan.fixed_commitments_cents(),
-        plan.baseline_remaining_cents(),
-        plan.reserve_sweep_pct(),
-        plan.investing_sweep_pct(),
-    )];
+    let mut plan_table = comfy_table::Table::new();
+    plan_table.load_preset(comfy_table::presets::UTF8_FULL);
+    plan_table.set_header(vec![
+        "Month",
+        "Conservative Budget",
+        "Fixed Commitments",
+        "Baseline Remaining",
+        "Reserve Sweep %",
+        "Investing Sweep %",
+    ]);
+    plan_table.add_row(vec![
+        plan.month_key().to_string(),
+        plan.conservative_budget_cents().to_string(),
+        plan.fixed_commitments_cents().to_string(),
+        plan.baseline_remaining_cents().to_string(),
+        plan.reserve_sweep_pct().to_string(),
+        plan.investing_sweep_pct().to_string(),
+    ]);
+
+    let mut scenario_table = comfy_table::Table::new();
+    scenario_table.load_preset(comfy_table::presets::UTF8_FULL);
+    scenario_table.set_header(vec![
+        "Scenario",
+        "Monthly Income",
+        "Surplus",
+        "Reserve Sweep",
+        "Investing Sweep",
+        "Available After Sweeps",
+    ]);
+
     for key in [ScenarioKey::Bear, ScenarioKey::Base, ScenarioKey::Bull] {
         if let Some(scenario) = plan.scenario(key) {
-            lines.push(format!(
-                "budget.rsu-scenario scenario={} monthly_income_cents={} surplus_cents={} reserve_sweep_cents={} investing_sweep_cents={} available_after_sweeps_cents={}",
-                scenario_name(key),
-                scenario.monthly_income_cents(),
-                scenario.surplus_cents(),
-                scenario.reserve_sweep_cents(),
-                scenario.investing_sweep_cents(),
-                scenario.available_after_sweeps_cents()
-            ));
+            scenario_table.add_row(vec![
+                scenario_name(key).to_string(),
+                scenario.monthly_income_cents().to_string(),
+                scenario.surplus_cents().to_string(),
+                scenario.reserve_sweep_cents().to_string(),
+                scenario.investing_sweep_cents().to_string(),
+                scenario.available_after_sweeps_cents().to_string(),
+            ]);
         }
     }
-    lines.join("\n")
+
+    format!("budget.rsu-plan\n{plan_table}\n{scenario_table}")
 }
 
 const fn scenario_name(key: ScenarioKey) -> &'static str {
@@ -173,7 +208,12 @@ mod tests {
 
         assert_eq!(
             output,
-            "budget.set month=2026-03 budget_cents=5000 actual_prefix=expenses: variance_cents=-1250"
+            "budget.set\n\
+            ┌─────────┬──────────────┬───────────────┬────────────────┐\n\
+            │ Month   ┆ Budget Cents ┆ Actual Prefix ┆ Variance Cents │\n\
+            ╞═════════╪══════════════╪═══════════════╪════════════════╡\n\
+            │ 2026-03 ┆ 5000         ┆ expenses:     ┆ -1250          │\n\
+            └─────────┴──────────────┴───────────────┴────────────────┘"
         );
     }
 
@@ -192,9 +232,12 @@ mod tests {
 
         let output = render_rsu_plan_output(&plan);
 
-        assert!(output.contains("budget.rsu-plan month=2026-03"));
-        assert!(output.contains("budget.rsu-scenario scenario=bear"));
-        assert!(output.contains("budget.rsu-scenario scenario=base"));
-        assert!(output.contains("budget.rsu-scenario scenario=bull"));
+        assert!(output.contains("budget.rsu-plan"));
+        assert!(output.contains("2026-03"));
+        assert!(output.contains("Conservative Budget"));
+        assert!(output.contains("Monthly Income"));
+        assert!(output.contains("bear"));
+        assert!(output.contains("base"));
+        assert!(output.contains("bull"));
     }
 }
