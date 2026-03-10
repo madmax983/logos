@@ -591,9 +591,14 @@ fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
     runtime
         .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
         .expect("post");
-    let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 110_000)
-        .with_analytics_artifact_id("artifact-missing")
-        .with_confirm_close(true);
+    let request = MonthAutopilotRequest::new(
+        &logos_cli::runtime::CliRuntime::current_month_key_local(),
+        "assets:checking",
+        100_000,
+        110_000,
+    )
+    .with_analytics_artifact_id("artifact-missing")
+    .with_confirm_close(true);
 
     let err = runtime
         .run_month_autopilot(&request)

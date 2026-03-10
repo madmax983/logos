@@ -32,10 +32,8 @@ impl MermaidSankeyExporter {
         let mut flows: HashMap<(String, String), i64> = HashMap::new();
 
         for tx in &self.transactions {
-            let (credits, debits): (Vec<&Posting>, Vec<&Posting>) = tx
-                .postings()
-                .iter()
-                .partition(|p| p.amount() < 0);
+            let (credits, debits): (Vec<&Posting>, Vec<&Posting>) =
+                tx.postings().iter().partition(|p| p.amount() < 0);
 
             let total_credit: i64 = credits.iter().map(|p| p.amount().abs()).sum();
 
@@ -169,7 +167,7 @@ assets:savings,expenses:rent,400.00
             .posting(Posting::credit("assets:savings", 4000).unwrap())
             // Distributed to:
             .posting(Posting::debit("expenses:food", 5000)) // 60% of 50 = 30 from checking, 20 from savings
-            .posting(Posting::debit("expenses:fun", 5000))  // 60% of 50 = 30 from checking, 20 from savings
+            .posting(Posting::debit("expenses:fun", 5000)) // 60% of 50 = 30 from checking, 20 from savings
             .build()
             .unwrap();
 
