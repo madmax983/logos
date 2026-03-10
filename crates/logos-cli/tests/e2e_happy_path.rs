@@ -318,7 +318,7 @@ fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
         let mut runtime = CliRuntime::open(&path).expect("open");
         let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 198_766)
             .with_statement_pdf(&statement_path)
-            .with_confirm_close(true);
+            .with_confirm_close(true).with_allow_variance(true);
         let summary = runtime
             .run_month_autopilot(&request)
             .expect("autopilot succeeds");
@@ -593,7 +593,7 @@ fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
         .expect("post");
     let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 110_000)
         .with_analytics_artifact_id("artifact-missing")
-        .with_confirm_close(true);
+        .with_confirm_close(true).with_allow_variance(true);
 
     let err = runtime
         .run_month_autopilot(&request)
