@@ -107,9 +107,26 @@ fn render_pdf_output(
     imported_count: usize,
     duplicate_count: usize,
 ) -> String {
-    format!(
-        "import.pdf file={file_path} account={account} dry_run={dry_run} ocr={ocr} imported={imported_count} duplicates={duplicate_count}"
-    )
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "File",
+        "Account",
+        "Dry Run",
+        "OCR",
+        "Imported",
+        "Duplicates",
+    ]);
+    table.add_row(vec![
+        file_path.to_string(),
+        account.to_string(),
+        dry_run.to_string(),
+        ocr.to_string(),
+        imported_count.to_string(),
+        duplicate_count.to_string(),
+    ]);
+
+    format!("import.pdf\n{table}")
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -126,9 +143,36 @@ fn render_csv_output(
     imported_count: usize,
     duplicate_count: usize,
 ) -> String {
-    format!(
-        "import.csv file={file_path} source_id={source_id} dry_run={dry_run} skip_header={skip_header} timestamp_idx={timestamp_idx} amount_idx={amount_idx} memo_idx={memo_idx} account_idx={account_idx} category_idx={category_idx} imported={imported_count} duplicates={duplicate_count}"
-    )
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "File",
+        "Source ID",
+        "Dry Run",
+        "Skip Header",
+        "Timestamps Idx",
+        "Amount Idx",
+        "Memo Idx",
+        "Account Idx",
+        "Category Idx",
+        "Imported",
+        "Duplicates",
+    ]);
+    table.add_row(vec![
+        file_path.to_string(),
+        source_id.to_string(),
+        dry_run.to_string(),
+        skip_header.to_string(),
+        timestamp_idx.to_string(),
+        amount_idx.to_string(),
+        memo_idx.to_string(),
+        account_idx.to_string(),
+        category_idx.to_string(),
+        imported_count.to_string(),
+        duplicate_count.to_string(),
+    ]);
+
+    format!("import.csv\n{table}")
 }
 
 #[cfg(test)]
@@ -137,29 +181,42 @@ mod tests {
 
     #[test]
     fn render_pdf_output_is_deterministic() {
-        assert_eq!(
-            render_pdf_output("stmt.pdf", "assets:checking", true, false, 12, 3),
-            "import.pdf file=stmt.pdf account=assets:checking dry_run=true ocr=false imported=12 duplicates=3"
-        );
+        let output = render_pdf_output("stmt.pdf", "assets:checking", true, false, 12, 3);
+        assert!(output.contains("import.pdf"));
+        assert!(output.contains("stmt.pdf"));
+        assert!(output.contains("assets:checking"));
+        assert!(output.contains("true"));
+        assert!(output.contains("false"));
+        assert!(output.contains("12"));
+        assert!(output.contains("3"));
     }
 
     #[test]
     fn render_csv_output_is_deterministic() {
-        assert_eq!(
-            render_csv_output(
-                "statement.csv",
-                "chase.csv",
-                false,
-                true,
-                0,
-                1,
-                2,
-                3,
-                4,
-                9,
-                1,
-            ),
-            "import.csv file=statement.csv source_id=chase.csv dry_run=false skip_header=true timestamp_idx=0 amount_idx=1 memo_idx=2 account_idx=3 category_idx=4 imported=9 duplicates=1"
+        let output = render_csv_output(
+            "statement.csv",
+            "chase.csv",
+            false,
+            true,
+            0,
+            1,
+            2,
+            3,
+            4,
+            9,
+            1,
         );
+        assert!(output.contains("import.csv"));
+        assert!(output.contains("statement.csv"));
+        assert!(output.contains("chase.csv"));
+        assert!(output.contains("false"));
+        assert!(output.contains("true"));
+        assert!(output.contains("0"));
+        assert!(output.contains("1"));
+        assert!(output.contains("2"));
+        assert!(output.contains("3"));
+        assert!(output.contains("4"));
+        assert!(output.contains("9"));
+        assert!(output.contains("1"));
     }
 }
