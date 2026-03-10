@@ -540,6 +540,12 @@ where
 }
 
 fn parse_txn(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Txn),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "txn".to_owned(),
     })?;
@@ -580,6 +586,12 @@ fn parse_txn(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Budget),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "budget".to_owned(),
     })?;
@@ -645,6 +657,12 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Analytics),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "analytics".to_owned(),
     })?;
@@ -709,6 +727,12 @@ fn parse_analytics_snapshot(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_import(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Import),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "import".to_owned(),
     })?;
@@ -766,6 +790,12 @@ fn parse_import(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_report(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Report),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "report".to_owned(),
     })?;
@@ -793,6 +823,12 @@ fn parse_report(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_reconcile(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Reconcile),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "reconcile".to_owned(),
     })?;
@@ -842,6 +878,12 @@ fn parse_reconcile(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_month(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Month),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "month".to_owned(),
     })?;
@@ -886,6 +928,12 @@ fn parse_month(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_close(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Close),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "close".to_owned(),
     })?;
@@ -918,6 +966,12 @@ fn parse_close(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_aletheia(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Aletheia),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "aletheia".to_owned(),
     })?;
