@@ -44,13 +44,11 @@ fn balanced_transaction_write_succeeds() {
     let id = store
         .write_transaction(
             TransactionBuilder::new("paycheck")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    10_000,
-                ))
                 .posting(
-                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                        .expect("credit"),
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
+                .posting(
+                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                 ),
         )
         .expect("write");
@@ -68,10 +66,7 @@ fn test_store_returns_correct_counts_and_has_transaction() {
     let txn_id = store
         .write_transaction(
             TransactionBuilder::new("txn1")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    100,
-                ))
+                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
                 .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap()),
         )
         .expect("write txn");
@@ -99,10 +94,7 @@ fn test_transactions_iterator_yields_all_items() {
     store
         .write_transaction(
             TransactionBuilder::new("txn1")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    100,
-                ))
+                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
                 .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap()),
         )
         .expect("write txn 1");
@@ -110,10 +102,7 @@ fn test_transactions_iterator_yields_all_items() {
     store
         .write_transaction(
             TransactionBuilder::new("txn2")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    200,
-                ))
+                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap())
                 .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap()),
         )
         .expect("write txn 2");
@@ -177,14 +166,10 @@ fn unbalanced_transaction_is_rejected_before_persistence() {
     let err = store
         .write_transaction(
             TransactionBuilder::new("bad")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    10_000,
-                ))
                 .posting(
-                    Posting::credit(AccountId::new("income:salary").unwrap(), 9_000)
-                        .expect("credit"),
-                ),
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
+                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 9_000).unwrap()),
         )
         .expect_err("must reject");
 
@@ -198,13 +183,11 @@ fn correction_append_links_superseded_transaction() {
     let id = store
         .write_transaction(
             TransactionBuilder::new("paycheck")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    10_000,
-                ))
                 .posting(
-                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                        .expect("credit"),
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
+                .posting(
+                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                 ),
         )
         .expect("write");
@@ -226,13 +209,11 @@ fn open_persists_transaction_across_reopen() {
         let id = store
             .write_transaction(
                 TransactionBuilder::new("paycheck")
-                    .posting(Posting::debit(
-                        AccountId::new("assets:checking").unwrap(),
-                        10_000,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write");
@@ -255,13 +236,11 @@ fn open_persists_correction_chain_across_reopen() {
         persisted_id = store
             .write_transaction(
                 TransactionBuilder::new("paycheck")
-                    .posting(Posting::debit(
-                        AccountId::new("assets:checking").unwrap(),
-                        10_000,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write");
@@ -369,13 +348,9 @@ fn open_persists_statement_line_evidence_across_reopen() {
         txn_id = store
             .write_transaction(
                 TransactionBuilder::new("coffee")
-                    .posting(Posting::debit(
-                        AccountId::new("expenses:food").unwrap(),
-                        500,
-                    ))
+                    .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 500).unwrap())
                     .posting(
-                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500)
-                            .expect("credit"),
+                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500).unwrap(),
                     ),
             )
             .expect("write txn");
@@ -425,13 +400,11 @@ fn open_persists_reconciliation_run_across_reopen() {
         txn_id = store
             .write_transaction(
                 TransactionBuilder::new("paycheck")
-                    .posting(Posting::debit(
-                        AccountId::new("assets:checking").unwrap(),
-                        10_000,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write transaction");
@@ -477,13 +450,11 @@ fn open_persists_month_close_across_reopen() {
         let txn_id = store
             .write_transaction(
                 TransactionBuilder::new("paycheck")
-                    .posting(Posting::debit(
-                        AccountId::new("assets:checking").unwrap(),
-                        10_000,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("txn");
@@ -566,13 +537,11 @@ fn embedded_mapping_writes_transaction_and_posting_graph_entities() {
         store
             .write_transaction(
                 TransactionBuilder::new("paycheck")
-                    .posting(Posting::debit(
-                        AccountId::new("assets:checking").unwrap(),
-                        10_000,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write");
@@ -606,13 +575,11 @@ fn embedded_mapping_writes_correction_supersedes_edge() {
         let id = store
             .write_transaction(
                 TransactionBuilder::new("paycheck")
-                    .posting(Posting::debit(
-                        AccountId::new("assets:checking").unwrap(),
-                        10_000,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write");
@@ -698,13 +665,9 @@ fn embedded_mapping_writes_import_batch_and_record_graph_entities() {
         let first_txn = store
             .write_transaction(
                 TransactionBuilder::new("coffee")
-                    .posting(Posting::debit(
-                        AccountId::new("expenses:food").unwrap(),
-                        500,
-                    ))
+                    .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 500).unwrap())
                     .posting(
-                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500)
-                            .expect("credit"),
+                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500).unwrap(),
                     ),
             )
             .expect("write");
@@ -752,26 +715,22 @@ fn embedded_mapping_writes_reconciliation_run_and_edges() {
         let txn_a = store
             .write_transaction(
                 TransactionBuilder::new("paycheck")
-                    .posting(Posting::debit(
-                        AccountId::new("assets:checking").unwrap(),
-                        10_000,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("txn a");
         let txn_b = store
             .write_transaction(
                 TransactionBuilder::new("groceries")
-                    .posting(Posting::debit(
-                        AccountId::new("expenses:food").unwrap(),
-                        2_500,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("assets:checking").unwrap(), 2_500)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("expenses:food").unwrap(), 2_500).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("assets:checking").unwrap(), 2_500).unwrap(),
                     ),
             )
             .expect("txn b");
@@ -820,13 +779,9 @@ fn embedded_mapping_links_reconciliation_run_to_statement_lines() {
         let txn = store
             .write_transaction(
                 TransactionBuilder::new("coffee")
-                    .posting(Posting::debit(
-                        AccountId::new("expenses:food").unwrap(),
-                        500,
-                    ))
+                    .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 500).unwrap())
                     .posting(
-                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500)
-                            .expect("credit"),
+                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500).unwrap(),
                     ),
             )
             .expect("txn");
@@ -901,13 +856,11 @@ fn embedded_mapping_writes_month_close_edges() {
         let txn = store
             .write_transaction(
                 TransactionBuilder::new("paycheck")
-                    .posting(Posting::debit(
-                        AccountId::new("assets:checking").unwrap(),
-                        10_000,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("txn");
@@ -986,13 +939,11 @@ fn transactions_as_of_respects_backdated_valid_time() {
         store
             .write_transaction_with_valid_time(
                 TransactionBuilder::new("backdated")
-                    .posting(Posting::debit(
-                        AccountId::new("assets:checking").unwrap(),
-                        7_500,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 7_500)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 7_500).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 7_500).unwrap(),
                     ),
                 Some(backdated_valid_time),
             )
@@ -1020,13 +971,11 @@ fn transactions_as_of_hides_superseded_after_correction_tx_time() {
         let txn_id = store
             .write_transaction(
                 TransactionBuilder::new("paycheck")
-                    .posting(Posting::debit(
-                        AccountId::new("assets:checking").unwrap(),
-                        10_000,
-                    ))
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write");
@@ -1059,10 +1008,9 @@ fn write_reconciliation_run_fails_with_negative_values() {
     let txn_id = store
         .write_transaction(
             TransactionBuilder::new("paycheck")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    10_000,
-                ))
+                .posting(
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
                 .posting(
                     Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                 ),
@@ -1145,10 +1093,9 @@ fn write_reconciliation_run_and_month_close_fails_with_negative_values() {
     let txn_id = store
         .write_transaction(
             TransactionBuilder::new("paycheck")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    10_000,
-                ))
+                .posting(
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
                 .posting(
                     Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                 ),
@@ -1234,10 +1181,9 @@ fn write_reconciliation_run_succeeds_with_zero_values() {
     let txn_id = store
         .write_transaction(
             TransactionBuilder::new("paycheck")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    10_000,
-                ))
+                .posting(
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
                 .posting(
                     Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                 ),
@@ -1270,10 +1216,9 @@ fn write_reconciliation_run_and_month_close_succeeds_with_zero_values() {
     let txn_id = store
         .write_transaction(
             TransactionBuilder::new("paycheck")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    10_000,
-                ))
+                .posting(
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
                 .posting(
                     Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                 ),
@@ -1307,10 +1252,9 @@ fn write_reconciliation_run_and_month_close_fails_with_unknown_artifact() {
     let txn_id = store
         .write_transaction(
             TransactionBuilder::new("paycheck")
-                .posting(Posting::debit(
-                    AccountId::new("assets:checking").unwrap(),
-                    10_000,
-                ))
+                .posting(
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
                 .posting(
                     Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                 ),
