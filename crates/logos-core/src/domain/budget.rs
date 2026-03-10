@@ -87,6 +87,8 @@ pub const fn rollover_end_balance(start: i64, assigned: i64, spent: i64) -> i64 
     } else if end < i64::MIN as i128 {
         i64::MIN
     } else {
-        end as i64
+        #[allow(clippy::cast_possible_truncation)]
+        let result = end as i64;
+        result
     }
 }

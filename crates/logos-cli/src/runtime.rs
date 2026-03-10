@@ -1376,28 +1376,36 @@ fn snapshot_rows(transactions: Vec<StoredTransaction>) -> Vec<SnapshotPostingRow
     rows
 }
 
+/// Hashes snapshot posting rows into a deterministic artifact fingerprint.
+///
+/// **Performance Optimization**: Pre-allocates a single `String` buffer outside the loop and
+/// uses `write!` instead of `format!` inside the loop. This prevents allocating a new string on the heap
+/// for every posting, which becomes a major bottleneck when snapshotting large ledgers.
 fn hash_rows(
     rows: &[SnapshotPostingRow],
     as_of_valid: i64,
     as_of_tx: i64,
     schema_version: i64,
 ) -> String {
+    use std::fmt::Write as _;
     let mut hasher = Hasher::new();
     hasher
         .update(format!("schema:{schema_version}|valid:{as_of_valid}|tx:{as_of_tx}\n").as_bytes());
+
+    let mut buf = String::with_capacity(256);
     for row in rows {
-        hasher.update(
-            format!(
-                "{}|{}|{}|{}|{}|{}\n",
-                row.txn_id,
-                row.description,
-                row.effective_at_us,
-                row.posting_ordinal,
-                row.account,
-                row.amount_cents
-            )
-            .as_bytes(),
+        buf.clear();
+        let _ = write!(
+            buf,
+            "{}|{}|{}|{}|{}|{}\n",
+            row.txn_id,
+            row.description,
+            row.effective_at_us,
+            row.posting_ordinal,
+            row.account,
+            row.amount_cents
         );
+        hasher.update(buf.as_bytes());
     }
     hasher.finalize().to_hex().to_string()
 }
