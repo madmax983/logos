@@ -1,11 +1,11 @@
 #![allow(clippy::should_panic_without_expect)]
 
-use proptest::prelude::*;
-use logos_core::planning::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
 use logos_core::domain::account::AccountId;
 use logos_core::domain::rsu::AllocationPolicy;
-use logos_core::planning::net_worth_projector::NetWorthProjector;
 use logos_core::planning::fire::UpcomingVest;
+use logos_core::planning::net_worth_projector::NetWorthProjector;
+use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
+use proptest::prelude::*;
 
 proptest! {
     #[test]
