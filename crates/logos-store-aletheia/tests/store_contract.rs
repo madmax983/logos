@@ -1356,3 +1356,69 @@ fn write_reconciliation_run_and_month_close_fails_with_unknown_artifact() {
 
     cleanup_store_path(&path);
 }
+
+#[test]
+fn write_month_close_fails_with_mismatched_month_key() {
+    let path = temp_store_path("month-close-mismatched-month");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let run_id = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                10_000,
+                110_000,
+                110_000,
+                0,
+                true,
+                1,
+                10_000,
+                0,
+                &[],
+            )
+            .expect("run")
+            .run_id()
+            .to_owned();
+
+        let err = store
+            .write_month_close("2026-04", "assets:checking", &run_id, None)
+            .expect_err("mismatched month_key must fail");
+        assert!(err.to_string().contains(
+            "month close month '2026-04' does not match reconciliation run month '2026-03'"
+        ));
+    }
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_month_close_fails_with_mismatched_checking_account() {
+    let path = temp_store_path("month-close-mismatched-account");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let run_id = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                10_000,
+                110_000,
+                110_000,
+                0,
+                true,
+                1,
+                10_000,
+                0,
+                &[],
+            )
+            .expect("run")
+            .run_id()
+            .to_owned();
+
+        let err = store
+            .write_month_close("2026-03", "assets:savings", &run_id, None)
+            .expect_err("mismatched checking_account must fail");
+        assert!(err.to_string().contains("month close checking_account 'assets:savings' does not match reconciliation run account 'assets:checking'"));
+    }
+    cleanup_store_path(&path);
+}
