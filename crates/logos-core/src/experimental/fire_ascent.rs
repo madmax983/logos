@@ -39,7 +39,9 @@ impl FireAscentSimulator {
             return String::from("Summit reached instantly: Expenses are zero!\n");
         }
         if fire_number == i64::MAX {
-            return String::from("The Summit is infinite (Safe Withdrawal Rate is 0%). The ascent is impossible.\n");
+            return String::from(
+                "The Summit is infinite (Safe Withdrawal Rate is 0%). The ascent is impossible.\n",
+            );
         }
 
         // Add milestones for the ascent (25%, 50%, 75%, 100%)
@@ -131,7 +133,10 @@ impl FireAscentSimulator {
             );
 
             if progress_pct < 0.0 {
-                 let _ = writeln!(output, "The mountain is too steep. Consider increasing savings or reducing expenses.");
+                let _ = writeln!(
+                    output,
+                    "The mountain is too steep. Consider increasing savings or reducing expenses."
+                );
             }
         }
 
