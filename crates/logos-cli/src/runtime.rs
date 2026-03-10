@@ -1159,6 +1159,7 @@ impl CliRuntime {
         let as_of_tx = as_of_tx_time_us.unwrap_or(snapshot_now);
         let rows = snapshot_rows(self.store.transactions_as_of_us(as_of_valid, as_of_tx)?);
         let content_hash = hash_rows(&rows, as_of_valid, as_of_tx, schema_version);
+        let rows_len = rows.len();
 
         let parquet_dir = self.artifacts_root.join(PARQUET_DIRECTORY);
         fs::create_dir_all(&parquet_dir).map_err(|err| RuntimeError::Analytics {
@@ -1170,7 +1171,7 @@ impl CliRuntime {
 
         let parquet_path = parquet_dir.join(format!("{content_hash}.parquet"));
         if !parquet_path.exists() {
-            write_rows_to_parquet(&parquet_path, &rows, as_of_valid, as_of_tx)?;
+            write_rows_to_parquet(&parquet_path, rows, as_of_valid, as_of_tx)?;
         }
 
         let parquet_uri = parquet_path.display().to_string();
@@ -1180,7 +1181,7 @@ impl CliRuntime {
                 &parquet_uri,
                 &content_hash,
                 schema_version,
-                i64::try_from(rows.len()).unwrap_or(i64::MAX),
+                i64::try_from(rows_len).unwrap_or(i64::MAX),
                 as_of_valid,
                 as_of_tx,
                 supersedes_artifact_id,
@@ -1412,20 +1413,33 @@ fn hash_rows(
     hasher.finalize().to_hex().to_string()
 }
 
+/// Writes transaction rows to a Parquet file.
+///
+/// **Performance Optimization**: Takes ownership of the rows and pre-allocates vectors for columns to avoid multiple O(N) heap reallocations and cloning during frame construction.
 fn write_rows_to_parquet(
     parquet_path: &Path,
-    rows: &[SnapshotPostingRow],
+    rows: Vec<SnapshotPostingRow>,
     as_of_valid: i64,
     as_of_tx: i64,
 ) -> Result<(), RuntimeError> {
-    let txn_ids: Vec<String> = rows.iter().map(|row| row.txn_id.clone()).collect();
-    let descriptions: Vec<String> = rows.iter().map(|row| row.description.clone()).collect();
-    let effective_at_values: Vec<i64> = rows.iter().map(|row| row.effective_at_us).collect();
-    let posting_ordinals: Vec<i64> = rows.iter().map(|row| row.posting_ordinal).collect();
-    let accounts: Vec<String> = rows.iter().map(|row| row.account.clone()).collect();
-    let amounts: Vec<i64> = rows.iter().map(|row| row.amount_cents).collect();
-    let snapshot_valid_values = vec![as_of_valid; rows.len()];
-    let snapshot_tx_values = vec![as_of_tx; rows.len()];
+    let rows_len = rows.len();
+    let mut txn_ids = Vec::with_capacity(rows_len);
+    let mut descriptions = Vec::with_capacity(rows_len);
+    let mut effective_at_values = Vec::with_capacity(rows_len);
+    let mut posting_ordinals = Vec::with_capacity(rows_len);
+    let mut accounts = Vec::with_capacity(rows_len);
+    let mut amounts = Vec::with_capacity(rows_len);
+
+    for row in rows {
+        txn_ids.push(row.txn_id);
+        descriptions.push(row.description);
+        effective_at_values.push(row.effective_at_us);
+        posting_ordinals.push(row.posting_ordinal);
+        accounts.push(row.account);
+        amounts.push(row.amount_cents);
+    }
+    let snapshot_valid_values = vec![as_of_valid; rows_len];
+    let snapshot_tx_values = vec![as_of_tx; rows_len];
 
     let mut frame = DataFrame::new(vec![
         Series::new("txn_id".into(), txn_ids).into(),
@@ -1466,7 +1480,10 @@ fn build_double_entry(
 ) -> Result<TransactionBuilder, RuntimeError> {
     use logos_core::AccountId;
     Ok(TransactionBuilder::new(description)
-        .posting(Posting::debit(AccountId::new(debit_account)?, amount_cents))
+        .posting(Posting::debit(
+            AccountId::new(debit_account)?,
+            amount_cents,
+        )?)
         .posting(Posting::credit(
             AccountId::new(credit_account)?,
             amount_cents,
