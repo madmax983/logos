@@ -117,6 +117,37 @@ pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
     Ok(())
 }
 
+/// Handles `ledger analytics sankey`.
+///
+/// # Errors
+///
+/// Returns an error when runtime initialization fails or querying transactions fails.
+pub fn sankey() -> Result<(), CliError> {
+    use chrono::Utc;
+    use logos_core::experimental::mermaid_exporter::MermaidSankeyExporter;
+
+    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+        command: "analytics.sankey".to_owned(),
+        message: format!("runtime initialization failed: {err}"),
+    })?;
+
+    let now_us = Utc::now().timestamp_micros();
+    let transactions = runtime
+        .transactions_as_of_us(now_us, now_us)
+        .map_err(|err| CliError::CommandRuntimeFailed {
+            command: "analytics.sankey".to_owned(),
+            message: format!("failed to retrieve transactions: {err}"),
+        })?;
+
+    let mut exporter = MermaidSankeyExporter::new();
+    for stored_tx in transactions {
+        exporter.add_transaction(stored_tx.transaction().clone());
+    }
+
+    println!("{}", exporter.export_sankey());
+    Ok(())
+}
+
 fn render_snapshot_manifest(
     prefix: &str,
     manifest: &logos_store_aletheia::model::StoredAnalyticsArtifactManifest,

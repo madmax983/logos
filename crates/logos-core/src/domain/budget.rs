@@ -18,6 +18,18 @@ pub struct BudgetMonth {
 }
 
 impl BudgetMonth {
+    /// Creates a new `BudgetMonth` record.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::budget::BudgetMonth;
+    ///
+    /// // Create a budget for March 2026 starting with $100 rolled over from February,
+    /// // assigning $500 this month, and having spent $200 so far.
+    /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
+    /// assert_eq!(budget.end_balance(), 400_00);
+    /// ```
     #[must_use]
     pub fn new(month_key: &str, start_balance: i64, assigned: i64, spent: i64) -> Self {
         Self {

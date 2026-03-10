@@ -1,9 +1,34 @@
+//! Automated distribution of restricted stock unit (RSU) vests.
+//!
+//! When an RSU vests, the gross value needs to be tracked and distributed across
+//! several financial buckets (e.g., tax reserves, savings goals, discretionary spending).
+//! This module automates the generation of perfectly balanced, multi-posting ledger
+//! transactions according to a user's defined [`AllocationPolicy`].
+
 use crate::domain::account::AccountId;
 use crate::domain::rsu::AllocationPolicy;
 use crate::domain::transaction::{Posting, Transaction, TransactionBuilder};
 use crate::error::DomainError;
 
-/// Configuration for `RsuAutoDistributor`, preventing positional string arguments.
+/// Configuration mapping logical buckets to physical account IDs.
+///
+/// This struct prevents positional string argument mix-ups when initializing the
+/// [`RsuAutoDistributor`].
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::planning::rsu_distributor::RsuDistributorConfig;
+/// use logos_core::AccountId;
+///
+/// let config = RsuDistributorConfig {
+///     rsu_asset: AccountId::new("assets:rsu").unwrap(),
+///     tax_reserve: AccountId::new("assets:tax").unwrap(),
+///     smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+///     goals: AccountId::new("assets:goals").unwrap(),
+///     discretionary: AccountId::new("assets:checking").unwrap(),
+/// };
+/// ```
 #[derive(Debug, Clone)]
 pub struct RsuDistributorConfig {
     pub rsu_asset: AccountId,
@@ -14,23 +39,70 @@ pub struct RsuDistributorConfig {
 }
 
 /// Automatically distributes vested RSU funds across target accounts
-/// according to an `AllocationPolicy`.
+/// according to an [`AllocationPolicy`].
+///
+/// Creates a single, balanced [`Transaction`] representing the vest event.
 #[derive(Debug, Clone)]
 pub struct RsuAutoDistributor {
     config: RsuDistributorConfig,
 }
 
 impl RsuAutoDistributor {
+    /// Creates a new distributor with the provided account routing configuration.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::planning::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
+    /// use logos_core::AccountId;
+    ///
+    /// let config = RsuDistributorConfig {
+    ///     rsu_asset: AccountId::new("assets:rsu").unwrap(),
+    ///     tax_reserve: AccountId::new("assets:tax").unwrap(),
+    ///     smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+    ///     goals: AccountId::new("assets:goals").unwrap(),
+    ///     discretionary: AccountId::new("assets:checking").unwrap(),
+    /// };
+    ///
+    /// let distributor = RsuAutoDistributor::new(config);
+    /// ```
     #[must_use]
     pub const fn new(config: RsuDistributorConfig) -> Self {
         Self { config }
     }
 
-    /// Distributes a gross vest amount across the configured accounts, ensuring perfectly balanced transactions.
-    /// Remainder cents from percentage division are swept into the tax reserve account.
+    /// Distributes a gross vest amount across the configured accounts.
+    ///
+    /// Because financial math often results in fractional cents when multiplying by
+    /// percentages, this function guarantees that the resulting transaction is perfectly
+    /// balanced by sweeping any remainder cents into the tax reserve account.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::planning::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
+    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// use logos_core::AccountId;
+    ///
+    /// let config = RsuDistributorConfig {
+    ///     rsu_asset: AccountId::new("assets:rsu").unwrap(),
+    ///     tax_reserve: AccountId::new("assets:tax").unwrap(),
+    ///     smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+    ///     goals: AccountId::new("assets:goals").unwrap(),
+    ///     discretionary: AccountId::new("assets:checking").unwrap(),
+    /// };
+    /// let distributor = RsuAutoDistributor::new(config);
+    /// let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
+    ///
+    /// // Distribute $100.00 (10,000 cents)
+    /// let tx = distributor.distribute_rsu_vest("Vest 1", 10_000, &policy).unwrap();
+    /// assert_eq!(tx.postings().len(), 5);
+    /// ```
     ///
     /// # Errors
-    /// Returns an error if the transaction description is empty or if the resulting transaction is unbalanced.
+    ///
+    /// Returns an error if the transaction `description` is empty, or if an invalid (non-positive)
+    /// `gross_vest_cents` amount is provided.
     pub fn distribute_rsu_vest(
         &self,
         description: &str,

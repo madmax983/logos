@@ -135,6 +135,7 @@ fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError>
         AnalyticsCommand::SnapshotShow { artifact_id } => {
             commands::analytics::snapshot_show(artifact_id)
         }
+        AnalyticsCommand::Sankey => commands::analytics::sankey(),
     }
 }
 
@@ -306,9 +307,11 @@ fn parse_month_key(flag: &str, value: String) -> Result<String, CliError> {
 }
 
 fn parse_optional_month_flag(args: &[String], flag: &str) -> Result<Option<String>, CliError> {
-    parse_optional_flag_value(args, flag)?
-        .map(|value| parse_month_key(flag, value))
-        .transpose()
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(None);
+    };
+
+    Ok(Some(parse_month_key(flag, value)?))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -346,6 +349,7 @@ impl Command {
             Self::Analytics(AnalyticsCommand::SnapshotCreate { .. }) => "analytics.snapshot.create",
             Self::Analytics(AnalyticsCommand::SnapshotList) => "analytics.snapshot.list",
             Self::Analytics(AnalyticsCommand::SnapshotShow { .. }) => "analytics.snapshot.show",
+            Self::Analytics(AnalyticsCommand::Sankey) => "analytics.sankey",
             Self::Import(ImportCommand::Pdf { .. }) => "import.pdf",
             Self::Import(ImportCommand::Csv { .. }) => "import.csv",
             Self::Reconcile(ReconcileCommand::Month { .. }) => "reconcile.month",
@@ -406,6 +410,7 @@ pub enum AnalyticsCommand {
     SnapshotShow {
         artifact_id: String,
     },
+    Sankey,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -641,6 +646,9 @@ fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
             command: Command::Help(HelpTopic::Analytics),
         }),
         "snapshot" => parse_analytics_snapshot(args),
+        "sankey" => Ok(ParsedArgs {
+            command: Command::Analytics(AnalyticsCommand::Sankey),
+        }),
         _ => Err(CliError::UnknownSubcommand {
             command: "analytics".to_owned(),
             subcommand: subcommand.clone(),
@@ -967,16 +975,16 @@ fn parse_flag_present(args: &[String], flag: &str) -> bool {
     args.iter().any(|arg| arg == flag)
 }
 
-fn parse_optional_i64_flag(
+fn parse_optional_parsed_flag<T: std::str::FromStr>(
     args: &[String],
     flag: &str,
-    default_value: i64,
-) -> Result<i64, CliError> {
+    default_value: T,
+) -> Result<T, CliError> {
     let Some(value) = parse_optional_flag_value(args, flag)? else {
         return Ok(default_value);
     };
 
-    let Ok(parsed) = value.parse::<i64>() else {
+    let Ok(parsed) = value.parse::<T>() else {
         return Err(CliError::InvalidArgValue {
             flag: flag.to_owned(),
             value,
@@ -986,12 +994,15 @@ fn parse_optional_i64_flag(
     Ok(parsed)
 }
 
-fn parse_optional_i64_value(args: &[String], flag: &str) -> Result<Option<i64>, CliError> {
+fn parse_optional_parsed_value<T: std::str::FromStr>(
+    args: &[String],
+    flag: &str,
+) -> Result<Option<T>, CliError> {
     let Some(value) = parse_optional_flag_value(args, flag)? else {
         return Ok(None);
     };
 
-    let Ok(parsed) = value.parse::<i64>() else {
+    let Ok(parsed) = value.parse::<T>() else {
         return Err(CliError::InvalidArgValue {
             flag: flag.to_owned(),
             value,
@@ -1001,9 +1012,12 @@ fn parse_optional_i64_value(args: &[String], flag: &str) -> Result<Option<i64>, 
     Ok(Some(parsed))
 }
 
-fn parse_required_i64_flag(args: &[String], flag: &str) -> Result<i64, CliError> {
+fn parse_required_parsed_flag<T: std::str::FromStr>(
+    args: &[String],
+    flag: &str,
+) -> Result<T, CliError> {
     let value = parse_flag_value(args, flag)?;
-    let Ok(parsed) = value.parse::<i64>() else {
+    let Ok(parsed) = value.parse::<T>() else {
         return Err(CliError::InvalidArgValue {
             flag: flag.to_owned(),
             value,
@@ -1013,16 +1027,24 @@ fn parse_required_i64_flag(args: &[String], flag: &str) -> Result<i64, CliError>
     Ok(parsed)
 }
 
-fn parse_required_u32_flag(args: &[String], flag: &str) -> Result<u32, CliError> {
-    let value = parse_flag_value(args, flag)?;
-    let Ok(parsed) = value.parse::<u32>() else {
-        return Err(CliError::InvalidArgValue {
-            flag: flag.to_owned(),
-            value,
-        });
-    };
+fn parse_optional_i64_flag(
+    args: &[String],
+    flag: &str,
+    default_value: i64,
+) -> Result<i64, CliError> {
+    parse_optional_parsed_flag(args, flag, default_value)
+}
 
-    Ok(parsed)
+fn parse_optional_i64_value(args: &[String], flag: &str) -> Result<Option<i64>, CliError> {
+    parse_optional_parsed_value(args, flag)
+}
+
+fn parse_required_i64_flag(args: &[String], flag: &str) -> Result<i64, CliError> {
+    parse_required_parsed_flag(args, flag)
+}
+
+fn parse_required_u32_flag(args: &[String], flag: &str) -> Result<u32, CliError> {
+    parse_required_parsed_flag(args, flag)
 }
 
 fn parse_optional_u16_flag(
@@ -1030,33 +1052,11 @@ fn parse_optional_u16_flag(
     flag: &str,
     default_value: u16,
 ) -> Result<u16, CliError> {
-    let Some(value) = parse_optional_flag_value(args, flag)? else {
-        return Ok(default_value);
-    };
-
-    let Ok(parsed) = value.parse::<u16>() else {
-        return Err(CliError::InvalidArgValue {
-            flag: flag.to_owned(),
-            value,
-        });
-    };
-
-    Ok(parsed)
+    parse_optional_parsed_flag(args, flag, default_value)
 }
 
 fn parse_optional_u8_flag(args: &[String], flag: &str, default_value: u8) -> Result<u8, CliError> {
-    let Some(value) = parse_optional_flag_value(args, flag)? else {
-        return Ok(default_value);
-    };
-
-    let Ok(parsed) = value.parse::<u8>() else {
-        return Err(CliError::InvalidArgValue {
-            flag: flag.to_owned(),
-            value,
-        });
-    };
-
-    Ok(parsed)
+    parse_optional_parsed_flag(args, flag, default_value)
 }
 
 fn parse_optional_usize_flag(
@@ -1064,28 +1064,9 @@ fn parse_optional_usize_flag(
     flag: &str,
     default_value: usize,
 ) -> Result<usize, CliError> {
-    let Some(value) = parse_optional_flag_value(args, flag)? else {
-        return Ok(default_value);
-    };
-
-    let Ok(parsed) = value.parse::<usize>() else {
-        return Err(CliError::InvalidArgValue {
-            flag: flag.to_owned(),
-            value,
-        });
-    };
-
-    Ok(parsed)
+    parse_optional_parsed_flag(args, flag, default_value)
 }
 
 fn parse_amount_cents(args: &[String]) -> Result<i64, CliError> {
-    let value = parse_flag_value(args, "--amount-cents")?;
-    let Ok(parsed) = value.parse::<i64>() else {
-        return Err(CliError::InvalidArgValue {
-            flag: "--amount-cents".to_owned(),
-            value,
-        });
-    };
-
-    Ok(parsed)
+    parse_required_parsed_flag(args, "--amount-cents")
 }

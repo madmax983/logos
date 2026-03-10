@@ -4,3 +4,9 @@
 ## 2024-03-24 - [Avoid re-allocations and clones on hot paths]
 **Learning:** `current_projection_without_superseded` was allocating an unbounded `Vec` and `HashSet`, and unnecessarily cloning strings.
 **Action:** Use `Vec::with_capacity` and `HashSet::with_capacity` where max length is known. Collect references into the `HashSet` to avoid cloning `String` objects when filtering.
+**[Vec Allocation for Polars Series]**
+**Learning:** When preparing string columns for Polars `Series::new`, we don't need to construct an intermediate `Vec<String>` with `.clone()`. Polars can serialize directly from a `Vec<&str>`.
+**Action:** Use `.as_str()` mapped directly to `Vec<&str>` to avoid thousands of intermediate heap allocations per serialized batch.
+**[Persistence Reordering Risk]**
+**Learning:** While refactoring persistence closures to avoid `.clone()`, do not rearrange the exact call order of `persist_X_graph` and `persist_X_memory` without an explicit architectural goal. Reordering persistence operations can lead to referential integrity bugs where child operations persist prior to parents.
+**Action:** Only refactor the inner arguments (e.g. `.clone()`) on persistence calls, without moving lines of code.

@@ -9,8 +9,8 @@ use blake3::Hasher;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, Utc};
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
 use logos_import::{
-    CsvMapping, ImportError, ImportRecord, deterministic_fingerprint, parse_pdf_statement_file,
-    parse_simple_csv_row,
+    CsvMapping, ImportError, ImportRecord, deterministic_fingerprint,
+    deterministic_fingerprint_legacy_v1, parse_pdf_statement_file, parse_simple_csv_row,
 };
 use logos_reporting::{
     RegisterEntry, RsuBudgetPlan, RsuBudgetPlanInput, ScenarioPriceInputs, project_budget_variance,
@@ -933,8 +933,12 @@ impl CliRuntime {
         mapping: &CsvMapping,
     ) -> Result<bool, RuntimeError> {
         let record = parse_simple_csv_row(row, mapping)?;
-        let content_hash_key = import_content_hash_key(deterministic_fingerprint(&record));
-        if self.store.has_import_record_content_hash(&content_hash_key) {
+        let (content_hash_key, legacy_content_hash_key) = import_content_hash_keys(&record);
+        if self.store.has_import_record_content_hash(&content_hash_key)
+            || self
+                .store
+                .has_import_record_content_hash(&legacy_content_hash_key)
+        {
             return Ok(false);
         }
 
@@ -993,13 +997,18 @@ impl CliRuntime {
             }
 
             let record = parse_simple_csv_row(row, mapping)?;
-            let content_hash_key = import_content_hash_key(deterministic_fingerprint(&record));
-            let seen_previously = self.store.has_import_record_content_hash(&content_hash_key);
-            let seen_in_batch = !seen_in_call.insert(content_hash_key.clone());
+            let (content_hash_key, legacy_content_hash_key) = import_content_hash_keys(&record);
+            let seen_previously = self.store.has_import_record_content_hash(&content_hash_key)
+                || self
+                    .store
+                    .has_import_record_content_hash(&legacy_content_hash_key);
+            // Avoid allocating strings for duplicate records by checking existence first.
+            let seen_in_batch = seen_in_call.contains(&content_hash_key);
             if seen_previously || seen_in_batch {
                 duplicate_count = duplicate_count.saturating_add(1);
                 continue;
             }
+            seen_in_call.insert(content_hash_key.clone());
 
             imported_count = imported_count.saturating_add(1);
             if dry_run {
@@ -1064,13 +1073,18 @@ impl CliRuntime {
         let mut imported_keys = Vec::new();
 
         for record in records {
-            let content_hash_key = import_content_hash_key(deterministic_fingerprint(&record));
-            let seen_previously = self.store.has_import_record_content_hash(&content_hash_key);
-            let seen_in_batch = !seen_in_call.insert(content_hash_key.clone());
+            let (content_hash_key, legacy_content_hash_key) = import_content_hash_keys(&record);
+            let seen_previously = self.store.has_import_record_content_hash(&content_hash_key)
+                || self
+                    .store
+                    .has_import_record_content_hash(&legacy_content_hash_key);
+            // Avoid allocating strings for duplicate records by checking existence first.
+            let seen_in_batch = seen_in_call.contains(&content_hash_key);
             if seen_previously || seen_in_batch {
                 duplicate_count = duplicate_count.saturating_add(1);
                 continue;
             }
+            seen_in_call.insert(content_hash_key.clone());
 
             imported_count = imported_count.saturating_add(1);
             if dry_run {
@@ -1305,8 +1319,16 @@ struct SnapshotPostingRow {
     amount_cents: i64,
 }
 
-fn import_content_hash_key(fingerprint: u64) -> String {
+fn import_content_hash_key_legacy_v1(fingerprint: u64) -> String {
     format!("{fingerprint:016x}")
+}
+
+fn import_content_hash_keys(record: &ImportRecord) -> (String, String) {
+    let content_hash_key = deterministic_fingerprint(record);
+    // Backward compatibility: detect duplicates imported before the v2 fingerprint rollout.
+    let legacy_content_hash_key =
+        import_content_hash_key_legacy_v1(deterministic_fingerprint_legacy_v1(record));
+    (content_hash_key, legacy_content_hash_key)
 }
 
 fn import_batch_key(
@@ -1418,11 +1440,11 @@ fn write_rows_to_parquet(
     as_of_valid: i64,
     as_of_tx: i64,
 ) -> Result<(), RuntimeError> {
-    let txn_ids: Vec<String> = rows.iter().map(|row| row.txn_id.clone()).collect();
-    let descriptions: Vec<String> = rows.iter().map(|row| row.description.clone()).collect();
+    let txn_ids: Vec<&str> = rows.iter().map(|row| row.txn_id.as_str()).collect();
+    let descriptions: Vec<&str> = rows.iter().map(|row| row.description.as_str()).collect();
     let effective_at_values: Vec<i64> = rows.iter().map(|row| row.effective_at_us).collect();
     let posting_ordinals: Vec<i64> = rows.iter().map(|row| row.posting_ordinal).collect();
-    let accounts: Vec<String> = rows.iter().map(|row| row.account.clone()).collect();
+    let accounts: Vec<&str> = rows.iter().map(|row| row.account.as_str()).collect();
     let amounts: Vec<i64> = rows.iter().map(|row| row.amount_cents).collect();
     let snapshot_valid_values = vec![as_of_valid; rows.len()];
     let snapshot_tx_values = vec![as_of_tx; rows.len()];

@@ -8,6 +8,7 @@ Current proof files:
 - correction lineage integrity and tx-time supersede visibility behavior
 - budget rollover conservation and latest-write-wins target semantics
 - RSU policy table and allocation invariants
+- import dedupe partition and idempotent re-import behavior
 
 Files:
 
@@ -15,6 +16,7 @@ Files:
 - `correction_invariants.verus`
 - `budget_invariants.verus`
 - `rsu_policy_invariants.verus`
+- `import_invariants.verus`
 
 Run proofs:
 
@@ -23,4 +25,5 @@ C:\Users\markm\verus\verus.exe logos-proof\transaction_invariants.verus
 C:\Users\markm\verus\verus.exe logos-proof\correction_invariants.verus
 C:\Users\markm\verus\verus.exe logos-proof\budget_invariants.verus
 C:\Users\markm\verus\verus.exe logos-proof\rsu_policy_invariants.verus
+C:\Users\markm\verus\verus.exe logos-proof\import_invariants.verus
 ```

@@ -307,6 +307,13 @@ fn parses_analytics_snapshot_list() {
 }
 
 #[test]
+fn parses_analytics_sankey() {
+    let args = vec!["ledger", "analytics", "sankey"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+    assert_eq!(parsed.command_path(), "analytics.sankey");
+}
+
+#[test]
 fn parses_analytics_snapshot_show() {
     let args = vec![
         "ledger",
