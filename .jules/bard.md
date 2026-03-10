@@ -17,3 +17,7 @@
 ## 2026-03-09 - [BudgetMonth Instantiation Guide]
 **Confusion:** Users were creating `BudgetMonth` instances without clear understanding of what "assigned" and "spent" meant in the context of the rollover, and no executable example existed.
 **Clarification:** Added an executable doc-test example to `BudgetMonth::new` showing exactly how month rollover is calculated conceptually via an example to bridge the conceptual gap.
+
+## 2026-03-10 - [FireSimulator Primitives]
+**Confusion:** The `FireSimulator` and its configuration primitives in `logos-core::planning::fire` had dry, terse docstrings that repeated function names without explaining the underlying "why" (e.g. why risk haircut tiers exist or what a FIRE number represents practically). The module lacked a high-level explanation of its core purpose.
+**Clarification:** Added a module-level `//!` narrative ("The Great Escape") explaining the goal of projecting financial independence. Upgraded struct and method docstrings to use storytelling analogies (war chest, burn rate) and added standalone, executable `## Examples` doc-tests to `FireConfig` and all public `FireSimulator` methods to demonstrate integration points clearly.
