@@ -306,9 +306,10 @@ fn parse_month_key(flag: &str, value: String) -> Result<String, CliError> {
 }
 
 fn parse_optional_month_flag(args: &[String], flag: &str) -> Result<Option<String>, CliError> {
-    parse_optional_flag_value(args, flag)?
-        .map(|value| parse_month_key(flag, value))
-        .transpose()
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(None);
+    };
+    Ok(Some(parse_month_key(flag, value)?))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
