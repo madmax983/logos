@@ -591,7 +591,9 @@ fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
     runtime
         .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
         .expect("post");
-    let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 110_000)
+
+    let current_month = chrono::Utc::now().format("%Y-%m").to_string();
+    let request = MonthAutopilotRequest::new(&current_month, "assets:checking", 100_000, 110_000)
         .with_analytics_artifact_id("artifact-missing")
         .with_confirm_close(true);
 
@@ -602,7 +604,7 @@ fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
     assert_eq!(runtime.reconciliation_run_count(), 0);
     assert!(
         runtime
-            .month_close_for_scope("2026-02", "assets:checking")
+            .month_close_for_scope(&current_month, "assets:checking")
             .is_none()
     );
 }
