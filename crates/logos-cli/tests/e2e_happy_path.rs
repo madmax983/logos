@@ -4,7 +4,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::DateTime;
 use logos_cli::runtime::{CliRuntime, MonthAutopilotRequest};
 use logos_core::TransactionId;
+use logos_fetch::{FetchedStatementArtifact, OutputFormat};
 use logos_import::CsvMapping;
+use logos_store_aletheia::model::StoredFetchRunStatus;
 
 fn temp_runtime_path(prefix: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -316,7 +318,8 @@ fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
 
     {
         let mut runtime = CliRuntime::open(&path).expect("open");
-        let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 198_766)
+        let request = MonthAutopilotRequest::new("2026-02", "assets:checking")
+            .with_balances(100_000, 198_766)
             .with_statement_pdf(&statement_path)
             .with_confirm_close(true);
         let summary = runtime
@@ -350,9 +353,243 @@ fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
 }
 
 #[test]
+fn e2e_runtime_month_autopilot_uses_fetched_statement_metadata_when_balances_are_absent() {
+    let path = temp_runtime_path("month-autopilot-fetched-balances");
+    let statement_path = temp_runtime_path("month-autopilot-fetched-balances-statement")
+        .with_extension("pdf")
+        .to_string_lossy()
+        .to_string();
+    std::fs::write(
+        &statement_path,
+        "2026-02-01 COFFEE SHOP -12.34\n2026-02-02 PAYROLL 1000.00\n",
+    )
+    .expect("write statement");
+
+    {
+        let mut runtime = CliRuntime::open(&path).expect("open");
+        runtime.stage_fetched_statement_artifact(
+            FetchedStatementArtifact::new(
+                "pcu:checking",
+                "assets:checking",
+                OutputFormat::Pdf,
+                &statement_path,
+                "2026-02",
+                100_000,
+                198_766,
+            )
+            .expect("artifact"),
+        );
+        let request =
+            MonthAutopilotRequest::new("2026-02", "assets:checking").with_confirm_close(true);
+        let summary = runtime
+            .run_month_autopilot(&request)
+            .expect("autopilot succeeds");
+
+        assert_eq!(summary.imported_count(), 2);
+        assert_eq!(summary.duplicate_count(), 0);
+        assert_eq!(summary.reconciliation_run().variance_cents(), 0);
+        assert!(summary.reconciliation_run().reconciled());
+    }
+
+    cleanup_file(Path::new(&statement_path));
+    cleanup_runtime_path(&path);
+}
+
+#[test]
+fn e2e_runtime_month_autopilot_loads_fetch_source_config_and_fetches_before_reconcile() {
+    let root = temp_runtime_path("month-autopilot-fetch-config");
+    let ledger_path = root.join("ledger");
+    let config_path = root.join("statement-sources.toml");
+    std::fs::create_dir_all(&root).expect("create runtime root");
+    std::fs::write(
+        &config_path,
+        r#"
+[[sources]]
+ source_id = "fixture:checking"
+ institution_id = "fake-fixture"
+ ledger_account = "assets:checking"
+ format_preference = ["pdf"]
+ username_secret_ref = "op://logos/fake/username"
+ password_secret_ref = "op://logos/fake/password"
+ totp_secret_ref = "op://logos/fake/totp"
+ "#,
+    )
+    .expect("write fetch config");
+
+    {
+        let mut runtime = CliRuntime::open(&ledger_path).expect("open");
+        let request =
+            MonthAutopilotRequest::new("2026-02", "assets:checking").with_confirm_close(true);
+        let summary = runtime
+            .run_month_autopilot(&request)
+            .expect("autopilot succeeds with config-driven fetch");
+
+        assert_eq!(summary.imported_count(), 2);
+        assert_eq!(summary.duplicate_count(), 0);
+        assert_eq!(summary.reconciliation_run().variance_cents(), 0);
+        assert!(summary.reconciliation_run().reconciled());
+        assert_eq!(summary.report().checking_balance_cents(), 98_766);
+        assert_eq!(summary.fetch_runs().len(), 1);
+        assert_eq!(summary.fetch_runs()[0].run_id(), "fetch-1");
+        assert_eq!(
+            summary.fetch_runs()[0].status(),
+            StoredFetchRunStatus::Downloaded
+        );
+        assert_eq!(summary.fetch_runs()[0].source_id(), "fixture:checking");
+    }
+
+    {
+        let reopened = CliRuntime::open(&ledger_path).expect("reopen");
+        let fetch_runs = reopened.list_fetch_runs(Some("2026-02"), Some("assets:checking"));
+        assert_eq!(fetch_runs.len(), 1);
+        assert_eq!(fetch_runs[0].run_id(), "fetch-1");
+        assert_eq!(fetch_runs[0].status(), StoredFetchRunStatus::Downloaded);
+        assert!(
+            fetch_runs[0]
+                .artifact_path()
+                .expect("path")
+                .ends_with("fake-statement-2026-02.pdf")
+        );
+    }
+
+    cleanup_runtime_path(&root);
+}
+
+#[test]
+fn e2e_runtime_month_autopilot_with_explicit_balances_ignores_broken_fetch_config() {
+    let root = temp_runtime_path("month-autopilot-manual-balances");
+    let ledger_path = root.join("ledger");
+    let config_path = root.join("statement-sources.toml");
+    std::fs::create_dir_all(&root).expect("create runtime root");
+    std::fs::write(
+        &config_path,
+        r#"
+[[sources]]
+source_id = "m1:taxable"
+institution_id = "m1-finance"
+ledger_account = "assets:checking"
+format_preference = ["pdf"]
+username_secret_ref = "op://logos/m1/username"
+password_secret_ref = "op://logos/m1/password"
+"#,
+    )
+    .expect("write fetch config");
+
+    {
+        let mut runtime = CliRuntime::open(&ledger_path).expect("open");
+        let request = MonthAutopilotRequest::new("2026-02", "assets:checking")
+            .with_balances(100_000, 100_000)
+            .with_confirm_close(true);
+        let summary = runtime
+            .run_month_autopilot(&request)
+            .expect("autopilot succeeds with explicit balances");
+
+        assert_eq!(summary.imported_count(), 0);
+        assert_eq!(summary.duplicate_count(), 0);
+        assert_eq!(summary.reconciliation_run().variance_cents(), 0);
+        assert!(summary.reconciliation_run().reconciled());
+        assert!(summary.fetch_runs().is_empty());
+    }
+
+    {
+        let reopened = CliRuntime::open(&ledger_path).expect("reopen");
+        assert!(
+            reopened
+                .list_fetch_runs(Some("2026-02"), Some("assets:checking"))
+                .is_empty()
+        );
+    }
+
+    cleanup_runtime_path(&root);
+}
+
+#[test]
+fn e2e_runtime_month_autopilot_marks_partial_fetch_failure_as_needs_attention() {
+    let root = temp_runtime_path("month-autopilot-partial-fetch");
+    let ledger_path = root.join("ledger");
+    let config_path = root.join("statement-sources.toml");
+    std::fs::create_dir_all(&root).expect("create runtime root");
+    std::fs::write(
+        &config_path,
+        r#"
+[[sources]]
+source_id = "fixture:checking"
+institution_id = "fake-fixture"
+ledger_account = "assets:checking"
+format_preference = ["pdf"]
+username_secret_ref = "op://logos/fake/username"
+password_secret_ref = "op://logos/fake/password"
+totp_secret_ref = "op://logos/fake/totp"
+
+[[sources]]
+source_id = "m1:taxable"
+institution_id = "fake-needs-attention"
+ledger_account = "assets:checking"
+format_preference = ["pdf"]
+username_secret_ref = "op://logos/m1/username"
+password_secret_ref = "op://logos/m1/password"
+totp_secret_ref = "op://logos/m1/totp"
+"#,
+    )
+    .expect("write fetch config");
+
+    {
+        let mut runtime = CliRuntime::open(&ledger_path).expect("open");
+        let request =
+            MonthAutopilotRequest::new("2026-02", "assets:checking").with_confirm_close(true);
+        let summary = runtime
+            .run_month_autopilot(&request)
+            .expect("autopilot should continue with partial fetch success");
+
+        assert_eq!(summary.imported_count(), 2);
+        assert_eq!(summary.duplicate_count(), 0);
+        assert_eq!(summary.fetch_runs().len(), 2);
+        assert!(
+            summary
+                .fetch_runs()
+                .iter()
+                .any(|run| run.source_id() == "fixture:checking"
+                    && run.status() == StoredFetchRunStatus::Downloaded)
+        );
+        assert!(
+            summary
+                .fetch_runs()
+                .iter()
+                .any(|run| run.source_id() == "m1:taxable"
+                    && run.status() == StoredFetchRunStatus::NeedsAttention
+                    && run.error_summary() == Some("mfa challenge required"))
+        );
+        assert!(
+            runtime
+                .month_close_for_scope("2026-02", "assets:checking")
+                .is_some()
+        );
+    }
+
+    {
+        let reopened = CliRuntime::open(&ledger_path).expect("reopen");
+        let fetch_runs = reopened.list_fetch_runs(Some("2026-02"), Some("assets:checking"));
+        assert_eq!(fetch_runs.len(), 2);
+        assert!(
+            fetch_runs
+                .iter()
+                .any(|run| run.status() == StoredFetchRunStatus::NeedsAttention)
+        );
+        assert!(
+            reopened
+                .month_close_for_scope("2026-02", "assets:checking")
+                .is_some()
+        );
+    }
+
+    cleanup_runtime_path(&root);
+}
+
+#[test]
 fn e2e_runtime_month_autopilot_requires_confirm_close() {
     let mut runtime = CliRuntime::new_in_memory();
-    let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 100_000);
+    let request =
+        MonthAutopilotRequest::new("2026-02", "assets:checking").with_balances(100_000, 100_000);
 
     let err = runtime
         .run_month_autopilot(&request)
@@ -366,6 +603,22 @@ fn e2e_runtime_month_autopilot_requires_confirm_close() {
         runtime
             .month_close_for_scope("2026-02", "assets:checking")
             .is_none()
+    );
+}
+
+#[test]
+fn e2e_runtime_month_autopilot_rejects_missing_balances_when_no_fetched_metadata_exists() {
+    let mut runtime = CliRuntime::new_in_memory();
+    let request = MonthAutopilotRequest::new("2026-02", "assets:checking").with_confirm_close(true);
+
+    let err = runtime
+        .run_month_autopilot(&request)
+        .expect_err("balances or fetched metadata required");
+
+    assert!(
+        err.to_string()
+            .contains("requires opening/closing balances or fetched statement metadata"),
+        "unexpected error: {err}"
     );
 }
 
@@ -588,7 +841,8 @@ fn e2e_import_backdates_valid_time_from_statement_timestamp() {
 #[test]
 fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
     let mut runtime = CliRuntime::new_in_memory();
-    let request = MonthAutopilotRequest::new("2026-02", "assets:checking", 100_000, 100_000)
+    let request = MonthAutopilotRequest::new("2026-02", "assets:checking")
+        .with_balances(100_000, 100_000)
         .with_analytics_artifact_id("artifact-missing")
         .with_allow_variance(true)
         .with_confirm_close(true);

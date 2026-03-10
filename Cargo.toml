@@ -2,6 +2,7 @@
 members = [
     "crates/logos-core",
     "crates/logos-cli",
+    "crates/logos-fetch",
     "crates/logos-store-aletheia",
     "crates/logos-import",
     "crates/logos-reporting",

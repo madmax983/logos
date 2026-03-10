@@ -11,8 +11,10 @@ workspace = true
 blake3 = "1.8.3"
 chrono = { version = "0.4.42", default-features = true, features = ["clock"] }
 logos-core = { path = "../logos-core" }
+logos-fetch = { path = "../logos-fetch" }
 logos-import = { path = "../logos-import" }
 logos-reporting = { path = "../logos-reporting" }
 logos-store-aletheia = { path = "../logos-store-aletheia" }
 comfy-table = "7.1"
 polars = { version = "0.46.0", features = ["parquet"] }
+tokio = { version = "1.48.0", features = ["rt"] }

@@ -14,12 +14,16 @@ use crate::model::{
     EDGE_EVIDENCES_TXN, EDGE_HAS_IMPORT_RECORD, EDGE_HAS_POSTING, EDGE_HAS_STATEMENT_LINE,
     EDGE_RECONCILES_STMT_LINE, EDGE_RECONCILES_TXN, EDGE_SUPERSEDES,
     LABEL_ANALYTICS_ARTIFACT_MANIFEST, LABEL_LEDGER_BUDGET_TARGET, LABEL_LEDGER_CORRECTION,
-    LABEL_LEDGER_IMPORT_BATCH, LABEL_LEDGER_IMPORT_RECORD, LABEL_LEDGER_MONTH_CLOSE,
-    LABEL_LEDGER_POSTING, LABEL_LEDGER_RECONCILIATION_RUN, LABEL_LEDGER_STATEMENT_LINE,
-    LABEL_LEDGER_TRANSACTION, NewImportRecord, PROP_ACCOUNT, PROP_AMOUNT_CENTS, PROP_ARTIFACT_ID,
-    PROP_ARTIFACT_KIND, PROP_ARTIFACT_URI, PROP_BUDGET_CENTS, PROP_CONTENT_HASH,
-    PROP_CREATED_AT_US, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_EXPENSE_ACCOUNT_PREFIX,
-    PROP_IMPORT_BATCH_ID, PROP_IMPORT_BATCH_KEY, PROP_IMPORT_CONTENT_HASH_KEY, PROP_IMPORT_DRY_RUN,
+    LABEL_LEDGER_FETCH_RUN, LABEL_LEDGER_IMPORT_BATCH, LABEL_LEDGER_IMPORT_RECORD,
+    LABEL_LEDGER_MONTH_CLOSE, LABEL_LEDGER_POSTING, LABEL_LEDGER_RECONCILIATION_RUN,
+    LABEL_LEDGER_STATEMENT_LINE, LABEL_LEDGER_TRANSACTION, NewImportRecord, PROP_ACCOUNT,
+    PROP_AMOUNT_CENTS, PROP_ARTIFACT_ID, PROP_ARTIFACT_KIND, PROP_ARTIFACT_URI, PROP_BUDGET_CENTS,
+    PROP_CONTENT_HASH, PROP_CREATED_AT_US, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US,
+    PROP_EXPENSE_ACCOUNT_PREFIX, PROP_FETCH_ARTIFACT_PATH, PROP_FETCH_CLOSING_BALANCE_CENTS,
+    PROP_FETCH_CREATED_AT_US, PROP_FETCH_ERROR_SUMMARY, PROP_FETCH_INSTITUTION_ID,
+    PROP_FETCH_LEDGER_ACCOUNT, PROP_FETCH_OPENING_BALANCE_CENTS, PROP_FETCH_OUTPUT_FORMAT,
+    PROP_FETCH_RUN_ID, PROP_FETCH_SOURCE_ID, PROP_FETCH_STATUS, PROP_IMPORT_BATCH_ID,
+    PROP_IMPORT_BATCH_KEY, PROP_IMPORT_CONTENT_HASH_KEY, PROP_IMPORT_DRY_RUN,
     PROP_IMPORT_DUPLICATE_COUNT, PROP_IMPORT_IMPORTED_AT_US, PROP_IMPORT_IMPORTED_TXN_ID,
     PROP_IMPORT_KIND, PROP_IMPORT_OCR_ENABLED, PROP_IMPORT_RECORD_COUNT, PROP_IMPORT_SOURCE_URI,
     PROP_MONTH_CLOSE_ANALYTICS_ARTIFACT_ID, PROP_MONTH_CLOSE_CLOSED_AT_US, PROP_MONTH_CLOSE_ID,
@@ -34,7 +38,8 @@ use crate::model::{
     PROP_SNAPSHOT_VALID_AT_US, PROP_STATEMENT_AMOUNT_CENTS, PROP_STATEMENT_LINE_ID,
     PROP_STATEMENT_MEMO, PROP_STATEMENT_SOURCE_URI, PROP_STATEMENT_TIMESTAMP,
     PROP_SUPERSEDES_ARTIFACT_ID, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID,
-    StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredCorrection, StoredImportBatch,
+    StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredCorrection,
+    StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredImportBatch,
     StoredImportRecord, StoredMonthClose, StoredReconciliationRun, StoredStatementLine,
     StoredTransaction,
 };
@@ -89,6 +94,7 @@ pub struct AletheiaStore {
     pub(crate) next_artifact_id: u64,
     pub(crate) next_import_batch_id: u64,
     pub(crate) next_statement_line_id: u64,
+    pub(crate) next_fetch_run_id: u64,
     pub(crate) next_reconciliation_run_id: u64,
     pub(crate) next_month_close_id: u64,
     pub(crate) transactions: HashMap<TransactionId, StoredTransaction>,
@@ -99,6 +105,7 @@ pub struct AletheiaStore {
     pub(crate) import_records: HashMap<String, StoredImportRecord>,
     pub(crate) statement_lines: HashMap<String, StoredStatementLine>,
     pub(crate) statement_line_ids_by_txn: HashMap<TransactionId, Vec<String>>,
+    pub(crate) fetch_runs: HashMap<String, StoredFetchRun>,
     pub(crate) reconciliation_runs: HashMap<String, StoredReconciliationRun>,
     pub(crate) reconciliation_statement_line_ids: HashMap<String, Vec<String>>,
     pub(crate) month_closes: HashMap<String, StoredMonthClose>,
@@ -119,6 +126,8 @@ struct LoadedProjection {
     import_batch_nodes: HashMap<String, NodeId>,
     statement_lines: HashMap<String, StoredStatementLine>,
     statement_line_nodes: HashMap<String, NodeId>,
+    fetch_runs: HashMap<String, StoredFetchRun>,
+    fetch_run_nodes: HashMap<String, NodeId>,
     reconciliation_runs: HashMap<String, StoredReconciliationRun>,
     reconciliation_run_nodes: HashMap<String, NodeId>,
     reconciliation_statement_line_ids: HashMap<String, Vec<String>>,
@@ -134,6 +143,7 @@ pub(crate) struct EmbeddedStore {
     pub(crate) analytics_artifact_nodes: HashMap<String, NodeId>,
     pub(crate) import_batch_nodes: HashMap<String, NodeId>,
     pub(crate) statement_line_nodes: HashMap<String, NodeId>,
+    pub(crate) fetch_run_nodes: HashMap<String, NodeId>,
     pub(crate) reconciliation_run_nodes: HashMap<String, NodeId>,
     pub(crate) month_close_nodes: HashMap<String, NodeId>,
 }
@@ -149,6 +159,7 @@ impl fmt::Debug for EmbeddedStore {
             )
             .field("import_batch_nodes", &self.import_batch_nodes.len())
             .field("statement_line_nodes", &self.statement_line_nodes.len())
+            .field("fetch_run_nodes", &self.fetch_run_nodes.len())
             .field(
                 "reconciliation_run_nodes",
                 &self.reconciliation_run_nodes.len(),
@@ -165,6 +176,7 @@ impl fmt::Debug for AletheiaStore {
             .field("next_artifact_id", &self.next_artifact_id)
             .field("next_import_batch_id", &self.next_import_batch_id)
             .field("next_statement_line_id", &self.next_statement_line_id)
+            .field("next_fetch_run_id", &self.next_fetch_run_id)
             .field(
                 "next_reconciliation_run_id",
                 &self.next_reconciliation_run_id,
@@ -226,6 +238,7 @@ impl AletheiaStore {
         let next_artifact_id = infer_next_artifact_id(loaded.analytics_artifacts.keys());
         let next_import_batch_id = infer_next_import_batch_id(loaded.import_batches.keys());
         let next_statement_line_id = infer_next_statement_line_id(loaded.statement_lines.keys());
+        let next_fetch_run_id = infer_next_fetch_run_id(loaded.fetch_runs.keys());
         let next_reconciliation_run_id =
             infer_next_reconciliation_run_id(loaded.reconciliation_runs.keys());
         let next_month_close_id = infer_next_month_close_id(loaded.month_closes.keys());
@@ -238,6 +251,7 @@ impl AletheiaStore {
             next_artifact_id,
             next_import_batch_id,
             next_statement_line_id,
+            next_fetch_run_id,
             next_reconciliation_run_id,
             next_month_close_id,
             transactions: loaded.transactions,
@@ -248,6 +262,7 @@ impl AletheiaStore {
             import_records: loaded.import_records,
             statement_lines: loaded.statement_lines,
             statement_line_ids_by_txn,
+            fetch_runs: loaded.fetch_runs,
             reconciliation_runs: loaded.reconciliation_runs,
             reconciliation_statement_line_ids: loaded.reconciliation_statement_line_ids,
             month_closes: loaded.month_closes,
@@ -258,6 +273,7 @@ impl AletheiaStore {
                 analytics_artifact_nodes: loaded.analytics_artifact_nodes,
                 import_batch_nodes: loaded.import_batch_nodes,
                 statement_line_nodes: loaded.statement_line_nodes,
+                fetch_run_nodes: loaded.fetch_run_nodes,
                 reconciliation_run_nodes: loaded.reconciliation_run_nodes,
                 month_close_nodes: loaded.month_close_nodes,
             }),
@@ -283,6 +299,11 @@ impl AletheiaStore {
     pub(crate) fn next_statement_line_id(&mut self) -> String {
         self.next_statement_line_id = self.next_statement_line_id.saturating_add(1);
         format!("stmt-line-{}", self.next_statement_line_id)
+    }
+
+    pub(crate) fn next_fetch_run_id(&mut self) -> String {
+        self.next_fetch_run_id = self.next_fetch_run_id.saturating_add(1);
+        format!("fetch-{}", self.next_fetch_run_id)
     }
 
     pub(crate) fn next_reconciliation_run_id(&mut self) -> String {
@@ -343,6 +364,60 @@ impl AletheiaStore {
                 .push(line_id.clone());
         }
         self.statement_lines.insert(line_id, line);
+    }
+
+    pub(crate) fn persist_fetch_run(&mut self, run: StoredFetchRun) {
+        self.fetch_runs.insert(run.run_id().to_owned(), run);
+    }
+
+    pub(crate) fn persist_fetch_run_graph(
+        &mut self,
+        run: &StoredFetchRun,
+    ) -> Result<(), StoreError> {
+        let Some(embedded) = self.embedded.as_mut() else {
+            return Ok(());
+        };
+
+        let mut tx = embedded
+            .db
+            .write_transaction()
+            .map_err(|err| map_persist_error("unable to start fetch run write transaction", err))?;
+        let run_node = tx
+            .create_node(
+                LABEL_LEDGER_FETCH_RUN,
+                PropertyMapBuilder::new()
+                    .insert(PROP_FETCH_RUN_ID, run.run_id())
+                    .insert(PROP_FETCH_SOURCE_ID, run.source_id())
+                    .insert(PROP_FETCH_INSTITUTION_ID, run.institution_id())
+                    .insert(PROP_FETCH_LEDGER_ACCOUNT, run.ledger_account())
+                    .insert(PROP_MONTH_KEY, run.month_key())
+                    .insert(PROP_FETCH_STATUS, run.status().as_str())
+                    .insert(PROP_FETCH_ARTIFACT_PATH, run.artifact_path().unwrap_or(""))
+                    .insert(
+                        PROP_FETCH_OUTPUT_FORMAT,
+                        run.output_format()
+                            .map_or("", StoredFetchArtifactFormat::as_str),
+                    )
+                    .insert(
+                        PROP_FETCH_OPENING_BALANCE_CENTS,
+                        run.opening_balance_cents().unwrap_or(0),
+                    )
+                    .insert(
+                        PROP_FETCH_CLOSING_BALANCE_CENTS,
+                        run.closing_balance_cents().unwrap_or(0),
+                    )
+                    .insert(PROP_FETCH_ERROR_SUMMARY, run.error_summary().unwrap_or(""))
+                    .insert(PROP_FETCH_CREATED_AT_US, run.created_at().wallclock())
+                    .build(),
+            )
+            .map_err(|err| map_persist_error("unable to create LedgerFetchRun node", err))?;
+        tx.commit()
+            .map_err(|err| map_persist_error("unable to commit embedded fetch run write", err))?;
+
+        embedded
+            .fetch_run_nodes
+            .insert(run.run_id().to_owned(), run_node);
+        Ok(())
     }
 
     pub(crate) fn persist_reconciliation_run(&mut self, run: StoredReconciliationRun) {
@@ -1113,6 +1188,7 @@ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
     let (analytics_artifacts, analytics_artifact_nodes) = load_analytics_artifacts(db)?;
     let (import_batches, import_records, import_batch_nodes, statement_lines, statement_line_nodes) =
         load_import_batches_and_records(db, &transaction_nodes)?;
+    let (fetch_runs, fetch_run_nodes) = load_fetch_runs(db)?;
     let (reconciliation_runs, reconciliation_run_nodes, reconciliation_statement_line_ids) =
         load_reconciliation_runs(db, &transaction_nodes, &statement_line_nodes)?;
     let (month_closes, month_close_nodes) =
@@ -1129,6 +1205,8 @@ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
         import_batch_nodes,
         statement_lines,
         statement_line_nodes,
+        fetch_runs,
+        fetch_run_nodes,
         reconciliation_runs,
         reconciliation_run_nodes,
         reconciliation_statement_line_ids,
@@ -1750,6 +1828,100 @@ fn load_statement_lines(
     Ok((lines, line_nodes))
 }
 
+type FetchRunLoad = (HashMap<String, StoredFetchRun>, HashMap<String, NodeId>);
+
+fn load_fetch_runs(db: &AletheiaDB) -> Result<FetchRunLoad, StoreError> {
+    let fetch_run_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_FETCH_RUN);
+    let mut runs = HashMap::new();
+    let mut run_nodes = HashMap::new();
+
+    for node_id in fetch_run_node_ids {
+        let node = db
+            .get_node(node_id)
+            .map_err(|err| map_load_error("unable to read LedgerFetchRun node", err))?;
+
+        let run_id = required_node_string_property(&node, PROP_FETCH_RUN_ID)?;
+        if runs.contains_key(&run_id) {
+            return Err(StoreError::LoadFailed {
+                message: format!("duplicate fetch run id '{run_id}' in graph projection"),
+            });
+        }
+
+        let source_id = required_node_string_property(&node, PROP_FETCH_SOURCE_ID)?;
+        let institution_id = required_node_string_property(&node, PROP_FETCH_INSTITUTION_ID)?;
+        let ledger_account = required_node_string_property(&node, PROP_FETCH_LEDGER_ACCOUNT)?;
+        let month_key = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let status_value = required_node_string_property(&node, PROP_FETCH_STATUS)?;
+        let status =
+            StoredFetchRunStatus::parse(&status_value).ok_or_else(|| StoreError::LoadFailed {
+                message: format!("fetch run '{run_id}' has invalid status '{status_value}'"),
+            })?;
+        let artifact_path = optional_node_string_property(&node, PROP_FETCH_ARTIFACT_PATH)
+            .filter(|value| !value.is_empty());
+        let output_format = optional_node_string_property(&node, PROP_FETCH_OUTPUT_FORMAT)
+            .filter(|value| !value.is_empty())
+            .map(|value| {
+                StoredFetchArtifactFormat::parse(&value).ok_or_else(|| StoreError::LoadFailed {
+                    message: format!("fetch run '{run_id}' has invalid output format '{value}'"),
+                })
+            })
+            .transpose()?;
+        let opening_balance_cents = if artifact_path.is_some() {
+            Some(required_node_i64_property(
+                &node,
+                PROP_FETCH_OPENING_BALANCE_CENTS,
+            )?)
+        } else {
+            optional_node_i64_property(&node, PROP_FETCH_OPENING_BALANCE_CENTS)
+                .filter(|value| *value != 0)
+        };
+        let closing_balance_cents = if artifact_path.is_some() {
+            Some(required_node_i64_property(
+                &node,
+                PROP_FETCH_CLOSING_BALANCE_CENTS,
+            )?)
+        } else {
+            optional_node_i64_property(&node, PROP_FETCH_CLOSING_BALANCE_CENTS)
+                .filter(|value| *value != 0)
+        };
+        let error_summary = optional_node_string_property(&node, PROP_FETCH_ERROR_SUMMARY)
+            .filter(|value| !value.is_empty());
+        let created_at = required_node_i64_property(&node, PROP_FETCH_CREATED_AT_US)?.into();
+
+        if matches!(
+            status,
+            StoredFetchRunStatus::Downloaded | StoredFetchRunStatus::Imported
+        ) && (artifact_path.is_none() || output_format.is_none())
+        {
+            return Err(StoreError::LoadFailed {
+                message: format!(
+                    "fetch run '{run_id}' is missing artifact metadata for status '{}'",
+                    status.as_str()
+                ),
+            });
+        }
+
+        let run = StoredFetchRun::new(
+            &run_id,
+            &source_id,
+            &institution_id,
+            &ledger_account,
+            &month_key,
+            status,
+            artifact_path.as_deref(),
+            output_format,
+            opening_balance_cents,
+            closing_balance_cents,
+            error_summary.as_deref(),
+            created_at,
+        );
+        runs.insert(run_id.clone(), run);
+        run_nodes.insert(run_id, node.id);
+    }
+
+    Ok((runs, run_nodes))
+}
+
 type ReconciliationLoad = (
     HashMap<String, StoredReconciliationRun>,
     HashMap<String, NodeId>,
@@ -2229,6 +2401,18 @@ where
 {
     ids.filter_map(|id| {
         id.strip_prefix("stmt-line-")
+            .and_then(|value| value.parse::<u64>().ok())
+    })
+    .max()
+    .unwrap_or(0)
+}
+
+fn infer_next_fetch_run_id<'a, I>(ids: I) -> u64
+where
+    I: Iterator<Item = &'a String>,
+{
+    ids.filter_map(|id| {
+        id.strip_prefix("fetch-")
             .and_then(|value| value.parse::<u64>().ok())
     })
     .max()

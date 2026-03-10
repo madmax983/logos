@@ -8,6 +8,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use blake3::Hasher;
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, Utc};
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
+use logos_fetch::{
+    FakeStatementAdapter, FetchRequest, FetchRunStatus, FetchedStatementArtifact,
+    OnePasswordCliSecretResolver, OutputFormat, ProvidentAdapter, SecretBundle, SecretResolver,
+    StatementAdapter, StatementSource, StatementSourceConfig,
+};
 use logos_import::{
     CsvMapping, ImportError, ImportRecord, deterministic_fingerprint,
     deterministic_fingerprint_legacy_v1, parse_pdf_statement_file, parse_simple_csv_row,
@@ -19,16 +24,19 @@ use logos_reporting::{
 use logos_store_aletheia::{
     AletheiaStore, StoreError,
     model::{
-        NewImportRecord, StoredAnalyticsArtifactManifest, StoredMonthClose,
-        StoredReconciliationRun, StoredStatementLine, StoredTransaction,
+        NewImportRecord, StoredAnalyticsArtifactManifest, StoredFetchArtifactFormat,
+        StoredFetchRun, StoredFetchRunStatus, StoredMonthClose, StoredReconciliationRun,
+        StoredStatementLine, StoredTransaction,
     },
 };
 use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
 
 const LOGOS_DB_PATH_ENV: &str = "LOGOS_DB_PATH";
 const LOGOS_ARTIFACTS_PATH_ENV: &str = "LOGOS_ARTIFACTS_PATH";
+const LOGOS_FETCH_CONFIG_PATH_ENV: &str = "LOGOS_FETCH_CONFIG_PATH";
 const DEFAULT_DB_DIRECTORY: &str = ".logos";
 const DEFAULT_DB_NAME: &str = "ledger";
+const DEFAULT_FETCH_CONFIG_NAME: &str = "statement-sources.toml";
 const ARTIFACTS_DIRECTORY: &str = "artifacts";
 const PARQUET_DIRECTORY: &str = "parquet";
 const DEFAULT_ANALYTICS_SCHEMA_VERSION: i64 = 1;
@@ -106,8 +114,8 @@ pub type CsvImportSummary = ImportSummary;
 pub struct MonthAutopilotRequest {
     month_key: String,
     checking_account: String,
-    opening_balance_cents: i64,
-    closing_balance_cents: i64,
+    opening_balance_cents: Option<i64>,
+    closing_balance_cents: Option<i64>,
     statement_pdf_path: Option<PathBuf>,
     enable_ocr: bool,
     allow_variance: bool,
@@ -121,6 +129,7 @@ pub struct MonthAutopilotSummary {
     checking_account: String,
     imported_count: usize,
     duplicate_count: usize,
+    fetch_runs: Vec<StoredFetchRun>,
     reconciliation_run: StoredReconciliationRun,
     report: MonthReport,
     close: StoredMonthClose,
@@ -154,17 +163,12 @@ impl ImportSummary {
 
 impl MonthAutopilotRequest {
     #[must_use]
-    pub fn new(
-        month_key: &str,
-        checking_account: &str,
-        opening_balance_cents: i64,
-        closing_balance_cents: i64,
-    ) -> Self {
+    pub fn new(month_key: &str, checking_account: &str) -> Self {
         Self {
             month_key: month_key.to_owned(),
             checking_account: checking_account.to_owned(),
-            opening_balance_cents,
-            closing_balance_cents,
+            opening_balance_cents: None,
+            closing_balance_cents: None,
             statement_pdf_path: None,
             enable_ocr: false,
             allow_variance: false,
@@ -176,6 +180,17 @@ impl MonthAutopilotRequest {
     #[must_use]
     pub fn with_statement_pdf(mut self, path: impl AsRef<Path>) -> Self {
         self.statement_pdf_path = Some(path.as_ref().to_path_buf());
+        self
+    }
+
+    #[must_use]
+    pub const fn with_balances(
+        mut self,
+        opening_balance_cents: i64,
+        closing_balance_cents: i64,
+    ) -> Self {
+        self.opening_balance_cents = Some(opening_balance_cents);
+        self.closing_balance_cents = Some(closing_balance_cents);
         self
     }
 
@@ -214,12 +229,12 @@ impl MonthAutopilotRequest {
     }
 
     #[must_use]
-    pub const fn opening_balance_cents(&self) -> i64 {
+    pub const fn opening_balance_cents(&self) -> Option<i64> {
         self.opening_balance_cents
     }
 
     #[must_use]
-    pub const fn closing_balance_cents(&self) -> i64 {
+    pub const fn closing_balance_cents(&self) -> Option<i64> {
         self.closing_balance_cents
     }
 
@@ -256,6 +271,7 @@ impl MonthAutopilotSummary {
         checking_account: &str,
         imported_count: usize,
         duplicate_count: usize,
+        fetch_runs: Vec<StoredFetchRun>,
         reconciliation_run: StoredReconciliationRun,
         report: MonthReport,
         close: StoredMonthClose,
@@ -265,6 +281,7 @@ impl MonthAutopilotSummary {
             checking_account: checking_account.to_owned(),
             imported_count,
             duplicate_count,
+            fetch_runs,
             reconciliation_run,
             report,
             close,
@@ -289,6 +306,11 @@ impl MonthAutopilotSummary {
     #[must_use]
     pub const fn duplicate_count(&self) -> usize {
         self.duplicate_count
+    }
+
+    #[must_use]
+    pub fn fetch_runs(&self) -> &[StoredFetchRun] {
+        &self.fetch_runs
     }
 
     #[must_use]
@@ -415,6 +437,8 @@ pub struct CliRuntime {
     store: AletheiaStore,
     imported_records: usize,
     artifacts_root: PathBuf,
+    fetch_config_path: Option<PathBuf>,
+    fetched_statement_artifacts: Vec<FetchedStatementArtifact>,
 }
 
 impl Default for CliRuntime {
@@ -424,6 +448,8 @@ impl Default for CliRuntime {
             store: AletheiaStore::new_in_memory(),
             imported_records: 0,
             artifacts_root: default_artifacts_root(&default_store_path),
+            fetch_config_path: None,
+            fetched_statement_artifacts: Vec::new(),
         }
     }
 }
@@ -454,6 +480,8 @@ impl CliRuntime {
             store: AletheiaStore::open(&store_path)?,
             imported_records: 0,
             artifacts_root: default_artifacts_root(&store_path),
+            fetch_config_path: Some(default_fetch_config_path(&store_path)),
+            fetched_statement_artifacts: Vec::new(),
         })
     }
 
@@ -744,6 +772,34 @@ impl CliRuntime {
         runs
     }
 
+    #[must_use]
+    pub fn fetch_run(&self, run_id: &str) -> Option<StoredFetchRun> {
+        self.store.fetch_run(run_id).cloned()
+    }
+
+    #[must_use]
+    pub fn list_fetch_runs(
+        &self,
+        month_key: Option<&str>,
+        checking_account: Option<&str>,
+    ) -> Vec<StoredFetchRun> {
+        let mut runs: Vec<_> = self
+            .store
+            .fetch_runs()
+            .filter(|run| month_key.is_none_or(|month| run.month_key() == month))
+            .filter(|run| checking_account.is_none_or(|account| run.ledger_account() == account))
+            .cloned()
+            .collect();
+        runs.sort_by(|left, right| {
+            right
+                .created_at()
+                .wallclock()
+                .cmp(&left.created_at().wallclock())
+                .then_with(|| left.run_id().cmp(right.run_id()))
+        });
+        runs
+    }
+
     /// Closes a month scope using a previously persisted reconciliation run.
     ///
     /// # Errors
@@ -775,6 +831,16 @@ impl CliRuntime {
         self.store
             .month_close_for_scope(month_key, checking_account)
             .cloned()
+    }
+
+    /// Stages fetched statement metadata for later month-autopilot resolution.
+    pub fn stage_fetched_statement_artifact(&mut self, artifact: FetchedStatementArtifact) {
+        self.fetched_statement_artifacts.retain(|existing| {
+            !(existing.source_id() == artifact.source_id()
+                && existing.ledger_account() == artifact.ledger_account()
+                && existing.month_key() == artifact.month_key())
+        });
+        self.fetched_statement_artifacts.push(artifact);
     }
 
     /// Runs the full month workflow with close-time safety checks.
@@ -813,6 +879,24 @@ impl CliRuntime {
             });
         }
 
+        let needs_fetched_balances = !matches!(
+            (
+                request.opening_balance_cents(),
+                request.closing_balance_cents(),
+            ),
+            (Some(_), Some(_))
+        );
+        let fetch_runs = if needs_fetched_balances
+            && request.statement_pdf_path().is_none()
+            && self
+                .fetched_statement_artifact_for(request.checking_account(), request.month_key())
+                .is_none()
+        {
+            self.fetch_configured_statement_artifacts(request, needs_fetched_balances)?
+        } else {
+            Vec::new()
+        };
+
         let (imported_count, duplicate_count) = if let Some(path) = request.statement_pdf_path() {
             let summary = self.import_pdf_statement(
                 path,
@@ -821,15 +905,20 @@ impl CliRuntime {
                 request.enable_ocr(),
             )?;
             (summary.imported_count(), summary.duplicate_count())
+        } else if let Some(artifact) =
+            self.fetched_statement_artifact_for(request.checking_account(), request.month_key())
+        {
+            self.import_fetched_statement_artifact(&artifact, request.enable_ocr())?
         } else {
             (0, 0)
         };
 
+        let balances = self.resolve_autopilot_balances(request)?;
         let preview = self.reconcile_month_for(
             request.checking_account(),
             request.month_key(),
-            request.opening_balance_cents(),
-            request.closing_balance_cents(),
+            balances.opening_balance_cents,
+            balances.closing_balance_cents,
         );
         if preview.variance_cents() != 0 && !request.allow_variance() {
             return Err(RuntimeError::Analytics {
@@ -845,10 +934,10 @@ impl CliRuntime {
         let (run, close) = self.store.write_reconciliation_run_and_month_close(
             request.month_key(),
             request.checking_account(),
-            request.opening_balance_cents(),
+            balances.opening_balance_cents,
             preview.ledger_delta_cents(),
             preview.expected_closing_balance_cents(),
-            request.closing_balance_cents(),
+            balances.closing_balance_cents,
             preview.variance_cents(),
             preview.is_reconciled(),
             matched_postings,
@@ -864,10 +953,363 @@ impl CliRuntime {
             request.checking_account(),
             imported_count,
             duplicate_count,
+            fetch_runs,
             run,
             report,
             close,
         ))
+    }
+
+    fn fetch_configured_statement_artifacts(
+        &mut self,
+        request: &MonthAutopilotRequest,
+        fetch_required: bool,
+    ) -> Result<Vec<StoredFetchRun>, RuntimeError> {
+        let config = match self.load_statement_source_config() {
+            Ok(config) => config,
+            Err(err) if !fetch_required => return Ok(Vec::new()),
+            Err(err) => return Err(err),
+        };
+        let Some(config) = config else {
+            return Ok(Vec::new());
+        };
+
+        let matched_sources: Vec<_> = config
+            .sources()
+            .iter()
+            .filter(|source| source.ledger_account() == request.checking_account())
+            .cloned()
+            .collect();
+        if matched_sources.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let fetch_runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .map_err(|err| RuntimeError::Analytics {
+                message: format!("failed to start statement fetch runtime: {err}"),
+            })?;
+
+        let mut first_required_error = None;
+        let mut staged_artifact = false;
+        let mut persisted_runs = Vec::new();
+        for source in matched_sources {
+            let fetch_request = match FetchRequest::new(&source, request.month_key()) {
+                Ok(fetch_request) => fetch_request,
+                Err(err) => {
+                    let err = fetch_error_to_runtime(err);
+                    if fetch_required && first_required_error.is_none() {
+                        first_required_error = Some(RuntimeError::Analytics {
+                            message: err.to_string(),
+                        });
+                    }
+                    persisted_runs.push(self.persist_failed_fetch_run(
+                        &source,
+                        request.month_key(),
+                        &err.to_string(),
+                    )?);
+                    continue;
+                }
+            };
+            let secrets = match self.secret_bundle_for_fetch_source(&source) {
+                Ok(secrets) => secrets,
+                Err(err) => {
+                    if fetch_required && first_required_error.is_none() {
+                        first_required_error = Some(RuntimeError::Analytics {
+                            message: err.to_string(),
+                        });
+                    }
+                    persisted_runs.push(self.persist_failed_fetch_run(
+                        &source,
+                        request.month_key(),
+                        &err.to_string(),
+                    )?);
+                    continue;
+                }
+            };
+            let result =
+                match self.run_fetch_adapter(&fetch_runtime, &source, &fetch_request, &secrets) {
+                    Ok(result) => result,
+                    Err(err) => {
+                        if fetch_required && first_required_error.is_none() {
+                            first_required_error = Some(RuntimeError::Analytics {
+                                message: err.to_string(),
+                            });
+                        }
+                        persisted_runs.push(self.persist_failed_fetch_run(
+                            &source,
+                            request.month_key(),
+                            &err.to_string(),
+                        )?);
+                        continue;
+                    }
+                };
+            if matches!(
+                result.status(),
+                FetchRunStatus::Downloaded | FetchRunStatus::Imported
+            ) && result.artifact().is_none()
+            {
+                let message = format!(
+                    "statement fetch for source '{}' returned {:?} without an artifact",
+                    source.source_id(),
+                    result.status()
+                );
+                if fetch_required && first_required_error.is_none() {
+                    first_required_error = Some(RuntimeError::Analytics {
+                        message: message.clone(),
+                    });
+                }
+                persisted_runs.push(self.persist_failed_fetch_run(
+                    &source,
+                    request.month_key(),
+                    &message,
+                )?);
+                continue;
+            }
+            match result.status() {
+                FetchRunStatus::Downloaded | FetchRunStatus::Imported => {
+                    if let Some(artifact) = result.artifact().cloned() {
+                        self.stage_fetched_statement_artifact(artifact);
+                        staged_artifact = true;
+                    }
+                    persisted_runs.push(self.persist_fetch_run_from_result(
+                        &source,
+                        request.month_key(),
+                        &result,
+                    )?);
+                }
+                FetchRunStatus::NoNewStatement => {
+                    persisted_runs.push(self.persist_fetch_run_from_result(
+                        &source,
+                        request.month_key(),
+                        &result,
+                    )?);
+                }
+                FetchRunStatus::NeedsAttention | FetchRunStatus::Failed => {
+                    persisted_runs.push(self.persist_fetch_run_from_result(
+                        &source,
+                        request.month_key(),
+                        &result,
+                    )?);
+                    if fetch_required && first_required_error.is_none() {
+                        first_required_error = Some(RuntimeError::Analytics {
+                            message: format!(
+                                "statement fetch for source '{}' requires attention before month autopilot can continue",
+                                source.source_id()
+                            ),
+                        });
+                    }
+                }
+            }
+        }
+
+        if fetch_required && !staged_artifact {
+            if let Some(err) = first_required_error {
+                return Err(err);
+            }
+        }
+
+        Ok(persisted_runs)
+    }
+
+    fn fetched_statement_artifact_for(
+        &self,
+        checking_account: &str,
+        month_key: &str,
+    ) -> Option<FetchedStatementArtifact> {
+        self.fetched_statement_artifacts
+            .iter()
+            .rev()
+            .find(|artifact| {
+                artifact.ledger_account() == checking_account && artifact.month_key() == month_key
+            })
+            .cloned()
+    }
+
+    fn import_fetched_statement_artifact(
+        &mut self,
+        artifact: &FetchedStatementArtifact,
+        enable_ocr: bool,
+    ) -> Result<(usize, usize), RuntimeError> {
+        match artifact.output_format() {
+            OutputFormat::Pdf => {
+                let summary = self.import_pdf_statement(
+                    artifact.artifact_path(),
+                    artifact.ledger_account(),
+                    false,
+                    enable_ocr,
+                )?;
+                Ok((summary.imported_count(), summary.duplicate_count()))
+            }
+            OutputFormat::Csv => Err(RuntimeError::Analytics {
+                message: format!(
+                    "month autopilot cannot import fetched csv artifact '{}' yet",
+                    artifact.artifact_path()
+                ),
+            }),
+        }
+    }
+
+    fn resolve_autopilot_balances(
+        &self,
+        request: &MonthAutopilotRequest,
+    ) -> Result<ResolvedAutopilotBalances, RuntimeError> {
+        if let (Some(opening_balance_cents), Some(closing_balance_cents)) = (
+            request.opening_balance_cents(),
+            request.closing_balance_cents(),
+        ) {
+            return Ok(ResolvedAutopilotBalances {
+                opening_balance_cents,
+                closing_balance_cents,
+            });
+        }
+
+        if let Some(artifact) =
+            self.fetched_statement_artifact_for(request.checking_account(), request.month_key())
+        {
+            return Ok(ResolvedAutopilotBalances {
+                opening_balance_cents: artifact.opening_balance_cents(),
+                closing_balance_cents: artifact.closing_balance_cents(),
+            });
+        }
+
+        Err(RuntimeError::Analytics {
+            message:
+                "month autopilot requires opening/closing balances or fetched statement metadata"
+                    .to_owned(),
+        })
+    }
+
+    fn load_statement_source_config(&self) -> Result<Option<StatementSourceConfig>, RuntimeError> {
+        let Some(path) = self.fetch_config_path.as_ref() else {
+            return Ok(None);
+        };
+        if !path.exists() {
+            if env::var_os(LOGOS_FETCH_CONFIG_PATH_ENV).is_some() {
+                return Err(RuntimeError::Analytics {
+                    message: format!(
+                        "statement fetch config path '{}' does not exist",
+                        path.display()
+                    ),
+                });
+            }
+            return Ok(None);
+        }
+
+        let input = fs::read_to_string(path).map_err(|err| RuntimeError::Analytics {
+            message: format!(
+                "failed to read statement source config '{}': {err}",
+                path.display()
+            ),
+        })?;
+
+        StatementSourceConfig::from_toml(&input)
+            .map(Some)
+            .map_err(fetch_error_to_runtime)
+    }
+
+    fn secret_bundle_for_fetch_source(
+        &self,
+        source: &StatementSource,
+    ) -> Result<SecretBundle, RuntimeError> {
+        let resolver = OnePasswordCliSecretResolver::from_environment();
+        self.secret_bundle_for_fetch_source_with_resolver(source, &resolver)
+    }
+
+    fn secret_bundle_for_fetch_source_with_resolver<R>(
+        &self,
+        source: &StatementSource,
+        resolver: &R,
+    ) -> Result<SecretBundle, RuntimeError>
+    where
+        R: SecretResolver,
+    {
+        match source.institution_id() {
+            "fake-fixture" => SecretBundle::new("fixture-user", "fixture-pass", Some("000000"))
+                .map_err(fetch_error_to_runtime),
+            "fake-needs-attention" => {
+                SecretBundle::new("fixture-user", "fixture-pass", Some("000000"))
+                    .map_err(fetch_error_to_runtime)
+            }
+            _ => resolver.resolve(source).map_err(fetch_error_to_runtime),
+        }
+    }
+
+    fn run_fetch_adapter(
+        &self,
+        fetch_runtime: &tokio::runtime::Runtime,
+        source: &StatementSource,
+        request: &FetchRequest,
+        secrets: &SecretBundle,
+    ) -> Result<logos_fetch::FetchResult, RuntimeError> {
+        match source.institution_id() {
+            "fake-fixture" => fetch_runtime
+                .block_on(
+                    FakeStatementAdapter::download_fixture_statement().fetch(request, secrets),
+                )
+                .map_err(fetch_error_to_runtime),
+            "fake-needs-attention" => fetch_runtime
+                .block_on(
+                    FakeStatementAdapter::needs_attention("mfa challenge required")
+                        .fetch(request, secrets),
+                )
+                .map_err(fetch_error_to_runtime),
+            "provident-credit-union" => fetch_runtime
+                .block_on(ProvidentAdapter::fixture_runner_output().fetch(request, secrets))
+                .map_err(fetch_error_to_runtime),
+            institution_id => Err(RuntimeError::Analytics {
+                message: format!(
+                    "no statement fetch adapter is registered for institution '{}'",
+                    institution_id
+                ),
+            }),
+        }
+    }
+
+    fn persist_fetch_run_from_result(
+        &mut self,
+        source: &StatementSource,
+        month_key: &str,
+        result: &logos_fetch::FetchResult,
+    ) -> Result<StoredFetchRun, RuntimeError> {
+        let artifact = result.artifact();
+        self.store
+            .write_fetch_run(
+                source.source_id(),
+                source.institution_id(),
+                source.ledger_account(),
+                month_key,
+                store_fetch_run_status(result.status()),
+                artifact.map(|value| value.artifact_path()),
+                artifact.map(|value| output_format_label(value.output_format())),
+                artifact.map(|value| value.opening_balance_cents()),
+                artifact.map(|value| value.closing_balance_cents()),
+                result.error_summary(),
+            )
+            .map_err(RuntimeError::from)
+    }
+
+    fn persist_failed_fetch_run(
+        &mut self,
+        source: &StatementSource,
+        month_key: &str,
+        error_summary: &str,
+    ) -> Result<StoredFetchRun, RuntimeError> {
+        self.store
+            .write_fetch_run(
+                source.source_id(),
+                source.institution_id(),
+                source.ledger_account(),
+                month_key,
+                StoredFetchRunStatus::Failed,
+                None,
+                None,
+                None,
+                None,
+                Some(error_summary),
+            )
+            .map_err(RuntimeError::from)
     }
 
     /// Projects a scenario-based RSU budget plan for a month scope.
@@ -1358,6 +1800,117 @@ fn default_artifacts_root(store_path: &Path) -> PathBuf {
         || store_path.join(ARTIFACTS_DIRECTORY),
         |parent| parent.join(ARTIFACTS_DIRECTORY),
     )
+}
+
+fn default_fetch_config_path(store_path: &Path) -> PathBuf {
+    if let Some(path) = env::var_os(LOGOS_FETCH_CONFIG_PATH_ENV) {
+        return PathBuf::from(path);
+    }
+
+    store_path.parent().map_or_else(
+        || store_path.join(DEFAULT_FETCH_CONFIG_NAME),
+        |parent| parent.join(DEFAULT_FETCH_CONFIG_NAME),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CliRuntime;
+    use logos_fetch::{FetchError, OutputFormat, SecretBundle, SecretResolver, StatementSource};
+
+    #[derive(Debug, Clone)]
+    struct StubSecretResolver {
+        bundle: SecretBundle,
+    }
+
+    impl SecretResolver for StubSecretResolver {
+        fn resolve(&self, _source: &StatementSource) -> Result<SecretBundle, FetchError> {
+            Ok(self.bundle.clone())
+        }
+    }
+
+    #[test]
+    fn fake_fetch_sources_bypass_external_secret_resolution() {
+        let runtime = CliRuntime::new_in_memory();
+        let source = StatementSource::new(
+            "fixture:checking",
+            "fake-fixture",
+            "assets:checking",
+            vec![OutputFormat::Pdf],
+        )
+        .expect("source");
+        let resolver = StubSecretResolver {
+            bundle: SecretBundle::new("wrong", "wrong", Some("999999")).expect("bundle"),
+        };
+
+        let bundle = runtime
+            .secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
+            .expect("bundle");
+
+        assert_eq!(
+            bundle,
+            SecretBundle::new("fixture-user", "fixture-pass", Some("000000")).expect("fixture")
+        );
+    }
+
+    #[test]
+    fn real_fetch_sources_use_external_secret_resolution() {
+        let runtime = CliRuntime::new_in_memory();
+        let source = StatementSource::new(
+            "pcu:checking",
+            "provident-credit-union",
+            "assets:checking",
+            vec![OutputFormat::Pdf],
+        )
+        .expect("source")
+        .with_secret_refs(
+            "op://logos/provident/username",
+            "op://logos/provident/password",
+            Some("op://logos/provident/totp"),
+        )
+        .expect("secret refs");
+        let resolver = StubSecretResolver {
+            bundle: SecretBundle::new("markm", "s3cr3t", Some("123456")).expect("bundle"),
+        };
+
+        let bundle = runtime
+            .secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
+            .expect("bundle");
+
+        assert_eq!(
+            bundle,
+            SecretBundle::new("markm", "s3cr3t", Some("123456")).expect("expected")
+        );
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ResolvedAutopilotBalances {
+    opening_balance_cents: i64,
+    closing_balance_cents: i64,
+}
+
+fn fetch_error_to_runtime(err: logos_fetch::FetchError) -> RuntimeError {
+    RuntimeError::Analytics {
+        message: err.to_string(),
+    }
+}
+
+fn output_format_label(output_format: OutputFormat) -> StoredFetchArtifactFormat {
+    match output_format {
+        OutputFormat::Csv => StoredFetchArtifactFormat::Csv,
+        OutputFormat::Pdf => StoredFetchArtifactFormat::Pdf,
+    }
+}
+
+fn store_fetch_run_status(status: FetchRunStatus) -> StoredFetchRunStatus {
+    match status {
+        FetchRunStatus::Downloaded => StoredFetchRunStatus::Downloaded,
+        FetchRunStatus::Imported => StoredFetchRunStatus::Imported,
+        FetchRunStatus::NoNewStatement => StoredFetchRunStatus::NoNewStatement,
+        FetchRunStatus::NeedsAttention => StoredFetchRunStatus::NeedsAttention,
+        FetchRunStatus::Failed => StoredFetchRunStatus::Failed,
+    }
 }
 
 fn current_time_us() -> i64 {
