@@ -10,7 +10,7 @@ use logos_core::planning::fire::UpcomingVest;
 proptest! {
     #[test]
     #[should_panic(expected = "attempt to multiply with overflow")]
-    fn distribute_rsu_vest_panics_on_overflow(gross_vest in any::<i64>()) {
+    fn distribute_rsu_vest_panics_on_overflow(gross_vest in i64::MAX / 2..i64::MAX) {
         let config = RsuDistributorConfig {
             rsu_asset: AccountId::new("assets:rsu").unwrap(),
             tax_reserve: AccountId::new("assets:tax").unwrap(),
