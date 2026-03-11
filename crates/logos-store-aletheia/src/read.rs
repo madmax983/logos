@@ -11,7 +11,7 @@ use crate::{
         AsOf, EDGE_HAS_POSTING, EDGE_SUPERSEDES, LABEL_LEDGER_CORRECTION, PROP_ACCOUNT,
         PROP_AMOUNT_CENTS, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_ORDINAL,
         PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID, StoredAnalyticsArtifactManifest, StoredBudgetTarget,
-        StoredCorrection, StoredImportBatch, StoredImportRecord, StoredMonthClose,
+        StoredCorrection, StoredFetchRun, StoredImportBatch, StoredImportRecord, StoredMonthClose,
         StoredReconciliationRun, StoredStatementLine, StoredTransaction,
     },
     parse_posting, required_edge_i64_property, required_node_i64_property,
@@ -96,6 +96,20 @@ impl AletheiaStore {
 
     pub fn statement_lines(&self) -> impl Iterator<Item = &StoredStatementLine> + '_ {
         self.statement_lines.values()
+    }
+
+    #[must_use]
+    pub fn fetch_run_count(&self) -> usize {
+        self.fetch_runs.len()
+    }
+
+    #[must_use]
+    pub fn fetch_run(&self, run_id: &str) -> Option<&StoredFetchRun> {
+        self.fetch_runs.get(run_id)
+    }
+
+    pub fn fetch_runs(&self) -> impl Iterator<Item = &StoredFetchRun> + '_ {
+        self.fetch_runs.values()
     }
 
     #[must_use]

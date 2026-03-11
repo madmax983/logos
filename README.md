@@ -18,6 +18,8 @@ Implemented foundations:
 
 See [docs/financial-planning.md](docs/financial-planning.md) for details on auto distribution, FIRE progress modeling, and net worth projection.
 
+Headless statement-fetch architecture for future `month autopilot` automation is tracked in [docs/adr/0003-headless-statement-fetch-and-autopilot-integration.md](docs/adr/0003-headless-statement-fetch-and-autopilot-integration.md). Operator guidance for config layout, 1Password refs, fetch-run triage, and scheduled execution lives in [docs/fetch-ops.md](docs/fetch-ops.md).
+
 ## Tooling
 
 Run from repository root:

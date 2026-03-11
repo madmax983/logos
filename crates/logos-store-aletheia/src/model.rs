@@ -11,6 +11,7 @@ pub(crate) const LABEL_LEDGER_IMPORT_RECORD: &str = "LedgerImportRecord";
 pub(crate) const LABEL_LEDGER_STATEMENT_LINE: &str = "LedgerStatementLine";
 pub(crate) const LABEL_LEDGER_RECONCILIATION_RUN: &str = "LedgerReconciliationRun";
 pub(crate) const LABEL_LEDGER_MONTH_CLOSE: &str = "LedgerMonthClose";
+pub(crate) const LABEL_LEDGER_FETCH_RUN: &str = "LedgerFetchRun";
 
 pub(crate) const EDGE_HAS_POSTING: &str = "HAS_POSTING";
 pub(crate) const EDGE_SUPERSEDES: &str = "SUPERSEDES";
@@ -82,6 +83,17 @@ pub(crate) const PROP_MONTH_CLOSE_ID: &str = "month_close_id";
 pub(crate) const PROP_MONTH_CLOSE_RECONCILIATION_RUN_ID: &str = "month_close_reconciliation_run_id";
 pub(crate) const PROP_MONTH_CLOSE_ANALYTICS_ARTIFACT_ID: &str = "month_close_analytics_artifact_id";
 pub(crate) const PROP_MONTH_CLOSE_CLOSED_AT_US: &str = "month_close_closed_at_us";
+pub(crate) const PROP_FETCH_RUN_ID: &str = "fetch_run_id";
+pub(crate) const PROP_FETCH_SOURCE_ID: &str = "fetch_source_id";
+pub(crate) const PROP_FETCH_INSTITUTION_ID: &str = "fetch_institution_id";
+pub(crate) const PROP_FETCH_LEDGER_ACCOUNT: &str = "fetch_ledger_account";
+pub(crate) const PROP_FETCH_STATUS: &str = "fetch_status";
+pub(crate) const PROP_FETCH_ARTIFACT_PATH: &str = "fetch_artifact_path";
+pub(crate) const PROP_FETCH_OUTPUT_FORMAT: &str = "fetch_output_format";
+pub(crate) const PROP_FETCH_OPENING_BALANCE_CENTS: &str = "fetch_opening_balance_cents";
+pub(crate) const PROP_FETCH_CLOSING_BALANCE_CENTS: &str = "fetch_closing_balance_cents";
+pub(crate) const PROP_FETCH_ERROR_SUMMARY: &str = "fetch_error_summary";
+pub(crate) const PROP_FETCH_CREATED_AT_US: &str = "fetch_created_at_us";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AsOf {
@@ -264,6 +276,37 @@ pub struct StoredMonthClose {
     reconciliation_run_id: String,
     analytics_artifact_id: Option<String>,
     closed_at: Timestamp,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StoredFetchRunStatus {
+    Downloaded,
+    Imported,
+    NoNewStatement,
+    NeedsAttention,
+    Failed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StoredFetchArtifactFormat {
+    Csv,
+    Pdf,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredFetchRun {
+    run_id: String,
+    source_id: String,
+    institution_id: String,
+    ledger_account: String,
+    month_key: String,
+    status: StoredFetchRunStatus,
+    artifact_path: Option<String>,
+    output_format: Option<StoredFetchArtifactFormat>,
+    opening_balance_cents: Option<i64>,
+    closing_balance_cents: Option<i64>,
+    error_summary: Option<String>,
+    created_at: Timestamp,
 }
 
 impl StoredAnalyticsArtifactManifest {
@@ -765,6 +808,150 @@ impl StoredMonthClose {
     #[must_use]
     pub const fn closed_at(&self) -> Timestamp {
         self.closed_at
+    }
+}
+
+impl StoredFetchRunStatus {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Downloaded => "downloaded",
+            Self::Imported => "imported",
+            Self::NoNewStatement => "no_new_statement",
+            Self::NeedsAttention => "needs_attention",
+            Self::Failed => "failed",
+        }
+    }
+
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "downloaded" => Some(Self::Downloaded),
+            "imported" => Some(Self::Imported),
+            "no_new_statement" => Some(Self::NoNewStatement),
+            "needs_attention" => Some(Self::NeedsAttention),
+            "failed" => Some(Self::Failed),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn is_success(self) -> bool {
+        matches!(
+            self,
+            Self::Downloaded | Self::Imported | Self::NoNewStatement
+        )
+    }
+}
+
+impl StoredFetchArtifactFormat {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Csv => "csv",
+            Self::Pdf => "pdf",
+        }
+    }
+
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "csv" => Some(Self::Csv),
+            "pdf" => Some(Self::Pdf),
+            _ => None,
+        }
+    }
+}
+
+impl StoredFetchRun {
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        run_id: &str,
+        source_id: &str,
+        institution_id: &str,
+        ledger_account: &str,
+        month_key: &str,
+        status: StoredFetchRunStatus,
+        artifact_path: Option<&str>,
+        output_format: Option<StoredFetchArtifactFormat>,
+        opening_balance_cents: Option<i64>,
+        closing_balance_cents: Option<i64>,
+        error_summary: Option<&str>,
+        created_at: Timestamp,
+    ) -> Self {
+        Self {
+            run_id: run_id.to_owned(),
+            source_id: source_id.to_owned(),
+            institution_id: institution_id.to_owned(),
+            ledger_account: ledger_account.to_owned(),
+            month_key: month_key.to_owned(),
+            status,
+            artifact_path: artifact_path.map(str::to_owned),
+            output_format,
+            opening_balance_cents,
+            closing_balance_cents,
+            error_summary: error_summary.map(str::to_owned),
+            created_at,
+        }
+    }
+
+    #[must_use]
+    pub fn run_id(&self) -> &str {
+        &self.run_id
+    }
+
+    #[must_use]
+    pub fn source_id(&self) -> &str {
+        &self.source_id
+    }
+
+    #[must_use]
+    pub fn institution_id(&self) -> &str {
+        &self.institution_id
+    }
+
+    #[must_use]
+    pub fn ledger_account(&self) -> &str {
+        &self.ledger_account
+    }
+
+    #[must_use]
+    pub fn month_key(&self) -> &str {
+        &self.month_key
+    }
+
+    #[must_use]
+    pub const fn status(&self) -> StoredFetchRunStatus {
+        self.status
+    }
+
+    #[must_use]
+    pub fn artifact_path(&self) -> Option<&str> {
+        self.artifact_path.as_deref()
+    }
+
+    #[must_use]
+    pub const fn output_format(&self) -> Option<StoredFetchArtifactFormat> {
+        self.output_format
+    }
+
+    #[must_use]
+    pub const fn opening_balance_cents(&self) -> Option<i64> {
+        self.opening_balance_cents
+    }
+
+    #[must_use]
+    pub const fn closing_balance_cents(&self) -> Option<i64> {
+        self.closing_balance_cents
+    }
+
+    #[must_use]
+    pub fn error_summary(&self) -> Option<&str> {
+        self.error_summary.as_deref()
+    }
+
+    #[must_use]
+    pub const fn created_at(&self) -> Timestamp {
+        self.created_at
     }
 }
 

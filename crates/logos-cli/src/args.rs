@@ -88,6 +88,7 @@ fn execute_command(command: &Command) -> Result<(), CliError> {
         Command::Txn(command) => execute_txn_command(command),
         Command::Analytics(command) => execute_analytics_command(command),
         Command::Import(command) => execute_import_command(command),
+        Command::Fetch(command) => execute_fetch_command(command),
         Command::Reconcile(command) => execute_reconcile_command(command),
         Command::Month(command) => execute_month_command(command),
         Command::Close(command) => execute_close_command(command),
@@ -168,6 +169,16 @@ fn execute_import_command(command: &ImportCommand) -> Result<(), CliError> {
             *skip_header,
             *dry_run,
         ),
+    }
+}
+
+fn execute_fetch_command(command: &FetchCommand) -> Result<(), CliError> {
+    match command {
+        FetchCommand::ListRuns {
+            month_key,
+            checking_account,
+        } => commands::fetch::list_runs(month_key.as_deref(), checking_account.as_deref()),
+        FetchCommand::ShowRun { run_id } => commands::fetch::show_run(run_id),
     }
 }
 
@@ -321,6 +332,7 @@ pub enum Command {
     Txn(TxnCommand),
     Analytics(AnalyticsCommand),
     Import(ImportCommand),
+    Fetch(FetchCommand),
     Reconcile(ReconcileCommand),
     Month(MonthCommand),
     Close(CloseCommand),
@@ -339,6 +351,7 @@ impl Command {
             Self::Help(HelpTopic::Aletheia) => "help.aletheia",
             Self::Help(HelpTopic::Analytics) => "help.analytics",
             Self::Help(HelpTopic::Import) => "help.import",
+            Self::Help(HelpTopic::Fetch) => "help.fetch",
             Self::Help(HelpTopic::Reconcile) => "help.reconcile",
             Self::Help(HelpTopic::Month) => "help.month",
             Self::Help(HelpTopic::Close) => "help.close",
@@ -352,6 +365,8 @@ impl Command {
             Self::Analytics(AnalyticsCommand::Sankey) => "analytics.sankey",
             Self::Import(ImportCommand::Pdf { .. }) => "import.pdf",
             Self::Import(ImportCommand::Csv { .. }) => "import.csv",
+            Self::Fetch(FetchCommand::ListRuns { .. }) => "fetch.list",
+            Self::Fetch(FetchCommand::ShowRun { .. }) => "fetch.show",
             Self::Reconcile(ReconcileCommand::Month { .. }) => "reconcile.month",
             Self::Reconcile(ReconcileCommand::List { .. }) => "reconcile.list",
             Self::Reconcile(ReconcileCommand::Show { .. }) => "reconcile.show",
@@ -373,6 +388,7 @@ pub enum HelpTopic {
     Report,
     Aletheia,
     Import,
+    Fetch,
     Reconcile,
     Month,
     Close,
@@ -435,6 +451,17 @@ pub enum ImportCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FetchCommand {
+    ListRuns {
+        month_key: Option<String>,
+        checking_account: Option<String>,
+    },
+    ShowRun {
+        run_id: String,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ReconcileCommand {
     Month {
         checking_account: String,
@@ -456,8 +483,8 @@ pub enum MonthCommand {
     Autopilot {
         month_key: Option<String>,
         checking_account: String,
-        opening_balance_cents: i64,
-        closing_balance_cents: i64,
+        opening_balance_cents: Option<i64>,
+        closing_balance_cents: Option<i64>,
         statement_pdf: Option<String>,
         ocr: bool,
         allow_variance: bool,
@@ -528,6 +555,7 @@ where
         "txn" => parse_txn(&values),
         "analytics" => parse_analytics(&values),
         "import" => parse_import(&values),
+        "fetch" => parse_fetch(&values),
         "reconcile" => parse_reconcile(&values),
         "month" => parse_month(&values),
         "close" => parse_close(&values),
@@ -789,6 +817,38 @@ fn parse_import(args: &[String]) -> Result<ParsedArgs, CliError> {
     }
 }
 
+fn parse_fetch(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
+        command: "fetch".to_owned(),
+    })?;
+
+    match subcommand.as_str() {
+        "--help" | "-h" => Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Fetch),
+        }),
+        "list-runs" => {
+            let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?;
+            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
+            Ok(ParsedArgs {
+                command: Command::Fetch(FetchCommand::ListRuns {
+                    month_key,
+                    checking_account,
+                }),
+            })
+        }
+        "show-run" => {
+            let run_id = parse_flag_value(&args[2..], "--run-id")?;
+            Ok(ParsedArgs {
+                command: Command::Fetch(FetchCommand::ShowRun { run_id }),
+            })
+        }
+        _ => Err(CliError::UnknownSubcommand {
+            command: "fetch".to_owned(),
+            subcommand: subcommand.clone(),
+        }),
+    }
+}
+
 fn parse_report(args: &[String]) -> Result<ParsedArgs, CliError> {
     if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
         return Ok(ParsedArgs {
@@ -896,10 +956,11 @@ fn parse_month(args: &[String]) -> Result<ParsedArgs, CliError> {
             let month_key = parse_optional_month_flag(&args[2..], "--month")?;
             let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?
                 .unwrap_or_else(|| DEFAULT_CHECKING_ACCOUNT.to_owned());
-            let opening_balance_cents =
-                parse_required_parsed_flag::<i64>(&args[2..], "--opening-balance-cents")?;
-            let closing_balance_cents =
-                parse_required_parsed_flag::<i64>(&args[2..], "--closing-balance-cents")?;
+            let (opening_balance_cents, closing_balance_cents) = parse_paired_i64_flags(
+                &args[2..],
+                "--opening-balance-cents",
+                "--closing-balance-cents",
+            )?;
             let statement_pdf = parse_optional_flag_value(&args[2..], "--statement-pdf")?;
             let ocr = parse_flag_present(&args[2..], "--ocr");
             let allow_variance = parse_flag_present(&args[2..], "--allow-variance");
@@ -1002,6 +1063,7 @@ fn parse_help_topic(args: &[String]) -> Result<HelpTopic, CliError> {
         Some("report") => Ok(HelpTopic::Report),
         Some("aletheia") => Ok(HelpTopic::Aletheia),
         Some("import") => Ok(HelpTopic::Import),
+        Some("fetch") => Ok(HelpTopic::Fetch),
         Some("reconcile") => Ok(HelpTopic::Reconcile),
         Some("month") => Ok(HelpTopic::Month),
         Some("close") => Ok(HelpTopic::Close),
@@ -1089,7 +1151,52 @@ fn parse_required_parsed_flag<T: std::str::FromStr>(
         });
     };
 
-    Ok(parsed)
+    Ok(Some(parsed))
+}
+
+fn parse_paired_i64_flags(
+    args: &[String],
+    left_flag: &str,
+    right_flag: &str,
+) -> Result<(Option<i64>, Option<i64>), CliError> {
+    let left = parse_optional_i64_value(args, left_flag)?;
+    let right = parse_optional_i64_value(args, right_flag)?;
+
+    match (left, right) {
+        (Some(left), Some(right)) => Ok((Some(left), Some(right))),
+        (None, None) => Ok((None, None)),
+        _ => Err(CliError::MissingArgValue {
+            flag: format!("{left_flag}' or '{right_flag}"),
+        }),
+    }
+}
+
+fn parse_required_i64_flag(args: &[String], flag: &str) -> Result<i64, CliError> {
+    parse_required_parsed_flag(args, flag)
+}
+
+fn parse_required_u32_flag(args: &[String], flag: &str) -> Result<u32, CliError> {
+    parse_required_parsed_flag(args, flag)
+}
+
+fn parse_optional_u16_flag(
+    args: &[String],
+    flag: &str,
+    default_value: u16,
+) -> Result<u16, CliError> {
+    parse_optional_parsed_flag(args, flag, default_value)
+}
+
+fn parse_optional_u8_flag(args: &[String], flag: &str, default_value: u8) -> Result<u8, CliError> {
+    parse_optional_parsed_flag(args, flag, default_value)
+}
+
+fn parse_optional_usize_flag(
+    args: &[String],
+    flag: &str,
+    default_value: usize,
+) -> Result<usize, CliError> {
+    parse_optional_parsed_flag(args, flag, default_value)
 }
 
 fn parse_amount_cents(args: &[String]) -> Result<i64, CliError> {

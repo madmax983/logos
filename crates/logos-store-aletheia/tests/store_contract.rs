@@ -4,7 +4,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use aletheiadb::{AletheiaDB, AletheiaDBConfig, DurabilityMode, WalConfigBuilder, time};
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
-use logos_store_aletheia::{AletheiaStore, StoreError, model::NewImportRecord};
+use logos_store_aletheia::{
+    AletheiaStore, StoreError,
+    model::{NewImportRecord, StoredFetchRunStatus},
+};
 
 fn temp_store_path(prefix: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -524,6 +527,120 @@ fn open_persists_month_close_across_reopen() {
     assert_eq!(close.reconciliation_run_id(), run_id);
     assert_eq!(close.month_key(), "2026-03");
     assert_eq!(close.checking_account(), "assets:checking");
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_fetch_run_persists_needs_attention_status_and_error_summary() {
+    let path = temp_store_path("persist-fetch-run");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let run = store
+            .write_fetch_run(
+                "pcu:checking",
+                "provident-credit-union",
+                "assets:checking",
+                "2026-03",
+                StoredFetchRunStatus::NeedsAttention,
+                None,
+                None,
+                None,
+                None,
+                Some("mfa challenge required"),
+            )
+            .expect("write fetch run");
+        assert_eq!(run.run_id(), "fetch-1");
+        assert_eq!(run.status(), StoredFetchRunStatus::NeedsAttention);
+        assert_eq!(run.error_summary(), Some("mfa challenge required"));
+    }
+
+    let reopened = AletheiaStore::open(&path).expect("reopen");
+    assert_eq!(reopened.fetch_run_count(), 1);
+    let run = reopened.fetch_run("fetch-1").expect("fetch run exists");
+    assert_eq!(run.source_id(), "pcu:checking");
+    assert_eq!(run.institution_id(), "provident-credit-union");
+    assert_eq!(run.ledger_account(), "assets:checking");
+    assert_eq!(run.month_key(), "2026-03");
+    assert_eq!(run.status(), StoredFetchRunStatus::NeedsAttention);
+    assert_eq!(run.error_summary(), Some("mfa challenge required"));
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_fetch_run_lists_reloaded_runs_and_continues_sequential_ids() {
+    let path = temp_store_path("persist-fetch-run-list");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let first = store
+            .write_fetch_run(
+                "amex:checking",
+                "american-express",
+                "assets:checking",
+                "2026-01",
+                StoredFetchRunStatus::NeedsAttention,
+                None,
+                None,
+                None,
+                None,
+                Some("captcha required"),
+            )
+            .expect("write first fetch run");
+        let second = store
+            .write_fetch_run(
+                "pcu:checking",
+                "provident-credit-union",
+                "assets:checking",
+                "2026-02",
+                StoredFetchRunStatus::NoNewStatement,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            .expect("write second fetch run");
+
+        assert_eq!(first.run_id(), "fetch-1");
+        assert_eq!(second.run_id(), "fetch-2");
+    }
+
+    {
+        let reopened = AletheiaStore::open(&path).expect("reopen");
+        assert_eq!(reopened.fetch_run_count(), 2);
+
+        let mut runs = reopened.fetch_runs().collect::<Vec<_>>();
+        runs.sort_by(|left, right| left.run_id().cmp(right.run_id()));
+
+        assert_eq!(runs.len(), 2);
+        assert_eq!(runs[0].run_id(), "fetch-1");
+        assert_eq!(runs[1].run_id(), "fetch-2");
+        assert_eq!(runs[1].status(), StoredFetchRunStatus::NoNewStatement);
+        assert_eq!(
+            reopened.fetch_run("fetch-2").map(|run| run.source_id()),
+            Some("pcu:checking")
+        );
+    }
+
+    {
+        let mut reopened = AletheiaStore::open(&path).expect("reopen for append");
+        let third = reopened
+            .write_fetch_run(
+                "rh:brokerage",
+                "robinhood",
+                "assets:brokerage",
+                "2026-03",
+                StoredFetchRunStatus::Failed,
+                None,
+                None,
+                None,
+                None,
+                Some("site flow changed"),
+            )
+            .expect("write third fetch run");
+        assert_eq!(third.run_id(), "fetch-3");
+    }
 
     cleanup_store_path(&path);
 }

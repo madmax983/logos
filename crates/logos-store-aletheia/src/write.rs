@@ -6,7 +6,8 @@ use logos_core::{Correction, TransactionBuilder, TransactionId};
 use crate::{
     AletheiaStore, StoreError,
     model::{
-        NewImportRecord, StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredImportBatch,
+        NewImportRecord, StoredAnalyticsArtifactManifest, StoredBudgetTarget,
+        StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredImportBatch,
         StoredImportRecord, StoredMonthClose, StoredReconciliationRun, StoredStatementLine,
     },
 };
@@ -283,6 +284,82 @@ impl AletheiaStore {
         }
 
         Ok(batch)
+    }
+
+    /// Writes an immutable fetch-run record for one statement source attempt.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when metadata is invalid or persistence fails.
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_fetch_run(
+        &mut self,
+        source_id: &str,
+        institution_id: &str,
+        ledger_account: &str,
+        month_key: &str,
+        status: StoredFetchRunStatus,
+        artifact_path: Option<&str>,
+        output_format: Option<StoredFetchArtifactFormat>,
+        opening_balance_cents: Option<i64>,
+        closing_balance_cents: Option<i64>,
+        error_summary: Option<&str>,
+    ) -> Result<StoredFetchRun, StoreError> {
+        if source_id.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "source_id must not be empty".to_owned(),
+            });
+        }
+        if institution_id.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "institution_id must not be empty".to_owned(),
+            });
+        }
+        if ledger_account.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "ledger_account must not be empty".to_owned(),
+            });
+        }
+        if month_key.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "month_key must not be empty".to_owned(),
+            });
+        }
+        if matches!(
+            status,
+            StoredFetchRunStatus::Downloaded | StoredFetchRunStatus::Imported
+        ) && (artifact_path.is_none()
+            || output_format.is_none()
+            || opening_balance_cents.is_none()
+            || closing_balance_cents.is_none())
+        {
+            return Err(StoreError::PersistFailed {
+                message: format!(
+                    "status '{}' requires artifact path, format, and balance metadata",
+                    status.as_str()
+                ),
+            });
+        }
+
+        let run_id = self.next_fetch_run_id();
+        let created_at = aletheiadb::time::now();
+        let run = StoredFetchRun::new(
+            &run_id,
+            source_id,
+            institution_id,
+            ledger_account,
+            month_key,
+            status,
+            artifact_path,
+            output_format,
+            opening_balance_cents,
+            closing_balance_cents,
+            error_summary.filter(|value| !value.is_empty()),
+            created_at,
+        );
+        self.persist_fetch_run_graph(&run)?;
+        self.persist_fetch_run(run.clone());
+        Ok(run)
     }
 
     /// Writes an immutable reconciliation run with linked transaction evidence.

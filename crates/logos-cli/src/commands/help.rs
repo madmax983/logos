@@ -11,6 +11,7 @@ Commands:
   analytics snapshot ...            Manage immutable analytics artifacts
   import pdf ...                    Import statement rows from a PDF
   import csv ...                    Import statement rows from a CSV file
+  fetch list-runs                   List statement fetch runs
   reconcile month                   Reconcile month against statement balances
   month autopilot                   Run import/reconcile/report/close workflow
   close month                       Freeze a month scope with evidence links
@@ -57,7 +58,21 @@ Subcommands:
                                        Import statement rows from PDF text, optionally OCR scanned pages
   csv --file <path> [--source-id <id>] [--timestamp-idx <usize>] [--amount-idx <usize>] [--memo-idx <usize>]
       [--account-idx <usize>] [--category-idx <usize>] [--skip-header] [--dry-run]
-                                       Import statement rows from CSV and persist imported statement evidence
+                                        Import statement rows from CSV and persist imported statement evidence
+";
+
+const FETCH_HELP_TEXT: &str = "\
+Usage: ledger fetch <subcommand> [options]
+
+Subcommands:
+  list-runs [--month <YYYY-MM>] [--checking-account <name>]
+                                       List persisted statement fetch runs with optional filters; use for needs_attention triage
+  show-run --run-id <id>
+                                       Show one persisted statement fetch run by id, including artifact path and error summary
+
+Environment:
+  LOGOS_FETCH_CONFIG_PATH            Override statement source config path; default is sibling statement-sources.toml next to the ledger store
+  LOGOS_FETCH_OP_BIN                 Override 1Password CLI executable path used for secret resolution
 ";
 
 const RECONCILE_HELP_TEXT: &str = "\
@@ -76,9 +91,15 @@ const MONTH_HELP_TEXT: &str = "\
 Usage: ledger month <subcommand> [options]
 
 Subcommands:
-  autopilot --opening-balance-cents <i64> --closing-balance-cents <i64> [--month <YYYY-MM>] [--checking-account <name>]
+  autopilot [--opening-balance-cents <i64> --closing-balance-cents <i64>] [--month <YYYY-MM>] [--checking-account <name>]
             [--statement-pdf <path>] [--ocr] [--allow-variance] [--analytics-artifact-id <id>] --confirm-close
-                                      Import(optional) + reconcile + report + close with explicit close confirmation
+                                       Import(optional) + reconcile + report + close; balances may be omitted when fetched statement metadata is configured
+
+Default fetch config:
+  <ledger-store-parent>/statement-sources.toml
+
+Environment:
+  LOGOS_FETCH_CONFIG_PATH            Override statement source config path for config-driven month autopilot fetch
 ";
 
 const CLOSE_HELP_TEXT: &str = "\
@@ -121,7 +142,13 @@ Environment:
 ///
 /// This handler never errors.
 pub fn show(topic: HelpTopic) -> Result<(), CliError> {
-    let text = match topic {
+    let text = help_text(topic);
+    println!("{text}");
+    Ok(())
+}
+
+fn help_text(topic: HelpTopic) -> &'static str {
+    match topic {
         HelpTopic::General => GENERAL_HELP_TEXT,
         HelpTopic::Txn => TXN_HELP_TEXT,
         HelpTopic::Analytics => ANALYTICS_HELP_TEXT,
@@ -129,10 +156,38 @@ pub fn show(topic: HelpTopic) -> Result<(), CliError> {
         HelpTopic::Report => REPORT_HELP_TEXT,
         HelpTopic::Aletheia => ALETHEIA_HELP_TEXT,
         HelpTopic::Import => IMPORT_HELP_TEXT,
+        HelpTopic::Fetch => FETCH_HELP_TEXT,
         HelpTopic::Reconcile => RECONCILE_HELP_TEXT,
         HelpTopic::Month => MONTH_HELP_TEXT,
         HelpTopic::Close => CLOSE_HELP_TEXT,
-    };
-    println!("{text}");
-    Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::help_text;
+    use crate::args::HelpTopic;
+
+    #[test]
+    fn month_help_mentions_default_statement_source_discovery() {
+        let text = help_text(HelpTopic::Month);
+
+        assert!(text.contains("<ledger-store-parent>/statement-sources.toml"));
+        assert!(text.contains("LOGOS_FETCH_CONFIG_PATH"));
+    }
+
+    #[test]
+    fn fetch_help_mentions_needs_attention_triage() {
+        let text = help_text(HelpTopic::Fetch);
+
+        assert!(text.contains("needs_attention triage"));
+        assert!(text.contains("error summary"));
+    }
+
+    #[test]
+    fn fetch_help_mentions_op_bin_override() {
+        let text = help_text(HelpTopic::Fetch);
+
+        assert!(text.contains("LOGOS_FETCH_OP_BIN"));
+    }
 }

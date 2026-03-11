@@ -887,17 +887,53 @@ fn rejects_reconcile_show_without_run_id() {
 }
 
 #[test]
-fn parses_month_autopilot_with_defaults() {
+fn parses_fetch_list_runs_with_optional_filters() {
     let args = vec![
         "ledger",
-        "month",
-        "autopilot",
-        "--opening-balance-cents",
-        "100000",
-        "--closing-balance-cents",
-        "107500",
-        "--confirm-close",
+        "fetch",
+        "list-runs",
+        "--month",
+        "2026-04",
+        "--checking-account",
+        "assets:checking",
     ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "fetch.list");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Fetch(logos_cli::args::FetchCommand::ListRuns {
+            month_key,
+            checking_account,
+        }) if month_key.as_deref() == Some("2026-04")
+            && checking_account.as_deref() == Some("assets:checking")
+    ));
+}
+
+#[test]
+fn parses_fetch_show_with_run_id() {
+    let args = vec!["ledger", "fetch", "show-run", "--run-id", "fetch-17"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "fetch.show");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::args::Command::Fetch(logos_cli::args::FetchCommand::ShowRun { run_id })
+            if run_id == "fetch-17"
+    ));
+}
+
+#[test]
+fn rejects_fetch_show_without_run_id() {
+    let args = vec!["ledger", "fetch", "show-run"];
+    let err = logos_cli::parse_args(args).expect_err("missing run id");
+
+    assert_eq!(err.to_string(), "missing value for argument '--run-id'");
+}
+
+#[test]
+fn parses_month_autopilot_with_defaults() {
+    let args = vec!["ledger", "month", "autopilot", "--confirm-close"];
     let parsed = logos_cli::parse_args(args).expect("parse");
 
     assert_eq!(parsed.command_path(), "month.autopilot");
@@ -915,8 +951,8 @@ fn parses_month_autopilot_with_defaults() {
             confirm_close,
         }) if month_key.is_none()
             && checking_account == "assets:checking"
-            && *opening_balance_cents == 100_000
-            && *closing_balance_cents == 107_500
+            && opening_balance_cents.is_none()
+            && closing_balance_cents.is_none()
             && statement_pdf.is_none()
             && !*ocr
             && !*allow_variance
@@ -963,8 +999,8 @@ fn parses_month_autopilot_with_explicit_flags() {
             confirm_close,
         }) if month_key.as_deref() == Some("2026-04")
             && checking_account == "assets:brokerage"
-            && *opening_balance_cents == 250_000
-            && *closing_balance_cents == 260_500
+            && opening_balance_cents == &Some(250_000)
+            && closing_balance_cents == &Some(260_500)
             && statement_pdf.as_deref() == Some("statement.pdf")
             && *ocr
             && *allow_variance
@@ -974,7 +1010,7 @@ fn parses_month_autopilot_with_explicit_flags() {
 }
 
 #[test]
-fn rejects_month_autopilot_when_missing_opening_balance() {
+fn rejects_month_autopilot_when_only_one_balance_flag_is_present() {
     let args = vec![
         "ledger",
         "month",
@@ -983,11 +1019,11 @@ fn rejects_month_autopilot_when_missing_opening_balance() {
         "107500",
         "--confirm-close",
     ];
-    let err = logos_cli::parse_args(args).expect_err("missing opening balance");
+    let err = logos_cli::parse_args(args).expect_err("mismatched balance flags");
 
     assert_eq!(
         err.to_string(),
-        "missing value for argument '--opening-balance-cents'"
+        "missing value for argument '--opening-balance-cents' or '--closing-balance-cents'"
     );
 }
 
