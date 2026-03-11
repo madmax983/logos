@@ -424,3 +424,183 @@ mod tests {
         assert!(mapped.to_string().contains("test context"));
     }
 }
+
+#[test]
+fn test_store_empty_accessors() {
+    let store = crate::AletheiaStore::new();
+    assert_eq!(store.transaction_count(), 0);
+    assert_eq!(store.correction_count(), 0);
+    assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").unwrap()));
+    assert!(store.latest_correction().is_none());
+    assert_eq!(store.transactions().count(), 0);
+    assert!(store.budget_target("2026-03", "expenses:food").is_none());
+    assert_eq!(store.budget_targets().count(), 0);
+    assert!(store.analytics_artifact("missing").is_none());
+    assert_eq!(store.analytics_artifacts().count(), 0);
+    assert_eq!(store.import_record_count(), 0);
+    assert!(!store.has_import_record_content_hash("missing"));
+    assert_eq!(store.import_records().count(), 0);
+    assert_eq!(store.import_batches().count(), 0);
+    assert_eq!(store.statement_line_count(), 0);
+    assert_eq!(store.statement_lines().count(), 0);
+    assert!(
+        store
+            .statement_lines_for_reconciliation_run("missing")
+            .is_empty()
+    );
+    assert_eq!(store.reconciliation_run_count(), 0);
+    assert!(store.reconciliation_run("missing").is_none());
+    assert_eq!(store.reconciliation_runs().count(), 0);
+    assert_eq!(store.month_close_count(), 0);
+    assert!(store.month_close("missing").is_none());
+    assert!(
+        store
+            .month_close_for_scope("2026-03", "assets:checking")
+            .is_none()
+    );
+    assert_eq!(store.month_closes().count(), 0);
+
+    // transactions_as_of_us
+    let as_of_us = store.transactions_as_of_us(1000, 2000).unwrap();
+    assert!(as_of_us.is_empty());
+
+    let proj = store.current_projection_without_superseded();
+    assert!(proj.is_empty());
+}
+
+#[test]
+fn test_store_populated_accessors() {
+    use logos_core::{AccountId, Correction, Posting, TransactionBuilder};
+    let mut store = crate::AletheiaStore::new();
+
+    // Write transaction
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("test")
+                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
+                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap()),
+        )
+        .unwrap();
+
+    assert_eq!(store.transaction_count(), 1);
+    assert!(store.has_transaction(&txn_id));
+    let txns: Vec<_> = store.transactions().collect();
+    assert_eq!(txns.len(), 1);
+
+    // Write correction
+    let corr = Correction::new(txn_id.clone(), "fix").unwrap();
+    store.write_correction(corr).unwrap();
+    assert_eq!(store.correction_count(), 1);
+
+    // Write budget target
+    store
+        .write_budget_target("2026-03", "expenses:food", 500)
+        .unwrap();
+    assert_eq!(store.budget_targets().count(), 1);
+
+    // Write analytics artifact
+    store
+        .write_analytics_artifact_manifest(
+            "test_kind",
+            "test_uri",
+            "test_hash",
+            1,
+            1,
+            aletheiadb::time::now(),
+            aletheiadb::time::now(),
+            None,
+        )
+        .unwrap();
+    assert_eq!(store.analytics_artifacts().count(), 1);
+
+    // Write import batch
+    let rec = crate::model::NewImportRecord::new("hash1", Some(&txn_id));
+    store
+        .write_import_batch("kind", "uri", "batch1", 0, false, false, &[rec])
+        .unwrap();
+    assert_eq!(store.import_record_count(), 1);
+    assert!(store.has_import_record_content_hash("hash1"));
+    assert_eq!(store.import_records().count(), 1);
+    assert_eq!(store.import_batches().count(), 1);
+
+    // Write statement line
+    let line_rec = crate::model::NewImportRecord::with_statement_line(
+        "line1",
+        Some(&txn_id),
+        "uri",
+        "2026-03-01T00:00:00",
+        "memo",
+        -100,
+    );
+    store
+        .write_import_batch("stmt", "uri", "batch2", 0, false, false, &[line_rec])
+        .unwrap();
+    assert_eq!(store.statement_line_count(), 1);
+    assert_eq!(store.statement_lines().count(), 1);
+
+    // Write reconciliation run
+    let run = store
+        .write_reconciliation_run(
+            "2026-03",
+            "assets:checking",
+            0,
+            100,
+            100,
+            100,
+            0,
+            true,
+            1,
+            100,
+            0,
+            &[txn_id.clone()],
+        )
+        .unwrap();
+    assert_eq!(store.reconciliation_run_count(), 1);
+    assert_eq!(store.reconciliation_runs().count(), 1);
+
+    // Write month close
+    store
+        .write_month_close("2026-03", "assets:checking", run.run_id(), None)
+        .unwrap();
+    assert_eq!(store.month_close_count(), 1);
+    assert!(store.month_close("close-1").is_some());
+    assert_eq!(store.month_closes().count(), 1);
+}
+
+#[test]
+fn test_current_projection_without_superseded() {
+    use logos_core::{AccountId, Correction, Posting, TransactionBuilder};
+    let mut store = crate::AletheiaStore::new();
+
+    // Write transaction 1
+    let txn_id1 = store
+        .write_transaction(
+            TransactionBuilder::new("test1")
+                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
+                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap()),
+        )
+        .unwrap();
+
+    // Write transaction 2
+    let txn_id2 = store
+        .write_transaction(
+            TransactionBuilder::new("test2")
+                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap())
+                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap()),
+        )
+        .unwrap();
+
+    let mut proj = store.current_projection_without_superseded();
+    assert_eq!(proj.len(), 2);
+    assert!(proj.iter().any(|t| t.id() == &txn_id1));
+    assert!(proj.iter().any(|t| t.id() == &txn_id2));
+
+    // Supersede transaction 1
+    let corr = Correction::new(txn_id1.clone(), "fix").unwrap();
+    store.write_correction(corr).unwrap();
+
+    proj = store.current_projection_without_superseded();
+    assert_eq!(proj.len(), 1);
+    assert!(!proj.iter().any(|t| t.id() == &txn_id1));
+    assert!(proj.iter().any(|t| t.id() == &txn_id2));
+}
