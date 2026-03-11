@@ -122,6 +122,27 @@ Model details:
   - `previous_net_worth + monthly_savings + vested_this_month`
 - Milestones are sorted ascending and recorded once at first crossing.
 
+Example:
+
+```rust
+use logos_core::planning::net_worth_projector::NetWorthProjector;
+use logos_core::planning::fire::UpcomingVest;
+
+let mut projector = NetWorthProjector::new(10_000_000, 500_000); // $100k net worth, $5k/mo savings
+projector.add_milestone_cents(15_000_000); // target $150k
+
+projector.add_upcoming_vest(UpcomingVest {
+    avg_close_price_cents: 10_000,
+    units: 500, // 500 units @ $100 = $50k gross
+    days_to_vest: 45, // Medium tier haircut (40% discount) = 60% safe value = $30k
+});
+
+let (timeline, milestones) = projector.project_timeline(3);
+
+assert_eq!(timeline.len(), 3);
+assert_eq!(timeline[1].net_worth_cents, 14_000_000); // Month 2: 100k + 10k(savings) + 30k(vest) = 140k
+```
+
 ## Notes
 
 - All values are integer cents (`i64` for amounts, `u16/u32` for horizon and units).

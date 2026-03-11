@@ -318,9 +318,11 @@ fn parse_month_key(flag: &str, value: String) -> Result<String, CliError> {
 }
 
 fn parse_optional_month_flag(args: &[String], flag: &str) -> Result<Option<String>, CliError> {
-    parse_optional_flag_value(args, flag)?
-        .map(|value| parse_month_key(flag, value))
-        .transpose()
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(None);
+    };
+
+    Ok(Some(parse_month_key(flag, value)?))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -566,6 +568,12 @@ where
 }
 
 fn parse_txn(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Txn),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "txn".to_owned(),
     })?;
@@ -606,6 +614,12 @@ fn parse_txn(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Budget),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "budget".to_owned(),
     })?;
@@ -616,8 +630,11 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
         }),
         "set" => {
             let month_key = parse_optional_month_flag(&args[2..], "--month")?;
-            let budget_cents =
-                parse_optional_i64_flag(&args[2..], "--budget-cents", DEFAULT_BUDGET_CENTS)?;
+            let budget_cents = parse_optional_parsed_flag::<i64>(
+                &args[2..],
+                "--budget-cents",
+                DEFAULT_BUDGET_CENTS,
+            )?;
             let expense_account_prefix =
                 parse_optional_flag_value(&args[2..], "--expense-account-prefix")?
                     .unwrap_or_else(|| DEFAULT_EXPENSE_ACCOUNT_PREFIX.to_owned());
@@ -631,16 +648,21 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
         }
         "rsu-plan" => {
             let month_key = parse_optional_month_flag(&args[2..], "--month")?;
-            let quarterly_units = parse_required_u32_flag(&args[2..], "--quarterly-units")?;
-            let days_to_vest = parse_optional_u16_flag(&args[2..], "--days-to-vest", 45)?;
-            let bear_price_cents = parse_required_i64_flag(&args[2..], "--bear-price-cents")?;
-            let base_price_cents = parse_required_i64_flag(&args[2..], "--base-price-cents")?;
-            let bull_price_cents = parse_required_i64_flag(&args[2..], "--bull-price-cents")?;
+            let quarterly_units =
+                parse_required_parsed_flag::<u32>(&args[2..], "--quarterly-units")?;
+            let days_to_vest = parse_optional_parsed_flag::<u16>(&args[2..], "--days-to-vest", 45)?;
+            let bear_price_cents =
+                parse_required_parsed_flag::<i64>(&args[2..], "--bear-price-cents")?;
+            let base_price_cents =
+                parse_required_parsed_flag::<i64>(&args[2..], "--base-price-cents")?;
+            let bull_price_cents =
+                parse_required_parsed_flag::<i64>(&args[2..], "--bull-price-cents")?;
             let fixed_commitments_cents =
-                parse_optional_i64_flag(&args[2..], "--fixed-commitments-cents", 0)?;
-            let reserve_sweep_pct = parse_optional_u8_flag(&args[2..], "--reserve-sweep-pct", 60)?;
+                parse_optional_parsed_flag::<i64>(&args[2..], "--fixed-commitments-cents", 0)?;
+            let reserve_sweep_pct =
+                parse_optional_parsed_flag::<u8>(&args[2..], "--reserve-sweep-pct", 60)?;
             let investing_sweep_pct =
-                parse_optional_u8_flag(&args[2..], "--investing-sweep-pct", 30)?;
+                parse_optional_parsed_flag::<u8>(&args[2..], "--investing-sweep-pct", 30)?;
             Ok(ParsedArgs {
                 command: Command::Budget(BudgetCommand::RsuPlan {
                     month_key,
@@ -663,6 +685,12 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Analytics),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "analytics".to_owned(),
     })?;
@@ -689,9 +717,10 @@ fn parse_analytics_snapshot(args: &[String]) -> Result<ParsedArgs, CliError> {
 
     match action.as_str() {
         "create" => {
-            let as_of_valid_time_us = parse_optional_i64_value(&args[3..], "--as-of-valid-us")?;
-            let as_of_tx_time_us = parse_optional_i64_value(&args[3..], "--as-of-tx-us")?;
-            let schema_version = parse_optional_i64_flag(
+            let as_of_valid_time_us =
+                parse_optional_parsed_value::<i64>(&args[3..], "--as-of-valid-us")?;
+            let as_of_tx_time_us = parse_optional_parsed_value::<i64>(&args[3..], "--as-of-tx-us")?;
+            let schema_version = parse_optional_parsed_flag::<i64>(
                 &args[3..],
                 "--schema-version",
                 crate::runtime::CliRuntime::default_analytics_schema_version(),
@@ -726,6 +755,12 @@ fn parse_analytics_snapshot(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_import(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Import),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "import".to_owned(),
     })?;
@@ -752,11 +787,13 @@ fn parse_import(args: &[String]) -> Result<ParsedArgs, CliError> {
         "csv" => {
             let file_path = parse_flag_value(&args[2..], "--file")?;
             let source_id = parse_optional_flag_value(&args[2..], "--source-id")?;
-            let timestamp_idx = parse_optional_usize_flag(&args[2..], "--timestamp-idx", 0)?;
-            let amount_idx = parse_optional_usize_flag(&args[2..], "--amount-idx", 1)?;
-            let memo_idx = parse_optional_usize_flag(&args[2..], "--memo-idx", 2)?;
-            let account_idx = parse_optional_usize_flag(&args[2..], "--account-idx", 3)?;
-            let category_idx = parse_optional_usize_flag(&args[2..], "--category-idx", 4)?;
+            let timestamp_idx =
+                parse_optional_parsed_flag::<usize>(&args[2..], "--timestamp-idx", 0)?;
+            let amount_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--amount-idx", 1)?;
+            let memo_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--memo-idx", 2)?;
+            let account_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--account-idx", 3)?;
+            let category_idx =
+                parse_optional_parsed_flag::<usize>(&args[2..], "--category-idx", 4)?;
             let skip_header = parse_flag_present(&args[2..], "--skip-header");
             let dry_run = parse_flag_present(&args[2..], "--dry-run");
             Ok(ParsedArgs {
@@ -813,6 +850,12 @@ fn parse_fetch(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_report(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Report),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "report".to_owned(),
     })?;
@@ -840,6 +883,12 @@ fn parse_report(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_reconcile(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Reconcile),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "reconcile".to_owned(),
     })?;
@@ -853,9 +902,9 @@ fn parse_reconcile(args: &[String]) -> Result<ParsedArgs, CliError> {
                 .unwrap_or_else(|| DEFAULT_CHECKING_ACCOUNT.to_owned());
             let month_key = parse_optional_month_flag(&args[2..], "--month")?;
             let opening_balance_cents =
-                parse_required_i64_flag(&args[2..], "--opening-balance-cents")?;
+                parse_required_parsed_flag::<i64>(&args[2..], "--opening-balance-cents")?;
             let closing_balance_cents =
-                parse_required_i64_flag(&args[2..], "--closing-balance-cents")?;
+                parse_required_parsed_flag::<i64>(&args[2..], "--closing-balance-cents")?;
             Ok(ParsedArgs {
                 command: Command::Reconcile(ReconcileCommand::Month {
                     checking_account,
@@ -889,6 +938,12 @@ fn parse_reconcile(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_month(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Month),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "month".to_owned(),
     })?;
@@ -934,6 +989,12 @@ fn parse_month(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_close(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Close),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "close".to_owned(),
     })?;
@@ -966,6 +1027,12 @@ fn parse_close(args: &[String]) -> Result<ParsedArgs, CliError> {
 }
 
 fn parse_aletheia(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Aletheia),
+        });
+    }
+
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
         command: "aletheia".to_owned(),
     })?;
@@ -1054,11 +1121,14 @@ fn parse_optional_parsed_flag<T: std::str::FromStr>(
     Ok(parsed)
 }
 
-fn parse_required_parsed_flag<T: std::str::FromStr>(
+fn parse_optional_parsed_value<T: std::str::FromStr>(
     args: &[String],
     flag: &str,
-) -> Result<T, CliError> {
-    let value = parse_flag_value(args, flag)?;
+) -> Result<Option<T>, CliError> {
+    let Some(value) = parse_optional_flag_value(args, flag)? else {
+        return Ok(None);
+    };
+
     let Ok(parsed) = value.parse::<T>() else {
         return Err(CliError::InvalidArgValue {
             flag: flag.to_owned(),
@@ -1066,23 +1136,15 @@ fn parse_required_parsed_flag<T: std::str::FromStr>(
         });
     };
 
-    Ok(parsed)
+    Ok(Some(parsed))
 }
 
-fn parse_optional_i64_flag(
+fn parse_required_parsed_flag<T: std::str::FromStr>(
     args: &[String],
     flag: &str,
-    default_value: i64,
-) -> Result<i64, CliError> {
-    parse_optional_parsed_flag(args, flag, default_value)
-}
-
-fn parse_optional_i64_value(args: &[String], flag: &str) -> Result<Option<i64>, CliError> {
-    let Some(value) = parse_optional_flag_value(args, flag)? else {
-        return Ok(None);
-    };
-
-    let Ok(parsed) = value.parse::<i64>() else {
+) -> Result<T, CliError> {
+    let value = parse_flag_value(args, flag)?;
+    let Ok(parsed) = value.parse::<T>() else {
         return Err(CliError::InvalidArgValue {
             flag: flag.to_owned(),
             value,

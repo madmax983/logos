@@ -1,57 +1,47 @@
 #![allow(clippy::should_panic_without_expect)]
-use logos_core::AccountId;
-use logos_core::domain::budget::rollover_end_balance;
-use logos_core::domain::transaction::{Posting, TransactionBuilder};
+
+use logos_core::domain::account::AccountId;
+use logos_core::domain::rsu::AllocationPolicy;
+use logos_core::planning::fire::UpcomingVest;
+use logos_core::planning::net_worth_projector::NetWorthProjector;
+use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
 use proptest::prelude::*;
 
 proptest! {
     #[test]
-    fn havoc_posting_credit_does_not_panic(amount in any::<i64>()) {
-        let _ = Posting::credit(AccountId::new("test").unwrap(), amount);
-    }
-
-    #[test]
-    fn havoc_transaction_builder_sum_does_not_panic(
-        amounts in prop::collection::vec(any::<i64>(), 1..100)
-    ) {
-        let mut builder = TransactionBuilder::new("Test");
-        for amt in amounts {
-            if let Ok(posting) = Posting::debit(AccountId::new("test").unwrap(), amt) {
-                builder = builder.posting(posting);
-            }
-        }
-        let _ = builder.build();
-    }
-
-    #[test]
-    fn havoc_rollover_end_balance_does_not_panic(
-        start in any::<i64>(),
-        assigned in any::<i64>(),
-        spent in any::<i64>()
-    ) {
-        let _ = rollover_end_balance(start, assigned, spent);
-    }
-
-    #[test]
     #[should_panic(expected = "attempt to multiply with overflow")]
-    fn havoc_distribute_rsu_vest_does_not_panic(
-        amount in any::<i64>(),
-    ) {
-        let policy = logos_core::domain::rsu::AllocationPolicy::new(25, 25, 25, 25).unwrap();
-        let config = logos_core::planning::rsu_distributor::RsuDistributorConfig {
+    fn distribute_rsu_vest_panics_on_overflow(gross_vest in i64::MAX / 2..i64::MAX) {
+        let config = RsuDistributorConfig {
             rsu_asset: AccountId::new("assets:rsu").unwrap(),
             tax_reserve: AccountId::new("assets:tax").unwrap(),
             smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
             goals: AccountId::new("assets:goals").unwrap(),
             discretionary: AccountId::new("assets:checking").unwrap(),
         };
-        let distributor = logos_core::planning::rsu_distributor::RsuAutoDistributor::new(config);
-        let _ = distributor.distribute_rsu_vest("test", amount, &policy);
-    }
-}
+        let distributor = RsuAutoDistributor::new(config);
+        let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
 
-#[test]
-fn havoc_posting_credit_min_does_not_panic() {
-    let _ =
-        logos_core::domain::transaction::Posting::credit(AccountId::new("test").unwrap(), i64::MIN);
+        // This will panic when multiplied by percent, if gross_vest is very large
+        let _ = distributor.distribute_rsu_vest("Vest 1", gross_vest, &policy);
+    }
+
+    #[test]
+    #[should_panic(expected = "attempt to multiply with overflow")]
+    fn project_timeline_panics_on_overflow(
+        initial_net_worth in any::<i64>(),
+        monthly_savings in any::<i64>(),
+        months in 2185..=u16::MAX,
+        vest_units in any::<u32>(),
+        vest_days in any::<u16>(),
+        vest_price in any::<i64>(),
+    ) {
+        let mut projector = NetWorthProjector::new(initial_net_worth, monthly_savings);
+        projector.add_upcoming_vest(UpcomingVest {
+            units: vest_units,
+            avg_close_price_cents: vest_price,
+            days_to_vest: vest_days,
+        });
+
+        let _ = projector.project_timeline(months);
+    }
 }

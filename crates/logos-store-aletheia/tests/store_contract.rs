@@ -50,10 +50,8 @@ fn balanced_transaction_write_succeeds() {
                 .posting(
                     Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000)
                         .expect("debit"),
-                )
                 .posting(
-                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                        .expect("credit"),
+                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                 ),
         )
         .expect("write");
@@ -182,9 +180,9 @@ fn unbalanced_transaction_is_rejected_before_persistence() {
                         .expect("debit"),
                 )
                 .posting(
-                    Posting::credit(AccountId::new("income:salary").unwrap(), 9_000)
-                        .expect("credit"),
-                ),
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
+                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 9_000).unwrap()),
         )
         .expect_err("must reject");
 
@@ -203,8 +201,10 @@ fn correction_append_links_superseded_transaction() {
                         .expect("debit"),
                 )
                 .posting(
-                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                        .expect("credit"),
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
+                .posting(
+                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                 ),
         )
         .expect("write");
@@ -231,8 +231,10 @@ fn open_persists_transaction_across_reopen() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write");
@@ -260,8 +262,10 @@ fn open_persists_correction_chain_across_reopen() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write");
@@ -374,8 +378,7 @@ fn open_persists_statement_line_evidence_across_reopen() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500)
-                            .expect("credit"),
+                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500).unwrap(),
                     ),
             )
             .expect("write txn");
@@ -430,8 +433,10 @@ fn open_persists_reconciliation_run_across_reopen() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write transaction");
@@ -482,8 +487,10 @@ fn open_persists_month_close_across_reopen() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("txn");
@@ -685,8 +692,10 @@ fn embedded_mapping_writes_transaction_and_posting_graph_entities() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write");
@@ -725,8 +734,10 @@ fn embedded_mapping_writes_correction_supersedes_edge() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write");
@@ -817,8 +828,7 @@ fn embedded_mapping_writes_import_batch_and_record_graph_entities() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500)
-                            .expect("credit"),
+                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500).unwrap(),
                     ),
             )
             .expect("write");
@@ -871,8 +881,10 @@ fn embedded_mapping_writes_reconciliation_run_and_edges() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("txn a");
@@ -884,8 +896,10 @@ fn embedded_mapping_writes_reconciliation_run_and_edges() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("assets:checking").unwrap(), 2_500)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("expenses:food").unwrap(), 2_500).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("assets:checking").unwrap(), 2_500).unwrap(),
                     ),
             )
             .expect("txn b");
@@ -939,8 +953,7 @@ fn embedded_mapping_links_reconciliation_run_to_statement_lines() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500)
-                            .expect("credit"),
+                        Posting::credit(AccountId::new("assets:checking").unwrap(), 500).unwrap(),
                     ),
             )
             .expect("txn");
@@ -1020,8 +1033,10 @@ fn embedded_mapping_writes_month_close_edges() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("txn");
@@ -1105,8 +1120,10 @@ fn transactions_as_of_respects_backdated_valid_time() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 7_500)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 7_500).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 7_500).unwrap(),
                     ),
                 Some(backdated_valid_time),
             )
@@ -1139,8 +1156,10 @@ fn transactions_as_of_hides_superseded_after_correction_tx_time() {
                             .expect("debit"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000)
-                            .expect("credit"),
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                     ),
             )
             .expect("write");
@@ -1452,5 +1471,71 @@ fn write_reconciliation_run_and_month_close_fails_with_unknown_artifact() {
         StoreError::UnknownArtifact { .. }
     ));
 
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_month_close_fails_with_mismatched_month_key() {
+    let path = temp_store_path("month-close-mismatched-month");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let run_id = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                10_000,
+                110_000,
+                110_000,
+                0,
+                true,
+                1,
+                10_000,
+                0,
+                &[],
+            )
+            .expect("run")
+            .run_id()
+            .to_owned();
+
+        let err = store
+            .write_month_close("2026-04", "assets:checking", &run_id, None)
+            .expect_err("mismatched month_key must fail");
+        assert!(err.to_string().contains(
+            "month close month '2026-04' does not match reconciliation run month '2026-03'"
+        ));
+    }
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_month_close_fails_with_mismatched_checking_account() {
+    let path = temp_store_path("month-close-mismatched-account");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let run_id = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                10_000,
+                110_000,
+                110_000,
+                0,
+                true,
+                1,
+                10_000,
+                0,
+                &[],
+            )
+            .expect("run")
+            .run_id()
+            .to_owned();
+
+        let err = store
+            .write_month_close("2026-03", "assets:savings", &run_id, None)
+            .expect_err("mismatched checking_account must fail");
+        assert!(err.to_string().contains("month close checking_account 'assets:savings' does not match reconciliation run account 'assets:checking'"));
+    }
     cleanup_store_path(&path);
 }

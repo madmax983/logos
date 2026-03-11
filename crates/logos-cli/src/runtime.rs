@@ -1444,11 +1444,13 @@ impl CliRuntime {
                 || self
                     .store
                     .has_import_record_content_hash(&legacy_content_hash_key);
-            let seen_in_batch = !seen_in_call.insert(content_hash_key.clone());
+            // Avoid allocating strings for duplicate records by checking existence first.
+            let seen_in_batch = seen_in_call.contains(&content_hash_key);
             if seen_previously || seen_in_batch {
                 duplicate_count = duplicate_count.saturating_add(1);
                 continue;
             }
+            seen_in_call.insert(content_hash_key.clone());
 
             imported_count = imported_count.saturating_add(1);
             if dry_run {
@@ -1518,11 +1520,13 @@ impl CliRuntime {
                 || self
                     .store
                     .has_import_record_content_hash(&legacy_content_hash_key);
-            let seen_in_batch = !seen_in_call.insert(content_hash_key.clone());
+            // Avoid allocating strings for duplicate records by checking existence first.
+            let seen_in_batch = seen_in_call.contains(&content_hash_key);
             if seen_previously || seen_in_batch {
                 duplicate_count = duplicate_count.saturating_add(1);
                 continue;
             }
+            seen_in_call.insert(content_hash_key.clone());
 
             imported_count = imported_count.saturating_add(1);
             if dry_run {

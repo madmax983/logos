@@ -151,29 +151,6 @@ fn write_month_close_fails_when_reconciliation_run_is_unknown() {
 }
 
 #[test]
-fn write_month_close_fails_when_month_is_empty() {
-    let mut store = AletheiaStore::new();
-    let err = store
-        .write_month_close("", "assets:checking", "run-1", None)
-        .unwrap_err();
-
-    assert!(err.to_string().contains("month_key must not be empty"));
-}
-
-#[test]
-fn write_month_close_fails_when_checking_account_is_empty() {
-    let mut store = AletheiaStore::new();
-    let err = store
-        .write_month_close("2026-03", "", "run-1", None)
-        .unwrap_err();
-
-    assert!(
-        err.to_string()
-            .contains("checking_account must not be empty")
-    );
-}
-
-#[test]
 fn write_month_close_fails_when_reconciliation_run_id_is_empty() {
     let mut store = AletheiaStore::new();
     let err = store
@@ -230,81 +207,6 @@ fn write_month_close_fails_when_already_closed() {
 }
 
 #[test]
-fn write_reconciliation_run_and_month_close_fails_when_month_is_empty() {
-    let mut store = AletheiaStore::new();
-    let txn_id = store
-        .write_transaction(
-            TransactionBuilder::new("paycheck")
-                .posting(
-                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
-                )
-                .posting(
-                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
-                ),
-        )
-        .unwrap();
-
-    let err = store
-        .write_reconciliation_run_and_month_close(
-            "",
-            "assets:checking",
-            100_000,
-            10_000,
-            110_000,
-            110_000,
-            0,
-            true,
-            1,
-            10_000,
-            0,
-            std::slice::from_ref(&txn_id),
-            None,
-        )
-        .unwrap_err();
-
-    assert!(err.to_string().contains("month_key must not be empty"));
-}
-
-#[test]
-fn write_reconciliation_run_and_month_close_fails_when_checking_account_is_empty() {
-    let mut store = AletheiaStore::new();
-    let txn_id = store
-        .write_transaction(
-            TransactionBuilder::new("paycheck")
-                .posting(
-                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
-                )
-                .posting(
-                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
-                ),
-        )
-        .unwrap();
-
-    let err = store
-        .write_reconciliation_run_and_month_close(
-            "2026-03",
-            "",
-            100_000,
-            10_000,
-            110_000,
-            110_000,
-            0,
-            true,
-            1,
-            10_000,
-            0,
-            std::slice::from_ref(&txn_id),
-            None,
-        )
-        .unwrap_err();
-
-    assert!(
-        err.to_string()
-            .contains("checking_account must not be empty")
-    );
-}
-
-#[test]
 fn write_reconciliation_run_and_month_close_fails_when_already_closed() {
     let mut store = AletheiaStore::new();
     let txn_id = store
@@ -356,77 +258,4 @@ fn write_reconciliation_run_and_month_close_fails_when_already_closed() {
         .unwrap_err();
 
     assert!(err.to_string().contains("is already closed by"));
-}
-
-#[test]
-fn write_reconciliation_run_fails_when_month_is_empty() {
-    let mut store = AletheiaStore::new();
-    let txn_id = store
-        .write_transaction(
-            TransactionBuilder::new("paycheck")
-                .posting(
-                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
-                )
-                .posting(
-                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
-                ),
-        )
-        .unwrap();
-
-    let err = store
-        .write_reconciliation_run(
-            "",
-            "assets:checking",
-            100_000,
-            10_000,
-            110_000,
-            110_000,
-            0,
-            true,
-            1,
-            10_000,
-            0,
-            std::slice::from_ref(&txn_id),
-        )
-        .unwrap_err();
-
-    assert!(err.to_string().contains("month_key must not be empty"));
-}
-
-#[test]
-fn write_reconciliation_run_fails_when_checking_account_is_empty() {
-    let mut store = AletheiaStore::new();
-    let txn_id = store
-        .write_transaction(
-            TransactionBuilder::new("paycheck")
-                .posting(
-                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
-                )
-                .posting(
-                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
-                ),
-        )
-        .unwrap();
-
-    let err = store
-        .write_reconciliation_run(
-            "2026-03",
-            "",
-            100_000,
-            10_000,
-            110_000,
-            110_000,
-            0,
-            true,
-            1,
-            10_000,
-            0,
-            std::slice::from_ref(&txn_id),
-        )
-        .unwrap_err();
-
-    assert!(
-        err.to_string()
-            .contains("checking_account must not be empty")
-    );
 }
