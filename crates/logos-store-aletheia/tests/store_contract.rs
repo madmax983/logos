@@ -47,6 +47,7 @@ fn balanced_transaction_write_succeeds() {
                 .posting(
                     Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000)
                         .expect("debit"),
+                )
                 .posting(
                     Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
                 ),

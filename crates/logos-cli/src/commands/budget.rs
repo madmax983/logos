@@ -1,4 +1,5 @@
 use crate::{args::CliError, runtime::CliRuntime};
+use logos_core::experimental::monte_carlo::MonteCarloProjector;
 use logos_reporting::{RsuBudgetPlan, ScenarioKey};
 
 trait BudgetRuntime {
@@ -97,6 +98,33 @@ pub fn rsu_plan(
     Ok(())
 }
 
+/// Handles `ledger budget monte-carlo`.
+///
+/// # Errors
+///
+/// Returns an error when execution fails.
+pub fn monte_carlo(
+    initial_cents: i64,
+    monthly_contribution_cents: i64,
+    annual_mean_return: f64,
+    annual_volatility: f64,
+    seed: u64,
+    months: u16,
+    paths: u32,
+) -> Result<(), CliError> {
+    let projector = MonteCarloProjector::new(
+        initial_cents,
+        monthly_contribution_cents,
+        annual_mean_return,
+        annual_volatility,
+        seed,
+    );
+    let result = projector.run(months, paths);
+    let output = render_monte_carlo_output(&result);
+    println!("{output}");
+    Ok(())
+}
+
 fn render_budget_set_output(
     runtime: &impl BudgetRuntime,
     month_key: &str,
@@ -169,6 +197,27 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
     }
 
     format!("budget.rsu-plan\n{plan_table}\n{scenario_table}")
+}
+
+fn render_monte_carlo_output(result: &logos_core::experimental::monte_carlo::MonteCarloResult) -> String {
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec!["Percentile", "Projected Outcome"]);
+
+    table.add_row(vec![
+        "P5 (Pessimistic)",
+        &format!("${:.2}", (result.p5_cents as f64) / 100.0),
+    ]);
+    table.add_row(vec![
+        "Median (Expected)",
+        &format!("${:.2}", (result.median_cents as f64) / 100.0),
+    ]);
+    table.add_row(vec![
+        "P95 (Optimistic)",
+        &format!("${:.2}", (result.p95_cents as f64) / 100.0),
+    ]);
+
+    format!("budget.monte-carlo\n{table}")
 }
 
 const fn scenario_name(key: ScenarioKey) -> &'static str {

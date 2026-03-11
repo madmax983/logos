@@ -55,7 +55,7 @@ impl fmt::Display for CliError {
 
 impl std::error::Error for CliError {}
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ParsedArgs {
     command: Command,
 }
@@ -262,6 +262,23 @@ fn execute_budget_command(command: &BudgetCommand) -> Result<(), CliError> {
             *reserve_sweep_pct,
             *investing_sweep_pct,
         ),
+        BudgetCommand::MonteCarlo {
+            initial_cents,
+            monthly_contribution_cents,
+            annual_mean_return,
+            annual_volatility,
+            seed,
+            months,
+            paths,
+        } => commands::budget::monte_carlo(
+            *initial_cents,
+            *monthly_contribution_cents,
+            *annual_mean_return,
+            *annual_volatility,
+            *seed,
+            *months,
+            *paths,
+        ),
     }
 }
 
@@ -314,7 +331,7 @@ fn parse_optional_month_flag(args: &[String], flag: &str) -> Result<Option<Strin
     Ok(Some(parse_month_key(flag, value)?))
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     Help(HelpTopic),
     Aletheia(AletheiaCommand),
@@ -359,6 +376,7 @@ impl Command {
             Self::Close(CloseCommand::Month { .. }) => "close.month",
             Self::Budget(BudgetCommand::Set { .. }) => "budget.set",
             Self::Budget(BudgetCommand::RsuPlan { .. }) => "budget.rsu-plan",
+            Self::Budget(BudgetCommand::MonteCarlo { .. }) => "budget.monte-carlo",
             Self::Report(ReportCommand::Month { .. }) => "report.month",
         }
     }
@@ -476,7 +494,7 @@ pub enum CloseCommand {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BudgetCommand {
     Set {
         month_key: Option<String>,
@@ -493,6 +511,15 @@ pub enum BudgetCommand {
         fixed_commitments_cents: i64,
         reserve_sweep_pct: u8,
         investing_sweep_pct: u8,
+    },
+    MonteCarlo {
+        initial_cents: i64,
+        monthly_contribution_cents: i64,
+        annual_mean_return: f64,
+        annual_volatility: f64,
+        seed: u64,
+        months: u16,
+        paths: u32,
     },
 }
 
@@ -646,6 +673,27 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
                     fixed_commitments_cents,
                     reserve_sweep_pct,
                     investing_sweep_pct,
+                }),
+            })
+        }
+        "monte-carlo" => {
+            let initial_cents = parse_required_parsed_flag::<i64>(&args[2..], "--initial-cents")?;
+            let monthly_contribution_cents = parse_required_parsed_flag::<i64>(&args[2..], "--monthly-contribution-cents")?;
+            let annual_mean_return = parse_required_parsed_flag::<f64>(&args[2..], "--annual-mean-return")?;
+            let annual_volatility = parse_required_parsed_flag::<f64>(&args[2..], "--annual-volatility")?;
+            let seed = parse_optional_parsed_flag::<u64>(&args[2..], "--seed", 42)?;
+            let months = parse_required_parsed_flag::<u16>(&args[2..], "--months")?;
+            let paths = parse_required_parsed_flag::<u32>(&args[2..], "--paths")?;
+
+            Ok(ParsedArgs {
+                command: Command::Budget(BudgetCommand::MonteCarlo {
+                    initial_cents,
+                    monthly_contribution_cents,
+                    annual_mean_return,
+                    annual_volatility,
+                    seed,
+                    months,
+                    paths,
                 }),
             })
         }
