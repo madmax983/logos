@@ -12,6 +12,7 @@ Commands:
   import pdf ...                    Import statement rows from a PDF
   import csv ...                    Import statement rows from a CSV file
   fetch list-runs                   List statement fetch runs
+  capture ingest                    Ingest phone-captured draft notes from a synced vault inbox
   reconcile month                   Reconcile month against statement balances
   month autopilot                   Run import/reconcile/report/close workflow
   close month                       Freeze a month scope with evidence links
@@ -76,6 +77,26 @@ Subcommands:
 Environment:
   LOGOS_FETCH_CONFIG_PATH            Override statement source config path; default is sibling statement-sources.toml next to the ledger store
   LOGOS_FETCH_OP_BIN                 Override 1Password CLI executable path used for secret resolution
+";
+
+const CAPTURE_HELP_TEXT: &str = "\
+Usage: ledger capture <subcommand> [options]
+
+Subcommands:
+  ingest --vault-path <path> [--inbox-subdir <path>]
+                                       Scan a synced vault inbox and ingest draft capture notes
+  list [--status <status>]
+                                       List persisted capture drafts by optional workflow status
+  show --capture-id <id>
+                                       Show one persisted capture draft by id
+  promote --capture-id <id> [--debit-account <name>] [--credit-account <name>]
+                                       Promote one capture draft into a real ledger transaction
+  reject --capture-id <id> --reason <text>
+                                       Mark one capture draft as rejected with an explicit reason
+
+Environment:
+  LOGOS_CAPTURE_VAULT_PATH           Override synced vault root directory
+  LOGOS_CAPTURE_INBOX_SUBDIR         Override capture inbox subdirectory relative to the vault root
 ";
 
 const RECONCILE_HELP_TEXT: &str = "\
@@ -160,6 +181,7 @@ fn help_text(topic: HelpTopic) -> &'static str {
         HelpTopic::Aletheia => ALETHEIA_HELP_TEXT,
         HelpTopic::Import => IMPORT_HELP_TEXT,
         HelpTopic::Fetch => FETCH_HELP_TEXT,
+        HelpTopic::Capture => CAPTURE_HELP_TEXT,
         HelpTopic::Reconcile => RECONCILE_HELP_TEXT,
         HelpTopic::Month => MONTH_HELP_TEXT,
         HelpTopic::Close => CLOSE_HELP_TEXT,

@@ -1,6 +1,7 @@
 pub mod aletheia;
 pub mod analytics;
 pub mod budget;
+pub mod capture;
 pub mod close;
 pub mod fetch;
 pub mod help;

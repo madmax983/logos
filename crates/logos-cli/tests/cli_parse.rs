@@ -932,6 +932,28 @@ fn rejects_fetch_show_without_run_id() {
 }
 
 #[test]
+fn parses_capture_ingest_command() {
+    let args = vec![
+        "ledger",
+        "capture",
+        "ingest",
+        "--vault-path",
+        "G:\\My Drive\\claude",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "capture.ingest");
+}
+
+#[test]
+fn parses_capture_promote_command() {
+    let args = vec!["ledger", "capture", "promote", "--capture-id", "cap-1"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "capture.promote");
+}
+
+#[test]
 fn parses_month_autopilot_with_defaults() {
     let args = vec!["ledger", "month", "autopilot", "--confirm-close"];
     let parsed = logos_cli::parse_args(args).expect("parse");

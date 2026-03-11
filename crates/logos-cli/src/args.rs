@@ -89,6 +89,7 @@ fn execute_command(command: &Command) -> Result<(), CliError> {
         Command::Analytics(command) => execute_analytics_command(command),
         Command::Import(command) => execute_import_command(command),
         Command::Fetch(command) => execute_fetch_command(command),
+        Command::Capture(command) => execute_capture_command(command),
         Command::Reconcile(command) => execute_reconcile_command(command),
         Command::Month(command) => execute_month_command(command),
         Command::Close(command) => execute_close_command(command),
@@ -179,6 +180,29 @@ fn execute_fetch_command(command: &FetchCommand) -> Result<(), CliError> {
             checking_account,
         } => commands::fetch::list_runs(month_key.as_deref(), checking_account.as_deref()),
         FetchCommand::ShowRun { run_id } => commands::fetch::show_run(run_id),
+    }
+}
+
+fn execute_capture_command(command: &CaptureCommand) -> Result<(), CliError> {
+    match command {
+        CaptureCommand::Ingest {
+            vault_path,
+            inbox_subdir,
+        } => commands::capture::ingest(vault_path, inbox_subdir.as_deref()),
+        CaptureCommand::List { status } => commands::capture::list(status.as_deref()),
+        CaptureCommand::Show { capture_id } => commands::capture::show(capture_id),
+        CaptureCommand::Promote {
+            capture_id,
+            debit_account,
+            credit_account,
+        } => commands::capture::promote(
+            capture_id,
+            debit_account.as_deref(),
+            credit_account.as_deref(),
+        ),
+        CaptureCommand::Reject { capture_id, reason } => {
+            commands::capture::reject(capture_id, reason)
+        }
     }
 }
 
@@ -350,6 +374,7 @@ pub enum Command {
     Analytics(AnalyticsCommand),
     Import(ImportCommand),
     Fetch(FetchCommand),
+    Capture(CaptureCommand),
     Reconcile(ReconcileCommand),
     Month(MonthCommand),
     Close(CloseCommand),
@@ -369,6 +394,7 @@ impl Command {
             Self::Help(HelpTopic::Analytics) => "help.analytics",
             Self::Help(HelpTopic::Import) => "help.import",
             Self::Help(HelpTopic::Fetch) => "help.fetch",
+            Self::Help(HelpTopic::Capture) => "help.capture",
             Self::Help(HelpTopic::Reconcile) => "help.reconcile",
             Self::Help(HelpTopic::Month) => "help.month",
             Self::Help(HelpTopic::Close) => "help.close",
@@ -384,6 +410,11 @@ impl Command {
             Self::Import(ImportCommand::Csv { .. }) => "import.csv",
             Self::Fetch(FetchCommand::ListRuns { .. }) => "fetch.list",
             Self::Fetch(FetchCommand::ShowRun { .. }) => "fetch.show",
+            Self::Capture(CaptureCommand::Ingest { .. }) => "capture.ingest",
+            Self::Capture(CaptureCommand::List { .. }) => "capture.list",
+            Self::Capture(CaptureCommand::Show { .. }) => "capture.show",
+            Self::Capture(CaptureCommand::Promote { .. }) => "capture.promote",
+            Self::Capture(CaptureCommand::Reject { .. }) => "capture.reject",
             Self::Reconcile(ReconcileCommand::Month { .. }) => "reconcile.month",
             Self::Reconcile(ReconcileCommand::List { .. }) => "reconcile.list",
             Self::Reconcile(ReconcileCommand::Show { .. }) => "reconcile.show",
@@ -407,6 +438,7 @@ pub enum HelpTopic {
     Aletheia,
     Import,
     Fetch,
+    Capture,
     Reconcile,
     Month,
     Close,
@@ -476,6 +508,29 @@ pub enum FetchCommand {
     },
     ShowRun {
         run_id: String,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CaptureCommand {
+    Ingest {
+        vault_path: String,
+        inbox_subdir: Option<String>,
+    },
+    List {
+        status: Option<String>,
+    },
+    Show {
+        capture_id: String,
+    },
+    Promote {
+        capture_id: String,
+        debit_account: Option<String>,
+        credit_account: Option<String>,
+    },
+    Reject {
+        capture_id: String,
+        reason: String,
     },
 }
 
@@ -583,6 +638,7 @@ where
         "analytics" => parse_analytics(&values),
         "import" => parse_import(&values),
         "fetch" => parse_fetch(&values),
+        "capture" => parse_capture(&values),
         "reconcile" => parse_reconcile(&values),
         "month" => parse_month(&values),
         "close" => parse_close(&values),
@@ -900,6 +956,69 @@ fn parse_fetch(args: &[String]) -> Result<ParsedArgs, CliError> {
     }
 }
 
+fn parse_capture(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Capture),
+        });
+    }
+
+    let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
+        command: "capture".to_owned(),
+    })?;
+
+    match subcommand.as_str() {
+        "--help" | "-h" => Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Capture),
+        }),
+        "ingest" => {
+            let vault_path = parse_flag_value(&args[2..], "--vault-path")?;
+            let inbox_subdir = parse_optional_flag_value(&args[2..], "--inbox-subdir")?;
+            Ok(ParsedArgs {
+                command: Command::Capture(CaptureCommand::Ingest {
+                    vault_path,
+                    inbox_subdir,
+                }),
+            })
+        }
+        "list" => {
+            let status = parse_optional_flag_value(&args[2..], "--status")?;
+            Ok(ParsedArgs {
+                command: Command::Capture(CaptureCommand::List { status }),
+            })
+        }
+        "show" => {
+            let capture_id = parse_flag_value(&args[2..], "--capture-id")?;
+            Ok(ParsedArgs {
+                command: Command::Capture(CaptureCommand::Show { capture_id }),
+            })
+        }
+        "promote" => {
+            let capture_id = parse_flag_value(&args[2..], "--capture-id")?;
+            let debit_account = parse_optional_flag_value(&args[2..], "--debit-account")?;
+            let credit_account = parse_optional_flag_value(&args[2..], "--credit-account")?;
+            Ok(ParsedArgs {
+                command: Command::Capture(CaptureCommand::Promote {
+                    capture_id,
+                    debit_account,
+                    credit_account,
+                }),
+            })
+        }
+        "reject" => {
+            let capture_id = parse_flag_value(&args[2..], "--capture-id")?;
+            let reason = parse_flag_value(&args[2..], "--reason")?;
+            Ok(ParsedArgs {
+                command: Command::Capture(CaptureCommand::Reject { capture_id, reason }),
+            })
+        }
+        _ => Err(CliError::UnknownSubcommand {
+            command: "capture".to_owned(),
+            subcommand: subcommand.clone(),
+        }),
+    }
+}
+
 fn parse_report(args: &[String]) -> Result<ParsedArgs, CliError> {
     if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
         return Ok(ParsedArgs {
@@ -1115,6 +1234,7 @@ fn parse_help_topic(args: &[String]) -> Result<HelpTopic, CliError> {
         Some("aletheia") => Ok(HelpTopic::Aletheia),
         Some("import") => Ok(HelpTopic::Import),
         Some("fetch") => Ok(HelpTopic::Fetch),
+        Some("capture") => Ok(HelpTopic::Capture),
         Some("reconcile") => Ok(HelpTopic::Reconcile),
         Some("month") => Ok(HelpTopic::Month),
         Some("close") => Ok(HelpTopic::Close),
