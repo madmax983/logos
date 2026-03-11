@@ -40,6 +40,9 @@ Subcommands:
            [--month <YYYY-MM>] [--days-to-vest <u16>] [--fixed-commitments-cents <i64>]
            [--reserve-sweep-pct <u8>] [--investing-sweep-pct <u8>]
                                      Build bear/base/bull RSU budget scenarios with conservative baseline
+  monte-carlo --initial-cents <i64> --monthly-contribution-cents <i64> --annual-mean-return <f64> --annual-volatility <f64>
+              --months <u16> --paths <u32> [--seed <u64>]
+                                     Simulate future net worth outcomes using randomized market returns
 ";
 
 const REPORT_HELP_TEXT: &str = "\
