@@ -405,7 +405,7 @@ fn optional_node_timestamp_property(node: &Node, key: &str) -> Option<Timestamp>
 mod tests {
     #[test]
     fn test_transactions_as_of_error_when_mismatched_txn_id() {
-        use aletheiadb::{Error as DbError, StorageError, NodeId, EdgeId};
+        use aletheiadb::{EdgeId, Error as DbError, NodeId, StorageError};
         use logos_core::TransactionId;
         let node_err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
         assert!(is_node_not_visible(&node_err));
@@ -773,6 +773,4 @@ fn test_current_projection_without_superseded() {
     assert_eq!(proj.len(), 1);
     assert!(!proj.iter().any(|t| t.id() == &txn_id1));
     assert!(proj.iter().any(|t| t.id() == &txn_id2));
-
-
 }

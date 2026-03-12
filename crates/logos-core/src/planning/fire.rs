@@ -381,7 +381,7 @@ mod tests {
             // Then forecast returns (i64::MAX / 100) * 75 / 100
 
             let gross = i64::MAX / 100;
-            let avg_close_price_cents = gross / (units as i64);
+            let avg_close_price_cents = gross / i64::from(units);
 
             // Each forecast gives ~ 0.0075 * i64::MAX
             // We need more than 1 / 0.0075 = 133 vests to overflow `sum()`
