@@ -1199,7 +1199,7 @@ fn parse_required_parsed_flag<T: std::str::FromStr>(
         });
     };
 
-    Ok(Some(parsed))
+    Ok(parsed)
 }
 
 fn parse_paired_i64_flags(
@@ -1207,8 +1207,8 @@ fn parse_paired_i64_flags(
     left_flag: &str,
     right_flag: &str,
 ) -> Result<(Option<i64>, Option<i64>), CliError> {
-    let left = parse_optional_i64_value(args, left_flag)?;
-    let right = parse_optional_i64_value(args, right_flag)?;
+    let left = parse_optional_parsed_value::<i64>(args, left_flag)?;
+    let right = parse_optional_parsed_value::<i64>(args, right_flag)?;
 
     match (left, right) {
         (Some(left), Some(right)) => Ok((Some(left), Some(right))),
@@ -1217,34 +1217,6 @@ fn parse_paired_i64_flags(
             flag: format!("{left_flag}' or '{right_flag}"),
         }),
     }
-}
-
-fn parse_required_i64_flag(args: &[String], flag: &str) -> Result<i64, CliError> {
-    parse_required_parsed_flag(args, flag)
-}
-
-fn parse_required_u32_flag(args: &[String], flag: &str) -> Result<u32, CliError> {
-    parse_required_parsed_flag(args, flag)
-}
-
-fn parse_optional_u16_flag(
-    args: &[String],
-    flag: &str,
-    default_value: u16,
-) -> Result<u16, CliError> {
-    parse_optional_parsed_flag(args, flag, default_value)
-}
-
-fn parse_optional_u8_flag(args: &[String], flag: &str, default_value: u8) -> Result<u8, CliError> {
-    parse_optional_parsed_flag(args, flag, default_value)
-}
-
-fn parse_optional_usize_flag(
-    args: &[String],
-    flag: &str,
-    default_value: usize,
-) -> Result<usize, CliError> {
-    parse_optional_parsed_flag(args, flag, default_value)
 }
 
 fn parse_amount_cents(args: &[String]) -> Result<i64, CliError> {
