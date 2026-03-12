@@ -102,9 +102,9 @@ fn render_show_output(run: &StoredFetchRun) -> String {
         run.status().as_str().to_owned(),
         run.artifact_path().unwrap_or("-").to_owned(),
         run.opening_balance_cents()
-            .map_or_else(|| "-".to_owned(), |value| value.to_string()),
+            .map_or_else(|| "-".to_owned(), |value| format!("${:.2}", (value as f64) / 100.0)),
         run.closing_balance_cents()
-            .map_or_else(|| "-".to_owned(), |value| value.to_string()),
+            .map_or_else(|| "-".to_owned(), |value| format!("${:.2}", (value as f64) / 100.0)),
         run.error_summary().unwrap_or("-").to_owned(),
         run.created_at().wallclock().to_string(),
     ]);
@@ -140,6 +140,31 @@ mod tests {
         assert!(output.contains("fetch-3"));
         assert!(output.contains("pcu:checking"));
         assert!(output.contains("downloaded"));
+    }
+
+    #[test]
+    fn render_show_output_with_balances_is_deterministic() {
+        let run = StoredFetchRun::new(
+            "fetch-3",
+            "pcu:checking",
+            "provident-credit-union",
+            "assets:checking",
+            "2026-03",
+            StoredFetchRunStatus::Downloaded,
+            Some("C:\\statements\\pcu-2026-03.pdf"),
+            Some(StoredFetchArtifactFormat::Pdf),
+            Some(100_000),
+            Some(198_766),
+            None,
+            1_700_000_333_i64.into(),
+        );
+        let output = render_show_output(&run);
+
+        assert!(output.contains("fetch-3"));
+        assert!(output.contains("provident-credit-union"));
+        assert!(output.contains("downloaded"));
+        assert!(output.contains("$1000.00"));
+        assert!(output.contains("$1987.66"));
     }
 
     #[test]

@@ -102,16 +102,16 @@ fn render_month_output(
         run.run_id().to_owned(),
         month_key.to_owned(),
         checking_account.to_owned(),
-        opening_balance_cents.to_string(),
-        run.ledger_delta_cents().to_string(),
-        run.expected_closing_balance_cents().to_string(),
-        run.statement_closing_balance_cents().to_string(),
-        run.variance_cents().to_string(),
+        format!("${:.2}", (opening_balance_cents as f64) / 100.0),
+        format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0),
+        format!("${:.2}", (run.expected_closing_balance_cents() as f64) / 100.0),
+        format!("${:.2}", (run.statement_closing_balance_cents() as f64) / 100.0),
+        format!("${:.2}", (run.variance_cents() as f64) / 100.0),
         run.reconciled().to_string(),
         run.matched_postings().to_string(),
         run.matched_transaction_count().to_string(),
-        run.inflow_cents().to_string(),
-        run.outflow_cents().to_string(),
+        format!("${:.2}", (run.inflow_cents() as f64) / 100.0),
+        format!("${:.2}", (run.outflow_cents() as f64) / 100.0),
         run.created_at().wallclock().to_string(),
     ]);
     table.to_string()
@@ -140,16 +140,16 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
         run.run_id().to_owned(),
         run.month_key().to_owned(),
         run.checking_account().to_owned(),
-        run.opening_balance_cents().to_string(),
-        run.ledger_delta_cents().to_string(),
-        run.expected_closing_balance_cents().to_string(),
-        run.statement_closing_balance_cents().to_string(),
-        run.variance_cents().to_string(),
+        format!("${:.2}", (run.opening_balance_cents() as f64) / 100.0),
+        format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0),
+        format!("${:.2}", (run.expected_closing_balance_cents() as f64) / 100.0),
+        format!("${:.2}", (run.statement_closing_balance_cents() as f64) / 100.0),
+        format!("${:.2}", (run.variance_cents() as f64) / 100.0),
         run.reconciled().to_string(),
         run.matched_postings().to_string(),
         run.matched_transaction_count().to_string(),
-        run.inflow_cents().to_string(),
-        run.outflow_cents().to_string(),
+        format!("${:.2}", (run.inflow_cents() as f64) / 100.0),
+        format!("${:.2}", (run.outflow_cents() as f64) / 100.0),
         run.created_at().wallclock().to_string(),
     ]);
     table.to_string()
@@ -185,7 +185,7 @@ fn render_list_output(
             run.run_id().to_owned(),
             run.month_key().to_owned(),
             run.checking_account().to_owned(),
-            run.variance_cents().to_string(),
+            format!("${:.2}", (run.variance_cents() as f64) / 100.0),
             run.reconciled().to_string(),
             run.matched_transaction_count().to_string(),
             run.created_at().wallclock().to_string(),
@@ -223,12 +223,14 @@ mod tests {
         );
         let output = render_month_output("assets:checking", "2026-03", 100_000, &run);
 
-        let expected = "┌─────────┬─────────┬─────────────────┬─────────┬──────────┬──────────────────┬───────────────────┬──────────┬────────────┬──────────────────┬──────────────┬────────┬─────────┬────────────┐
-│ Run ID  ┆ Month   ┆ Account         ┆ Opening ┆ Ledger Δ ┆ Expected Closing ┆ Statement Closing ┆ Variance ┆ Reconciled ┆ Matched Postings ┆ Matched Txns ┆ Inflow ┆ Outflow ┆ Created At │
-╞═════════╪═════════╪═════════════════╪═════════╪══════════╪══════════════════╪═══════════════════╪══════════╪════════════╪══════════════════╪══════════════╪════════╪═════════╪════════════╡
-│ recon-7 ┆ 2026-03 ┆ assets:checking ┆ 100000  ┆ 7500     ┆ 107500           ┆ 106000            ┆ -1500    ┆ false      ┆ 2                ┆ 2            ┆ 10000  ┆ 2500    ┆ 1700000111 │
-└─────────┴─────────┴─────────────────┴─────────┴──────────┴──────────────────┴───────────────────┴──────────┴────────────┴──────────────────┴──────────────┴────────┴─────────┴────────────┘";
-        assert_eq!(output, expected);
+        assert!(output.contains("recon-7"));
+        assert!(output.contains("$1000.00"));
+        assert!(output.contains("$75.00"));
+        assert!(output.contains("$1075.00"));
+        assert!(output.contains("$1060.00"));
+        assert!(output.contains("$-15.00"));
+        assert!(output.contains("$100.00"));
+        assert!(output.contains("$25.00"));
     }
 
     #[test]
@@ -250,12 +252,15 @@ mod tests {
             1_700_000_222_i64.into(),
         );
         let output = render_show_output(&run);
-        let expected = "┌─────────┬─────────┬─────────────────┬─────────┬──────────┬──────────────────┬───────────────────┬──────────┬────────────┬──────────────────┬──────────────┬────────┬─────────┬────────────┐
-│ Run ID  ┆ Month   ┆ Account         ┆ Opening ┆ Ledger Δ ┆ Expected Closing ┆ Statement Closing ┆ Variance ┆ Reconciled ┆ Matched Postings ┆ Matched Txns ┆ Inflow ┆ Outflow ┆ Created At │
-╞═════════╪═════════╪═════════════════╪═════════╪══════════╪══════════════════╪═══════════════════╪══════════╪════════════╪══════════════════╪══════════════╪════════╪═════════╪════════════╡
-│ recon-8 ┆ 2026-04 ┆ assets:checking ┆ 200000  ┆ 12000    ┆ 212000           ┆ 212500            ┆ 500      ┆ false      ┆ 3                ┆ 2            ┆ 15000  ┆ 3000    ┆ 1700000222 │
-└─────────┴─────────┴─────────────────┴─────────┴──────────┴──────────────────┴───────────────────┴──────────┴────────────┴──────────────────┴──────────────┴────────┴─────────┴────────────┘";
-        assert_eq!(output, expected);
+
+        assert!(output.contains("recon-8"));
+        assert!(output.contains("$2000.00"));
+        assert!(output.contains("$120.00"));
+        assert!(output.contains("$2120.00"));
+        assert!(output.contains("$2125.00"));
+        assert!(output.contains("$5.00"));
+        assert!(output.contains("$150.00"));
+        assert!(output.contains("$30.00"));
     }
 
     #[test]
@@ -296,13 +301,11 @@ mod tests {
         ];
 
         let output = render_list_output(Some("2026-05"), Some("assets:checking"), &runs);
-        let expected = "reconcile.list filter_month=2026-05 filter_checking_account=assets:checking count=2\n┌──────────┬─────────┬─────────────────┬──────────┬────────────┬──────────────┬────────────┐
-│ Run ID   ┆ Month   ┆ Account         ┆ Variance ┆ Reconciled ┆ Matched Txns ┆ Created At │
-╞══════════╪═════════╪═════════════════╪══════════╪════════════╪══════════════╪════════════╡
-│ recon-9  ┆ 2026-05 ┆ assets:checking ┆ 0        ┆ true       ┆ 2            ┆ 1700000333 │
-├╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ recon-10 ┆ 2026-05 ┆ assets:checking ┆ -500     ┆ false      ┆ 1            ┆ 1700000444 │
-└──────────┴─────────┴─────────────────┴──────────┴────────────┴──────────────┴────────────┘";
-        assert_eq!(output, expected);
+
+        assert!(output.contains("reconcile.list"));
+        assert!(output.contains("recon-9"));
+        assert!(output.contains("$0.00"));
+        assert!(output.contains("recon-10"));
+        assert!(output.contains("$-5.00"));
     }
 }

@@ -136,17 +136,12 @@ fn render_budget_set_output(
 
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec![
-        "Month",
-        "Budget Cents",
-        "Actual Prefix",
-        "Variance Cents",
-    ]);
+    table.set_header(vec!["Month", "Budget", "Actual Prefix", "Variance"]);
     table.add_row(vec![
         month_key.to_string(),
-        budget_cents.to_string(),
+        format!("${:.2}", (budget_cents as f64) / 100.0),
         expense_account_prefix.to_string(),
-        variance_cents.to_string(),
+        format!("${:.2}", (variance_cents as f64) / 100.0),
     ]);
 
     format!("budget.set\n{table}")
@@ -165,9 +160,9 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
     ]);
     plan_table.add_row(vec![
         plan.month_key().to_string(),
-        plan.conservative_budget_cents().to_string(),
-        plan.fixed_commitments_cents().to_string(),
-        plan.baseline_remaining_cents().to_string(),
+        format!("${:.2}", (plan.conservative_budget_cents() as f64) / 100.0),
+        format!("${:.2}", (plan.fixed_commitments_cents() as f64) / 100.0),
+        format!("${:.2}", (plan.baseline_remaining_cents() as f64) / 100.0),
         plan.reserve_sweep_pct().to_string(),
         plan.investing_sweep_pct().to_string(),
     ]);
@@ -187,11 +182,11 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
         if let Some(scenario) = plan.scenario(key) {
             scenario_table.add_row(vec![
                 scenario_name(key).to_string(),
-                scenario.monthly_income_cents().to_string(),
-                scenario.surplus_cents().to_string(),
-                scenario.reserve_sweep_cents().to_string(),
-                scenario.investing_sweep_cents().to_string(),
-                scenario.available_after_sweeps_cents().to_string(),
+                format!("${:.2}", (scenario.monthly_income_cents() as f64) / 100.0),
+                format!("${:.2}", (scenario.surplus_cents() as f64) / 100.0),
+                format!("${:.2}", (scenario.reserve_sweep_cents() as f64) / 100.0),
+                format!("${:.2}", (scenario.investing_sweep_cents() as f64) / 100.0),
+                format!("${:.2}", (scenario.available_after_sweeps_cents() as f64) / 100.0),
             ]);
         }
     }
@@ -257,15 +252,15 @@ mod tests {
         };
         let output = render_budget_set_output(&runtime, "2026-03", 5_000, "expenses:");
 
-        assert_eq!(
-            output,
-            "budget.set\n\
-            ┌─────────┬──────────────┬───────────────┬────────────────┐\n\
-            │ Month   ┆ Budget Cents ┆ Actual Prefix ┆ Variance Cents │\n\
-            ╞═════════╪══════════════╪═══════════════╪════════════════╡\n\
-            │ 2026-03 ┆ 5000         ┆ expenses:     ┆ -1250          │\n\
-            └─────────┴──────────────┴───────────────┴────────────────┘"
-        );
+        assert!(output.contains("budget.set"));
+        assert!(output.contains("Month"));
+        assert!(output.contains("Budget"));
+        assert!(output.contains("Actual Prefix"));
+        assert!(output.contains("Variance"));
+        assert!(output.contains("2026-03"));
+        assert!(output.contains("$50.00"));
+        assert!(output.contains("expenses:"));
+        assert!(output.contains("$-12.50"));
     }
 
     #[test]

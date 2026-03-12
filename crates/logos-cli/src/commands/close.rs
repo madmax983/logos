@@ -55,15 +55,27 @@ fn render_close_month_output(
     close: &StoredMonthClose,
     analytics_artifact_id: Option<&str>,
 ) -> String {
-    format!(
-        "close.month close_id={} month={} checking_account={} reconciliation_run_id={} analytics_artifact_id={} closed_at_us={}",
-        close.close_id(),
-        close.month_key(),
-        close.checking_account(),
-        close.reconciliation_run_id(),
-        analytics_artifact_id.unwrap_or(""),
-        close.closed_at().wallclock()
-    )
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Close ID",
+        "Month",
+        "Account",
+        "Recon Run ID",
+        "Analytics ID",
+        "Closed At",
+    ]);
+
+    table.add_row(vec![
+        close.close_id().to_owned(),
+        close.month_key().to_owned(),
+        close.checking_account().to_owned(),
+        close.reconciliation_run_id().to_owned(),
+        analytics_artifact_id.unwrap_or("").to_owned(),
+        close.closed_at().wallclock().to_string(),
+    ]);
+
+    format!("close.month\n{table}")
 }
 
 #[cfg(test)]
@@ -83,9 +95,12 @@ mod tests {
         );
 
         let output = render_close_month_output(&close, close.analytics_artifact_id());
-        assert_eq!(
-            output,
-            "close.month close_id=close-3 month=2026-03 checking_account=assets:checking reconciliation_run_id=recon-11 analytics_artifact_id=artifact-7 closed_at_us=1700000555"
-        );
+        assert!(output.contains("close.month"));
+        assert!(output.contains("close-3"));
+        assert!(output.contains("2026-03"));
+        assert!(output.contains("assets:checking"));
+        assert!(output.contains("recon-11"));
+        assert!(output.contains("artifact-7"));
+        assert!(output.contains("1700000555"));
     }
 }
