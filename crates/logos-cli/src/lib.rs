@@ -1,4 +1,5 @@
 pub mod args;
+pub mod capture_note;
 pub mod commands;
 pub mod runtime;
 
