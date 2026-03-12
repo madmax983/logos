@@ -437,6 +437,77 @@ mod tests {
         let mapped = map_load_error("test context", err);
         assert!(mapped.to_string().contains("test context"));
     }
+
+    fn temp_db_path(prefix: &str) -> std::path::PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos();
+        std::env::temp_dir().join(format!("logos-store-read-tests-{prefix}-{nanos}.db"))
+    }
+
+    #[test]
+    fn test_get_node_at_as_of_error_handling() {
+        let path = temp_db_path("node-error");
+        let db = crate::open_embedded_db(&path).unwrap();
+        let node_id = NodeId::new(999).unwrap();
+        let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
+
+        // This will naturally throw a NodeNotFound error because the DB is empty
+        // NodeNotFound maps to None via is_node_not_visible
+        let result = super::get_node_at_as_of(&db, node_id, as_of);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_none());
+
+        if path.exists() {
+            let _ = std::fs::remove_dir_all(&path);
+        }
+    }
+
+    #[test]
+    fn test_get_edge_at_as_of_error_handling() {
+        let path = temp_db_path("edge-error");
+        let db = crate::open_embedded_db(&path).unwrap();
+        let edge_id = EdgeId::new(999).unwrap();
+        let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
+
+        // This will naturally throw an EdgeNotFound error because the DB is empty
+        // EdgeNotFound maps to None via is_edge_not_visible
+        let result = super::get_edge_at_as_of(&db, edge_id, as_of);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_none());
+
+        if path.exists() {
+            let _ = std::fs::remove_dir_all(&path);
+        }
+    }
+
+    #[test]
+    fn test_has_visible_supersedes_edge_returns_false() {
+        use aletheiadb::WriteOps;
+        let path = temp_db_path("edge-vis-error");
+        let db = crate::open_embedded_db(&path).unwrap();
+
+        // Write nodes and edges via a transaction block, mapping errors correctly
+        let node_id = db
+            .write(|tx: &mut aletheiadb::WriteTransaction| {
+                let n1 = tx.create_node("TestNode", Default::default())?;
+                let n2 = tx.create_node("TargetNode", Default::default())?;
+                tx.create_edge(n1, n2, "NotSupersedes", Default::default())?;
+                Ok::<NodeId, DbError>(n1)
+            })
+            .unwrap();
+
+        let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
+
+        let result = super::has_visible_supersedes_edge(&db, node_id, as_of);
+        assert!(result.is_ok());
+        assert!(!result.unwrap());
+
+        if path.exists() {
+            let _ = std::fs::remove_dir_all(&path);
+        }
+    }
 }
 
 #[test]
@@ -505,11 +576,22 @@ fn test_store_populated_accessors() {
     store.write_correction(corr).unwrap();
     assert_eq!(store.correction_count(), 1);
 
+    // Write a second correction
+    let corr2 = Correction::new(txn_id.clone(), "fix2").unwrap();
+    store.write_correction(corr2).unwrap();
+    assert_eq!(store.correction_count(), 2);
+
     // Write budget target
     store
         .write_budget_target("2026-03", "expenses:food", 500)
         .unwrap();
     assert_eq!(store.budget_targets().count(), 1);
+
+    // Write a second budget target
+    store
+        .write_budget_target("2026-03", "expenses:rent", 1500)
+        .unwrap();
+    assert_eq!(store.budget_targets().count(), 2);
 
     // Write analytics artifact
     store
@@ -526,6 +608,20 @@ fn test_store_populated_accessors() {
         .unwrap();
     assert_eq!(store.analytics_artifacts().count(), 1);
 
+    store
+        .write_analytics_artifact_manifest(
+            "test_kind2",
+            "test_uri2",
+            "test_hash2",
+            1,
+            1,
+            aletheiadb::time::now(),
+            aletheiadb::time::now(),
+            None,
+        )
+        .unwrap();
+    assert_eq!(store.analytics_artifacts().count(), 2);
+
     // Write import batch
     let rec = crate::model::NewImportRecord::new("hash1", Some(&txn_id));
     store
@@ -533,8 +629,17 @@ fn test_store_populated_accessors() {
         .unwrap();
     assert_eq!(store.import_record_count(), 1);
     assert!(store.has_import_record_content_hash("hash1"));
+    assert!(!store.has_import_record_content_hash("missing_hash"));
     assert_eq!(store.import_records().count(), 1);
     assert_eq!(store.import_batches().count(), 1);
+
+    let rec2 = crate::model::NewImportRecord::new("hash2", Some(&txn_id));
+    store
+        .write_import_batch("kind", "uri", "batch2", 0, false, false, &[rec2])
+        .unwrap();
+    assert_eq!(store.import_record_count(), 2);
+    assert_eq!(store.import_records().count(), 2);
+    assert_eq!(store.import_batches().count(), 2);
 
     // Write statement line
     let line_rec = crate::model::NewImportRecord::with_statement_line(
@@ -546,10 +651,24 @@ fn test_store_populated_accessors() {
         -100,
     );
     store
-        .write_import_batch("stmt", "uri", "batch2", 0, false, false, &[line_rec])
+        .write_import_batch("stmt", "uri", "batch3", 0, false, false, &[line_rec])
         .unwrap();
     assert_eq!(store.statement_line_count(), 1);
     assert_eq!(store.statement_lines().count(), 1);
+
+    let line_rec2 = crate::model::NewImportRecord::with_statement_line(
+        "line2",
+        Some(&txn_id),
+        "uri",
+        "2026-03-01T00:00:00",
+        "memo",
+        -100,
+    );
+    store
+        .write_import_batch("stmt", "uri", "batch4", 0, false, false, &[line_rec2])
+        .unwrap();
+    assert_eq!(store.statement_line_count(), 2);
+    assert_eq!(store.statement_lines().count(), 2);
 
     // Write reconciliation run
     let run = store
@@ -571,6 +690,25 @@ fn test_store_populated_accessors() {
     assert_eq!(store.reconciliation_run_count(), 1);
     assert_eq!(store.reconciliation_runs().count(), 1);
 
+    let run2 = store
+        .write_reconciliation_run(
+            "2026-03",
+            "assets:savings",
+            0,
+            100,
+            100,
+            100,
+            0,
+            true,
+            1,
+            100,
+            0,
+            &[txn_id.clone()],
+        )
+        .unwrap();
+    assert_eq!(store.reconciliation_run_count(), 2);
+    assert_eq!(store.reconciliation_runs().count(), 2);
+
     // Write month close
     store
         .write_month_close("2026-03", "assets:checking", run.run_id(), None)
@@ -578,6 +716,14 @@ fn test_store_populated_accessors() {
     assert_eq!(store.month_close_count(), 1);
     assert!(store.month_close("close-1").is_some());
     assert_eq!(store.month_closes().count(), 1);
+
+    store
+        .write_month_close("2026-03", "assets:savings", run2.run_id(), None)
+        .unwrap();
+    assert_eq!(store.month_close_count(), 2);
+    assert!(store.month_close("close-2").is_some());
+    assert!(store.month_close("missing_close").is_none());
+    assert_eq!(store.month_closes().count(), 2);
 }
 
 #[test]
