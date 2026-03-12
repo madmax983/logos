@@ -355,4 +355,47 @@ mod tests {
         sim_exceeds.add_assets_liabilities(200_000_000, 0); // 2M NW
         assert_eq!(sim_exceeds.fire_progress_pct(), 100);
     }
+
+    use proptest::prelude::*;
+    proptest! {
+        #[test]
+        #[should_panic(expected = "attempt to add with overflow")]
+        #[allow(clippy::should_panic_without_expect)]
+        fn havoc_safe_net_worth_cents_panics_on_overflow(
+            units in 100_000..200_000_u32,
+        ) {
+            let mut sim = FireSimulator::new(500_000);
+
+            // `sum()` over i64 will panic if the accumulated value overflows.
+            // But we must be careful: if `forecast_value_cents` overflows internally,
+            // it catches it with `checked_mul` and returns 0!
+
+            // forecast_value_cents calculates: gross = avg * units.
+            // Then it does: gross.checked_mul(retained_pct)
+            // So we need:
+            // 1) avg * units < i64::MAX
+            // 2) (avg * units) * 75 < i64::MAX
+            // So avg * units < i64::MAX / 75.
+
+            // Let's set gross = i64::MAX / 100. (so it's < i64::MAX / 75)
+            // Then forecast returns (i64::MAX / 100) * 75 / 100
+
+            let gross = i64::MAX / 100;
+            let avg_close_price_cents = gross / (units as i64);
+
+            // Each forecast gives ~ 0.0075 * i64::MAX
+            // We need more than 1 / 0.0075 = 133 vests to overflow `sum()`
+            // Let's add 200 vests.
+
+            for _ in 0..200 {
+                sim.add_upcoming_vest(UpcomingVest {
+                    avg_close_price_cents,
+                    units,
+                    days_to_vest: 15,
+                });
+            }
+
+            let _ = sim.safe_net_worth_cents();
+        }
+    }
 }
