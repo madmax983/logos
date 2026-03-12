@@ -24,12 +24,14 @@ use logos_reporting::{
 use logos_store_aletheia::{
     AletheiaStore, StoreError,
     model::{
-        NewImportRecord, StoredAnalyticsArtifactManifest, StoredFetchArtifactFormat,
-        StoredFetchRun, StoredFetchRunStatus, StoredMonthClose, StoredReconciliationRun,
-        StoredStatementLine, StoredTransaction,
+        NewImportRecord, StoredAnalyticsArtifactManifest, StoredCaptureStatus,
+        StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredMonthClose,
+        StoredReconciliationRun, StoredStatementLine, StoredTransaction,
     },
 };
 use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
+
+use crate::capture_note::CaptureNote;
 
 const LOGOS_DB_PATH_ENV: &str = "LOGOS_DB_PATH";
 const LOGOS_ARTIFACTS_PATH_ENV: &str = "LOGOS_ARTIFACTS_PATH";
@@ -37,6 +39,7 @@ const LOGOS_FETCH_CONFIG_PATH_ENV: &str = "LOGOS_FETCH_CONFIG_PATH";
 const DEFAULT_DB_DIRECTORY: &str = ".logos";
 const DEFAULT_DB_NAME: &str = "ledger";
 const DEFAULT_FETCH_CONFIG_NAME: &str = "statement-sources.toml";
+const DEFAULT_CAPTURE_INBOX_SUBDIR: &str = "finance/inbox";
 const ARTIFACTS_DIRECTORY: &str = "artifacts";
 const PARQUET_DIRECTORY: &str = "parquet";
 const DEFAULT_ANALYTICS_SCHEMA_VERSION: i64 = 1;
@@ -47,6 +50,7 @@ pub enum RuntimeError {
     Import(ImportError),
     Domain(logos_core::DomainError),
     Analytics { message: String },
+    Capture { message: String },
 }
 
 impl fmt::Display for RuntimeError {
@@ -56,6 +60,7 @@ impl fmt::Display for RuntimeError {
             Self::Import(err) => write!(f, "{err}"),
             Self::Domain(err) => write!(f, "domain error: {err}"),
             Self::Analytics { message } => write!(f, "{message}"),
+            Self::Capture { message } => write!(f, "{message}"),
         }
     }
 }
@@ -110,6 +115,15 @@ pub struct ImportSummary {
 pub type PdfImportSummary = ImportSummary;
 pub type CsvImportSummary = ImportSummary;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CaptureIngestSummary {
+    ingested_count: usize,
+    updated_count: usize,
+    skipped_count: usize,
+    conflict_count: usize,
+    malformed_count: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthAutopilotRequest {
     month_key: String,
@@ -158,6 +172,50 @@ impl ImportSummary {
     #[must_use]
     pub const fn dry_run(&self) -> bool {
         self.dry_run
+    }
+}
+
+impl CaptureIngestSummary {
+    #[must_use]
+    pub const fn new(
+        ingested_count: usize,
+        updated_count: usize,
+        skipped_count: usize,
+        conflict_count: usize,
+        malformed_count: usize,
+    ) -> Self {
+        Self {
+            ingested_count,
+            updated_count,
+            skipped_count,
+            conflict_count,
+            malformed_count,
+        }
+    }
+
+    #[must_use]
+    pub const fn ingested_count(&self) -> usize {
+        self.ingested_count
+    }
+
+    #[must_use]
+    pub const fn updated_count(&self) -> usize {
+        self.updated_count
+    }
+
+    #[must_use]
+    pub const fn skipped_count(&self) -> usize {
+        self.skipped_count
+    }
+
+    #[must_use]
+    pub const fn conflict_count(&self) -> usize {
+        self.conflict_count
+    }
+
+    #[must_use]
+    pub const fn malformed_count(&self) -> usize {
+        self.malformed_count
     }
 }
 
@@ -490,6 +548,73 @@ impl CliRuntime {
         Self::default()
     }
 
+    /// Ingests Markdown capture notes from a synced vault inbox into the local store.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the vault/inbox path is invalid, a note cannot be read,
+    /// or persistence fails.
+    pub fn ingest_capture_notes(
+        &mut self,
+        vault_path: &Path,
+        inbox_subdir: Option<&str>,
+    ) -> Result<CaptureIngestSummary, RuntimeError> {
+        let inbox_root = resolve_capture_inbox_root(vault_path, inbox_subdir)?;
+        let markdown_files = collect_markdown_files(&inbox_root)?;
+        let mut prepared_notes = Vec::with_capacity(markdown_files.len());
+        let mut malformed_count: usize = 0;
+
+        for path in markdown_files {
+            let raw_bytes = fs::read(&path).map_err(|err| RuntimeError::Capture {
+                message: format!("unable to read capture note '{}': {err}", path.display()),
+            })?;
+            let raw =
+                String::from_utf8(raw_bytes.clone()).map_err(|err| RuntimeError::Capture {
+                    message: format!(
+                        "capture note '{}' is not valid UTF-8: {err}",
+                        path.display()
+                    ),
+                })?;
+            let content_hash = hash_capture_note_bytes(&raw_bytes);
+
+            match CaptureNote::parse(&raw) {
+                Ok(note) => prepared_notes.push(PreparedCaptureNote {
+                    source_path: normalize_capture_source_path(&path),
+                    content_hash,
+                    note,
+                }),
+                Err(_) => malformed_count = malformed_count.saturating_add(1),
+            }
+        }
+
+        let mut summary = CaptureIngestSummary::new(0, 0, 0, 0, malformed_count);
+        for prepared in prepared_notes {
+            let existing = self.store.capture_draft(&prepared.note.capture_id);
+            match decide_capture_ingest_action(
+                existing.map(|draft| draft.content_hash()),
+                existing.map(|draft| draft.status()),
+                &prepared.content_hash,
+            ) {
+                CaptureIngestAction::Ingest => {
+                    self.write_prepared_capture_note(&prepared)?;
+                    summary.ingested_count = summary.ingested_count.saturating_add(1);
+                }
+                CaptureIngestAction::Update => {
+                    self.write_prepared_capture_note(&prepared)?;
+                    summary.updated_count = summary.updated_count.saturating_add(1);
+                }
+                CaptureIngestAction::Skip => {
+                    summary.skipped_count = summary.skipped_count.saturating_add(1);
+                }
+                CaptureIngestAction::Conflict => {
+                    summary.conflict_count = summary.conflict_count.saturating_add(1);
+                }
+            }
+        }
+
+        Ok(summary)
+    }
+
     #[must_use]
     pub fn default_store_path() -> PathBuf {
         if let Some(path) = env::var_os(LOGOS_DB_PATH_ENV) {
@@ -522,6 +647,29 @@ impl CliRuntime {
     ) -> Result<TransactionId, RuntimeError> {
         let builder = build_double_entry(description, debit_account, credit_account, amount_cents)?;
         Ok(self.store.write_transaction(builder)?)
+    }
+
+    fn write_prepared_capture_note(
+        &mut self,
+        prepared: &PreparedCaptureNote,
+    ) -> Result<(), RuntimeError> {
+        self.store
+            .write_capture_draft(
+                &prepared.note.capture_id,
+                &prepared.source_path,
+                &prepared.content_hash,
+                &prepared.note.captured_at,
+                &prepared.note.kind,
+                prepared.note.amount_cents,
+                &prepared.note.currency,
+                &prepared.note.merchant_memo,
+                prepared.note.from_account_hint.as_deref(),
+                prepared.note.to_account_hint.as_deref(),
+                prepared.note.category_hint.as_deref(),
+                &prepared.note.body,
+            )
+            .map(|_| ())
+            .map_err(RuntimeError::from)
     }
 
     #[must_use]
@@ -1817,10 +1965,139 @@ fn default_fetch_config_path(store_path: &Path) -> PathBuf {
     )
 }
 
+#[derive(Debug)]
+struct PreparedCaptureNote {
+    source_path: String,
+    content_hash: String,
+    note: CaptureNote,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CaptureIngestAction {
+    Ingest,
+    Update,
+    Skip,
+    Conflict,
+}
+
+fn resolve_capture_inbox_root(
+    vault_path: &Path,
+    inbox_subdir: Option<&str>,
+) -> Result<PathBuf, RuntimeError> {
+    if !vault_path.exists() {
+        return Err(RuntimeError::Capture {
+            message: format!("vault path '{}' does not exist", vault_path.display()),
+        });
+    }
+    if !vault_path.is_dir() {
+        return Err(RuntimeError::Capture {
+            message: format!("vault path '{}' is not a directory", vault_path.display()),
+        });
+    }
+
+    let inbox_root = inbox_subdir.map_or_else(
+        || vault_path.join(DEFAULT_CAPTURE_INBOX_SUBDIR),
+        |subdir| {
+            let subdir_path = Path::new(subdir);
+            if subdir_path.is_absolute() {
+                subdir_path.to_path_buf()
+            } else {
+                vault_path.join(subdir_path)
+            }
+        },
+    );
+
+    if !inbox_root.exists() {
+        return Err(RuntimeError::Capture {
+            message: format!("capture inbox '{}' does not exist", inbox_root.display()),
+        });
+    }
+    if !inbox_root.is_dir() {
+        return Err(RuntimeError::Capture {
+            message: format!(
+                "capture inbox '{}' is not a directory",
+                inbox_root.display()
+            ),
+        });
+    }
+
+    Ok(inbox_root)
+}
+
+fn collect_markdown_files(root: &Path) -> Result<Vec<PathBuf>, RuntimeError> {
+    let mut files = Vec::new();
+    collect_markdown_files_recursive(root, &mut files)?;
+    files.sort();
+    Ok(files)
+}
+
+fn collect_markdown_files_recursive(
+    root: &Path,
+    files: &mut Vec<PathBuf>,
+) -> Result<(), RuntimeError> {
+    let mut entries = fs::read_dir(root)
+        .map_err(|err| RuntimeError::Capture {
+            message: format!("unable to read capture inbox '{}': {err}", root.display()),
+        })?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|err| RuntimeError::Capture {
+            message: format!(
+                "unable to enumerate capture inbox '{}': {err}",
+                root.display()
+            ),
+        })?;
+    entries.sort_by_key(|entry| entry.path());
+
+    for entry in entries {
+        let path = entry.path();
+        let file_type = entry.file_type().map_err(|err| RuntimeError::Capture {
+            message: format!("unable to inspect capture path '{}': {err}", path.display()),
+        })?;
+        if file_type.is_dir() {
+            collect_markdown_files_recursive(&path, files)?;
+        } else if file_type.is_file()
+            && path
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("md"))
+        {
+            files.push(path);
+        }
+    }
+
+    Ok(())
+}
+
+fn hash_capture_note_bytes(bytes: &[u8]) -> String {
+    let mut hasher = Hasher::new();
+    hasher.update(b"capture-note\n");
+    hasher.update(bytes);
+    hasher.finalize().to_hex().to_string()
+}
+
+fn normalize_capture_source_path(path: &Path) -> String {
+    path.to_string_lossy().replace('\\', "/")
+}
+
+fn decide_capture_ingest_action(
+    existing_hash: Option<&str>,
+    existing_status: Option<StoredCaptureStatus>,
+    incoming_hash: &str,
+) -> CaptureIngestAction {
+    match (existing_hash, existing_status) {
+        (None, None) => CaptureIngestAction::Ingest,
+        (Some(hash), _) if hash == incoming_hash => CaptureIngestAction::Skip,
+        (Some(_), Some(status)) if status.is_terminal() => CaptureIngestAction::Conflict,
+        (Some(_), Some(_)) => CaptureIngestAction::Update,
+        _ => CaptureIngestAction::Ingest,
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::CliRuntime;
+    use super::{CaptureIngestAction, CliRuntime, decide_capture_ingest_action};
     use logos_fetch::{FetchError, OutputFormat, SecretBundle, SecretResolver, StatementSource};
+    use logos_store_aletheia::model::StoredCaptureStatus;
 
     #[derive(Debug, Clone)]
     struct StubSecretResolver {
@@ -1884,6 +2161,38 @@ mod tests {
         assert_eq!(
             bundle,
             SecretBundle::new("markm", "s3cr3t", Some("123456")).expect("expected")
+        );
+    }
+
+    #[test]
+    fn decide_capture_ingest_action_covers_ingest_update_skip_and_conflict() {
+        assert_eq!(
+            decide_capture_ingest_action(None, None, "sha256:new"),
+            CaptureIngestAction::Ingest
+        );
+        assert_eq!(
+            decide_capture_ingest_action(
+                Some("sha256:same"),
+                Some(StoredCaptureStatus::Inbox),
+                "sha256:same"
+            ),
+            CaptureIngestAction::Skip
+        );
+        assert_eq!(
+            decide_capture_ingest_action(
+                Some("sha256:old"),
+                Some(StoredCaptureStatus::Inbox),
+                "sha256:new"
+            ),
+            CaptureIngestAction::Update
+        );
+        assert_eq!(
+            decide_capture_ingest_action(
+                Some("sha256:old"),
+                Some(StoredCaptureStatus::Promoted),
+                "sha256:new"
+            ),
+            CaptureIngestAction::Conflict
         );
     }
 }
