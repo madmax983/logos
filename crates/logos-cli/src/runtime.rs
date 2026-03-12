@@ -24,7 +24,7 @@ use logos_reporting::{
 use logos_store_aletheia::{
     AletheiaStore, StoreError,
     model::{
-        NewImportRecord, StoredAnalyticsArtifactManifest, StoredCaptureStatus,
+        NewImportRecord, StoredAnalyticsArtifactManifest, StoredCaptureDraft, StoredCaptureStatus,
         StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredMonthClose,
         StoredReconciliationRun, StoredStatementLine, StoredTransaction,
     },
@@ -125,6 +125,25 @@ pub struct CaptureIngestSummary {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CaptureDraftRow {
+    capture_id: String,
+    source_path: String,
+    content_hash: String,
+    captured_at: String,
+    kind: String,
+    amount_cents: i64,
+    currency: String,
+    merchant_memo: String,
+    from_account_hint: Option<String>,
+    to_account_hint: Option<String>,
+    category_hint: Option<String>,
+    body_note: String,
+    status: String,
+    promotion_txn_id: Option<String>,
+    rejection_reason: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthAutopilotRequest {
     month_key: String,
     checking_account: String,
@@ -216,6 +235,143 @@ impl CaptureIngestSummary {
     #[must_use]
     pub const fn malformed_count(&self) -> usize {
         self.malformed_count
+    }
+}
+
+impl CaptureDraftRow {
+    fn from_stored(draft: &StoredCaptureDraft) -> Self {
+        Self {
+            capture_id: draft.capture_id().to_owned(),
+            source_path: draft.source_path().to_owned(),
+            content_hash: draft.content_hash().to_owned(),
+            captured_at: draft.captured_at().to_owned(),
+            kind: draft.kind().to_owned(),
+            amount_cents: draft.amount_cents(),
+            currency: draft.currency().to_owned(),
+            merchant_memo: draft.merchant_memo().to_owned(),
+            from_account_hint: draft.from_account_hint().map(str::to_owned),
+            to_account_hint: draft.to_account_hint().map(str::to_owned),
+            category_hint: draft.category_hint().map(str::to_owned),
+            body_note: draft.body_note().to_owned(),
+            status: draft.status().as_str().to_owned(),
+            promotion_txn_id: draft
+                .promotion_txn_id()
+                .map(|value| value.as_str().to_owned()),
+            rejection_reason: draft.rejection_reason().map(str::to_owned),
+        }
+    }
+
+    #[must_use]
+    pub fn capture_id(&self) -> &str {
+        &self.capture_id
+    }
+
+    #[must_use]
+    pub fn source_path(&self) -> &str {
+        &self.source_path
+    }
+
+    #[must_use]
+    pub fn content_hash(&self) -> &str {
+        &self.content_hash
+    }
+
+    #[must_use]
+    pub fn captured_at(&self) -> &str {
+        &self.captured_at
+    }
+
+    #[must_use]
+    pub fn kind(&self) -> &str {
+        &self.kind
+    }
+
+    #[must_use]
+    pub const fn amount_cents(&self) -> i64 {
+        self.amount_cents
+    }
+
+    #[must_use]
+    pub fn currency(&self) -> &str {
+        &self.currency
+    }
+
+    #[must_use]
+    pub fn merchant_memo(&self) -> &str {
+        &self.merchant_memo
+    }
+
+    #[must_use]
+    pub fn from_account_hint(&self) -> Option<&str> {
+        self.from_account_hint.as_deref()
+    }
+
+    #[must_use]
+    pub fn to_account_hint(&self) -> Option<&str> {
+        self.to_account_hint.as_deref()
+    }
+
+    #[must_use]
+    pub fn category_hint(&self) -> Option<&str> {
+        self.category_hint.as_deref()
+    }
+
+    #[must_use]
+    pub fn body_note(&self) -> &str {
+        &self.body_note
+    }
+
+    #[must_use]
+    pub fn status(&self) -> &str {
+        &self.status
+    }
+
+    #[must_use]
+    pub fn promotion_txn_id(&self) -> Option<&str> {
+        self.promotion_txn_id.as_deref()
+    }
+
+    #[must_use]
+    pub fn rejection_reason(&self) -> Option<&str> {
+        self.rejection_reason.as_deref()
+    }
+
+    #[cfg(test)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_for_tests(
+        capture_id: &str,
+        source_path: &str,
+        content_hash: &str,
+        captured_at: &str,
+        kind: &str,
+        amount_cents: i64,
+        currency: &str,
+        merchant_memo: &str,
+        from_account_hint: Option<&str>,
+        to_account_hint: Option<&str>,
+        category_hint: Option<&str>,
+        body_note: &str,
+        status: &str,
+        promotion_txn_id: Option<&str>,
+        rejection_reason: Option<&str>,
+    ) -> Self {
+        Self {
+            capture_id: capture_id.to_owned(),
+            source_path: source_path.to_owned(),
+            content_hash: content_hash.to_owned(),
+            captured_at: captured_at.to_owned(),
+            kind: kind.to_owned(),
+            amount_cents,
+            currency: currency.to_owned(),
+            merchant_memo: merchant_memo.to_owned(),
+            from_account_hint: from_account_hint.map(str::to_owned),
+            to_account_hint: to_account_hint.map(str::to_owned),
+            category_hint: category_hint.map(str::to_owned),
+            body_note: body_note.to_owned(),
+            status: status.to_owned(),
+            promotion_txn_id: promotion_txn_id.map(str::to_owned),
+            rejection_reason: rejection_reason.map(str::to_owned),
+        }
     }
 }
 
@@ -613,6 +769,48 @@ impl CliRuntime {
         }
 
         Ok(summary)
+    }
+
+    /// Lists persisted capture drafts with an optional workflow status filter.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the status filter is invalid.
+    pub fn list_capture_drafts(
+        &self,
+        status: Option<&str>,
+    ) -> Result<Vec<CaptureDraftRow>, RuntimeError> {
+        let parsed_status = status
+            .map(|value| {
+                StoredCaptureStatus::parse(value).ok_or_else(|| RuntimeError::Capture {
+                    message: format!("unknown capture status filter '{value}'"),
+                })
+            })
+            .transpose()?;
+
+        let mut rows = self
+            .store
+            .capture_drafts()
+            .filter(|draft| parsed_status.is_none_or(|value| draft.status() == value))
+            .map(CaptureDraftRow::from_stored)
+            .collect::<Vec<_>>();
+        rows.sort_by(|left, right| left.capture_id().cmp(right.capture_id()));
+        Ok(rows)
+    }
+
+    /// Loads one persisted capture draft by id.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the draft does not exist.
+    pub fn show_capture_draft(&self, capture_id: &str) -> Result<CaptureDraftRow, RuntimeError> {
+        let draft = self
+            .store
+            .capture_draft(capture_id)
+            .ok_or_else(|| RuntimeError::Capture {
+                message: format!("capture draft '{capture_id}' not found"),
+            })?;
+        Ok(CaptureDraftRow::from_stored(draft))
     }
 
     #[must_use]

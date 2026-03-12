@@ -84,11 +84,11 @@ Usage: ledger capture <subcommand> [options]
 
 Subcommands:
   ingest --vault-path <path> [--inbox-subdir <path>]
-                                       Scan a synced vault inbox and ingest draft capture notes
+                                        Scan a synced vault inbox and ingest draft capture notes
   list [--status <status>]
-                                       List persisted capture drafts by optional workflow status
+                                       List persisted capture drafts by optional workflow status (inbox|ready|suggested|needs_review|promoted|rejected|conflict)
   show --capture-id <id>
-                                       Show one persisted capture draft by id
+                                       Show one persisted capture draft by id with source path, hints, and note body
   promote --capture-id <id> [--debit-account <name>] [--credit-account <name>]
                                        Promote one capture draft into a real ledger transaction
   reject --capture-id <id> --reason <text>
