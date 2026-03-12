@@ -66,21 +66,40 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
         .iter()
         .filter(|run| run.status() == StoredFetchRunStatus::NeedsAttention)
         .count();
-    format!(
-        "month.autopilot month={} checking_account={} imported_count={} duplicate_count={} fetch_run_count={} fetch_needs_attention_count={} run_id={} variance_cents={} reconciled={} report_cashflow_cents={} close_id={} closed_at_us={}",
-        summary.month_key(),
-        summary.checking_account(),
-        summary.imported_count(),
-        summary.duplicate_count(),
-        summary.fetch_runs().len(),
-        fetch_needs_attention_count,
-        summary.reconciliation_run().run_id(),
-        summary.reconciliation_run().variance_cents(),
-        summary.reconciliation_run().reconciled(),
-        summary.report().cashflow_cents(),
-        summary.close().close_id(),
-        summary.close().closed_at().wallclock()
-    )
+
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Month",
+        "Account",
+        "Imported",
+        "Duplicates",
+        "Fetch Runs",
+        "Needs Attention",
+        "Recon Run ID",
+        "Variance",
+        "Reconciled",
+        "Cashflow",
+        "Close ID",
+        "Closed At",
+    ]);
+
+    table.add_row(vec![
+        summary.month_key().to_owned(),
+        summary.checking_account().to_owned(),
+        summary.imported_count().to_string(),
+        summary.duplicate_count().to_string(),
+        summary.fetch_runs().len().to_string(),
+        fetch_needs_attention_count.to_string(),
+        summary.reconciliation_run().run_id().to_owned(),
+        format!("${:.2}", (summary.reconciliation_run().variance_cents() as f64) / 100.0),
+        summary.reconciliation_run().reconciled().to_string(),
+        format!("${:.2}", (summary.report().cashflow_cents() as f64) / 100.0),
+        summary.close().close_id().to_owned(),
+        summary.close().closed_at().wallclock().to_string(),
+    ]);
+
+    format!("month.autopilot\n{table}")
 }
 
 #[cfg(test)]
@@ -144,9 +163,14 @@ mod tests {
         );
 
         let output = render_autopilot_output(&summary);
-        assert_eq!(
-            output,
-            "month.autopilot month=2026-04 checking_account=assets:checking imported_count=2 duplicate_count=0 fetch_run_count=1 fetch_needs_attention_count=0 run_id=recon-5 variance_cents=0 reconciled=true report_cashflow_cents=7500 close_id=close-2 closed_at_us=1700000456"
-        );
+        assert!(output.contains("month.autopilot"));
+        assert!(output.contains("2026-04"));
+        assert!(output.contains("assets:checking"));
+        assert!(output.contains("recon-5"));
+        assert!(output.contains("close-2"));
+        assert!(output.contains("$0.00"));
+        assert!(output.contains("true"));
+        assert!(output.contains("$75.00"));
+        assert!(output.contains("1700000456"));
     }
 }

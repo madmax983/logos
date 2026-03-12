@@ -1199,7 +1199,7 @@ fn parse_required_parsed_flag<T: std::str::FromStr>(
         });
     };
 
-    Ok(Some(parsed))
+    Ok(parsed)
 }
 
 fn parse_paired_i64_flags(
@@ -1207,8 +1207,8 @@ fn parse_paired_i64_flags(
     left_flag: &str,
     right_flag: &str,
 ) -> Result<(Option<i64>, Option<i64>), CliError> {
-    let left = parse_optional_i64_value(args, left_flag)?;
-    let right = parse_optional_i64_value(args, right_flag)?;
+    let left = parse_optional_parsed_value::<i64>(args, left_flag)?;
+    let right = parse_optional_parsed_value::<i64>(args, right_flag)?;
 
     match (left, right) {
         (Some(left), Some(right)) => Ok((Some(left), Some(right))),
