@@ -11,8 +11,9 @@ use crate::{
         AsOf, EDGE_HAS_POSTING, EDGE_SUPERSEDES, LABEL_LEDGER_CORRECTION, PROP_ACCOUNT,
         PROP_AMOUNT_CENTS, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_ORDINAL,
         PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID, StoredAnalyticsArtifactManifest, StoredBudgetTarget,
-        StoredCorrection, StoredFetchRun, StoredImportBatch, StoredImportRecord, StoredMonthClose,
-        StoredReconciliationRun, StoredStatementLine, StoredTransaction,
+        StoredCaptureDraft, StoredCorrection, StoredFetchRun, StoredImportBatch,
+        StoredImportRecord, StoredMonthClose, StoredReconciliationRun, StoredStatementLine,
+        StoredTransaction,
     },
     parse_posting, required_edge_i64_property, required_node_i64_property,
     required_node_string_property,
@@ -96,6 +97,20 @@ impl AletheiaStore {
 
     pub fn statement_lines(&self) -> impl Iterator<Item = &StoredStatementLine> + '_ {
         self.statement_lines.values()
+    }
+
+    #[must_use]
+    pub fn capture_draft_count(&self) -> usize {
+        self.capture_drafts.len()
+    }
+
+    #[must_use]
+    pub fn capture_draft(&self, capture_id: &str) -> Option<&StoredCaptureDraft> {
+        self.capture_drafts.get(capture_id)
+    }
+
+    pub fn capture_drafts(&self) -> impl Iterator<Item = &StoredCaptureDraft> + '_ {
+        self.capture_drafts.values()
     }
 
     #[must_use]

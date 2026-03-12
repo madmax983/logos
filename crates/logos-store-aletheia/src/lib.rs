@@ -13,19 +13,25 @@ use crate::model::{
     EDGE_CLOSES_ANALYTICS_ARTIFACT, EDGE_CLOSES_RECONCILIATION_RUN, EDGE_DERIVED_FROM,
     EDGE_EVIDENCES_TXN, EDGE_HAS_IMPORT_RECORD, EDGE_HAS_POSTING, EDGE_HAS_STATEMENT_LINE,
     EDGE_RECONCILES_STMT_LINE, EDGE_RECONCILES_TXN, EDGE_SUPERSEDES,
-    LABEL_ANALYTICS_ARTIFACT_MANIFEST, LABEL_LEDGER_BUDGET_TARGET, LABEL_LEDGER_CORRECTION,
-    LABEL_LEDGER_FETCH_RUN, LABEL_LEDGER_IMPORT_BATCH, LABEL_LEDGER_IMPORT_RECORD,
-    LABEL_LEDGER_MONTH_CLOSE, LABEL_LEDGER_POSTING, LABEL_LEDGER_RECONCILIATION_RUN,
-    LABEL_LEDGER_STATEMENT_LINE, LABEL_LEDGER_TRANSACTION, NewImportRecord, PROP_ACCOUNT,
-    PROP_AMOUNT_CENTS, PROP_ARTIFACT_ID, PROP_ARTIFACT_KIND, PROP_ARTIFACT_URI, PROP_BUDGET_CENTS,
-    PROP_CONTENT_HASH, PROP_CREATED_AT_US, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US,
-    PROP_EXPENSE_ACCOUNT_PREFIX, PROP_FETCH_ARTIFACT_PATH, PROP_FETCH_CLOSING_BALANCE_CENTS,
-    PROP_FETCH_CREATED_AT_US, PROP_FETCH_ERROR_SUMMARY, PROP_FETCH_INSTITUTION_ID,
-    PROP_FETCH_LEDGER_ACCOUNT, PROP_FETCH_OPENING_BALANCE_CENTS, PROP_FETCH_OUTPUT_FORMAT,
-    PROP_FETCH_RUN_ID, PROP_FETCH_SOURCE_ID, PROP_FETCH_STATUS, PROP_IMPORT_BATCH_ID,
-    PROP_IMPORT_BATCH_KEY, PROP_IMPORT_CONTENT_HASH_KEY, PROP_IMPORT_DRY_RUN,
-    PROP_IMPORT_DUPLICATE_COUNT, PROP_IMPORT_IMPORTED_AT_US, PROP_IMPORT_IMPORTED_TXN_ID,
-    PROP_IMPORT_KIND, PROP_IMPORT_OCR_ENABLED, PROP_IMPORT_RECORD_COUNT, PROP_IMPORT_SOURCE_URI,
+    LABEL_ANALYTICS_ARTIFACT_MANIFEST, LABEL_LEDGER_BUDGET_TARGET, LABEL_LEDGER_CAPTURE_DRAFT,
+    LABEL_LEDGER_CORRECTION, LABEL_LEDGER_FETCH_RUN, LABEL_LEDGER_IMPORT_BATCH,
+    LABEL_LEDGER_IMPORT_RECORD, LABEL_LEDGER_MONTH_CLOSE, LABEL_LEDGER_POSTING,
+    LABEL_LEDGER_RECONCILIATION_RUN, LABEL_LEDGER_STATEMENT_LINE, LABEL_LEDGER_TRANSACTION,
+    NewImportRecord, PROP_ACCOUNT, PROP_AMOUNT_CENTS, PROP_ARTIFACT_ID, PROP_ARTIFACT_KIND,
+    PROP_ARTIFACT_URI, PROP_BUDGET_CENTS, PROP_CAPTURE_BODY_NOTE, PROP_CAPTURE_CAPTURED_AT,
+    PROP_CAPTURE_CATEGORY_HINT, PROP_CAPTURE_CURRENCY, PROP_CAPTURE_FROM_ACCOUNT_HINT,
+    PROP_CAPTURE_ID, PROP_CAPTURE_INGESTED_AT_US, PROP_CAPTURE_KIND, PROP_CAPTURE_MERCHANT_MEMO,
+    PROP_CAPTURE_PROMOTION_TXN_ID, PROP_CAPTURE_REJECTION_REASON, PROP_CAPTURE_SOURCE_PATH,
+    PROP_CAPTURE_STATUS, PROP_CAPTURE_SUGGESTED_CREDIT_ACCOUNT,
+    PROP_CAPTURE_SUGGESTED_DEBIT_ACCOUNT, PROP_CAPTURE_TO_ACCOUNT_HINT, PROP_CONTENT_HASH,
+    PROP_CREATED_AT_US, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US, PROP_EXPENSE_ACCOUNT_PREFIX,
+    PROP_FETCH_ARTIFACT_PATH, PROP_FETCH_CLOSING_BALANCE_CENTS, PROP_FETCH_CREATED_AT_US,
+    PROP_FETCH_ERROR_SUMMARY, PROP_FETCH_INSTITUTION_ID, PROP_FETCH_LEDGER_ACCOUNT,
+    PROP_FETCH_OPENING_BALANCE_CENTS, PROP_FETCH_OUTPUT_FORMAT, PROP_FETCH_RUN_ID,
+    PROP_FETCH_SOURCE_ID, PROP_FETCH_STATUS, PROP_IMPORT_BATCH_ID, PROP_IMPORT_BATCH_KEY,
+    PROP_IMPORT_CONTENT_HASH_KEY, PROP_IMPORT_DRY_RUN, PROP_IMPORT_DUPLICATE_COUNT,
+    PROP_IMPORT_IMPORTED_AT_US, PROP_IMPORT_IMPORTED_TXN_ID, PROP_IMPORT_KIND,
+    PROP_IMPORT_OCR_ENABLED, PROP_IMPORT_RECORD_COUNT, PROP_IMPORT_SOURCE_URI,
     PROP_MONTH_CLOSE_ANALYTICS_ARTIFACT_ID, PROP_MONTH_CLOSE_CLOSED_AT_US, PROP_MONTH_CLOSE_ID,
     PROP_MONTH_CLOSE_RECONCILIATION_RUN_ID, PROP_MONTH_KEY, PROP_ORDINAL, PROP_REASON,
     PROP_RECONCILIATION_CHECKING_ACCOUNT, PROP_RECONCILIATION_CREATED_AT_US,
@@ -38,10 +44,10 @@ use crate::model::{
     PROP_SNAPSHOT_VALID_AT_US, PROP_STATEMENT_AMOUNT_CENTS, PROP_STATEMENT_LINE_ID,
     PROP_STATEMENT_MEMO, PROP_STATEMENT_SOURCE_URI, PROP_STATEMENT_TIMESTAMP,
     PROP_SUPERSEDES_ARTIFACT_ID, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID,
-    StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredCorrection,
-    StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredImportBatch,
-    StoredImportRecord, StoredMonthClose, StoredReconciliationRun, StoredStatementLine,
-    StoredTransaction,
+    StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredCaptureDraft, StoredCaptureStatus,
+    StoredCorrection, StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus,
+    StoredImportBatch, StoredImportRecord, StoredMonthClose, StoredReconciliationRun,
+    StoredStatementLine, StoredTransaction,
 };
 
 pub mod model;
@@ -105,6 +111,7 @@ pub struct AletheiaStore {
     pub(crate) import_records: HashMap<String, StoredImportRecord>,
     pub(crate) statement_lines: HashMap<String, StoredStatementLine>,
     pub(crate) statement_line_ids_by_txn: HashMap<TransactionId, Vec<String>>,
+    pub(crate) capture_drafts: HashMap<String, StoredCaptureDraft>,
     pub(crate) fetch_runs: HashMap<String, StoredFetchRun>,
     pub(crate) reconciliation_runs: HashMap<String, StoredReconciliationRun>,
     pub(crate) reconciliation_statement_line_ids: HashMap<String, Vec<String>>,
@@ -126,6 +133,8 @@ struct LoadedProjection {
     import_batch_nodes: HashMap<String, NodeId>,
     statement_lines: HashMap<String, StoredStatementLine>,
     statement_line_nodes: HashMap<String, NodeId>,
+    capture_drafts: HashMap<String, StoredCaptureDraft>,
+    capture_draft_nodes: HashMap<String, NodeId>,
     fetch_runs: HashMap<String, StoredFetchRun>,
     fetch_run_nodes: HashMap<String, NodeId>,
     reconciliation_runs: HashMap<String, StoredReconciliationRun>,
@@ -143,6 +152,7 @@ pub(crate) struct EmbeddedStore {
     pub(crate) analytics_artifact_nodes: HashMap<String, NodeId>,
     pub(crate) import_batch_nodes: HashMap<String, NodeId>,
     pub(crate) statement_line_nodes: HashMap<String, NodeId>,
+    pub(crate) capture_draft_nodes: HashMap<String, NodeId>,
     pub(crate) fetch_run_nodes: HashMap<String, NodeId>,
     pub(crate) reconciliation_run_nodes: HashMap<String, NodeId>,
     pub(crate) month_close_nodes: HashMap<String, NodeId>,
@@ -159,6 +169,7 @@ impl fmt::Debug for EmbeddedStore {
             )
             .field("import_batch_nodes", &self.import_batch_nodes.len())
             .field("statement_line_nodes", &self.statement_line_nodes.len())
+            .field("capture_draft_nodes", &self.capture_draft_nodes.len())
             .field("fetch_run_nodes", &self.fetch_run_nodes.len())
             .field(
                 "reconciliation_run_nodes",
@@ -193,6 +204,7 @@ impl fmt::Debug for AletheiaStore {
                 "statement_line_ids_by_txn",
                 &self.statement_line_ids_by_txn.len(),
             )
+            .field("capture_drafts", &self.capture_drafts.len())
             .field("reconciliation_runs", &self.reconciliation_runs.len())
             .field(
                 "reconciliation_statement_line_ids",
@@ -262,6 +274,7 @@ impl AletheiaStore {
             import_records: loaded.import_records,
             statement_lines: loaded.statement_lines,
             statement_line_ids_by_txn,
+            capture_drafts: loaded.capture_drafts,
             fetch_runs: loaded.fetch_runs,
             reconciliation_runs: loaded.reconciliation_runs,
             reconciliation_statement_line_ids: loaded.reconciliation_statement_line_ids,
@@ -273,6 +286,7 @@ impl AletheiaStore {
                 analytics_artifact_nodes: loaded.analytics_artifact_nodes,
                 import_batch_nodes: loaded.import_batch_nodes,
                 statement_line_nodes: loaded.statement_line_nodes,
+                capture_draft_nodes: loaded.capture_draft_nodes,
                 fetch_run_nodes: loaded.fetch_run_nodes,
                 reconciliation_run_nodes: loaded.reconciliation_run_nodes,
                 month_close_nodes: loaded.month_close_nodes,
@@ -364,6 +378,78 @@ impl AletheiaStore {
                 .push(line_id.clone());
         }
         self.statement_lines.insert(line_id, line);
+    }
+
+    pub(crate) fn persist_capture_draft(&mut self, draft: StoredCaptureDraft) {
+        self.capture_drafts
+            .insert(draft.capture_id().to_owned(), draft);
+    }
+
+    pub(crate) fn persist_capture_draft_graph(
+        &mut self,
+        draft: &StoredCaptureDraft,
+    ) -> Result<(), StoreError> {
+        let Some(embedded) = self.embedded.as_mut() else {
+            return Ok(());
+        };
+
+        let mut tx = embedded.db.write_transaction().map_err(|err| {
+            map_persist_error("unable to start capture draft write transaction", err)
+        })?;
+        let draft_node = tx
+            .create_node(
+                LABEL_LEDGER_CAPTURE_DRAFT,
+                PropertyMapBuilder::new()
+                    .insert(PROP_CAPTURE_ID, draft.capture_id())
+                    .insert(PROP_CAPTURE_SOURCE_PATH, draft.source_path())
+                    .insert(PROP_CONTENT_HASH, draft.content_hash())
+                    .insert(PROP_CAPTURE_CAPTURED_AT, draft.captured_at())
+                    .insert(PROP_CAPTURE_KIND, draft.kind())
+                    .insert(PROP_AMOUNT_CENTS, draft.amount_cents())
+                    .insert(PROP_CAPTURE_CURRENCY, draft.currency())
+                    .insert(PROP_CAPTURE_MERCHANT_MEMO, draft.merchant_memo())
+                    .insert(
+                        PROP_CAPTURE_FROM_ACCOUNT_HINT,
+                        draft.from_account_hint().unwrap_or(""),
+                    )
+                    .insert(
+                        PROP_CAPTURE_TO_ACCOUNT_HINT,
+                        draft.to_account_hint().unwrap_or(""),
+                    )
+                    .insert(
+                        PROP_CAPTURE_CATEGORY_HINT,
+                        draft.category_hint().unwrap_or(""),
+                    )
+                    .insert(PROP_CAPTURE_BODY_NOTE, draft.body_note())
+                    .insert(PROP_CAPTURE_STATUS, draft.status().as_str())
+                    .insert(
+                        PROP_CAPTURE_SUGGESTED_DEBIT_ACCOUNT,
+                        draft.suggested_debit_account().unwrap_or(""),
+                    )
+                    .insert(
+                        PROP_CAPTURE_SUGGESTED_CREDIT_ACCOUNT,
+                        draft.suggested_credit_account().unwrap_or(""),
+                    )
+                    .insert(
+                        PROP_CAPTURE_PROMOTION_TXN_ID,
+                        draft.promotion_txn_id().map_or("", TransactionId::as_str),
+                    )
+                    .insert(
+                        PROP_CAPTURE_REJECTION_REASON,
+                        draft.rejection_reason().unwrap_or(""),
+                    )
+                    .insert(PROP_CAPTURE_INGESTED_AT_US, draft.ingested_at().wallclock())
+                    .build(),
+            )
+            .map_err(|err| map_persist_error("unable to create LedgerCaptureDraft node", err))?;
+        tx.commit().map_err(|err| {
+            map_persist_error("unable to commit embedded capture draft write", err)
+        })?;
+
+        embedded
+            .capture_draft_nodes
+            .insert(draft.capture_id().to_owned(), draft_node);
+        Ok(())
     }
 
     pub(crate) fn persist_fetch_run(&mut self, run: StoredFetchRun) {
@@ -1188,6 +1274,7 @@ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
     let (analytics_artifacts, analytics_artifact_nodes) = load_analytics_artifacts(db)?;
     let (import_batches, import_records, import_batch_nodes, statement_lines, statement_line_nodes) =
         load_import_batches_and_records(db, &transaction_nodes)?;
+    let (capture_drafts, capture_draft_nodes) = load_capture_drafts(db)?;
     let (fetch_runs, fetch_run_nodes) = load_fetch_runs(db)?;
     let (reconciliation_runs, reconciliation_run_nodes, reconciliation_statement_line_ids) =
         load_reconciliation_runs(db, &transaction_nodes, &statement_line_nodes)?;
@@ -1205,6 +1292,8 @@ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
         import_batch_nodes,
         statement_lines,
         statement_line_nodes,
+        capture_drafts,
+        capture_draft_nodes,
         fetch_runs,
         fetch_run_nodes,
         reconciliation_runs,
@@ -1213,6 +1302,106 @@ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {
         month_closes,
         month_close_nodes,
     })
+}
+
+type CaptureDraftLoad = (HashMap<String, StoredCaptureDraft>, HashMap<String, NodeId>);
+
+fn load_capture_drafts(db: &AletheiaDB) -> Result<CaptureDraftLoad, StoreError> {
+    let draft_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_CAPTURE_DRAFT);
+    let mut latest_by_id: HashMap<String, (u64, StoredCaptureDraft, NodeId)> = HashMap::new();
+
+    for node_id in draft_node_ids {
+        let node = db
+            .get_node(node_id)
+            .map_err(|err| map_load_error("unable to read LedgerCaptureDraft node", err))?;
+
+        let capture_id = required_node_string_property(&node, PROP_CAPTURE_ID)?;
+        let source_path = required_node_string_property(&node, PROP_CAPTURE_SOURCE_PATH)?;
+        let content_hash = required_node_string_property(&node, PROP_CONTENT_HASH)?;
+        let captured_at = required_node_string_property(&node, PROP_CAPTURE_CAPTURED_AT)?;
+        let kind = required_node_string_property(&node, PROP_CAPTURE_KIND)?;
+        let amount_cents = required_node_i64_property(&node, PROP_AMOUNT_CENTS)?;
+        let currency = required_node_string_property(&node, PROP_CAPTURE_CURRENCY)?;
+        let merchant_memo = required_node_string_property(&node, PROP_CAPTURE_MERCHANT_MEMO)?;
+        let from_account_hint =
+            optional_node_string_property(&node, PROP_CAPTURE_FROM_ACCOUNT_HINT)
+                .filter(|value| !value.is_empty());
+        let to_account_hint = optional_node_string_property(&node, PROP_CAPTURE_TO_ACCOUNT_HINT)
+            .filter(|value| !value.is_empty());
+        let category_hint = optional_node_string_property(&node, PROP_CAPTURE_CATEGORY_HINT)
+            .filter(|value| !value.is_empty());
+        let body_note =
+            optional_node_string_property(&node, PROP_CAPTURE_BODY_NOTE).unwrap_or_default();
+        let status_value = required_node_string_property(&node, PROP_CAPTURE_STATUS)?;
+        let status =
+            StoredCaptureStatus::parse(&status_value).ok_or_else(|| StoreError::LoadFailed {
+                message: format!(
+                    "capture draft '{capture_id}' has invalid status '{status_value}'"
+                ),
+            })?;
+        let suggested_debit_account =
+            optional_node_string_property(&node, PROP_CAPTURE_SUGGESTED_DEBIT_ACCOUNT)
+                .filter(|value| !value.is_empty());
+        let suggested_credit_account =
+            optional_node_string_property(&node, PROP_CAPTURE_SUGGESTED_CREDIT_ACCOUNT)
+                .filter(|value| !value.is_empty());
+        let promotion_txn_id = optional_node_string_property(&node, PROP_CAPTURE_PROMOTION_TXN_ID)
+            .filter(|value| !value.is_empty())
+            .map(|value| {
+                TransactionId::new(&value).map_err(|err| StoreError::LoadFailed {
+                    message: format!(
+                        "capture draft '{capture_id}' has invalid promotion_txn_id '{value}': {err}"
+                    ),
+                })
+            })
+            .transpose()?;
+        let rejection_reason = optional_node_string_property(&node, PROP_CAPTURE_REJECTION_REASON)
+            .filter(|value| !value.is_empty());
+        let ingested_at = required_node_i64_property(&node, PROP_CAPTURE_INGESTED_AT_US)?.into();
+
+        let draft = StoredCaptureDraft::new(
+            &capture_id,
+            &source_path,
+            &content_hash,
+            &captured_at,
+            &kind,
+            amount_cents,
+            &currency,
+            &merchant_memo,
+            from_account_hint.as_deref(),
+            to_account_hint.as_deref(),
+            category_hint.as_deref(),
+            &body_note,
+            status,
+            suggested_debit_account.as_deref(),
+            suggested_credit_account.as_deref(),
+            promotion_txn_id,
+            rejection_reason.as_deref(),
+            ingested_at,
+        );
+
+        match latest_by_id.get_mut(&capture_id) {
+            Some((latest_node_id, latest_draft, latest_graph_node_id)) => {
+                if node.id.as_u64() > *latest_node_id {
+                    *latest_node_id = node.id.as_u64();
+                    *latest_draft = draft;
+                    *latest_graph_node_id = node.id;
+                }
+            }
+            None => {
+                latest_by_id.insert(capture_id, (node.id.as_u64(), draft, node.id));
+            }
+        }
+    }
+
+    let mut drafts = HashMap::new();
+    let mut draft_nodes = HashMap::new();
+    for (capture_id, (_, draft, node_id)) in latest_by_id {
+        drafts.insert(capture_id.clone(), draft);
+        draft_nodes.insert(capture_id, node_id);
+    }
+
+    Ok((drafts, draft_nodes))
 }
 
 type TransactionLoad = (

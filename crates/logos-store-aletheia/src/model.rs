@@ -12,6 +12,7 @@ pub(crate) const LABEL_LEDGER_STATEMENT_LINE: &str = "LedgerStatementLine";
 pub(crate) const LABEL_LEDGER_RECONCILIATION_RUN: &str = "LedgerReconciliationRun";
 pub(crate) const LABEL_LEDGER_MONTH_CLOSE: &str = "LedgerMonthClose";
 pub(crate) const LABEL_LEDGER_FETCH_RUN: &str = "LedgerFetchRun";
+pub(crate) const LABEL_LEDGER_CAPTURE_DRAFT: &str = "LedgerCaptureDraft";
 
 pub(crate) const EDGE_HAS_POSTING: &str = "HAS_POSTING";
 pub(crate) const EDGE_SUPERSEDES: &str = "SUPERSEDES";
@@ -94,6 +95,22 @@ pub(crate) const PROP_FETCH_OPENING_BALANCE_CENTS: &str = "fetch_opening_balance
 pub(crate) const PROP_FETCH_CLOSING_BALANCE_CENTS: &str = "fetch_closing_balance_cents";
 pub(crate) const PROP_FETCH_ERROR_SUMMARY: &str = "fetch_error_summary";
 pub(crate) const PROP_FETCH_CREATED_AT_US: &str = "fetch_created_at_us";
+pub(crate) const PROP_CAPTURE_ID: &str = "capture_id";
+pub(crate) const PROP_CAPTURE_SOURCE_PATH: &str = "capture_source_path";
+pub(crate) const PROP_CAPTURE_CAPTURED_AT: &str = "capture_captured_at";
+pub(crate) const PROP_CAPTURE_KIND: &str = "capture_kind";
+pub(crate) const PROP_CAPTURE_CURRENCY: &str = "capture_currency";
+pub(crate) const PROP_CAPTURE_MERCHANT_MEMO: &str = "capture_merchant_memo";
+pub(crate) const PROP_CAPTURE_FROM_ACCOUNT_HINT: &str = "capture_from_account_hint";
+pub(crate) const PROP_CAPTURE_TO_ACCOUNT_HINT: &str = "capture_to_account_hint";
+pub(crate) const PROP_CAPTURE_CATEGORY_HINT: &str = "capture_category_hint";
+pub(crate) const PROP_CAPTURE_BODY_NOTE: &str = "capture_body_note";
+pub(crate) const PROP_CAPTURE_STATUS: &str = "capture_status";
+pub(crate) const PROP_CAPTURE_SUGGESTED_DEBIT_ACCOUNT: &str = "capture_suggested_debit_account";
+pub(crate) const PROP_CAPTURE_SUGGESTED_CREDIT_ACCOUNT: &str = "capture_suggested_credit_account";
+pub(crate) const PROP_CAPTURE_PROMOTION_TXN_ID: &str = "capture_promotion_txn_id";
+pub(crate) const PROP_CAPTURE_REJECTION_REASON: &str = "capture_rejection_reason";
+pub(crate) const PROP_CAPTURE_INGESTED_AT_US: &str = "capture_ingested_at_us";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AsOf {
@@ -248,6 +265,39 @@ pub struct NewImportRecord {
     content_hash_key: String,
     imported_txn_id: Option<TransactionId>,
     statement_line: Option<NewStatementLine>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StoredCaptureStatus {
+    Inbox,
+    Ready,
+    Suggested,
+    NeedsReview,
+    Promoted,
+    Rejected,
+    Conflict,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredCaptureDraft {
+    capture_id: String,
+    source_path: String,
+    content_hash: String,
+    captured_at: String,
+    kind: String,
+    amount_cents: i64,
+    currency: String,
+    merchant_memo: String,
+    from_account_hint: Option<String>,
+    to_account_hint: Option<String>,
+    category_hint: Option<String>,
+    body_note: String,
+    status: StoredCaptureStatus,
+    suggested_debit_account: Option<String>,
+    suggested_credit_account: Option<String>,
+    promotion_txn_id: Option<TransactionId>,
+    rejection_reason: Option<String>,
+    ingested_at: Timestamp,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -843,6 +893,39 @@ impl StoredFetchRunStatus {
     }
 }
 
+impl StoredCaptureStatus {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Inbox => "inbox",
+            Self::Ready => "ready",
+            Self::Suggested => "suggested",
+            Self::NeedsReview => "needs_review",
+            Self::Promoted => "promoted",
+            Self::Rejected => "rejected",
+            Self::Conflict => "conflict",
+        }
+    }
+
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "inbox" => Some(Self::Inbox),
+            "ready" => Some(Self::Ready),
+            "suggested" => Some(Self::Suggested),
+            "needs_review" => Some(Self::NeedsReview),
+            "promoted" => Some(Self::Promoted),
+            "rejected" => Some(Self::Rejected),
+            "conflict" => Some(Self::Conflict),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn is_terminal(self) -> bool {
+        matches!(self, Self::Promoted | Self::Rejected | Self::Conflict)
+    }
+}
+
 impl StoredFetchArtifactFormat {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
@@ -858,6 +941,142 @@ impl StoredFetchArtifactFormat {
             "pdf" => Some(Self::Pdf),
             _ => None,
         }
+    }
+}
+
+impl StoredCaptureDraft {
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        capture_id: &str,
+        source_path: &str,
+        content_hash: &str,
+        captured_at: &str,
+        kind: &str,
+        amount_cents: i64,
+        currency: &str,
+        merchant_memo: &str,
+        from_account_hint: Option<&str>,
+        to_account_hint: Option<&str>,
+        category_hint: Option<&str>,
+        body_note: &str,
+        status: StoredCaptureStatus,
+        suggested_debit_account: Option<&str>,
+        suggested_credit_account: Option<&str>,
+        promotion_txn_id: Option<TransactionId>,
+        rejection_reason: Option<&str>,
+        ingested_at: Timestamp,
+    ) -> Self {
+        Self {
+            capture_id: capture_id.to_owned(),
+            source_path: source_path.to_owned(),
+            content_hash: content_hash.to_owned(),
+            captured_at: captured_at.to_owned(),
+            kind: kind.to_owned(),
+            amount_cents,
+            currency: currency.to_owned(),
+            merchant_memo: merchant_memo.to_owned(),
+            from_account_hint: from_account_hint.map(str::to_owned),
+            to_account_hint: to_account_hint.map(str::to_owned),
+            category_hint: category_hint.map(str::to_owned),
+            body_note: body_note.to_owned(),
+            status,
+            suggested_debit_account: suggested_debit_account.map(str::to_owned),
+            suggested_credit_account: suggested_credit_account.map(str::to_owned),
+            promotion_txn_id,
+            rejection_reason: rejection_reason.map(str::to_owned),
+            ingested_at,
+        }
+    }
+
+    #[must_use]
+    pub fn capture_id(&self) -> &str {
+        &self.capture_id
+    }
+
+    #[must_use]
+    pub fn source_path(&self) -> &str {
+        &self.source_path
+    }
+
+    #[must_use]
+    pub fn content_hash(&self) -> &str {
+        &self.content_hash
+    }
+
+    #[must_use]
+    pub fn captured_at(&self) -> &str {
+        &self.captured_at
+    }
+
+    #[must_use]
+    pub fn kind(&self) -> &str {
+        &self.kind
+    }
+
+    #[must_use]
+    pub const fn amount_cents(&self) -> i64 {
+        self.amount_cents
+    }
+
+    #[must_use]
+    pub fn currency(&self) -> &str {
+        &self.currency
+    }
+
+    #[must_use]
+    pub fn merchant_memo(&self) -> &str {
+        &self.merchant_memo
+    }
+
+    #[must_use]
+    pub fn from_account_hint(&self) -> Option<&str> {
+        self.from_account_hint.as_deref()
+    }
+
+    #[must_use]
+    pub fn to_account_hint(&self) -> Option<&str> {
+        self.to_account_hint.as_deref()
+    }
+
+    #[must_use]
+    pub fn category_hint(&self) -> Option<&str> {
+        self.category_hint.as_deref()
+    }
+
+    #[must_use]
+    pub fn body_note(&self) -> &str {
+        &self.body_note
+    }
+
+    #[must_use]
+    pub const fn status(&self) -> StoredCaptureStatus {
+        self.status
+    }
+
+    #[must_use]
+    pub fn suggested_debit_account(&self) -> Option<&str> {
+        self.suggested_debit_account.as_deref()
+    }
+
+    #[must_use]
+    pub fn suggested_credit_account(&self) -> Option<&str> {
+        self.suggested_credit_account.as_deref()
+    }
+
+    #[must_use]
+    pub fn promotion_txn_id(&self) -> Option<&TransactionId> {
+        self.promotion_txn_id.as_ref()
+    }
+
+    #[must_use]
+    pub fn rejection_reason(&self) -> Option<&str> {
+        self.rejection_reason.as_deref()
+    }
+
+    #[must_use]
+    pub const fn ingested_at(&self) -> Timestamp {
+        self.ingested_at
     }
 }
 

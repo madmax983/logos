@@ -6,9 +6,10 @@ use logos_core::{Correction, TransactionBuilder, TransactionId};
 use crate::{
     AletheiaStore, StoreError,
     model::{
-        NewImportRecord, StoredAnalyticsArtifactManifest, StoredBudgetTarget,
-        StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredImportBatch,
-        StoredImportRecord, StoredMonthClose, StoredReconciliationRun, StoredStatementLine,
+        NewImportRecord, StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredCaptureDraft,
+        StoredCaptureStatus, StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus,
+        StoredImportBatch, StoredImportRecord, StoredMonthClose, StoredReconciliationRun,
+        StoredStatementLine,
     },
 };
 
@@ -284,6 +285,89 @@ impl AletheiaStore {
         }
 
         Ok(batch)
+    }
+
+    /// Writes an immutable capture draft record sourced from a synced vault note.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when required metadata is missing, invalid, or persistence fails.
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_capture_draft(
+        &mut self,
+        capture_id: &str,
+        source_path: &str,
+        content_hash: &str,
+        captured_at: &str,
+        kind: &str,
+        amount_cents: i64,
+        currency: &str,
+        merchant_memo: &str,
+        from_account_hint: Option<&str>,
+        to_account_hint: Option<&str>,
+        category_hint: Option<&str>,
+        body_note: &str,
+    ) -> Result<StoredCaptureDraft, StoreError> {
+        if capture_id.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "capture_id must not be empty".to_owned(),
+            });
+        }
+        if source_path.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "source_path must not be empty".to_owned(),
+            });
+        }
+        if content_hash.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "content_hash must not be empty".to_owned(),
+            });
+        }
+        if captured_at.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "captured_at must not be empty".to_owned(),
+            });
+        }
+        if !matches!(kind, "expense" | "income" | "transfer" | "cash") {
+            return Err(StoreError::PersistFailed {
+                message: format!("kind must be one of expense|income|transfer|cash, got '{kind}'"),
+            });
+        }
+        if currency.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "currency must not be empty".to_owned(),
+            });
+        }
+        if merchant_memo.is_empty() {
+            return Err(StoreError::PersistFailed {
+                message: "merchant_memo must not be empty".to_owned(),
+            });
+        }
+
+        let ingested_at = aletheiadb::time::now();
+        let draft = StoredCaptureDraft::new(
+            capture_id,
+            source_path,
+            content_hash,
+            captured_at,
+            kind,
+            amount_cents,
+            currency,
+            merchant_memo,
+            from_account_hint.filter(|value| !value.is_empty()),
+            to_account_hint.filter(|value| !value.is_empty()),
+            category_hint.filter(|value| !value.is_empty()),
+            body_note,
+            StoredCaptureStatus::Inbox,
+            None,
+            None,
+            None,
+            None,
+            ingested_at,
+        );
+        self.persist_capture_draft_graph(&draft)?;
+        self.persist_capture_draft(draft.clone());
+        Ok(draft)
     }
 
     /// Writes an immutable fetch-run record for one statement source attempt.
