@@ -1,7 +1,16 @@
 //! Net worth projection and milestone tracking over time.
 //!
+//! # The Time Machine
+//!
 //! This module contains primitives to simulate how a user's net worth will grow
 //! over a period of months, factoring in monthly cash savings and upcoming RSU vests.
+//! It answers the question: *When will I cross the finish line?*
+//!
+//! While the `FireSimulator` tells you what your target is, the `NetWorthProjector`
+//! tells you the exact month you will hit it. It acts as a financial time machine,
+//! moving forward month by month, collecting your steady savings, and waiting for
+//! the volatile, risk-adjusted payouts of your company stock.
+//!
 //! It also identifies exactly when specific financial milestones (like a FIRE number)
 //! will be achieved.
 
@@ -43,8 +52,11 @@ pub struct ProjectedMonth {
 /// Projects net worth over time based on steady savings and upcoming RSU vests.
 ///
 /// This provides a crystal ball to see *when* financial milestones (e.g., FIRE number)
-/// will be reached. The simulation runs forward month-by-month. It assumes that every month
-/// represents exactly 30 days when determining if a vest has occurred.
+/// will be reached. The simulation runs forward month-by-month, treating time as a
+/// linear progression of 30-day blocks. It patiently accumulates your boring, reliable
+/// savings and waits for the exciting, risk-adjusted pops of your unvested RSUs.
+///
+/// Use this when you need a timeline, not just a target.
 ///
 /// ## Examples
 ///
@@ -103,7 +115,9 @@ impl NetWorthProjector {
     /// Updates the `HaircutTierTable` used to discount future RSU vests.
     ///
     /// The projector uses these tiers to determine how much "safe" value
-    /// a future vest will add to the net worth.
+    /// a future vest will add to the net worth. This is your reality check mechanism:
+    /// it prevents you from counting your chickens (unvested RSUs) before they hatch,
+    /// applying heavier discounts to vests that are further out in the uncertain future.
     ///
     /// ## Examples
     ///
@@ -159,12 +173,14 @@ impl NetWorthProjector {
 
     /// Simulates net worth month-by-month for `months` iterations.
     ///
-    /// This is the core engine of the projector. It aggregates savings and safe
-    /// vest values into the total net worth, tracking milestones along the way.
+    /// This is the core engine of the projector, the time machine's ignition switch.
+    /// It aggregates your steady savings and the risk-adjusted, safe value of your
+    /// vesting stock into your total net worth. As it travels forward, it rings a bell
+    /// (records the month) every time you smash through one of your financial milestones.
     ///
     /// Returns a tuple containing:
-    /// 1. A timeline of [`ProjectedMonth`] snapshots.
-    /// 2. A vector of tuples `(milestone_cents, month_index)` indicating the month each milestone was crossed.
+    /// 1. A timeline of [`ProjectedMonth`] snapshots detailing the journey.
+    /// 2. A vector of tuples `(milestone_cents, month_index)` indicating the exact month each milestone was crossed.
     ///
     /// ## Examples
     ///

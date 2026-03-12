@@ -1,9 +1,17 @@
 //! Automated distribution of restricted stock unit (RSU) vests.
 //!
-//! When an RSU vests, the gross value needs to be tracked and distributed across
-//! several financial buckets (e.g., tax reserves, savings goals, discretionary spending).
-//! This module automates the generation of perfectly balanced, multi-posting ledger
-//! transactions according to a user's defined [`AllocationPolicy`].
+//! # The Wealth Funnel
+//!
+//! When a large, lumpy RSU vest hits your account, it's easy to succumb to lifestyle
+//! inflation. This module acts as an automated wealth funnel, ensuring that windfall
+//! money is intentionally routed before it can be wasted.
+//!
+//! It takes the gross value of a vest and automatically slices it into targeted buckets:
+//! setting aside the tax man's cut immediately, bolstering your emergency buffer, funding
+//! specific financial goals, and leaving a controlled amount for discretionary spending.
+//!
+//! This module automates the generation of these perfectly balanced, multi-posting ledger
+//! transactions according to your personal [`AllocationPolicy`].
 
 use crate::domain::account::AccountId;
 use crate::domain::rsu::AllocationPolicy;
@@ -12,8 +20,9 @@ use crate::error::DomainError;
 
 /// Configuration mapping logical buckets to physical account IDs.
 ///
-/// This struct prevents positional string argument mix-ups when initializing the
-/// [`RsuAutoDistributor`].
+/// This tells the distributor exactly which accounts represent the different stages
+/// of your wealth funnel. It prevents dangerous mix-ups (like sending your tax reserve
+/// to your checking account) by enforcing strong types during setup.
 ///
 /// ## Examples
 ///
@@ -41,7 +50,10 @@ pub struct RsuDistributorConfig {
 /// Automatically distributes vested RSU funds across target accounts
 /// according to an [`AllocationPolicy`].
 ///
-/// Creates a single, balanced [`Transaction`] representing the vest event.
+/// Think of this as the traffic cop for your company stock payouts. When a vest occurs,
+/// it takes the policy rules and the account map, calculating exactly how many pennies
+/// should go where, and constructs a pristine, mathematically balanced ledger [`Transaction`]
+/// representing the entire event—taxes and all.
 #[derive(Debug, Clone)]
 pub struct RsuAutoDistributor {
     config: RsuDistributorConfig,
@@ -73,9 +85,13 @@ impl RsuAutoDistributor {
 
     /// Distributes a gross vest amount across the configured accounts.
     ///
-    /// Because financial math often results in fractional cents when multiplying by
+    /// It calculates exactly how many pennies should go to the tax reserve, smoothing buffer,
+    /// goals, and discretionary accounts by applying the percentages defined in your [`AllocationPolicy`].
+    ///
+    /// Because financial math often results in fractional pennies when multiplying by
     /// percentages, this function guarantees that the resulting transaction is perfectly
-    /// balanced by sweeping any remainder cents into the tax reserve account.
+    /// balanced by ruthlessly sweeping any remainder pennies into the tax reserve account—because
+    /// it is always safer to overpay the tax man by a penny than to underpay him.
     ///
     /// ## Examples
     ///

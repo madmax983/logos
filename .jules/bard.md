@@ -21,3 +21,7 @@
 ## 2026-03-10 - [FireSimulator Primitives]
 **Confusion:** The `FireSimulator` and its configuration primitives in `logos-core::planning::fire` had dry, terse docstrings that repeated function names without explaining the underlying "why" (e.g. why risk haircut tiers exist or what a FIRE number represents practically). The module lacked a high-level explanation of its core purpose.
 **Clarification:** Added a module-level `//!` narrative ("The Great Escape") explaining the goal of projecting financial independence. Upgraded struct and method docstrings to use storytelling analogies (war chest, burn rate) and added standalone, executable `## Examples` doc-tests to `FireConfig` and all public `FireSimulator` methods to demonstrate integration points clearly.
+
+## 2026-03-12 - [NetWorthProjector and RsuAutoDistributor Primitives]
+**Confusion:** The `NetWorthProjector` and `RsuAutoDistributor` in `logos-core::planning` had dry, terse docstrings that repeated function names without explaining the underlying "why" (e.g., why net worth is projected over time or why RSU funds should be automatically routed). The modules lacked a high-level explanation of their core purpose.
+**Clarification:** Added module-level `//!` narratives ("The Time Machine" and "The Wealth Funnel") explaining the goals of projecting financial timelines and automatically saving vested stocks. Upgraded struct and method docstrings to use storytelling analogies (crystal ball, timeline tracking, traffic cop) to demonstrate integration points clearly.
