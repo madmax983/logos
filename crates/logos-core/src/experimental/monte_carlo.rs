@@ -14,14 +14,15 @@ struct Lcg {
 }
 
 impl Lcg {
-    const A: u64 = 6364136223846793005;
-    const C: u64 = 1442695040888963407;
+    const A: u64 = 6_364_136_223_846_793_005;
+    const C: u64 = 1_442_695_040_888_963_407;
 
-    fn new(seed: u64) -> Self {
+    const fn new(seed: u64) -> Self {
         Self { state: seed }
     }
 
     /// Returns a pseudo-random `u64`.
+    #[allow(clippy::missing_const_for_fn)]
     fn next_u64(&mut self) -> u64 {
         self.state = self.state.wrapping_mul(Self::A).wrapping_add(Self::C);
         self.state
@@ -108,6 +109,7 @@ impl MonteCarloProjector {
 
             for _ in 0..months {
                 let random_norm = lcg.next_normal();
+                #[allow(clippy::suboptimal_flops)]
                 let monthly_return = monthly_mean + monthly_volatility * random_norm;
 
                 #[allow(clippy::cast_precision_loss)]
@@ -129,22 +131,24 @@ impl MonteCarloProjector {
         final_outcomes.sort_unstable();
 
         // Calculate percentiles
-        #[allow(clippy::cast_precision_loss)]
-        let p5_idx = ((paths as f64) * 0.05).floor() as usize;
-        #[allow(clippy::cast_precision_loss)]
-        let median_idx = ((paths as f64) * 0.50).floor() as usize;
-        #[allow(clippy::cast_precision_loss)]
-        let p95_idx = ((paths as f64) * 0.95).floor() as usize;
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let lower_bound_idx = (f64::from(paths) * 0.05).floor() as usize;
+
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let median_idx = (f64::from(paths) * 0.50).floor() as usize;
+
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let upper_bound_idx = (f64::from(paths) * 0.95).floor() as usize;
 
         // Ensure indices are within bounds (for very small path counts)
-        let p5_idx = p5_idx.clamp(0, paths.saturating_sub(1) as usize);
-        let median_idx = median_idx.clamp(0, paths.saturating_sub(1) as usize);
-        let p95_idx = p95_idx.clamp(0, paths.saturating_sub(1) as usize);
+        let safe_lower_bound_idx = lower_bound_idx.clamp(0, paths.saturating_sub(1) as usize);
+        let safe_median_idx = median_idx.clamp(0, paths.saturating_sub(1) as usize);
+        let safe_upper_bound_idx = upper_bound_idx.clamp(0, paths.saturating_sub(1) as usize);
 
         MonteCarloResult {
-            p5_cents: final_outcomes[p5_idx],
-            median_cents: final_outcomes[median_idx],
-            p95_cents: final_outcomes[p95_idx],
+            p5_cents: final_outcomes[safe_lower_bound_idx],
+            median_cents: final_outcomes[safe_median_idx],
+            p95_cents: final_outcomes[safe_upper_bound_idx],
         }
     }
 }
@@ -156,8 +160,8 @@ mod tests {
     #[test]
     fn test_monte_carlo_projector_run() {
         let projector = MonteCarloProjector::new(
-            100_000_00, // $100,000 initial
-            1_000_00,   // $1,000 monthly contribution
+            10_000_000, // $100,000 initial
+            100_000,    // $1,000 monthly contribution
             0.07,       // 7% annual return
             0.15,       // 15% volatility
             42,         // fixed seed
@@ -166,7 +170,7 @@ mod tests {
         let result = projector.run(120, 1000); // 10 years, 1000 paths
 
         // We expect the median to be roughly $100k + $120k + growth > $220k
-        assert!(result.median_cents > 220_000_00);
+        assert!(result.median_cents > 22_000_000);
 
         // P5 should be less than Median, and Median should be less than P95
         assert!(result.p5_cents < result.median_cents);
@@ -175,10 +179,10 @@ mod tests {
 
     #[test]
     fn test_zero_paths() {
-        let projector = MonteCarloProjector::new(100_00, 100_00, 0.07, 0.15, 42);
+        let projector = MonteCarloProjector::new(10_000, 10_000, 0.07, 0.15, 42);
         let result = projector.run(12, 0);
-        assert_eq!(result.p5_cents, 100_00);
-        assert_eq!(result.median_cents, 100_00);
-        assert_eq!(result.p95_cents, 100_00);
+        assert_eq!(result.p5_cents, 10_000);
+        assert_eq!(result.median_cents, 10_000);
+        assert_eq!(result.p95_cents, 10_000);
     }
 }
