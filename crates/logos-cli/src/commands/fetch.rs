@@ -101,10 +101,14 @@ fn render_show_output(run: &StoredFetchRun) -> String {
         run.month_key().to_owned(),
         run.status().as_str().to_owned(),
         run.artifact_path().unwrap_or("-").to_owned(),
-        run.opening_balance_cents()
-            .map_or_else(|| "-".to_owned(), |value| format!("${:.2}", (value as f64) / 100.0)),
-        run.closing_balance_cents()
-            .map_or_else(|| "-".to_owned(), |value| format!("${:.2}", (value as f64) / 100.0)),
+        run.opening_balance_cents().map_or_else(
+            || "-".to_owned(),
+            |value| format!("${:.2}", (value as f64) / 100.0),
+        ),
+        run.closing_balance_cents().map_or_else(
+            || "-".to_owned(),
+            |value| format!("${:.2}", (value as f64) / 100.0),
+        ),
         run.error_summary().unwrap_or("-").to_owned(),
         run.created_at().wallclock().to_string(),
     ]);

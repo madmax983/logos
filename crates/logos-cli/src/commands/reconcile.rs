@@ -104,8 +104,14 @@ fn render_month_output(
         checking_account.to_owned(),
         format!("${:.2}", (opening_balance_cents as f64) / 100.0),
         format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0),
-        format!("${:.2}", (run.expected_closing_balance_cents() as f64) / 100.0),
-        format!("${:.2}", (run.statement_closing_balance_cents() as f64) / 100.0),
+        format!(
+            "${:.2}",
+            (run.expected_closing_balance_cents() as f64) / 100.0
+        ),
+        format!(
+            "${:.2}",
+            (run.statement_closing_balance_cents() as f64) / 100.0
+        ),
         format!("${:.2}", (run.variance_cents() as f64) / 100.0),
         run.reconciled().to_string(),
         run.matched_postings().to_string(),
@@ -142,8 +148,14 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
         run.checking_account().to_owned(),
         format!("${:.2}", (run.opening_balance_cents() as f64) / 100.0),
         format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0),
-        format!("${:.2}", (run.expected_closing_balance_cents() as f64) / 100.0),
-        format!("${:.2}", (run.statement_closing_balance_cents() as f64) / 100.0),
+        format!(
+            "${:.2}",
+            (run.expected_closing_balance_cents() as f64) / 100.0
+        ),
+        format!(
+            "${:.2}",
+            (run.statement_closing_balance_cents() as f64) / 100.0
+        ),
         format!("${:.2}", (run.variance_cents() as f64) / 100.0),
         run.reconciled().to_string(),
         run.matched_postings().to_string(),

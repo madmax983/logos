@@ -186,7 +186,10 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
                 format!("${:.2}", (scenario.surplus_cents() as f64) / 100.0),
                 format!("${:.2}", (scenario.reserve_sweep_cents() as f64) / 100.0),
                 format!("${:.2}", (scenario.investing_sweep_cents() as f64) / 100.0),
-                format!("${:.2}", (scenario.available_after_sweeps_cents() as f64) / 100.0),
+                format!(
+                    "${:.2}",
+                    (scenario.available_after_sweeps_cents() as f64) / 100.0
+                ),
             ]);
         }
     }
