@@ -706,9 +706,12 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
         }
         "monte-carlo" => {
             let initial_cents = parse_required_parsed_flag::<i64>(&args[2..], "--initial-cents")?;
-            let monthly_contribution_cents = parse_required_parsed_flag::<i64>(&args[2..], "--monthly-contribution-cents")?;
-            let annual_mean_return = parse_required_parsed_flag::<f64>(&args[2..], "--annual-mean-return")?;
-            let annual_volatility = parse_required_parsed_flag::<f64>(&args[2..], "--annual-volatility")?;
+            let monthly_contribution_cents =
+                parse_required_parsed_flag::<i64>(&args[2..], "--monthly-contribution-cents")?;
+            let annual_mean_return =
+                parse_required_parsed_flag::<f64>(&args[2..], "--annual-mean-return")?;
+            let annual_volatility =
+                parse_required_parsed_flag::<f64>(&args[2..], "--annual-volatility")?;
             let seed = parse_optional_parsed_flag::<u64>(&args[2..], "--seed", 42)?;
             let months = parse_required_parsed_flag::<u16>(&args[2..], "--months")?;
             let paths = parse_required_parsed_flag::<u32>(&args[2..], "--paths")?;
