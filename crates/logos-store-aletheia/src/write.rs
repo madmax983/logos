@@ -308,42 +308,6 @@ impl AletheiaStore {
         category_hint: Option<&str>,
         body_note: &str,
     ) -> Result<StoredCaptureDraft, StoreError> {
-        if capture_id.is_empty() {
-            return Err(StoreError::PersistFailed {
-                message: "capture_id must not be empty".to_owned(),
-            });
-        }
-        if source_path.is_empty() {
-            return Err(StoreError::PersistFailed {
-                message: "source_path must not be empty".to_owned(),
-            });
-        }
-        if content_hash.is_empty() {
-            return Err(StoreError::PersistFailed {
-                message: "content_hash must not be empty".to_owned(),
-            });
-        }
-        if captured_at.is_empty() {
-            return Err(StoreError::PersistFailed {
-                message: "captured_at must not be empty".to_owned(),
-            });
-        }
-        if !matches!(kind, "expense" | "income" | "transfer" | "cash") {
-            return Err(StoreError::PersistFailed {
-                message: format!("kind must be one of expense|income|transfer|cash, got '{kind}'"),
-            });
-        }
-        if currency.is_empty() {
-            return Err(StoreError::PersistFailed {
-                message: "currency must not be empty".to_owned(),
-            });
-        }
-        if merchant_memo.is_empty() {
-            return Err(StoreError::PersistFailed {
-                message: "merchant_memo must not be empty".to_owned(),
-            });
-        }
-
         let ingested_at = aletheiadb::time::now();
         let draft = StoredCaptureDraft::new(
             capture_id,
@@ -365,6 +329,19 @@ impl AletheiaStore {
             None,
             ingested_at,
         );
+        self.write_capture_draft_revision(draft)
+    }
+
+    /// Appends a new immutable revision for an existing capture draft id.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when required metadata is missing, invalid, or persistence fails.
+    pub fn write_capture_draft_revision(
+        &mut self,
+        draft: StoredCaptureDraft,
+    ) -> Result<StoredCaptureDraft, StoreError> {
+        validate_capture_draft(&draft)?;
         self.persist_capture_draft_graph(&draft)?;
         self.persist_capture_draft(draft.clone());
         Ok(draft)
@@ -706,4 +683,57 @@ impl AletheiaStore {
         self.persist_month_close(close.clone());
         Ok(close)
     }
+}
+
+fn validate_capture_draft(draft: &StoredCaptureDraft) -> Result<(), StoreError> {
+    if draft.capture_id().is_empty() {
+        return Err(StoreError::PersistFailed {
+            message: "capture_id must not be empty".to_owned(),
+        });
+    }
+    if draft.source_path().is_empty() {
+        return Err(StoreError::PersistFailed {
+            message: "source_path must not be empty".to_owned(),
+        });
+    }
+    if draft.content_hash().is_empty() {
+        return Err(StoreError::PersistFailed {
+            message: "content_hash must not be empty".to_owned(),
+        });
+    }
+    if draft.captured_at().is_empty() {
+        return Err(StoreError::PersistFailed {
+            message: "captured_at must not be empty".to_owned(),
+        });
+    }
+    if !matches!(draft.kind(), "expense" | "income" | "transfer" | "cash") {
+        return Err(StoreError::PersistFailed {
+            message: format!(
+                "kind must be one of expense|income|transfer|cash, got '{}'",
+                draft.kind()
+            ),
+        });
+    }
+    if draft.currency().is_empty() {
+        return Err(StoreError::PersistFailed {
+            message: "currency must not be empty".to_owned(),
+        });
+    }
+    if draft.merchant_memo().is_empty() {
+        return Err(StoreError::PersistFailed {
+            message: "merchant_memo must not be empty".to_owned(),
+        });
+    }
+    if draft.status() == StoredCaptureStatus::Promoted && draft.promotion_txn_id().is_none() {
+        return Err(StoreError::PersistFailed {
+            message: "promoted capture drafts must include promotion_txn_id".to_owned(),
+        });
+    }
+    if draft.status() != StoredCaptureStatus::Promoted && draft.promotion_txn_id().is_some() {
+        return Err(StoreError::PersistFailed {
+            message: "only promoted capture drafts may include promotion_txn_id".to_owned(),
+        });
+    }
+
+    Ok(())
 }

@@ -146,6 +146,14 @@ pub struct CaptureDraftRow {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CapturePromotionSummary {
+    capture_id: String,
+    transaction_id: String,
+    debit_account: String,
+    credit_account: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthAutopilotRequest {
     month_key: String,
     checking_account: String,
@@ -237,6 +245,43 @@ impl CaptureIngestSummary {
     #[must_use]
     pub const fn malformed_count(&self) -> usize {
         self.malformed_count
+    }
+}
+
+impl CapturePromotionSummary {
+    #[must_use]
+    pub fn new(
+        capture_id: &str,
+        transaction_id: &TransactionId,
+        debit_account: &str,
+        credit_account: &str,
+    ) -> Self {
+        Self {
+            capture_id: capture_id.to_owned(),
+            transaction_id: transaction_id.as_str().to_owned(),
+            debit_account: debit_account.to_owned(),
+            credit_account: credit_account.to_owned(),
+        }
+    }
+
+    #[must_use]
+    pub fn capture_id(&self) -> &str {
+        &self.capture_id
+    }
+
+    #[must_use]
+    pub fn transaction_id(&self) -> &str {
+        &self.transaction_id
+    }
+
+    #[must_use]
+    pub fn debit_account(&self) -> &str {
+        &self.debit_account
+    }
+
+    #[must_use]
+    pub fn credit_account(&self) -> &str {
+        &self.credit_account
     }
 }
 
@@ -852,6 +897,101 @@ impl CliRuntime {
         row.suggested_debit_account = classification.suggested_debit_account().map(str::to_owned);
         row.suggested_credit_account = classification.suggested_credit_account().map(str::to_owned);
         Ok(row)
+    }
+
+    /// Promotes one capture draft into a posted ledger transaction.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the draft does not exist, is already terminal, cannot resolve both
+    /// accounts, or when transaction persistence fails.
+    pub fn promote_capture_draft(
+        &mut self,
+        capture_id: &str,
+        debit_account: Option<&str>,
+        credit_account: Option<&str>,
+    ) -> Result<CapturePromotionSummary, RuntimeError> {
+        let draft = self
+            .store
+            .capture_draft(capture_id)
+            .ok_or_else(|| RuntimeError::Capture {
+                message: format!("capture draft '{capture_id}' not found"),
+            })?
+            .clone();
+
+        if draft.status() == StoredCaptureStatus::Promoted {
+            return Err(RuntimeError::Capture {
+                message: format!("capture draft '{capture_id}' is already promoted"),
+            });
+        }
+        if draft.status().is_terminal() {
+            return Err(RuntimeError::Capture {
+                message: format!(
+                    "capture draft '{capture_id}' cannot be promoted from status '{}'",
+                    draft.status().as_str()
+                ),
+            });
+        }
+        if draft.amount_cents() <= 0 {
+            return Err(RuntimeError::Capture {
+                message: format!(
+                    "capture draft '{capture_id}' must have a positive amount_cents to promote"
+                ),
+            });
+        }
+
+        let classification = classify_capture_draft(&draft, self.store.transactions());
+        let resolved_debit_account = debit_account
+            .map(str::to_owned)
+            .or_else(|| classification.suggested_debit_account().map(str::to_owned))
+            .ok_or_else(|| RuntimeError::Capture {
+                message: format!(
+                    "capture draft '{capture_id}' is missing a debit account; add a category hint or pass --debit-account"
+                ),
+            })?;
+        let resolved_credit_account = credit_account
+            .map(str::to_owned)
+            .or_else(|| classification.suggested_credit_account().map(str::to_owned))
+            .ok_or_else(|| RuntimeError::Capture {
+                message: format!(
+                    "capture draft '{capture_id}' is missing a credit account; add an account hint or pass --credit-account"
+                ),
+            })?;
+
+        let transaction_id = self.post_double_entry(
+            draft.merchant_memo(),
+            &resolved_debit_account,
+            &resolved_credit_account,
+            draft.amount_cents(),
+        )?;
+        let promoted = StoredCaptureDraft::new(
+            draft.capture_id(),
+            draft.source_path(),
+            draft.content_hash(),
+            draft.captured_at(),
+            draft.kind(),
+            draft.amount_cents(),
+            draft.currency(),
+            draft.merchant_memo(),
+            draft.from_account_hint(),
+            draft.to_account_hint(),
+            draft.category_hint(),
+            draft.body_note(),
+            StoredCaptureStatus::Promoted,
+            Some(&resolved_debit_account),
+            Some(&resolved_credit_account),
+            Some(transaction_id.clone()),
+            None,
+            draft.ingested_at(),
+        );
+        self.store.write_capture_draft_revision(promoted)?;
+
+        Ok(CapturePromotionSummary::new(
+            capture_id,
+            &transaction_id,
+            &resolved_debit_account,
+            &resolved_credit_account,
+        ))
     }
 
     #[must_use]

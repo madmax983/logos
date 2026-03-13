@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::{
     args::CliError,
-    runtime::{CaptureDraftRow, CaptureIngestSummary, CliRuntime},
+    runtime::{CaptureDraftRow, CaptureIngestSummary, CapturePromotionSummary, CliRuntime},
 };
 
 /// Handles `ledger capture ingest`.
@@ -74,13 +74,23 @@ pub fn show(capture_id: &str) -> Result<(), CliError> {
 ///
 /// # Errors
 ///
-/// Returns a placeholder runtime error until capture promotion is implemented.
 pub fn promote(
-    _capture_id: &str,
-    _debit_account: Option<&str>,
-    _credit_account: Option<&str>,
+    capture_id: &str,
+    debit_account: Option<&str>,
+    credit_account: Option<&str>,
 ) -> Result<(), CliError> {
-    not_implemented("capture.promote")
+    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+        command: "capture.promote".to_owned(),
+        message: format!("runtime initialization failed: {err}"),
+    })?;
+    let summary = runtime
+        .promote_capture_draft(capture_id, debit_account, credit_account)
+        .map_err(|err| CliError::CommandRuntimeFailed {
+            command: "capture.promote".to_owned(),
+            message: err.to_string(),
+        })?;
+    println!("{}", render_promote_output(&summary));
+    Ok(())
 }
 
 /// Handles `ledger capture reject`.
@@ -192,10 +202,23 @@ fn render_show_output(row: &CaptureDraftRow) -> String {
     table.to_string()
 }
 
+fn render_promote_output(summary: &CapturePromotionSummary) -> String {
+    format!(
+        "capture.promote capture_id={} transaction_id={} debit_account={} credit_account={}",
+        summary.capture_id(),
+        summary.transaction_id(),
+        summary.debit_account(),
+        summary.credit_account(),
+    )
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{render_ingest_output, render_list_output, render_show_output};
-    use crate::runtime::{CaptureDraftRow, CaptureIngestSummary};
+    use super::{
+        render_ingest_output, render_list_output, render_promote_output, render_show_output,
+    };
+    use crate::runtime::{CaptureDraftRow, CaptureIngestSummary, CapturePromotionSummary};
+    use logos_core::TransactionId;
 
     #[test]
     fn render_ingest_output_is_deterministic() {
@@ -270,5 +293,22 @@ mod tests {
         assert!(output.contains("Tacos El Rey"));
         assert!(output.contains("Team dinner"));
         assert!(output.contains("liabilities:amex:gold"));
+    }
+
+    #[test]
+    fn render_promote_output_is_deterministic() {
+        let summary = CapturePromotionSummary::new(
+            "cap-1",
+            &TransactionId::new("txn-1").expect("txn"),
+            "expenses:food:dining",
+            "liabilities:amex:gold",
+        );
+        let output = render_promote_output(&summary);
+
+        assert!(output.contains("capture.promote"));
+        assert!(output.contains("capture_id=cap-1"));
+        assert!(output.contains("transaction_id=txn-1"));
+        assert!(output.contains("debit_account=expenses:food:dining"));
+        assert!(output.contains("credit_account=liabilities:amex:gold"));
     }
 }

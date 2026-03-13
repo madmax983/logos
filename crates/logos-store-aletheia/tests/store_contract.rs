@@ -6,7 +6,7 @@ use aletheiadb::{AletheiaDB, AletheiaDBConfig, DurabilityMode, WalConfigBuilder,
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
 use logos_store_aletheia::{
     AletheiaStore, StoreError,
-    model::{NewImportRecord, StoredCaptureStatus, StoredFetchRunStatus},
+    model::{NewImportRecord, StoredCaptureDraft, StoredCaptureStatus, StoredFetchRunStatus},
 };
 
 fn temp_store_path(prefix: &str) -> PathBuf {
@@ -588,6 +588,82 @@ fn open_persists_capture_draft_across_reopen() {
     assert_eq!(draft.category_hint(), Some("expenses:food:dining"));
     assert_eq!(draft.body_note(), "Team dinner");
     assert_eq!(draft.status(), StoredCaptureStatus::Inbox);
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn write_capture_draft_revision_persists_latest_status_across_reopen() {
+    let path = temp_store_path("persist-capture-draft-revision");
+    let promoted_txn_id;
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        store
+            .write_capture_draft(
+                "cap-1",
+                "G:/My Drive/claude/finance/inbox/2026/03/cap-1.md",
+                "sha256:abc",
+                "2026-03-11T18:42:05Z",
+                "expense",
+                1_284,
+                "USD",
+                "Tacos El Rey",
+                Some("liabilities:amex:gold"),
+                None,
+                Some("expenses:food:dining"),
+                "Team dinner",
+            )
+            .expect("draft");
+        promoted_txn_id = store
+            .write_transaction(
+                TransactionBuilder::new("Tacos El Rey")
+                    .posting(
+                        Posting::debit(AccountId::new("expenses:food:dining").unwrap(), 1_284)
+                            .expect("debit"),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("liabilities:amex:gold").unwrap(), 1_284)
+                            .unwrap(),
+                    ),
+            )
+            .expect("promoted transaction");
+        let promoted = StoredCaptureDraft::new(
+            "cap-1",
+            "G:/My Drive/claude/finance/inbox/2026/03/cap-1.md",
+            "sha256:abc",
+            "2026-03-11T18:42:05Z",
+            "expense",
+            1_284,
+            "USD",
+            "Tacos El Rey",
+            Some("liabilities:amex:gold"),
+            None,
+            Some("expenses:food:dining"),
+            "Team dinner",
+            StoredCaptureStatus::Promoted,
+            Some("expenses:food:dining"),
+            Some("liabilities:amex:gold"),
+            Some(promoted_txn_id.clone()),
+            None,
+            time::now(),
+        );
+        store
+            .write_capture_draft_revision(promoted)
+            .expect("promoted draft revision");
+    }
+
+    let reopened = AletheiaStore::open(&path).expect("reopen");
+    let draft = reopened.capture_draft("cap-1").expect("draft exists");
+    assert_eq!(draft.status(), StoredCaptureStatus::Promoted);
+    assert_eq!(
+        draft.suggested_debit_account(),
+        Some("expenses:food:dining")
+    );
+    assert_eq!(
+        draft.suggested_credit_account(),
+        Some("liabilities:amex:gold")
+    );
+    assert_eq!(draft.promotion_txn_id(), Some(&promoted_txn_id));
 
     cleanup_store_path(&path);
 }
