@@ -1203,3 +1203,260 @@ fn write_reconciliation_run_and_month_close_fails_with_unknown_artifact() {
 
     cleanup_store_path(&path);
 }
+
+#[test]
+fn test_store_accessors_on_empty() {
+    let store = AletheiaStore::new();
+    assert_eq!(store.correction_count(), 0);
+    assert!(!store.has_transaction(&TransactionId::new("non-existent")));
+    assert!(store.transactions().next().is_none());
+    assert!(store.budget_targets().next().is_none());
+    assert!(store.analytics_artifacts().next().is_none());
+    assert_eq!(store.import_record_count(), 0);
+    assert!(!store.has_import_record_content_hash("non-existent"));
+    assert!(store.import_records().next().is_none());
+    assert!(store.import_batches().next().is_none());
+    assert_eq!(store.statement_line_count(), 0);
+    assert!(store.reconciliation_runs().next().is_none());
+    assert_eq!(store.month_close_count(), 0);
+    assert!(store.month_close("non-existent").is_none());
+    assert!(store.month_closes().next().is_none());
+}
+
+#[test]
+fn test_in_memory_projection_filters_superseded_transactions() {
+    let mut store = AletheiaStore::new();
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(Posting::debit("assets:checking", 10_000))
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
+        )
+        .expect("write txn");
+
+    let correction = Correction::new(txn_id, "fix memo").unwrap();
+    store.write_correction(correction).expect("write correction");
+
+    let as_of_us = store.transactions_as_of_us(aletheiadb::time::now().wallclock(), aletheiadb::time::now().wallclock()).expect("transactions as of us");
+    assert!(as_of_us.is_empty(), "superseded transaction should be filtered out");
+}
+
+#[test]
+fn test_transactions_as_of_us_returns_non_empty() {
+    let mut store = AletheiaStore::new();
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(Posting::debit("assets:checking", 10_000))
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
+        )
+        .expect("write txn");
+
+    let as_of_us = store.transactions_as_of_us(aletheiadb::time::now().wallclock(), aletheiadb::time::now().wallclock()).expect("transactions as of us");
+    assert_eq!(as_of_us.len(), 1);
+    assert_eq!(as_of_us[0].id(), &txn_id);
+}
+
+#[test]
+fn test_node_and_edge_visibility_at_as_of() {
+    let path = temp_store_path("visibility");
+    let tx_time_before = aletheiadb::time::now();
+    let mut store = AletheiaStore::open(&path).expect("open");
+    let _txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(Posting::debit("assets:checking", 10_000))
+                .posting(Posting::credit("income:salary", 10_000).unwrap()),
+        )
+        .expect("write txn");
+
+    let tx_time_after = aletheiadb::time::now();
+
+    // Transactions as of before the transaction was written
+    let before_visible = store
+        .transactions_as_of(aletheiadb::time::now(), tx_time_before)
+        .expect("query before tx");
+    assert!(before_visible.is_empty(), "node should not be visible before it was written");
+
+    // Transactions as of after the transaction was written
+    let after_visible = store
+        .transactions_as_of(aletheiadb::time::now(), tx_time_after)
+        .expect("query after tx");
+    assert_eq!(after_visible.len(), 1, "node should be visible after it was written");
+
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn test_has_visible_supersedes_edge_fails_if_not_present() {
+    let path = temp_store_path("visible-supersedes");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let txn_id = store
+            .write_transaction(
+                TransactionBuilder::new("paycheck")
+                    .posting(Posting::debit("assets:checking", 10_000))
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
+            )
+            .expect("write txn");
+
+        let correction = Correction::new(txn_id, "fix memo").unwrap();
+        store.write_correction(correction).expect("write correction");
+        let _ = aletheiadb::time::now();
+    }
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn test_import_records_and_batches_iterators() {
+    let path = temp_store_path("import-iterators");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        store
+            .write_import_batch(
+                "csv-row",
+                "inline:csv",
+                "batch-key-1",
+                0,
+                false,
+                false,
+                &[NewImportRecord::new("hash-abc", None)],
+            )
+            .expect("write import batch");
+
+        assert_eq!(store.import_batches().count(), 1);
+        assert_eq!(store.import_records().count(), 1);
+    }
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn test_reconciliation_runs_iterator_yields_all_items() {
+    let path = temp_store_path("reconciliation-iterator");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let txn_id = store
+            .write_transaction(
+                TransactionBuilder::new("paycheck")
+                    .posting(Posting::debit("assets:checking", 10_000))
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+            )
+            .expect("txn");
+
+        store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                10_000,
+                110_000,
+                110_000,
+                0,
+                true,
+                1,
+                10_000,
+                0,
+                std::slice::from_ref(&txn_id),
+            )
+            .expect("run");
+
+        assert_eq!(store.reconciliation_runs().count(), 1);
+    }
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn test_month_close_iterators_yields_all_items() {
+    let path = temp_store_path("month-close-iterator");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let txn_id = store
+            .write_transaction(
+                TransactionBuilder::new("paycheck")
+                    .posting(Posting::debit("assets:checking", 10_000))
+                    .posting(Posting::credit("income:salary", 10_000).expect("credit")),
+            )
+            .expect("txn");
+
+        let run = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                100_000,
+                10_000,
+                110_000,
+                110_000,
+                0,
+                true,
+                1,
+                10_000,
+                0,
+                std::slice::from_ref(&txn_id),
+            )
+            .expect("run");
+
+        let close = store
+            .write_month_close("2026-03", "assets:checking", run.run_id(), None)
+            .expect("close");
+
+        assert_eq!(store.month_closes().count(), 1);
+        assert!(store.month_close(close.close_id()).is_some());
+    }
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn test_has_visible_supersedes_edge_fails_if_not_present_visible() {
+    let path = temp_store_path("visible-supersedes-not-present");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let txn_id = store
+            .write_transaction(
+                TransactionBuilder::new("paycheck")
+                    .posting(Posting::debit("assets:checking", 10_000))
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
+            )
+            .expect("write txn");
+
+        // We write a correction for another transaction so the supersedes edge doesn't point to ours
+        let txn_id_2 = store
+            .write_transaction(
+                TransactionBuilder::new("paycheck")
+                    .posting(Posting::debit("assets:checking", 10_000))
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
+            )
+            .expect("write txn 2");
+
+        let correction = Correction::new(txn_id_2, "fix memo").unwrap();
+        store.write_correction(correction).expect("write correction");
+
+        let tx_time = aletheiadb::time::now();
+        let as_of_us = store.transactions_as_of_us(tx_time.wallclock(), tx_time.wallclock()).expect("transactions");
+        assert_eq!(as_of_us.len(), 1); // Only txn_id is visible, txn_id_2 is superseded
+        assert_eq!(as_of_us[0].id(), &txn_id);
+    }
+    cleanup_store_path(&path);
+}
+
+#[test]
+fn test_reconstruct_transaction_at_as_of_validates_posting() {
+    let path = temp_store_path("reconstruct-posting-validation");
+    {
+        let mut store = AletheiaStore::open(&path).expect("open");
+        let _txn_id = store
+            .write_transaction(
+                TransactionBuilder::new("paycheck")
+                    .posting(Posting::debit("assets:checking", 10_000))
+                    .posting(Posting::credit("income:salary", 10_000).unwrap()),
+            )
+            .expect("write txn");
+
+        let tx_time = aletheiadb::time::now();
+        let as_of_us = store.transactions_as_of_us(tx_time.wallclock(), tx_time.wallclock()).expect("transactions");
+        assert_eq!(as_of_us.len(), 1);
+
+        let tx = store.transactions().next().expect("tx");
+        assert_eq!(tx.transaction().postings().len(), 2);
+    }
+    cleanup_store_path(&path);
+}

@@ -32,10 +32,8 @@ impl MermaidSankeyExporter {
         let mut flows: HashMap<(String, String), i64> = HashMap::new();
 
         for tx in &self.transactions {
-            let (credits, debits): (Vec<&Posting>, Vec<&Posting>) = tx
-                .postings()
-                .iter()
-                .partition(|p| p.amount() < 0);
+            let (credits, debits): (Vec<&Posting>, Vec<&Posting>) =
+                tx.postings().iter().partition(|p| p.amount() < 0);
 
             let total_credit: i64 = credits.iter().map(|p| p.amount().abs()).sum();
 
@@ -97,8 +95,8 @@ mod tests {
         let mut exporter = MermaidSankeyExporter::new();
 
         let tx = TransactionBuilder::new("Salary")
-            .posting(Posting::credit("income:salary", 500000).unwrap())
-            .posting(Posting::debit("assets:checking", 500000))
+            .posting(Posting::credit("income:salary", 500_000).unwrap())
+            .posting(Posting::debit("assets:checking", 500_000))
             .build()
             .unwrap();
 
@@ -118,9 +116,9 @@ income:salary,assets:checking,5000.00
         let mut exporter = MermaidSankeyExporter::new();
 
         let tx = TransactionBuilder::new("Split")
-            .posting(Posting::credit("income:salary", 100000).unwrap())
-            .posting(Posting::debit("assets:checking", 70000))
-            .posting(Posting::debit("assets:savings", 30000))
+            .posting(Posting::credit("income:salary", 100_000).unwrap())
+            .posting(Posting::debit("assets:checking", 70_000))
+            .posting(Posting::debit("assets:savings", 30_000))
             .build()
             .unwrap();
 
@@ -141,9 +139,9 @@ income:salary,assets:savings,300.00
         let mut exporter = MermaidSankeyExporter::new();
 
         let tx = TransactionBuilder::new("Pool")
-            .posting(Posting::credit("assets:checking", 60000).unwrap())
-            .posting(Posting::credit("assets:savings", 40000).unwrap())
-            .posting(Posting::debit("expenses:rent", 100000))
+            .posting(Posting::credit("assets:checking", 60_000).unwrap())
+            .posting(Posting::credit("assets:savings", 40_000).unwrap())
+            .posting(Posting::debit("expenses:rent", 100_000))
             .build()
             .unwrap();
 
@@ -169,7 +167,7 @@ assets:savings,expenses:rent,400.00
             .posting(Posting::credit("assets:savings", 4000).unwrap())
             // Distributed to:
             .posting(Posting::debit("expenses:food", 5000)) // 60% of 50 = 30 from checking, 20 from savings
-            .posting(Posting::debit("expenses:fun", 5000))  // 60% of 50 = 30 from checking, 20 from savings
+            .posting(Posting::debit("expenses:fun", 5000)) // 60% of 50 = 30 from checking, 20 from savings
             .build()
             .unwrap();
 
