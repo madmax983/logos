@@ -1,14 +1,20 @@
 #![allow(clippy::should_panic_without_expect)]
 
+#[cfg(debug_assertions)]
 use logos_core::domain::account::AccountId;
+#[cfg(debug_assertions)]
 use logos_core::domain::rsu::AllocationPolicy;
+#[cfg(debug_assertions)]
 use logos_core::planning::fire::UpcomingVest;
+#[cfg(debug_assertions)]
 use logos_core::planning::net_worth_projector::NetWorthProjector;
+#[cfg(debug_assertions)]
 use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
 use proptest::prelude::*;
 
 proptest! {
     #[test]
+    #[cfg(debug_assertions)]
     #[should_panic(expected = "attempt to multiply with overflow")]
     fn distribute_rsu_vest_panics_on_overflow(gross_vest in i64::MAX / 2..i64::MAX) {
         let config = RsuDistributorConfig {
@@ -26,6 +32,7 @@ proptest! {
     }
 
     #[test]
+    #[cfg(debug_assertions)]
     #[should_panic(expected = "attempt to multiply with overflow")]
     fn project_timeline_panics_on_overflow(
         initial_net_worth in any::<i64>(),
@@ -43,5 +50,28 @@ proptest! {
         });
 
         let _ = projector.project_timeline(months);
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic(expected = "attempt to add with overflow")]
+    fn safe_net_worth_panics_on_overflow(
+        vests_count in 105u32..200u32,
+    ) {
+        use logos_core::planning::fire::FireSimulator;
+
+        let mut sim = FireSimulator::new(500_000);
+        let max_gross = i64::MAX / 75; // Safe max before checked_mul(75) returns None
+
+        for _ in 0..vests_count {
+            sim.add_upcoming_vest(UpcomingVest {
+                avg_close_price_cents: max_gross,
+                units: 1,
+                days_to_vest: 15,
+            });
+        }
+
+        // This will panic when calling .sum() on the iterator of safe values
+        let _ = sim.safe_net_worth_cents();
     }
 }
