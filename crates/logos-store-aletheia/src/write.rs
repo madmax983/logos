@@ -38,7 +38,7 @@ impl AletheiaStore {
         let id = self.next_transaction_id();
         let effective_at = valid_from.unwrap_or_else(aletheiadb::time::now);
         self.persist_transaction_graph(&id, &txn, effective_at)?;
-        self.persist_transaction(id.clone(), txn, effective_at);
+        self.persist_transaction(&id, txn, effective_at);
         Ok(id)
     }
 
@@ -123,7 +123,7 @@ impl AletheiaStore {
         );
 
         self.persist_analytics_artifact_graph(&manifest)?;
-        self.persist_analytics_artifact(manifest.clone());
+        self.persist_analytics_artifact(&manifest);
         Ok(manifest)
     }
 
@@ -267,7 +267,7 @@ impl AletheiaStore {
         }
 
         self.persist_import_batch_graph(&batch, records, &statement_lines)?;
-        self.persist_import_batch(batch.clone());
+        self.persist_import_batch(&batch);
 
         for record in records {
             let stored = StoredImportRecord::new(
@@ -352,7 +352,7 @@ impl AletheiaStore {
             created_at,
         );
         let statement_line_ids = self.persist_reconciliation_run_graph(&run, reconciled_txn_ids)?;
-        self.persist_reconciliation_run(run.clone());
+        self.persist_reconciliation_run(&run);
         self.persist_reconciliation_statement_line_ids(run.run_id(), statement_line_ids);
         Ok(run)
     }
@@ -457,9 +457,9 @@ impl AletheiaStore {
             &close,
             reconciled_txn_ids,
         )?;
-        self.persist_reconciliation_run(run.clone());
+        self.persist_reconciliation_run(&run);
         self.persist_reconciliation_statement_line_ids(run.run_id(), statement_line_ids);
-        self.persist_month_close(close.clone());
+        self.persist_month_close(&close);
         Ok((run, close))
     }
 
@@ -542,7 +542,7 @@ impl AletheiaStore {
             closed_at,
         );
         self.persist_month_close_graph(&close)?;
-        self.persist_month_close(close.clone());
+        self.persist_month_close(&close);
         Ok(close)
     }
 }

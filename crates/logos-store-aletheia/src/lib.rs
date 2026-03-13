@@ -301,13 +301,13 @@ impl AletheiaStore {
 
     pub(crate) fn persist_transaction(
         &mut self,
-        id: TransactionId,
+        id: &TransactionId,
         txn: logos_core::Transaction,
         effective_at: Timestamp,
     ) {
         self.transactions.insert(
             id.clone(),
-            StoredTransaction::with_effective_at(id, txn, effective_at),
+            StoredTransaction::with_effective_at(id.clone(), txn, effective_at),
         );
     }
 
@@ -319,14 +319,14 @@ impl AletheiaStore {
         self.budget_targets.insert(key, target);
     }
 
-    pub(crate) fn persist_analytics_artifact(&mut self, manifest: StoredAnalyticsArtifactManifest) {
+    pub(crate) fn persist_analytics_artifact(&mut self, manifest: &StoredAnalyticsArtifactManifest) {
         self.analytics_artifacts
-            .insert(manifest.artifact_id().to_owned(), manifest);
+            .insert(manifest.artifact_id().to_owned(), manifest.clone());
     }
 
-    pub(crate) fn persist_import_batch(&mut self, batch: StoredImportBatch) {
+    pub(crate) fn persist_import_batch(&mut self, batch: &StoredImportBatch) {
         self.import_batches
-            .insert(batch.batch_id().to_owned(), batch);
+            .insert(batch.batch_id().to_owned(), batch.clone());
     }
 
     pub(crate) fn persist_import_record(&mut self, record: StoredImportRecord) {
@@ -345,9 +345,9 @@ impl AletheiaStore {
         self.statement_lines.insert(line_id, line);
     }
 
-    pub(crate) fn persist_reconciliation_run(&mut self, run: StoredReconciliationRun) {
+    pub(crate) fn persist_reconciliation_run(&mut self, run: &StoredReconciliationRun) {
         self.reconciliation_runs
-            .insert(run.run_id().to_owned(), run);
+            .insert(run.run_id().to_owned(), run.clone());
     }
 
     pub(crate) fn persist_reconciliation_statement_line_ids(
@@ -359,7 +359,7 @@ impl AletheiaStore {
             .insert(run_id.to_owned(), statement_line_ids);
     }
 
-    pub(crate) fn persist_month_close(&mut self, close: StoredMonthClose) {
+    pub(crate) fn persist_month_close(&mut self, close: &StoredMonthClose) {
         self.month_close_by_scope.insert(
             (
                 close.month_key().to_owned(),
@@ -367,7 +367,7 @@ impl AletheiaStore {
             ),
             close.close_id().to_owned(),
         );
-        self.month_closes.insert(close.close_id().to_owned(), close);
+        self.month_closes.insert(close.close_id().to_owned(), close.clone());
     }
 
     pub(crate) fn build_and_validate(
@@ -1228,11 +1228,11 @@ fn load_corrections(
     db: &AletheiaDB,
     transaction_nodes: &HashMap<TransactionId, NodeId>,
 ) -> Result<Vec<StoredCorrection>, StoreError> {
-    let correction_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_CORRECTION);
-    // Pre-allocate vector based on known node count to prevent multiple heap reallocations.
+    // AletheiaDB scan iterators cannot report their length upfront, so we use the default
+    // vector reallocation strategy rather than adding overhead from an intermediate `.collect()`.
     let mut corrections = Vec::new();
 
-    for correction_node_id in correction_node_ids {
+    for correction_node_id in db.scan_nodes_by_label(LABEL_LEDGER_CORRECTION) {
         let correction_node = db
             .get_node(correction_node_id)
             .map_err(|err| map_load_error("unable to read LedgerCorrection node", err))?;
@@ -1871,9 +1871,10 @@ fn load_reconciliation_runs(
             outflow_cents,
             created_at,
         );
-        let mut statement_line_ids = Vec::new();
-        let mut seen_statement_line_ids = HashSet::new();
-        for edge_id in db.get_outgoing_edges_with_label(node_id, EDGE_RECONCILES_STMT_LINE) {
+        let edges = db.get_outgoing_edges_with_label(node_id, EDGE_RECONCILES_STMT_LINE);
+        let mut statement_line_ids = Vec::with_capacity(edges.len());
+        let mut seen_statement_line_ids = HashSet::with_capacity(edges.len());
+        for edge_id in edges {
             let edge = db
                 .get_edge(edge_id)
                 .map_err(|err| map_load_error("unable to read RECONCILES_STMT_LINE edge", err))?;
@@ -2159,7 +2160,12 @@ fn collect_statement_line_ids_for_transactions(
     statement_line_ids_by_txn: &HashMap<TransactionId, Vec<String>>,
     txn_ids: &[TransactionId],
 ) -> Vec<String> {
-    let mut line_ids = Vec::new();
+    let capacity = txn_ids
+        .iter()
+        .filter_map(|id| statement_line_ids_by_txn.get(id))
+        .map(Vec::len)
+        .sum();
+    let mut line_ids = Vec::with_capacity(capacity);
     for txn_id in txn_ids {
         if let Some(ids) = statement_line_ids_by_txn.get(txn_id) {
             line_ids.extend(ids.iter().cloned());
