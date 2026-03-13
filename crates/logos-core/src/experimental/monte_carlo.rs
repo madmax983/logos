@@ -14,15 +14,15 @@ struct Lcg {
 }
 
 impl Lcg {
-    const A: u64 = 6364136223846793005;
-    const C: u64 = 1442695040888963407;
+    const A: u64 = 6_364_136_223_846_793_005;
+    const C: u64 = 1_442_695_040_888_963_407;
 
-    fn new(seed: u64) -> Self {
+    const fn new(seed: u64) -> Self {
         Self { state: seed }
     }
 
     /// Returns a pseudo-random `u64`.
-    fn next_u64(&mut self) -> u64 {
+    const fn next_u64(&mut self) -> u64 {
         self.state = self.state.wrapping_mul(Self::A).wrapping_add(Self::C);
         self.state
     }
@@ -69,6 +69,19 @@ pub struct MonteCarloProjector {
 
 impl MonteCarloProjector {
     /// Creates a new `MonteCarloProjector`.
+    ///
+    /// The simulator takes in the initial portfolio balance, the monthly contribution
+    /// amount, expected annual mean return (e.g. 0.07 for 7%), and expected annual
+    /// volatility (e.g. 0.15 for 15%).
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::experimental::monte_carlo::MonteCarloProjector;
+    ///
+    /// // $10,000 initial, $500 monthly, 7% return, 15% volatility, seed 42
+    /// let projector = MonteCarloProjector::new(1_000_000, 50_000, 0.07, 0.15, 42);
+    /// ```
     #[must_use]
     pub const fn new(
         initial_cents: i64,
@@ -87,6 +100,23 @@ impl MonteCarloProjector {
     }
 
     /// Runs the Monte Carlo simulation for a given number of months and paths.
+    ///
+    /// The simulation outputs the 5th, 50th (median), and 95th percentiles of
+    /// ending portfolio balances across all paths run.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::experimental::monte_carlo::MonteCarloProjector;
+    ///
+    /// // Project a $100k starting balance adding $1k/month for 10 years (120 months)
+    /// // across 1,000 randomized simulation paths.
+    /// let projector = MonteCarloProjector::new(10_000_000, 100_000, 0.07, 0.15, 42);
+    /// let result = projector.run(120, 1000);
+    ///
+    /// // The median case after 10 years should reflect substantial growth.
+    /// assert!(result.median_cents > 22_000_000);
+    /// ```
     #[must_use]
     pub fn run(&self, months: u16, paths: u32) -> MonteCarloResult {
         if paths == 0 {
@@ -108,7 +138,7 @@ impl MonteCarloProjector {
 
             for _ in 0..months {
                 let random_norm = lcg.next_normal();
-                let monthly_return = monthly_mean + monthly_volatility * random_norm;
+                let monthly_return = monthly_volatility.mul_add(random_norm, monthly_mean);
 
                 #[allow(clippy::cast_precision_loss)]
                 let current_f64 = current_cents as f64;
@@ -129,22 +159,22 @@ impl MonteCarloProjector {
         final_outcomes.sort_unstable();
 
         // Calculate percentiles
-        #[allow(clippy::cast_precision_loss)]
-        let p5_idx = ((paths as f64) * 0.05).floor() as usize;
-        #[allow(clippy::cast_precision_loss)]
-        let median_idx = ((paths as f64) * 0.50).floor() as usize;
-        #[allow(clippy::cast_precision_loss)]
-        let p95_idx = ((paths as f64) * 0.95).floor() as usize;
+        #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let lower_idx = (f64::from(paths) * 0.05).floor() as usize;
+        #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let median_idx = (f64::from(paths) * 0.50).floor() as usize;
+        #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let upper_idx = (f64::from(paths) * 0.95).floor() as usize;
 
         // Ensure indices are within bounds (for very small path counts)
-        let p5_idx = p5_idx.clamp(0, paths.saturating_sub(1) as usize);
+        let lower_idx = lower_idx.clamp(0, paths.saturating_sub(1) as usize);
         let median_idx = median_idx.clamp(0, paths.saturating_sub(1) as usize);
-        let p95_idx = p95_idx.clamp(0, paths.saturating_sub(1) as usize);
+        let upper_idx = upper_idx.clamp(0, paths.saturating_sub(1) as usize);
 
         MonteCarloResult {
-            p5_cents: final_outcomes[p5_idx],
+            p5_cents: final_outcomes[lower_idx],
             median_cents: final_outcomes[median_idx],
-            p95_cents: final_outcomes[p95_idx],
+            p95_cents: final_outcomes[upper_idx],
         }
     }
 }
@@ -156,8 +186,8 @@ mod tests {
     #[test]
     fn test_monte_carlo_projector_run() {
         let projector = MonteCarloProjector::new(
-            100_000_00, // $100,000 initial
-            1_000_00,   // $1,000 monthly contribution
+            10_000_000, // $100,000 initial
+            100_000,   // $1,000 monthly contribution
             0.07,       // 7% annual return
             0.15,       // 15% volatility
             42,         // fixed seed
@@ -166,7 +196,7 @@ mod tests {
         let result = projector.run(120, 1000); // 10 years, 1000 paths
 
         // We expect the median to be roughly $100k + $120k + growth > $220k
-        assert!(result.median_cents > 220_000_00);
+        assert!(result.median_cents > 22_000_000);
 
         // P5 should be less than Median, and Median should be less than P95
         assert!(result.p5_cents < result.median_cents);
@@ -175,10 +205,10 @@ mod tests {
 
     #[test]
     fn test_zero_paths() {
-        let projector = MonteCarloProjector::new(100_00, 100_00, 0.07, 0.15, 42);
+        let projector = MonteCarloProjector::new(10_000, 10_000, 0.07, 0.15, 42);
         let result = projector.run(12, 0);
-        assert_eq!(result.p5_cents, 100_00);
-        assert_eq!(result.median_cents, 100_00);
-        assert_eq!(result.p95_cents, 100_00);
+        assert_eq!(result.p5_cents, 10_000);
+        assert_eq!(result.median_cents, 10_000);
+        assert_eq!(result.p95_cents, 10_000);
     }
 }
