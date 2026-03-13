@@ -20,6 +20,8 @@ See [docs/financial-planning.md](docs/financial-planning.md) for details on auto
 
 Headless statement-fetch architecture for future `month autopilot` automation is tracked in [docs/adr/0003-headless-statement-fetch-and-autopilot-integration.md](docs/adr/0003-headless-statement-fetch-and-autopilot-integration.md). Operator guidance for config layout, 1Password refs, fetch-run triage, and scheduled execution lives in [docs/fetch-ops.md](docs/fetch-ops.md).
 
+Vault-based phone capture through Obsidian is documented in [docs/capture-ops.md](docs/capture-ops.md), with the canonical frontmatter note shape in [docs/templates/obsidian-capture-note.md](docs/templates/obsidian-capture-note.md).
+
 ## Tooling
 
 Run from repository root:
