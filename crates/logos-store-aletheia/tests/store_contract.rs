@@ -39,6 +39,16 @@ fn open_raw_graph(path: &Path) -> AletheiaDB {
 }
 
 #[test]
+fn empty_store_has_zero_counts() {
+    let store = AletheiaStore::new();
+    assert_eq!(store.correction_count(), 0);
+    assert_eq!(store.transaction_count(), 0);
+    assert_eq!(store.budget_targets().count(), 0);
+    assert_eq!(store.analytics_artifacts().count(), 0);
+    assert!(!store.has_transaction(&TransactionId::new("non-existent").expect("id")));
+}
+
+#[test]
 fn balanced_transaction_write_succeeds() {
     let mut store = AletheiaStore::new();
     let id = store
@@ -116,6 +126,13 @@ fn test_transactions_iterator_yields_all_items() {
         .expect("write txn 2");
 
     assert_eq!(store.transactions().count(), 2);
+    let mut transactions_iter = store.transactions();
+    let first = transactions_iter.next().expect("first").id().as_str().to_string();
+    let second = transactions_iter.next().expect("second").id().as_str().to_string();
+    assert!(first == "txn-1" || first == "txn-2");
+    assert!(second == "txn-1" || second == "txn-2");
+    assert_ne!(first, second);
+    assert!(transactions_iter.next().is_none());
 }
 
 #[test]
@@ -132,6 +149,13 @@ fn test_budget_targets_iterator_yields_all_items() {
         .expect("write budget target 2");
 
     assert_eq!(store.budget_targets().count(), 2);
+    let mut targets_iter = store.budget_targets();
+    let first = targets_iter.next().expect("first");
+    let second = targets_iter.next().expect("second");
+    assert!(first.month_key() == "2026-03" || first.month_key() == "2026-04");
+    assert!(second.month_key() == "2026-03" || second.month_key() == "2026-04");
+    assert_ne!(first.month_key(), second.month_key());
+    assert!(targets_iter.next().is_none());
 }
 
 #[test]
@@ -166,6 +190,13 @@ fn test_analytics_artifacts_iterator_yields_all_items() {
         .expect("write second");
 
     assert_eq!(store.analytics_artifacts().count(), 2);
+    let mut artifacts_iter = store.analytics_artifacts();
+    let iter_first = artifacts_iter.next().expect("first");
+    let iter_second = artifacts_iter.next().expect("second");
+    assert!(iter_first.content_hash() == "hash-base" || iter_first.content_hash() == "hash-next");
+    assert!(iter_second.content_hash() == "hash-base" || iter_second.content_hash() == "hash-next");
+    assert_ne!(iter_first.content_hash(), iter_second.content_hash());
+    assert!(artifacts_iter.next().is_none());
 }
 
 #[test]

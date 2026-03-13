@@ -399,6 +399,9 @@ mod tests {
 
         let err2 = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
         assert!(!is_edge_not_visible(&err2));
+
+        let err3 = DbError::Storage(StorageError::io_error("simulated"));
+        assert!(!is_edge_not_visible(&err3));
     }
 
     #[test]
@@ -415,6 +418,9 @@ mod tests {
 
         let err3 = DbError::Storage(StorageError::EdgeNotFound(EdgeId::new(1).unwrap()));
         assert!(!is_node_not_visible(&err3));
+
+        let err4 = DbError::Storage(StorageError::io_error("simulated"));
+        assert!(!is_node_not_visible(&err4));
     }
 
     #[test]
@@ -422,5 +428,34 @@ mod tests {
         let err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
         let mapped = map_load_error("test context", err);
         assert!(mapped.to_string().contains("test context"));
+    }
+
+    #[test]
+    fn test_current_projection_without_superseded_returns_non_empty() {
+        let mut store = AletheiaStore::new();
+        let txn_id = store.write_transaction(
+            logos_core::TransactionBuilder::new("paycheck")
+                .posting(logos_core::Posting::debit(logos_core::AccountId::new("assets:checking").unwrap(), 100).unwrap())
+                .posting(logos_core::Posting::credit(logos_core::AccountId::new("income:salary").unwrap(), 100).unwrap())
+        ).unwrap();
+
+        let txns = store.current_projection_without_superseded();
+        assert_eq!(txns.len(), 1);
+        assert_eq!(txns[0].id().as_str(), txn_id.as_str());
+    }
+
+    #[test]
+    fn test_current_projection_without_superseded_filters_superseded() {
+        let mut store = AletheiaStore::new();
+        let txn_id = store.write_transaction(
+            logos_core::TransactionBuilder::new("paycheck")
+                .posting(logos_core::Posting::debit(logos_core::AccountId::new("assets:checking").unwrap(), 100).unwrap())
+                .posting(logos_core::Posting::credit(logos_core::AccountId::new("income:salary").unwrap(), 100).unwrap())
+        ).unwrap();
+
+        store.write_correction(logos_core::Correction::new(txn_id, "fix").unwrap()).unwrap();
+
+        let txns = store.current_projection_without_superseded();
+        assert_eq!(txns.len(), 0);
     }
 }

@@ -84,3 +84,66 @@ fn db_edge_not_visible_error_maps_to_none() {
     // the backdated transaction shouldn't be there.
     assert_eq!(transactions.len(), 0);
 }
+
+#[test]
+fn transactions_as_of_us_returns_non_empty_for_visible_transactions() {
+    let path = temp_store_path("read-visibility-as-of-us");
+    let mut store = AletheiaStore::open(&path).unwrap();
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
+                .posting(
+                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
+                ),
+        )
+        .unwrap();
+
+    #[allow(clippy::cast_possible_truncation)]
+    let valid_time_us = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as i64;
+    #[allow(clippy::cast_possible_truncation)]
+    let tx_time_us = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as i64;
+
+    let transactions = store
+        .transactions_as_of_us(valid_time_us + 10_000_000, tx_time_us + 10_000_000)
+        .unwrap();
+    assert_eq!(transactions.len(), 1);
+    assert_eq!(transactions[0].id().as_str(), txn_id.as_str());
+}
+
+#[test]
+fn has_visible_supersedes_edge_returns_false_when_not_superseded() {
+    let path = temp_store_path("read-visibility-visible-supersedes");
+    let mut store = AletheiaStore::open(&path).unwrap();
+
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
+                .posting(
+                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
+                ),
+        )
+        .unwrap();
+
+    // Wait a bit to ensure transaction times are distinct
+    std::thread::sleep(std::time::Duration::from_millis(5));
+    let tx_time_between = aletheiadb::time::now();
+    std::thread::sleep(std::time::Duration::from_millis(5));
+
+    let correction = logos_core::Correction::new(txn_id.clone(), "fixed memo").unwrap();
+    store.write_correction(correction).unwrap();
+
+    // At `tx_time_between`, the transaction exists but the supersedes edge does NOT exist.
+    // If `has_visible_supersedes_edge` is mutated to `Ok(true)`, it will erroneously filter it out.
+    let transactions = store
+        .transactions_as_of(aletheiadb::time::now(), tx_time_between)
+        .unwrap();
+
+    assert_eq!(transactions.len(), 1);
+    assert_eq!(transactions[0].id().as_str(), txn_id.as_str());
+}

@@ -12,6 +12,96 @@ fn temp_store_path(prefix: &str) -> std::path::PathBuf {
 }
 
 #[test]
+fn empty_store_yields_no_runs_or_closes() {
+    let store = AletheiaStore::new();
+    assert_eq!(store.reconciliation_runs().count(), 0);
+    assert_eq!(store.month_closes().count(), 0);
+    assert!(store.month_close("non-existent").is_none());
+}
+
+#[test]
+fn write_reconciliation_run_yields_expected_runs() {
+    let mut store = AletheiaStore::new();
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
+                .posting(
+                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
+                ),
+        )
+        .unwrap();
+
+    let run = store
+        .write_reconciliation_run(
+            "2026-03",
+            "assets:checking",
+            100_000,
+            10_000,
+            110_000,
+            110_000,
+            0,
+            true,
+            1,
+            10_000,
+            0,
+            std::slice::from_ref(&txn_id),
+        )
+        .unwrap();
+
+    let mut runs = store.reconciliation_runs();
+    let yielded_run = runs.next().unwrap();
+    assert_eq!(yielded_run.run_id(), run.run_id());
+    assert!(runs.next().is_none());
+}
+
+#[test]
+fn write_month_close_yields_expected_closes() {
+    let mut store = AletheiaStore::new();
+    let txn_id = store
+        .write_transaction(
+            TransactionBuilder::new("paycheck")
+                .posting(
+                    Posting::debit(AccountId::new("assets:checking").unwrap(), 10_000).unwrap(),
+                )
+                .posting(
+                    Posting::credit(AccountId::new("income:salary").unwrap(), 10_000).unwrap(),
+                ),
+        )
+        .unwrap();
+
+    let run = store
+        .write_reconciliation_run(
+            "2026-03",
+            "assets:checking",
+            100_000,
+            10_000,
+            110_000,
+            110_000,
+            0,
+            true,
+            1,
+            10_000,
+            0,
+            std::slice::from_ref(&txn_id),
+        )
+        .unwrap();
+
+    let close = store
+        .write_month_close("2026-03", "assets:checking", run.run_id(), None)
+        .unwrap();
+
+    assert!(store.month_close(close.close_id()).is_some());
+
+    let mut closes = store.month_closes();
+    let yielded_close = closes.next().unwrap();
+    assert_eq!(yielded_close.close_id(), close.close_id());
+    assert!(closes.next().is_none());
+}
+
+#[test]
 fn write_month_close_fails_when_month_does_not_match() {
     let mut store = AletheiaStore::new();
     let txn_id = store
