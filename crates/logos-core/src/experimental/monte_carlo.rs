@@ -9,20 +9,22 @@
 
 /// A simple Linear Congruential Generator for deterministic randomness.
 #[derive(Debug, Clone)]
-struct Lcg {
+#[allow(dead_code)]
+pub(crate) struct Lcg {
     state: u64,
 }
 
+#[allow(dead_code)]
 impl Lcg {
-    const A: u64 = 6364136223846793005;
-    const C: u64 = 1442695040888963407;
+    const A: u64 = 6_364_136_223_846_793_005;
+    const C: u64 = 1_442_695_040_888_963_407;
 
-    fn new(seed: u64) -> Self {
+    const fn new(seed: u64) -> Self {
         Self { state: seed }
     }
 
     /// Returns a pseudo-random `u64`.
-    fn next_u64(&mut self) -> u64 {
+    const fn next_u64(&mut self) -> u64 {
         self.state = self.state.wrapping_mul(Self::A).wrapping_add(Self::C);
         self.state
     }
@@ -48,18 +50,20 @@ impl Lcg {
 
 /// The result of a Monte Carlo simulation.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MonteCarloResult {
+#[allow(dead_code)]
+pub(crate) struct MonteCarloResult {
     /// 5th percentile outcome in cents.
-    pub p5_cents: i64,
+    pub(crate) p5: i64,
     /// 50th percentile (median) outcome in cents.
-    pub median_cents: i64,
+    pub(crate) median: i64,
     /// 95th percentile outcome in cents.
-    pub p95_cents: i64,
+    pub(crate) p95: i64,
 }
 
 /// A projector to simulate many possible future paths for investments.
 #[derive(Debug, Clone)]
-pub struct MonteCarloProjector {
+#[allow(dead_code)]
+pub(crate) struct MonteCarloProjector {
     initial_cents: i64,
     monthly_contribution_cents: i64,
     annual_mean_return: f64,
@@ -67,10 +71,11 @@ pub struct MonteCarloProjector {
     seed: u64,
 }
 
+#[allow(dead_code)]
 impl MonteCarloProjector {
     /// Creates a new `MonteCarloProjector`.
     #[must_use]
-    pub const fn new(
+    pub(crate) const fn new(
         initial_cents: i64,
         monthly_contribution_cents: i64,
         annual_mean_return: f64,
@@ -88,12 +93,12 @@ impl MonteCarloProjector {
 
     /// Runs the Monte Carlo simulation for a given number of months and paths.
     #[must_use]
-    pub fn run(&self, months: u16, paths: u32) -> MonteCarloResult {
+    pub(crate) fn run(&self, months: u16, paths: u32) -> MonteCarloResult {
         if paths == 0 {
             return MonteCarloResult {
-                p5_cents: self.initial_cents,
-                median_cents: self.initial_cents,
-                p95_cents: self.initial_cents,
+                p5: self.initial_cents,
+                median: self.initial_cents,
+                p95: self.initial_cents,
             };
         }
 
@@ -108,7 +113,7 @@ impl MonteCarloProjector {
 
             for _ in 0..months {
                 let random_norm = lcg.next_normal();
-                let monthly_return = monthly_mean + monthly_volatility * random_norm;
+                let monthly_return = monthly_volatility.mul_add(random_norm, monthly_mean);
 
                 #[allow(clippy::cast_precision_loss)]
                 let current_f64 = current_cents as f64;
@@ -129,22 +134,34 @@ impl MonteCarloProjector {
         final_outcomes.sort_unstable();
 
         // Calculate percentiles
-        #[allow(clippy::cast_precision_loss)]
-        let p5_idx = ((paths as f64) * 0.05).floor() as usize;
-        #[allow(clippy::cast_precision_loss)]
-        let median_idx = ((paths as f64) * 0.50).floor() as usize;
-        #[allow(clippy::cast_precision_loss)]
-        let p95_idx = ((paths as f64) * 0.95).floor() as usize;
+        #[allow(
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss
+        )]
+        let low_index = (f64::from(paths) * 0.05).floor() as usize;
+        #[allow(
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss
+        )]
+        let median_index = (f64::from(paths) * 0.50).floor() as usize;
+        #[allow(
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss
+        )]
+        let high_index = (f64::from(paths) * 0.95).floor() as usize;
 
         // Ensure indices are within bounds (for very small path counts)
-        let p5_idx = p5_idx.clamp(0, paths.saturating_sub(1) as usize);
-        let median_idx = median_idx.clamp(0, paths.saturating_sub(1) as usize);
-        let p95_idx = p95_idx.clamp(0, paths.saturating_sub(1) as usize);
+        let low_index = low_index.clamp(0, paths.saturating_sub(1) as usize);
+        let median_index = median_index.clamp(0, paths.saturating_sub(1) as usize);
+        let high_index = high_index.clamp(0, paths.saturating_sub(1) as usize);
 
         MonteCarloResult {
-            p5_cents: final_outcomes[p5_idx],
-            median_cents: final_outcomes[median_idx],
-            p95_cents: final_outcomes[p95_idx],
+            p5: final_outcomes[low_index],
+            median: final_outcomes[median_index],
+            p95: final_outcomes[high_index],
         }
     }
 }
@@ -156,8 +173,8 @@ mod tests {
     #[test]
     fn test_monte_carlo_projector_run() {
         let projector = MonteCarloProjector::new(
-            100_000_00, // $100,000 initial
-            1_000_00,   // $1,000 monthly contribution
+            10_000_000, // $100,000 initial
+            100_000,    // $1,000 monthly contribution
             0.07,       // 7% annual return
             0.15,       // 15% volatility
             42,         // fixed seed
@@ -166,19 +183,19 @@ mod tests {
         let result = projector.run(120, 1000); // 10 years, 1000 paths
 
         // We expect the median to be roughly $100k + $120k + growth > $220k
-        assert!(result.median_cents > 220_000_00);
+        assert!(result.median > 22_000_000);
 
         // P5 should be less than Median, and Median should be less than P95
-        assert!(result.p5_cents < result.median_cents);
-        assert!(result.median_cents < result.p95_cents);
+        assert!(result.p5 < result.median);
+        assert!(result.median < result.p95);
     }
 
     #[test]
     fn test_zero_paths() {
-        let projector = MonteCarloProjector::new(100_00, 100_00, 0.07, 0.15, 42);
+        let projector = MonteCarloProjector::new(10_000, 10_000, 0.07, 0.15, 42);
         let result = projector.run(12, 0);
-        assert_eq!(result.p5_cents, 100_00);
-        assert_eq!(result.median_cents, 100_00);
-        assert_eq!(result.p95_cents, 100_00);
+        assert_eq!(result.p5, 10_000);
+        assert_eq!(result.median, 10_000);
+        assert_eq!(result.p95, 10_000);
     }
 }
