@@ -2084,7 +2084,7 @@ fn required_edge_i64_property(edge: &Edge, key: &str) -> Result<i64, StoreError>
 
 fn parse_posting(txn_id: &str, account: &str, amount_cents: i64) -> Result<Posting, StoreError> {
     if amount_cents >= 0 {
-        return Ok(Posting::debit(account, amount_cents));
+        return Posting::debit(account, amount_cents).map_err(StoreError::Domain);
     }
 
     let credit_amount = amount_cents
@@ -2094,7 +2094,7 @@ fn parse_posting(txn_id: &str, account: &str, amount_cents: i64) -> Result<Posti
                 "transaction '{txn_id}' contains posting '{account}' with unsupported amount {amount_cents}"
             ),
         })?;
-    Ok(Posting::credit(account, credit_amount))
+    Posting::credit(account, credit_amount).map_err(StoreError::Domain)
 }
 
 fn map_load_error(context: &str, error: impl fmt::Display) -> StoreError {

@@ -1438,8 +1438,14 @@ fn build_double_entry(
     amount_cents: i64,
 ) -> TransactionBuilder {
     TransactionBuilder::new(description)
-        .posting(Posting::debit(debit_account, amount_cents))
-        .posting(Posting::credit(credit_account, amount_cents))
+        .posting(
+            Posting::debit(debit_account, amount_cents)
+                .expect("amounts should not overflow in this context"),
+        )
+        .posting(
+            Posting::credit(credit_account, amount_cents)
+                .expect("amounts should not overflow in this context"),
+        )
 }
 
 fn parse_import_timestamp(timestamp: &str) -> Option<i64> {

@@ -29,11 +29,11 @@ use crate::error::DomainError;
 /// use logos_core::domain::transaction::Posting;
 ///
 /// // Create a debit posting for $10.00 (1000 cents).
-/// let d = Posting::debit("assets:checking", 1000);
+/// let d = Posting::debit("assets:checking", 1000).unwrap();
 /// assert_eq!(d.amount(), 1000);
 ///
 /// // Create a credit posting for $10.00 (represented as -1000 cents internally).
-/// let c = Posting::credit("income:salary", 1000);
+/// let c = Posting::credit("income:salary", 1000).unwrap();
 /// assert_eq!(c.amount(), -1000);
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -44,22 +44,35 @@ pub struct Posting {
 
 impl Posting {
     /// Creates a debit posting. The amount should be passed as a positive number.
-    #[must_use]
-    pub fn debit(account: &str, amount: i64) -> Self {
-        Self {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the amount is negative.
+    pub fn debit(account: &str, amount: i64) -> Result<Self, DomainError> {
+        if amount < 0 {
+            return Err(DomainError::AmountOverflow);
+        }
+        Ok(Self {
             account: account.to_owned(),
             amount,
-        }
+        })
     }
 
     /// Creates a credit posting. The `amount` parameter is passed as positive,
     /// but will be negated internally to maintain the credit sign convention.
-    #[must_use]
-    pub fn credit(account: &str, amount: i64) -> Self {
-        Self {
-            account: account.to_owned(),
-            amount: -amount,
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the amount is negative or overflows.
+    pub fn credit(account: &str, amount: i64) -> Result<Self, DomainError> {
+        let negated = amount.checked_neg().ok_or(DomainError::AmountOverflow)?;
+        if amount < 0 {
+            return Err(DomainError::AmountOverflow);
         }
+        Ok(Self {
+            account: account.to_owned(),
+            amount: negated,
+        })
     }
 
     #[must_use]
@@ -109,8 +122,8 @@ impl Transaction {
 ///
 /// // A successful balanced transaction:
 /// let txn = TransactionBuilder::new("Buy groceries")
-///     .posting(Posting::debit("expenses:food", 5000))
-///     .posting(Posting::credit("assets:checking", 5000))
+///     .posting(Posting::debit("expenses:food", 5000).unwrap())
+///     .posting(Posting::credit("assets:checking", 5000).unwrap())
 ///     .build()
 ///     .expect("Transaction should balance");
 ///
@@ -123,7 +136,7 @@ impl Transaction {
 /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
 ///
 /// let result = TransactionBuilder::new("Oops")
-///     .posting(Posting::debit("expenses:food", 5000))
+///     .posting(Posting::debit("expenses:food", 5000).unwrap())
 ///     .build(); // Missing the credit!
 ///
 /// assert!(result.is_err());
@@ -161,7 +174,12 @@ impl TransactionBuilder {
             return Err(DomainError::EmptyTransactionDescription);
         }
 
-        let total: i64 = self.postings.iter().map(Posting::amount).sum();
+        let mut total: i64 = 0;
+        for p in &self.postings {
+            total = total
+                .checked_add(p.amount())
+                .ok_or(DomainError::AmountOverflow)?;
+        }
         if total != 0 {
             return Err(DomainError::UnbalancedTransaction { total });
         }

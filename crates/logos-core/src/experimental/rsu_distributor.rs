@@ -50,11 +50,11 @@ impl RsuAutoDistributor {
         let tax_cents = gross_vest_cents - smoothing_cents - goals_cents - discretionary_cents;
 
         TransactionBuilder::new(description)
-            .posting(Posting::credit(&self.rsu_asset, gross_vest_cents))
-            .posting(Posting::debit(&self.tax_reserve, tax_cents))
-            .posting(Posting::debit(&self.smoothing_buffer, smoothing_cents))
-            .posting(Posting::debit(&self.goals, goals_cents))
-            .posting(Posting::debit(&self.discretionary, discretionary_cents))
+            .posting(Posting::credit(&self.rsu_asset, gross_vest_cents)?)
+            .posting(Posting::debit(&self.tax_reserve, tax_cents)?)
+            .posting(Posting::debit(&self.smoothing_buffer, smoothing_cents)?)
+            .posting(Posting::debit(&self.goals, goals_cents)?)
+            .posting(Posting::debit(&self.discretionary, discretionary_cents)?)
             .build()
     }
 }
@@ -82,13 +82,13 @@ mod tests {
         assert_eq!(postings.len(), 5);
 
         // the source account is credited the gross amount
-        assert!(postings.contains(&Posting::credit("assets:rsu", 10000)));
+        assert!(postings.contains(&Posting::credit("assets:rsu", 10000).unwrap()));
 
         // the destinations are debited
-        assert!(postings.contains(&Posting::debit("assets:tax", 4000)));
-        assert!(postings.contains(&Posting::debit("assets:buffer", 2000)));
-        assert!(postings.contains(&Posting::debit("assets:goals", 3000)));
-        assert!(postings.contains(&Posting::debit("assets:checking", 1000)));
+        assert!(postings.contains(&Posting::debit("assets:tax", 4000).unwrap()));
+        assert!(postings.contains(&Posting::debit("assets:buffer", 2000).unwrap()));
+        assert!(postings.contains(&Posting::debit("assets:goals", 3000).unwrap()));
+        assert!(postings.contains(&Posting::debit("assets:checking", 1000).unwrap()));
     }
 
     #[test]
@@ -115,10 +115,10 @@ mod tests {
         // Remainder = 10 - 6 = 4 cents.
         // So tax gets 4 cents.
 
-        assert!(postings.contains(&Posting::credit("assets:rsu", 10)));
-        assert!(postings.contains(&Posting::debit("assets:tax", 4)));
-        assert!(postings.contains(&Posting::debit("assets:buffer", 3)));
-        assert!(postings.contains(&Posting::debit("assets:goals", 3)));
-        assert!(postings.contains(&Posting::debit("assets:checking", 0)));
+        assert!(postings.contains(&Posting::credit("assets:rsu", 10).unwrap()));
+        assert!(postings.contains(&Posting::debit("assets:tax", 4).unwrap()));
+        assert!(postings.contains(&Posting::debit("assets:buffer", 3).unwrap()));
+        assert!(postings.contains(&Posting::debit("assets:goals", 3).unwrap()));
+        assert!(postings.contains(&Posting::debit("assets:checking", 0).unwrap()));
     }
 }
