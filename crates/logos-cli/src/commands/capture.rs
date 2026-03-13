@@ -99,14 +99,18 @@ pub fn promote(
 ///
 /// Returns a placeholder runtime error until capture rejection is implemented.
 pub fn reject(_capture_id: &str, _reason: &str) -> Result<(), CliError> {
-    not_implemented("capture.reject")
-}
-
-fn not_implemented(command: &str) -> Result<(), CliError> {
-    Err(CliError::CommandRuntimeFailed {
-        command: command.to_owned(),
-        message: "capture runtime is not implemented yet".to_owned(),
-    })
+    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+        command: "capture.reject".to_owned(),
+        message: format!("runtime initialization failed: {err}"),
+    })?;
+    let row = runtime
+        .reject_capture_draft(_capture_id, _reason)
+        .map_err(|err| CliError::CommandRuntimeFailed {
+            command: "capture.reject".to_owned(),
+            message: err.to_string(),
+        })?;
+    println!("{}", render_reject_output(&row));
+    Ok(())
 }
 
 fn render_ingest_output(
@@ -212,10 +216,20 @@ fn render_promote_output(summary: &CapturePromotionSummary) -> String {
     )
 }
 
+fn render_reject_output(row: &CaptureDraftRow) -> String {
+    format!(
+        "capture.reject capture_id={} status={} reason={}",
+        row.capture_id(),
+        row.status(),
+        row.rejection_reason().unwrap_or("-"),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        render_ingest_output, render_list_output, render_promote_output, render_show_output,
+        render_ingest_output, render_list_output, render_promote_output, render_reject_output,
+        render_show_output,
     };
     use crate::runtime::{CaptureDraftRow, CaptureIngestSummary, CapturePromotionSummary};
     use logos_core::TransactionId;
@@ -310,5 +324,34 @@ mod tests {
         assert!(output.contains("transaction_id=txn-1"));
         assert!(output.contains("debit_account=expenses:food:dining"));
         assert!(output.contains("credit_account=liabilities:amex:gold"));
+    }
+
+    #[test]
+    fn render_reject_output_is_deterministic() {
+        let row = CaptureDraftRow::new_for_tests(
+            "cap-1",
+            "G:/My Drive/claude/finance/inbox/2026/03/cap-1.md",
+            "sha256:abc",
+            "2026-03-11T18:42:05Z",
+            "expense",
+            1_284,
+            "USD",
+            "Tacos El Rey",
+            Some("liabilities:amex:gold"),
+            None,
+            Some("expenses:food:dining"),
+            "Team dinner",
+            "rejected",
+            Some("expenses:food:dining"),
+            Some("liabilities:amex:gold"),
+            None,
+            Some("duplicate lunch"),
+        );
+        let output = render_reject_output(&row);
+
+        assert!(output.contains("capture.reject"));
+        assert!(output.contains("capture_id=cap-1"));
+        assert!(output.contains("status=rejected"));
+        assert!(output.contains("reason=duplicate lunch"));
     }
 }

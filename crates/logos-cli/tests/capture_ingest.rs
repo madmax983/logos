@@ -173,3 +173,71 @@ status: inbox
 
     cleanup_vault_path(&fixture);
 }
+
+#[test]
+fn changed_payload_after_promotion_becomes_conflict() {
+    let fixture = temp_vault_path("terminal-conflict");
+    write_note(
+        &fixture,
+        "finance/inbox/2026/03/cap-1.md",
+        r#"---
+capture_id: cap-1
+captured_at: 2026-03-11T18:42:05Z
+kind: expense
+amount_cents: 1284
+currency: USD
+merchant_memo: Tacos El Rey
+from_account_hint: liabilities:amex:gold
+category_hint: expenses:food:dining
+status: inbox
+---
+Team dinner
+"#,
+    );
+
+    let mut runtime = CliRuntime::new_in_memory();
+    runtime
+        .ingest_capture_notes(&fixture, Some("finance/inbox"))
+        .expect("initial ingest");
+    let promoted = runtime
+        .promote_capture_draft("cap-1", None, None)
+        .expect("promote");
+
+    write_note(
+        &fixture,
+        "finance/inbox/2026/03/cap-1.md",
+        r#"---
+capture_id: cap-1
+captured_at: 2026-03-11T18:42:05Z
+kind: expense
+amount_cents: 1584
+currency: USD
+merchant_memo: Tacos El Rey
+from_account_hint: liabilities:amex:gold
+category_hint: expenses:food:dining
+status: inbox
+---
+Team dinner with dessert
+"#,
+    );
+
+    let summary = runtime
+        .ingest_capture_notes(&fixture, Some("finance/inbox"))
+        .expect("conflict ingest");
+    let row = runtime.show_capture_draft("cap-1").expect("show");
+
+    assert_eq!(summary.ingested_count(), 0);
+    assert_eq!(summary.updated_count(), 0);
+    assert_eq!(summary.skipped_count(), 0);
+    assert_eq!(summary.conflict_count(), 1);
+    assert_eq!(summary.malformed_count(), 0);
+    assert_eq!(row.status(), "conflict");
+    assert_eq!(row.amount_cents(), 1_584);
+    assert_eq!(row.promotion_txn_id(), Some(promoted.transaction_id()));
+    assert!(
+        row.rejection_reason()
+            .is_some_and(|value| value.contains("terminal"))
+    );
+
+    cleanup_vault_path(&fixture);
+}

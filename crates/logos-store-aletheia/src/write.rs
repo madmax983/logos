@@ -729,9 +729,33 @@ fn validate_capture_draft(draft: &StoredCaptureDraft) -> Result<(), StoreError> 
             message: "promoted capture drafts must include promotion_txn_id".to_owned(),
         });
     }
-    if draft.status() != StoredCaptureStatus::Promoted && draft.promotion_txn_id().is_some() {
+    if !matches!(
+        draft.status(),
+        StoredCaptureStatus::Promoted | StoredCaptureStatus::Conflict
+    ) && draft.promotion_txn_id().is_some()
+    {
         return Err(StoreError::PersistFailed {
-            message: "only promoted capture drafts may include promotion_txn_id".to_owned(),
+            message: "only promoted or conflict capture drafts may include promotion_txn_id"
+                .to_owned(),
+        });
+    }
+    if matches!(
+        draft.status(),
+        StoredCaptureStatus::Rejected | StoredCaptureStatus::Conflict
+    ) && draft.rejection_reason().is_none()
+    {
+        return Err(StoreError::PersistFailed {
+            message: "rejected or conflict capture drafts must include rejection_reason".to_owned(),
+        });
+    }
+    if !matches!(
+        draft.status(),
+        StoredCaptureStatus::Rejected | StoredCaptureStatus::Conflict
+    ) && draft.rejection_reason().is_some()
+    {
+        return Err(StoreError::PersistFailed {
+            message: "only rejected or conflict capture drafts may include rejection_reason"
+                .to_owned(),
         });
     }
 

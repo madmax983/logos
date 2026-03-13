@@ -808,10 +808,10 @@ impl CliRuntime {
 
         let mut summary = CaptureIngestSummary::new(0, 0, 0, 0, malformed_count);
         for prepared in prepared_notes {
-            let existing = self.store.capture_draft(&prepared.note.capture_id);
+            let existing = self.store.capture_draft(&prepared.note.capture_id).cloned();
             match decide_capture_ingest_action(
-                existing.map(|draft| draft.content_hash()),
-                existing.map(|draft| draft.status()),
+                existing.as_ref().map(|draft| draft.content_hash()),
+                existing.as_ref().map(|draft| draft.status()),
                 &prepared.content_hash,
             ) {
                 CaptureIngestAction::Ingest => {
@@ -826,6 +826,9 @@ impl CliRuntime {
                     summary.skipped_count = summary.skipped_count.saturating_add(1);
                 }
                 CaptureIngestAction::Conflict => {
+                    if let Some(existing) = existing.as_ref() {
+                        self.write_conflicted_capture_note(existing, &prepared)?;
+                    }
                     summary.conflict_count = summary.conflict_count.saturating_add(1);
                 }
             }
@@ -994,6 +997,64 @@ impl CliRuntime {
         ))
     }
 
+    /// Rejects one capture draft and records the operator-supplied reason.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the draft does not exist, the reason is blank, or the draft is
+    /// already terminal.
+    pub fn reject_capture_draft(
+        &mut self,
+        capture_id: &str,
+        reason: &str,
+    ) -> Result<CaptureDraftRow, RuntimeError> {
+        let trimmed_reason = reason.trim();
+        if trimmed_reason.is_empty() {
+            return Err(RuntimeError::Capture {
+                message: "capture rejection reason must not be empty".to_owned(),
+            });
+        }
+
+        let draft = self
+            .store
+            .capture_draft(capture_id)
+            .ok_or_else(|| RuntimeError::Capture {
+                message: format!("capture draft '{capture_id}' not found"),
+            })?
+            .clone();
+        if draft.status().is_terminal() {
+            return Err(RuntimeError::Capture {
+                message: format!(
+                    "capture draft '{capture_id}' cannot be rejected from status '{}'",
+                    draft.status().as_str()
+                ),
+            });
+        }
+
+        let rejected = StoredCaptureDraft::new(
+            draft.capture_id(),
+            draft.source_path(),
+            draft.content_hash(),
+            draft.captured_at(),
+            draft.kind(),
+            draft.amount_cents(),
+            draft.currency(),
+            draft.merchant_memo(),
+            draft.from_account_hint(),
+            draft.to_account_hint(),
+            draft.category_hint(),
+            draft.body_note(),
+            StoredCaptureStatus::Rejected,
+            draft.suggested_debit_account(),
+            draft.suggested_credit_account(),
+            None,
+            Some(trimmed_reason),
+            draft.ingested_at(),
+        );
+        let rejected = self.store.write_capture_draft_revision(rejected)?;
+        Ok(CaptureDraftRow::from_stored(&rejected))
+    }
+
     #[must_use]
     pub fn default_store_path() -> PathBuf {
         if let Some(path) = env::var_os(LOGOS_DB_PATH_ENV) {
@@ -1047,6 +1108,42 @@ impl CliRuntime {
                 prepared.note.category_hint.as_deref(),
                 &prepared.note.body,
             )
+            .map(|_| ())
+            .map_err(RuntimeError::from)
+    }
+
+    fn write_conflicted_capture_note(
+        &mut self,
+        existing: &StoredCaptureDraft,
+        prepared: &PreparedCaptureNote,
+    ) -> Result<(), RuntimeError> {
+        let reason = format!(
+            "capture note '{}' changed content after terminal status '{}'",
+            prepared.note.capture_id,
+            existing.status().as_str()
+        );
+        let conflicted = StoredCaptureDraft::new(
+            &prepared.note.capture_id,
+            &prepared.source_path,
+            &prepared.content_hash,
+            &prepared.note.captured_at,
+            &prepared.note.kind,
+            prepared.note.amount_cents,
+            &prepared.note.currency,
+            &prepared.note.merchant_memo,
+            prepared.note.from_account_hint.as_deref(),
+            prepared.note.to_account_hint.as_deref(),
+            prepared.note.category_hint.as_deref(),
+            &prepared.note.body,
+            StoredCaptureStatus::Conflict,
+            None,
+            None,
+            existing.promotion_txn_id().cloned(),
+            Some(&reason),
+            existing.ingested_at(),
+        );
+        self.store
+            .write_capture_draft_revision(conflicted)
             .map(|_| ())
             .map_err(RuntimeError::from)
     }
