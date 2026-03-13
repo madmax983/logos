@@ -57,6 +57,7 @@ impl FetchRequest {
     }
 
     #[must_use]
+    #[allow(clippy::missing_const_for_fn)]
     pub fn source(&self) -> &StatementSource {
         &self.source
     }
@@ -83,6 +84,7 @@ impl FetchResult {
     }
 
     #[must_use]
+    #[allow(clippy::missing_const_for_fn)]
     pub fn artifact(&self) -> Option<&FetchedStatementArtifact> {
         self.artifact.as_ref()
     }

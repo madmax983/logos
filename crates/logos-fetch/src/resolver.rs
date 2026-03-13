@@ -7,10 +7,20 @@ use crate::{FetchError, SecretBundle, StatementSource};
 const LOGOS_FETCH_OP_BIN_ENV: &str = "LOGOS_FETCH_OP_BIN";
 
 pub trait SecretResolver {
+    /// Resolves secrets for a given statement source.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `FetchError` if secret resolution fails or the source configuration is invalid.
     fn resolve(&self, source: &StatementSource) -> Result<SecretBundle, FetchError>;
 }
 
 pub trait SecretRefReader {
+    /// Reads the secret from the underlying storage using the provided reference.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `FetchError` if the secret reference cannot be found or read.
     fn read_secret_ref(&self, secret_ref: &str) -> Result<String, FetchError>;
 }
 
@@ -63,9 +73,8 @@ where
 impl OpCliSecretRefReader {
     #[must_use]
     pub fn from_environment() -> Self {
-        let op_bin = env::var_os(LOGOS_FETCH_OP_BIN_ENV)
-            .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from("op"));
+        let op_bin =
+            env::var_os(LOGOS_FETCH_OP_BIN_ENV).map_or_else(|| PathBuf::from("op"), PathBuf::from);
         Self { op_bin }
     }
 }
