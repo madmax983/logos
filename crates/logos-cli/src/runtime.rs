@@ -31,7 +31,7 @@ use logos_store_aletheia::{
 };
 use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
 
-use crate::capture_note::CaptureNote;
+use crate::{capture_note::CaptureNote, capture_rules::classify_capture_draft};
 
 const LOGOS_DB_PATH_ENV: &str = "LOGOS_DB_PATH";
 const LOGOS_ARTIFACTS_PATH_ENV: &str = "LOGOS_ARTIFACTS_PATH";
@@ -139,6 +139,8 @@ pub struct CaptureDraftRow {
     category_hint: Option<String>,
     body_note: String,
     status: String,
+    suggested_debit_account: Option<String>,
+    suggested_credit_account: Option<String>,
     promotion_txn_id: Option<String>,
     rejection_reason: Option<String>,
 }
@@ -254,6 +256,8 @@ impl CaptureDraftRow {
             category_hint: draft.category_hint().map(str::to_owned),
             body_note: draft.body_note().to_owned(),
             status: draft.status().as_str().to_owned(),
+            suggested_debit_account: draft.suggested_debit_account().map(str::to_owned),
+            suggested_credit_account: draft.suggested_credit_account().map(str::to_owned),
             promotion_txn_id: draft
                 .promotion_txn_id()
                 .map(|value| value.as_str().to_owned()),
@@ -327,6 +331,16 @@ impl CaptureDraftRow {
     }
 
     #[must_use]
+    pub fn suggested_debit_account(&self) -> Option<&str> {
+        self.suggested_debit_account.as_deref()
+    }
+
+    #[must_use]
+    pub fn suggested_credit_account(&self) -> Option<&str> {
+        self.suggested_credit_account.as_deref()
+    }
+
+    #[must_use]
     pub fn promotion_txn_id(&self) -> Option<&str> {
         self.promotion_txn_id.as_deref()
     }
@@ -352,6 +366,8 @@ impl CaptureDraftRow {
         category_hint: Option<&str>,
         body_note: &str,
         status: &str,
+        suggested_debit_account: Option<&str>,
+        suggested_credit_account: Option<&str>,
         promotion_txn_id: Option<&str>,
         rejection_reason: Option<&str>,
     ) -> Self {
@@ -369,6 +385,8 @@ impl CaptureDraftRow {
             category_hint: category_hint.map(str::to_owned),
             body_note: body_note.to_owned(),
             status: status.to_owned(),
+            suggested_debit_account: suggested_debit_account.map(str::to_owned),
+            suggested_credit_account: suggested_credit_account.map(str::to_owned),
             promotion_txn_id: promotion_txn_id.map(str::to_owned),
             rejection_reason: rejection_reason.map(str::to_owned),
         }
@@ -811,6 +829,29 @@ impl CliRuntime {
                 message: format!("capture draft '{capture_id}' not found"),
             })?;
         Ok(CaptureDraftRow::from_stored(draft))
+    }
+
+    /// Reclassifies one capture draft using explicit hints and exact-match history rules.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the draft does not exist.
+    pub fn reclassify_capture_draft(
+        &self,
+        capture_id: &str,
+    ) -> Result<CaptureDraftRow, RuntimeError> {
+        let draft = self
+            .store
+            .capture_draft(capture_id)
+            .ok_or_else(|| RuntimeError::Capture {
+                message: format!("capture draft '{capture_id}' not found"),
+            })?;
+        let classification = classify_capture_draft(draft, self.store.transactions());
+        let mut row = CaptureDraftRow::from_stored(draft);
+        row.status = classification.status().as_str().to_owned();
+        row.suggested_debit_account = classification.suggested_debit_account().map(str::to_owned);
+        row.suggested_credit_account = classification.suggested_credit_account().map(str::to_owned);
+        Ok(row)
     }
 
     #[must_use]

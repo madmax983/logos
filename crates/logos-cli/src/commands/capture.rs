@@ -230,6 +230,8 @@ mod tests {
             Some("expenses:food:dining"),
             "Team dinner",
             "inbox",
+            Some("expenses:food:dining"),
+            Some("liabilities:amex:gold"),
             None,
             None,
         );
@@ -257,6 +259,8 @@ mod tests {
             Some("expenses:food:dining"),
             "Team dinner",
             "inbox",
+            Some("expenses:food:dining"),
+            Some("liabilities:amex:gold"),
             None,
             None,
         );
