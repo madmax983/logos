@@ -7,5 +7,8 @@ rust-version.workspace = true
 [lints]
 workspace = true
 
+[features]
+nova = []
+
 [dev-dependencies]
 proptest = "1.10.0"
