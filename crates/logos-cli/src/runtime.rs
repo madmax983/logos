@@ -967,7 +967,7 @@ impl CliRuntime {
     ) -> Result<Vec<StoredFetchRun>, RuntimeError> {
         let config = match self.load_statement_source_config() {
             Ok(config) => config,
-            Err(err) if !fetch_required => return Ok(Vec::new()),
+            Err(_err) if !fetch_required => return Ok(Vec::new()),
             Err(err) => return Err(err),
         };
         let Some(config) = config else {
