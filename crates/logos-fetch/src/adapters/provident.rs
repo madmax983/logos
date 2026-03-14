@@ -84,7 +84,7 @@ impl ProvidentAdapter {
     fn map_runner_output(
         &self,
         request: &FetchRequest,
-        output: ProvidentRunnerOutput,
+        output: &ProvidentRunnerOutput,
     ) -> Result<FetchResult, FetchError> {
         match output.status {
             ProvidentRunnerStatus::Downloaded => {
@@ -96,11 +96,12 @@ impl ProvidentAdapter {
             ProvidentRunnerStatus::NoNewStatement => {
                 Ok(FetchResult::new(FetchRunStatus::NoNewStatement, None))
             }
-            ProvidentRunnerStatus::NeedsAttention => {
-                self.map_failure_result(FetchRunStatus::NeedsAttention, output.error_summary)
-            }
+            ProvidentRunnerStatus::NeedsAttention => Self::map_failure_result(
+                FetchRunStatus::NeedsAttention,
+                output.error_summary.as_ref(),
+            ),
             ProvidentRunnerStatus::Failed => {
-                self.map_failure_result(FetchRunStatus::Failed, output.error_summary)
+                Self::map_failure_result(FetchRunStatus::Failed, output.error_summary.as_ref())
             }
         }
     }
@@ -109,7 +110,7 @@ impl ProvidentAdapter {
         &self,
         request: &FetchRequest,
         status: FetchRunStatus,
-        output: ProvidentRunnerOutput,
+        output: &ProvidentRunnerOutput,
     ) -> Result<FetchResult, FetchError> {
         let artifact_path = self.resolve_artifact_path(required_field(
             output.artifact_path.as_deref(),
@@ -141,15 +142,13 @@ impl ProvidentAdapter {
     }
 
     fn map_failure_result(
-        &self,
         status: FetchRunStatus,
-        error_summary: Option<String>,
+        error_summary: Option<&String>,
     ) -> Result<FetchResult, FetchError> {
-        FetchResult::new(status, None).with_error_summary(
-            error_summary
-                .as_deref()
-                .unwrap_or("provident runner did not include an error summary"),
-        )
+        FetchResult::new(status, None).with_error_summary(error_summary.map_or(
+            "provident runner did not include an error summary",
+            String::as_str,
+        ))
     }
 
     fn resolve_artifact_path(&self, artifact_path: &str) -> String {
@@ -175,7 +174,7 @@ impl StatementAdapter for ProvidentAdapter {
     ) -> Pin<Box<dyn Future<Output = Result<FetchResult, FetchError>> + Send + 'a>> {
         Box::pin(async move {
             let output = self.load_runner_output()?;
-            self.map_runner_output(request, output)
+            self.map_runner_output(request, &output)
         })
     }
 }
