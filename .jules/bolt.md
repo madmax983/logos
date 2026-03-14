@@ -10,3 +10,7 @@
 **[Persistence Reordering Risk]**
 **Learning:** While refactoring persistence closures to avoid `.clone()`, do not rearrange the exact call order of `persist_X_graph` and `persist_X_memory` without an explicit architectural goal. Reordering persistence operations can lead to referential integrity bugs where child operations persist prior to parents.
 **Action:** Only refactor the inner arguments (e.g. `.clone()`) on persistence calls, without moving lines of code.
+
+**Optimize Retain to While Loop**
+**Learning:** `Vec::retain()` inside a loop over $M$ iterations against an array of $N$ thresholds yields an $O(M \times N)$ time complexity because `retain()` sweeps the whole array and shifts elements.
+**Action:** Clone and `sort_unstable()` the thresholds upfront, then maintain an external index across iterations to perform checks in $O(M + N)$ time, avoiding unnecessary shifting and traversal.

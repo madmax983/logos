@@ -188,8 +188,9 @@ impl NetWorthProjector {
         let mut current_net_worth = self.initial_net_worth_cents;
 
         // Keep track of which milestones have been crossed
-        let mut uncrossed_milestones = self.milestones_cents.clone();
-        uncrossed_milestones.sort_unstable(); // Sort so we cross smaller milestones first
+        let mut sorted_milestones = self.milestones_cents.clone();
+        sorted_milestones.sort_unstable(); // Sort so we cross smaller milestones first
+        let mut next_milestone_idx = 0;
 
         for month_index in 1..=months {
             let mut vested_this_month: i64 = 0;
@@ -216,14 +217,13 @@ impl NetWorthProjector {
                 .saturating_add(vested_this_month);
 
             // Check for crossed milestones
-            uncrossed_milestones.retain(|&milestone| {
-                if current_net_worth >= milestone {
-                    crossed_milestones.push((milestone, month_index));
-                    false // Remove from uncrossed
-                } else {
-                    true // Keep in uncrossed
-                }
-            });
+            // Optimize milestone checking by leveraging the sorted order to only check uncrossed milestones without O(N) traversal.
+            while next_milestone_idx < sorted_milestones.len()
+                && current_net_worth >= sorted_milestones[next_milestone_idx]
+            {
+                crossed_milestones.push((sorted_milestones[next_milestone_idx], month_index));
+                next_milestone_idx += 1;
+            }
 
             timeline.push(ProjectedMonth {
                 month_index,
