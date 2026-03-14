@@ -8,13 +8,13 @@ fn fetched_artifact_tracks_balances_and_format() {
         OutputFormat::Pdf,
         "artifacts/statements/pcu-2026-02.pdf",
         "2026-02",
-        100_00,
-        250_00,
+        10_000,
+        25_000,
     )
     .expect("artifact");
 
     assert_eq!(artifact.month_key(), "2026-02");
-    assert_eq!(artifact.closing_balance_cents(), 250_00);
+    assert_eq!(artifact.closing_balance_cents(), 25_000);
 }
 
 #[test]

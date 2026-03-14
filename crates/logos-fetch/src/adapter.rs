@@ -57,7 +57,7 @@ impl FetchRequest {
     }
 
     #[must_use]
-    pub fn source(&self) -> &StatementSource {
+    pub const fn source(&self) -> &StatementSource {
         &self.source
     }
 
@@ -83,7 +83,7 @@ impl FetchResult {
     }
 
     #[must_use]
-    pub fn artifact(&self) -> Option<&FetchedStatementArtifact> {
+    pub const fn artifact(&self) -> Option<&FetchedStatementArtifact> {
         self.artifact.as_ref()
     }
 

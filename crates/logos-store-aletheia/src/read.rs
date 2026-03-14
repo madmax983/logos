@@ -406,7 +406,6 @@ mod tests {
     #[test]
     fn test_transactions_as_of_error_when_mismatched_txn_id() {
         use aletheiadb::{EdgeId, Error as DbError, NodeId, StorageError};
-        use logos_core::TransactionId;
         let node_err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
         assert!(is_node_not_visible(&node_err));
 
@@ -502,9 +501,9 @@ mod tests {
         // Write nodes and edges via a transaction block, mapping errors correctly
         let node_id = db
             .write(|tx: &mut aletheiadb::WriteTransaction| {
-                let n1 = tx.create_node("TestNode", Default::default())?;
-                let n2 = tx.create_node("TargetNode", Default::default())?;
-                tx.create_edge(n1, n2, "NotSupersedes", Default::default())?;
+                let n1 = tx.create_node("TestNode", aletheiadb::PropertyMap::default())?;
+                let n2 = tx.create_node("TargetNode", aletheiadb::PropertyMap::default())?;
+                tx.create_edge(n1, n2, "NotSupersedes", aletheiadb::PropertyMap::default())?;
                 Ok::<NodeId, DbError>(n1)
             })
             .unwrap();
@@ -565,6 +564,7 @@ fn test_store_empty_accessors() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn test_store_populated_accessors() {
     use logos_core::{AccountId, Correction, Posting, TransactionBuilder};
     let mut store = crate::AletheiaStore::new();
@@ -714,7 +714,7 @@ fn test_store_populated_accessors() {
             1,
             100,
             0,
-            &[txn_id.clone()],
+            std::slice::from_ref(&txn_id),
         )
         .unwrap();
     assert_eq!(store.reconciliation_run_count(), 2);

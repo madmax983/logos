@@ -998,7 +998,7 @@ impl CliRuntime {
             let fetch_request = match FetchRequest::new(&source, request.month_key()) {
                 Ok(fetch_request) => fetch_request,
                 Err(err) => {
-                    let err = fetch_error_to_runtime(err);
+                    let err = fetch_error_to_runtime(&err);
                     if fetch_required && first_required_error.is_none() {
                         first_required_error = Some(RuntimeError::Analytics {
                             message: err.to_string(),
@@ -1206,7 +1206,7 @@ impl CliRuntime {
 
         StatementSourceConfig::from_toml(&input)
             .map(Some)
-            .map_err(fetch_error_to_runtime)
+            .map_err(|err| fetch_error_to_runtime(&err))
     }
 
     fn secret_bundle_for_fetch_source(
@@ -1227,12 +1227,14 @@ impl CliRuntime {
     {
         match source.institution_id() {
             "fake-fixture" => SecretBundle::new("fixture-user", "fixture-pass", Some("000000"))
-                .map_err(fetch_error_to_runtime),
+                .map_err(|err| fetch_error_to_runtime(&err)),
             "fake-needs-attention" => {
                 SecretBundle::new("fixture-user", "fixture-pass", Some("000000"))
-                    .map_err(fetch_error_to_runtime)
+                    .map_err(|err| fetch_error_to_runtime(&err))
             }
-            _ => resolver.resolve(source).map_err(fetch_error_to_runtime),
+            _ => resolver
+                .resolve(source)
+                .map_err(|err| fetch_error_to_runtime(&err)),
         }
     }
 
@@ -1248,16 +1250,16 @@ impl CliRuntime {
                 .block_on(
                     FakeStatementAdapter::download_fixture_statement().fetch(request, secrets),
                 )
-                .map_err(fetch_error_to_runtime),
+                .map_err(|err| fetch_error_to_runtime(&err)),
             "fake-needs-attention" => fetch_runtime
                 .block_on(
                     FakeStatementAdapter::needs_attention("mfa challenge required")
                         .fetch(request, secrets),
                 )
-                .map_err(fetch_error_to_runtime),
+                .map_err(|err| fetch_error_to_runtime(&err)),
             "provident-credit-union" => fetch_runtime
                 .block_on(ProvidentAdapter::fixture_runner_output().fetch(request, secrets))
-                .map_err(fetch_error_to_runtime),
+                .map_err(|err| fetch_error_to_runtime(&err)),
             institution_id => Err(RuntimeError::Analytics {
                 message: format!(
                     "no statement fetch adapter is registered for institution '{}'",
@@ -1894,20 +1896,20 @@ struct ResolvedAutopilotBalances {
     closing_balance_cents: i64,
 }
 
-fn fetch_error_to_runtime(err: logos_fetch::FetchError) -> RuntimeError {
+fn fetch_error_to_runtime(err: &logos_fetch::FetchError) -> RuntimeError {
     RuntimeError::Analytics {
         message: err.to_string(),
     }
 }
 
-fn output_format_label(output_format: OutputFormat) -> StoredFetchArtifactFormat {
+const fn output_format_label(output_format: OutputFormat) -> StoredFetchArtifactFormat {
     match output_format {
         OutputFormat::Csv => StoredFetchArtifactFormat::Csv,
         OutputFormat::Pdf => StoredFetchArtifactFormat::Pdf,
     }
 }
 
-fn store_fetch_run_status(status: FetchRunStatus) -> StoredFetchRunStatus {
+const fn store_fetch_run_status(status: FetchRunStatus) -> StoredFetchRunStatus {
     match status {
         FetchRunStatus::Downloaded => StoredFetchRunStatus::Downloaded,
         FetchRunStatus::Imported => StoredFetchRunStatus::Imported,
