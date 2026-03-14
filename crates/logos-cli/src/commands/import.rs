@@ -188,7 +188,7 @@ mod tests {
         assert!(output.contains("true"));
         assert!(output.contains("false"));
         assert!(output.contains("12"));
-        assert!(output.contains("3"));
+        assert!(output.contains('3'));
     }
 
     #[test]
@@ -211,12 +211,12 @@ mod tests {
         assert!(output.contains("chase.csv"));
         assert!(output.contains("false"));
         assert!(output.contains("true"));
-        assert!(output.contains("0"));
-        assert!(output.contains("1"));
-        assert!(output.contains("2"));
-        assert!(output.contains("3"));
-        assert!(output.contains("4"));
-        assert!(output.contains("9"));
-        assert!(output.contains("1"));
+        assert!(output.contains('0'));
+        assert!(output.contains('1'));
+        assert!(output.contains('2'));
+        assert!(output.contains('3'));
+        assert!(output.contains('4'));
+        assert!(output.contains('9'));
+        assert!(output.contains('1'));
     }
 }

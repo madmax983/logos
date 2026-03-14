@@ -604,7 +604,9 @@ fn write_fetch_run_lists_reloaded_runs_and_continues_sequential_ids() {
         assert_eq!(runs[1].run_id(), "fetch-2");
         assert_eq!(runs[1].status(), StoredFetchRunStatus::NoNewStatement);
         assert_eq!(
-            reopened.fetch_run("fetch-2").map(|run| run.source_id()),
+            reopened
+                .fetch_run("fetch-2")
+                .map(logos_store_aletheia::model::StoredFetchRun::source_id),
             Some("pcu:checking")
         );
     }
