@@ -68,6 +68,16 @@ pub struct CategoryGroup {
 impl CategoryGroup {
     /// Creates a budget category group with a normalized identifier derived from `name`.
     ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::category::CategoryGroup;
+    ///
+    /// let group = CategoryGroup::new(" Housing ").expect("valid name");
+    /// assert_eq!(group.name(), "Housing");
+    /// assert_eq!(group.id().as_str(), "housing");
+    /// ```
+    ///
     /// # Errors
     ///
     /// Returns an error when `name` is empty after trimming.
@@ -105,6 +115,18 @@ pub struct Category {
 
 impl Category {
     /// Creates a budget category scoped to the provided category group id.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::category::{Category, CategoryGroup};
+    ///
+    /// let group = CategoryGroup::new("Housing").expect("valid group");
+    /// let category = Category::new(group.id().clone(), " Rent ").expect("valid category");
+    ///
+    /// assert_eq!(category.name(), "Rent");
+    /// assert_eq!(category.group_id().as_str(), "housing");
+    /// ```
     ///
     /// # Errors
     ///

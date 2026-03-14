@@ -35,6 +35,17 @@ impl Default for HaircutTierTable {
 impl HaircutTierTable {
     /// Creates a custom haircut tier table.
     ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::rsu::HaircutTierTable;
+    ///
+    /// let tiers = HaircutTierTable::new(20, 30, 50).expect("valid tiers");
+    /// assert_eq!(tiers.haircut_for_days(15), 20); // short (< 30 days)
+    /// assert_eq!(tiers.haircut_for_days(45), 30); // medium (<= 90 days)
+    /// assert_eq!(tiers.haircut_for_days(120), 50); // long (> 90 days)
+    /// ```
+    ///
     /// # Errors
     ///
     /// Returns an error if any percentage is greater than `100` or if
@@ -106,6 +117,17 @@ pub struct AllocationPolicy {
 
 impl AllocationPolicy {
     /// Creates an allocation policy that must total exactly 100%.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::rsu::AllocationPolicy;
+    ///
+    /// // 40% tax, 20% smoothing, 30% goals, 10% discretionary = 100%
+    /// let policy = AllocationPolicy::new(40, 20, 30, 10).expect("valid policy");
+    /// assert_eq!(policy.tax_reserve_pct(), 40);
+    /// assert_eq!(policy.goals_pct(), 30);
+    /// ```
     ///
     /// # Errors
     ///
