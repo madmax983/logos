@@ -404,4 +404,35 @@ mod tests {
         assert_eq!(plan.conservative_budget_cents(), 7500);
         assert_eq!(plan.baseline_remaining_cents(), 7500 - 5000); // 2500
     }
+    #[test]
+    fn test_scenario_price_inputs_validation() {
+        assert!(ScenarioPriceInputs::new(0, 200, 300).is_err());
+        assert!(ScenarioPriceInputs::new(100, 0, 300).is_err());
+        assert!(ScenarioPriceInputs::new(100, 200, 0).is_err());
+        assert!(ScenarioPriceInputs::new(-100, 200, 300).is_err());
+
+        assert!(ScenarioPriceInputs::new(200, 100, 300).is_err());
+        assert!(ScenarioPriceInputs::new(100, 300, 200).is_err());
+
+        assert!(ScenarioPriceInputs::new(100, 200, 300).is_ok());
+    }
+
+    #[test]
+    fn test_rsu_budget_plan_input_validation() {
+        let prices = ScenarioPriceInputs::new(100, 200, 300).unwrap();
+
+        assert!(RsuBudgetPlanInput::new(0, 0, prices, 5000, 10, 20).is_err());
+        assert!(RsuBudgetPlanInput::new(300, 0, prices, -100, 10, 20).is_err());
+        assert!(RsuBudgetPlanInput::new(300, 0, prices, 5000, 60, 50).is_err());
+
+        assert!(RsuBudgetPlanInput::new(300, 0, prices, 5000, 10, 20).is_ok());
+    }
+
+    #[test]
+    fn test_project_rsu_budget_plan_empty_month() {
+        let prices = ScenarioPriceInputs::new(100, 200, 300).unwrap();
+        let input = RsuBudgetPlanInput::new(300, 0, prices, 5000, 10, 20).unwrap();
+
+        assert!(project_rsu_budget_plan("", &input).is_err());
+    }
 }
