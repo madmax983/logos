@@ -1,21 +1,60 @@
+//! Error handling and recovery for the `logos` domain.
+//!
+//! This module defines the [`DomainError`] enumeration, which represents every
+//! possible failure mode that can occur when constructing valid financial
+//! primitives in the core library.
+//!
+//! Because `logos` is a strict, double-entry system, it rejects invalid states
+//! at creation time. If a function returns a `DomainError`, it means you tried
+//! to perform an operation that violates fundamental accounting or forecasting rules.
+
 use core::fmt;
 
+/// The central error type for all financial constraints in `logos`.
+///
+/// This enumeration captures all the ways you might accidentally construct
+/// an invalid ledger state, such as an unbalanced transaction, an empty account name,
+/// or a nonsensical risk haircut.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DomainError {
+    /// Returned when you try to create an `AccountId` from an empty string or just whitespace.
     EmptyAccountId,
+    /// Returned when you try to create a `TransactionId` from an empty string or just whitespace.
     EmptyTransactionId,
+    /// Returned when a `CategoryGroup` is given a name that trims down to nothing.
     EmptyCategoryGroupName,
+    /// Returned when a `Category` is given a name that trims down to nothing.
     EmptyCategoryName,
+    /// Returned when a transaction builder is given an empty description.
+    /// Every transaction must explain *what* happened.
     EmptyTransactionDescription,
+    /// Returned when you attempt to build a transaction without any postings.
+    /// A double-entry transaction needs at least two legs!
     EmptyTransactionPostings,
+    /// Returned when a correction is created without a reason. You must explain *why*
+    /// you are rewriting history.
     EmptyCorrectionReason,
+    /// Returned when a correction claims to supersede its own ID.
+    /// You cannot write a transaction that replaces itself.
     CorrectionCannotSupersedeSelf,
+    /// Returned when an RSU allocation policy does not equal exactly 100%.
+    /// The `total` field tells you what sum you provided.
     InvalidAllocationTotal { total: u16 },
+    /// Returned when a specific time horizon in a haircut table exceeds 100%.
+    /// `tier` indicates the culprit (e.g., "short" or "medium"), and `percentage` is what you tried to set.
     InvalidHaircutPercentage { tier: &'static str, percentage: u8 },
+    /// Returned when your risk haircut tiers are backwards.
+    /// Risk should increase over time, so you must have `short <= medium <= long`.
     InvalidHaircutOrdering { short: u8, medium: u8, long: u8 },
+    /// Returned when you pass a zero or negative amount to a debit. Debits must be strictly positive.
     InvalidDebitAmount { amount: i64 },
+    /// Returned when you pass a zero or negative amount to a credit. Credits must be strictly positive
+    /// before they are converted internally to negatives.
     InvalidCreditAmount { amount: i64 },
+    /// The fundamental rule of accounting broken. A transaction's debits and credits
+    /// must perfectly cancel each other out to `0`. The `total` tells you how far off balance you are.
     UnbalancedTransaction { total: i64 },
+    /// Returned when an operation exceeds the bounds of a 64-bit signed integer.
     AmountOverflow,
 }
 

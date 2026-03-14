@@ -1,3 +1,19 @@
+//! # The `logos-core` Library
+//!
+//! Welcome to the beating heart of `logos`. This library implements a strict,
+//! zero-trust double-entry accounting engine and sophisticated financial planning tools.
+//!
+//! It forces users to construct valid, fully balanced transactions where debits (+ve) and
+//! credits (-ve) perfectly net out. It also refuses to build objects without names,
+//! bounds, or logical invariants satisfied.
+//!
+//! ## Modules
+//!
+//! - **[`domain`]**: The foundational pieces of the ledger. Accounts, Transactions, Budgets, and RSUs.
+//! - **[`error`]**: Defines [`DomainError`], the one-stop shop for everything that can go wrong when breaking the rules.
+//! - **[`planning`]**: High-level financial forecasting. From automated RSU distribution to FIRE simulations and Net Worth Projection.
+//! - **[`experimental`]**: Beta features or proofs of concept. Use at your own risk.
+
 pub mod domain;
 pub mod error;
 pub mod experimental;
