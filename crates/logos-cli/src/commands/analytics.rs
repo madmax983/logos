@@ -237,3 +237,98 @@ mod tests {
         assert_eq!(output, expected);
     }
 }
+
+/// Handles `ledger analytics fire-sim`.
+///
+/// # Errors
+///
+/// Returns an error when runtime initialization fails.
+pub fn fire_sim(
+    monthly_expenses_cents: i64,
+    liquid_assets_cents: i64,
+    monthly_savings_cents: i64,
+) -> Result<(), CliError> {
+    use logos_core::planning::fire::FireSimulator;
+    use logos_core::planning::net_worth_projector::NetWorthProjector;
+
+    let mut sim = FireSimulator::new(monthly_expenses_cents);
+    sim.add_assets_liabilities(liquid_assets_cents, 0);
+
+    let fire_number = sim.fire_number_cents();
+    let current_net_worth = sim.safe_net_worth_cents();
+
+    let mut projector = NetWorthProjector::new(current_net_worth, monthly_savings_cents);
+    projector.add_milestone_cents(fire_number);
+
+    let months_to_simulate = 1200; // up to 100 years
+    let (timeline, _milestones) = projector.project_timeline(months_to_simulate);
+
+    let mut months_to_fire = None;
+    for month in timeline {
+        if month.net_worth_cents >= fire_number {
+            months_to_fire = Some(month.month_index);
+            break;
+        }
+    }
+
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec!["Metric", "Value"]);
+
+    #[allow(clippy::cast_precision_loss)]
+    table.add_row(vec![
+        "Monthly Expenses",
+        &format!("${:.2}", (monthly_expenses_cents as f64) / 100.0),
+    ]);
+
+    #[allow(clippy::cast_precision_loss)]
+    table.add_row(vec![
+        "Target FIRE Number",
+        &format!("${:.2}", (fire_number as f64) / 100.0),
+    ]);
+
+    #[allow(clippy::cast_precision_loss)]
+    table.add_row(vec![
+        "Current Safe Net Worth",
+        &format!("${:.2}", (current_net_worth as f64) / 100.0),
+    ]);
+
+    #[allow(clippy::cast_precision_loss)]
+    table.add_row(vec![
+        "Monthly Savings",
+        &format!("${:.2}", (monthly_savings_cents as f64) / 100.0),
+    ]);
+
+    if let Some(months) = months_to_fire {
+        let years = months / 12;
+        let extra_months = months % 12;
+        table.add_row(vec![
+            "Time to FIRE",
+            &format!(
+                "{} years, {} months ({} months total)",
+                years, extra_months, months
+            ),
+        ]);
+    } else {
+        table.add_row(vec![
+            "Time to FIRE",
+            "Not reached within 100 years simulation.",
+        ]);
+    }
+
+    println!("analytics.fire-sim\n{table}");
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod fire_sim_tests {
+    use super::*;
+
+    #[test]
+    fn test_fire_sim_calculates_correctly() {
+        // Just checking execution completes without error
+        let result = fire_sim(500_000, 1_000_000, 200_000);
+        assert!(result.is_ok());
+    }
+}

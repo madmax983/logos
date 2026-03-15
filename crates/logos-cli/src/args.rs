@@ -137,6 +137,15 @@ fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError>
             commands::analytics::snapshot_show(artifact_id)
         }
         AnalyticsCommand::Sankey => commands::analytics::sankey(),
+        AnalyticsCommand::FireSim {
+            monthly_expenses_cents,
+            liquid_assets_cents,
+            monthly_savings_cents,
+        } => commands::analytics::fire_sim(
+            *monthly_expenses_cents,
+            *liquid_assets_cents,
+            *monthly_savings_cents,
+        ),
     }
 }
 
@@ -380,6 +389,7 @@ impl Command {
             Self::Analytics(AnalyticsCommand::SnapshotList) => "analytics.snapshot.list",
             Self::Analytics(AnalyticsCommand::SnapshotShow { .. }) => "analytics.snapshot.show",
             Self::Analytics(AnalyticsCommand::Sankey) => "analytics.sankey",
+            Self::Analytics(AnalyticsCommand::FireSim { .. }) => "analytics.fire-sim",
             Self::Import(ImportCommand::Pdf { .. }) => "import.pdf",
             Self::Import(ImportCommand::Csv { .. }) => "import.csv",
             Self::Fetch(FetchCommand::ListRuns { .. }) => "fetch.list",
@@ -445,6 +455,11 @@ pub enum AnalyticsCommand {
         artifact_id: String,
     },
     Sankey,
+    FireSim {
+        monthly_expenses_cents: i64,
+        liquid_assets_cents: i64,
+        monthly_savings_cents: i64,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -754,6 +769,21 @@ fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
         "sankey" => Ok(ParsedArgs {
             command: Command::Analytics(AnalyticsCommand::Sankey),
         }),
+        "fire-sim" => {
+            let monthly_expenses_cents =
+                parse_required_parsed_flag(&args[2..], "--monthly-expenses-cents")?;
+            let liquid_assets_cents =
+                parse_required_parsed_flag(&args[2..], "--liquid-assets-cents")?;
+            let monthly_savings_cents =
+                parse_required_parsed_flag(&args[2..], "--monthly-savings-cents")?;
+            Ok(ParsedArgs {
+                command: Command::Analytics(AnalyticsCommand::FireSim {
+                    monthly_expenses_cents,
+                    liquid_assets_cents,
+                    monthly_savings_cents,
+                }),
+            })
+        }
         _ => Err(CliError::UnknownSubcommand {
             command: "analytics".to_owned(),
             subcommand: subcommand.clone(),

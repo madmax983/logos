@@ -114,13 +114,16 @@ Subcommands:
 ";
 
 const ANALYTICS_HELP_TEXT: &str = "\
-Usage: ledger analytics snapshot <action> [options]
+Usage: ledger analytics <subcommand> [options]
 
-Actions:
-  create [--as-of-valid-us <i64>] [--as-of-tx-us <i64>] [--schema-version <i64>] [--supersedes <artifact-id>]
+Subcommands:
+  snapshot create [--as-of-valid-us <i64>] [--as-of-tx-us <i64>] [--schema-version <i64>] [--supersedes <artifact-id>]
                                      Create immutable parquet analytics snapshot + Aletheia manifest
-  list                               List known analytics manifests
-  show --artifact-id <id>            Show one manifest
+  snapshot list                      List known analytics manifests
+  snapshot show --artifact-id <id>   Show one manifest
+  sankey                             Generate Mermaid Sankey diagram from current transactions
+  fire-sim --monthly-expenses-cents <i64> --liquid-assets-cents <i64> --monthly-savings-cents <i64>
+                                     Simulate time to Financial Independence
 
 Environment:
   LOGOS_ARTIFACTS_PATH               Override artifact root directory
