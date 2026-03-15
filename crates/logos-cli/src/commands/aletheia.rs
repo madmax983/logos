@@ -1,3 +1,11 @@
+//! Manages the local AletheiaDB server instance.
+//!
+//! `AletheiaDB` is the immutable ledger that `logos` relies on for persistence.
+//! This module provides commands to start a local node and check its health
+//! via HTTP. It assumes that the `gallifreydb` repository is checked out
+//! in the parent directory (`../gallifreydb`) by default, or relies on the
+//! `ALETHEIADB_MANIFEST_PATH` environment variable.
+
 use std::env;
 use std::io::{Read, Write};
 use std::net::TcpStream;
@@ -15,10 +23,22 @@ const IO_TIMEOUT_SECONDS: u64 = 2;
 
 /// Handles `ledger aletheia start`.
 ///
+/// Spawns a new cargo process to build and run the `aletheia-server` binary
+/// from the configured manifest path.
+///
 /// # Errors
 ///
 /// Returns an error when the local `AletheiaDB` manifest is missing or launching the
 /// server command fails.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use logos_cli::commands::aletheia::start;
+/// # unsafe { std::env::set_var("ALETHEIADB_MANIFEST_PATH", "../gallifreydb/Cargo.toml"); }
+/// // Starts the server in the foreground. Blocking call.
+/// let _ = start();
+/// ```
 pub fn start() -> Result<(), CliError> {
     let manifest_path = resolve_manifest_path();
     if !Path::new(&manifest_path).is_file() {
@@ -53,10 +73,25 @@ pub fn start() -> Result<(), CliError> {
 
 /// Handles `ledger aletheia status`.
 ///
+/// Performs a basic HTTP GET request to the `/status` endpoint of the
+/// running AletheiaDB instance.
+///
 /// # Errors
 ///
 /// Returns an error when the status endpoint is unreachable or does not report
 /// a healthy payload.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use logos_cli::commands::aletheia::status;
+/// # unsafe {
+/// #   std::env::set_var("GALLIFREYDB_HOST", "127.0.0.1");
+/// #   std::env::set_var("GALLIFREYDB_PORT", "8080");
+/// # }
+/// // Pings the local server and prints healthy if successful.
+/// let _ = status();
+/// ```
 pub fn status() -> Result<(), CliError> {
     let host = resolve_status_host();
     let port = resolve_status_port();

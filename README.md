@@ -72,7 +72,7 @@ cargo run -p logos-tui
 Use the CLI helper to launch and check a real local `aletheia-server` instance when you want HTTP integration/testing. This is optional for local CLI persistence.
 
 ```sh
-# Optional if your checkout is not at /path/to/gallifreydb
+# Optional if your gallifreydb checkout is not at ../gallifreydb
 export ALETHEIADB_MANIFEST_PATH="/path/to/gallifreydb/Cargo.toml"
 
 # Start server (foreground)

@@ -21,3 +21,7 @@
 ## 2026-03-10 - [FireSimulator Primitives]
 **Confusion:** The `FireSimulator` and its configuration primitives in `logos-core::planning::fire` had dry, terse docstrings that repeated function names without explaining the underlying "why" (e.g. why risk haircut tiers exist or what a FIRE number represents practically). The module lacked a high-level explanation of its core purpose.
 **Clarification:** Added a module-level `//!` narrative ("The Great Escape") explaining the goal of projecting financial independence. Upgraded struct and method docstrings to use storytelling analogies (war chest, burn rate) and added standalone, executable `## Examples` doc-tests to `FireConfig` and all public `FireSimulator` methods to demonstrate integration points clearly.
+
+## 2026-03-15 - [AletheiaDB Start Default Paths]
+**Confusion:** Users attempting to run `aletheia start` from the README's "Getting Started" section encountered confusing errors (`manifest not found at ...`) because the CLI assumes `gallifreydb` is cloned in the parent directory (`../gallifreydb`), which wasn't clearly documented.
+**Clarification:** Added module-level documentation and executable doc-tests to `crates/logos-cli/src/commands/aletheia.rs`. Improved the `CliError::AletheiaStartFailed` error message to instruct users on how to resolve the issue, and updated the README to explicitly clarify the default `ALETHEIADB_MANIFEST_PATH` expectation.

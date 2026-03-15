@@ -44,7 +44,10 @@ impl fmt::Display for CliError {
                 write!(f, "command '{command}' failed at runtime: {message}")
             }
             Self::AletheiaStartFailed { message } => {
-                write!(f, "failed to start aletheia server: {message}")
+                write!(
+                    f,
+                    "failed to start aletheia server: {message}. Ensure the `gallifreydb` repository is cloned in the parent directory, or set the ALETHEIADB_MANIFEST_PATH environment variable."
+                )
             }
             Self::AletheiaStatusFailed { endpoint, message } => {
                 write!(f, "failed status check at '{endpoint}': {message}")
