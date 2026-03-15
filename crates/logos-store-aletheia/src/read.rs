@@ -521,6 +521,7 @@ mod tests {
 }
 
 #[test]
+#[allow(clippy::needless_collect)]
 fn test_store_empty_accessors() {
     let store = crate::AletheiaStore::new();
     assert_eq!(store.transaction_count(), 0);
@@ -528,14 +529,19 @@ fn test_store_empty_accessors() {
     assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").unwrap()));
     assert!(store.latest_correction().is_none());
     assert_eq!(store.transactions().count(), 0);
+    assert_eq!(store.transactions().collect::<Vec<_>>().len(), 0);
     assert!(store.budget_target("2026-03", "expenses:food").is_none());
     assert_eq!(store.budget_targets().count(), 0);
+    assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 0);
     assert!(store.analytics_artifact("missing").is_none());
     assert_eq!(store.analytics_artifacts().count(), 0);
+    assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 0);
     assert_eq!(store.import_record_count(), 0);
     assert!(!store.has_import_record_content_hash("missing"));
     assert_eq!(store.import_records().count(), 0);
+    assert_eq!(store.import_records().collect::<Vec<_>>().len(), 0);
     assert_eq!(store.import_batches().count(), 0);
+    assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 0);
     assert_eq!(store.statement_line_count(), 0);
     assert_eq!(store.statement_lines().count(), 0);
     assert!(
@@ -546,6 +552,7 @@ fn test_store_empty_accessors() {
     assert_eq!(store.reconciliation_run_count(), 0);
     assert!(store.reconciliation_run("missing").is_none());
     assert_eq!(store.reconciliation_runs().count(), 0);
+    assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 0);
     assert_eq!(store.month_close_count(), 0);
     assert!(store.month_close("missing").is_none());
     assert!(
@@ -554,6 +561,7 @@ fn test_store_empty_accessors() {
             .is_none()
     );
     assert_eq!(store.month_closes().count(), 0);
+    assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 0);
 
     // transactions_as_of_us
     let as_of_us = store.transactions_as_of_us(1000, 2000).unwrap();
@@ -565,6 +573,7 @@ fn test_store_empty_accessors() {
 
 #[test]
 #[allow(clippy::too_many_lines)]
+#[allow(clippy::needless_collect)]
 fn test_store_populated_accessors() {
     use logos_core::{AccountId, Correction, Posting, TransactionBuilder};
     let mut store = crate::AletheiaStore::new();
@@ -581,6 +590,7 @@ fn test_store_populated_accessors() {
     assert_eq!(store.transaction_count(), 1);
     assert!(store.has_transaction(&txn_id));
     assert_eq!(store.transactions().count(), 1);
+    assert_eq!(store.transactions().collect::<Vec<_>>().len(), 1);
 
     // Write correction
     let corr = Correction::new(txn_id.clone(), "fix").unwrap();
@@ -597,12 +607,14 @@ fn test_store_populated_accessors() {
         .write_budget_target("2026-03", "expenses:food", 500)
         .unwrap();
     assert_eq!(store.budget_targets().count(), 1);
+    assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 1);
 
     // Write a second budget target
     store
         .write_budget_target("2026-03", "expenses:rent", 1500)
         .unwrap();
     assert_eq!(store.budget_targets().count(), 2);
+    assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 2);
 
     // Write analytics artifact
     store
@@ -618,6 +630,7 @@ fn test_store_populated_accessors() {
         )
         .unwrap();
     assert_eq!(store.analytics_artifacts().count(), 1);
+    assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 1);
 
     store
         .write_analytics_artifact_manifest(
@@ -632,6 +645,7 @@ fn test_store_populated_accessors() {
         )
         .unwrap();
     assert_eq!(store.analytics_artifacts().count(), 2);
+    assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 2);
 
     // Write import batch
     let rec = crate::model::NewImportRecord::new("hash1", Some(&txn_id));
@@ -642,7 +656,9 @@ fn test_store_populated_accessors() {
     assert!(store.has_import_record_content_hash("hash1"));
     assert!(!store.has_import_record_content_hash("missing_hash"));
     assert_eq!(store.import_records().count(), 1);
+    assert_eq!(store.import_records().collect::<Vec<_>>().len(), 1);
     assert_eq!(store.import_batches().count(), 1);
+    assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 1);
 
     let rec2 = crate::model::NewImportRecord::new("hash2", Some(&txn_id));
     store
@@ -650,7 +666,9 @@ fn test_store_populated_accessors() {
         .unwrap();
     assert_eq!(store.import_record_count(), 2);
     assert_eq!(store.import_records().count(), 2);
+    assert_eq!(store.import_records().collect::<Vec<_>>().len(), 2);
     assert_eq!(store.import_batches().count(), 2);
+    assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 2);
 
     // Write statement line
     let line_rec = crate::model::NewImportRecord::with_statement_line(
@@ -700,6 +718,7 @@ fn test_store_populated_accessors() {
         .unwrap();
     assert_eq!(store.reconciliation_run_count(), 1);
     assert_eq!(store.reconciliation_runs().count(), 1);
+    assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 1);
 
     let run2 = store
         .write_reconciliation_run(
@@ -719,6 +738,7 @@ fn test_store_populated_accessors() {
         .unwrap();
     assert_eq!(store.reconciliation_run_count(), 2);
     assert_eq!(store.reconciliation_runs().count(), 2);
+    assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 2);
 
     // Write month close
     store
@@ -727,6 +747,7 @@ fn test_store_populated_accessors() {
     assert_eq!(store.month_close_count(), 1);
     assert!(store.month_close("close-1").is_some());
     assert_eq!(store.month_closes().count(), 1);
+    assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 1);
 
     store
         .write_month_close("2026-03", "assets:savings", run2.run_id(), None)
@@ -735,6 +756,7 @@ fn test_store_populated_accessors() {
     assert!(store.month_close("close-2").is_some());
     assert!(store.month_close("missing_close").is_none());
     assert_eq!(store.month_closes().count(), 2);
+    assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 2);
 }
 
 #[test]
@@ -761,6 +783,7 @@ fn test_current_projection_without_superseded() {
         .unwrap();
 
     let mut proj = store.current_projection_without_superseded();
+    assert!(!proj.iter().any(|t| t.id().as_str() == "missing"));
     assert_eq!(proj.len(), 2);
     assert!(proj.iter().any(|t| t.id() == &txn_id1));
     assert!(proj.iter().any(|t| t.id() == &txn_id2));
