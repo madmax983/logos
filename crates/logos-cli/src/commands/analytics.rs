@@ -144,8 +144,12 @@ pub fn sankey() -> Result<(), CliError> {
         exporter.add_transaction(stored_tx.transaction().clone());
     }
 
-    println!("{}", exporter.export_sankey());
+    println!("{}", render_sankey_output(&exporter.export_sankey()));
     Ok(())
+}
+
+fn render_sankey_output(raw_mermaid: &str) -> String {
+    format!("analytics.sankey\n{raw_mermaid}")
 }
 
 fn render_snapshot_manifest(
@@ -186,8 +190,16 @@ fn render_snapshot_manifest(
 
 #[cfg(test)]
 mod tests {
-    use super::{render_snapshot_manifest, render_snapshot_manifest_list};
+    use super::{render_sankey_output, render_snapshot_manifest, render_snapshot_manifest_list};
     use logos_store_aletheia::model::StoredAnalyticsArtifactManifest;
+
+    #[test]
+    fn render_sankey_output_is_deterministic() {
+        let raw = "```mermaid\nsankey-beta\nincome:salary,assets:checking,500.00\n```\n";
+        let output = render_sankey_output(raw);
+        let expected = "analytics.sankey\n```mermaid\nsankey-beta\nincome:salary,assets:checking,500.00\n```\n";
+        assert_eq!(output, expected);
+    }
 
     #[test]
     fn render_snapshot_manifest_list_is_deterministic() {
