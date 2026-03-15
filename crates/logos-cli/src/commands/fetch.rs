@@ -1,3 +1,4 @@
+#![allow(clippy::cast_precision_loss)]
 use crate::{args::CliError, runtime::CliRuntime};
 use logos_store_aletheia::model::StoredFetchRun;
 

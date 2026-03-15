@@ -266,6 +266,7 @@ impl MonthAutopilotRequest {
 
 impl MonthAutopilotSummary {
     #[must_use]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         month_key: &str,
         checking_account: &str,
@@ -960,6 +961,7 @@ impl CliRuntime {
         ))
     }
 
+    #[allow(clippy::too_many_lines)]
     fn fetch_configured_statement_artifacts(
         &mut self,
         request: &MonthAutopilotRequest,
@@ -1012,7 +1014,7 @@ impl CliRuntime {
                     continue;
                 }
             };
-            let secrets = match self.secret_bundle_for_fetch_source(&source) {
+            let secrets = match Self::secret_bundle_for_fetch_source(&source) {
                 Ok(secrets) => secrets,
                 Err(err) => {
                     if fetch_required && first_required_error.is_none() {
@@ -1029,7 +1031,7 @@ impl CliRuntime {
                 }
             };
             let result =
-                match self.run_fetch_adapter(&fetch_runtime, &source, &fetch_request, &secrets) {
+                match Self::run_fetch_adapter(&fetch_runtime, &source, &fetch_request, &secrets) {
                     Ok(result) => result,
                     Err(err) => {
                         if fetch_required && first_required_error.is_none() {
@@ -1210,15 +1212,13 @@ impl CliRuntime {
     }
 
     fn secret_bundle_for_fetch_source(
-        &self,
         source: &StatementSource,
     ) -> Result<SecretBundle, RuntimeError> {
         let resolver = OnePasswordCliSecretResolver::from_environment();
-        self.secret_bundle_for_fetch_source_with_resolver(source, &resolver)
+        Self::secret_bundle_for_fetch_source_with_resolver(source, &resolver)
     }
 
     fn secret_bundle_for_fetch_source_with_resolver<R>(
-        &self,
         source: &StatementSource,
         resolver: &R,
     ) -> Result<SecretBundle, RuntimeError>
@@ -1239,7 +1239,6 @@ impl CliRuntime {
     }
 
     fn run_fetch_adapter(
-        &self,
         fetch_runtime: &tokio::runtime::Runtime,
         source: &StatementSource,
         request: &FetchRequest,
@@ -1262,8 +1261,7 @@ impl CliRuntime {
                 .map_err(|err| fetch_error_to_runtime(&err)),
             institution_id => Err(RuntimeError::Analytics {
                 message: format!(
-                    "no statement fetch adapter is registered for institution '{}'",
-                    institution_id
+                    "no statement fetch adapter is registered for institution \'{institution_id}\'"
                 ),
             }),
         }
@@ -1283,10 +1281,10 @@ impl CliRuntime {
                 source.ledger_account(),
                 month_key,
                 store_fetch_run_status(result.status()),
-                artifact.map(|value| value.artifact_path()),
+                artifact.map(logos_fetch::FetchedStatementArtifact::artifact_path),
                 artifact.map(|value| output_format_label(value.output_format())),
-                artifact.map(|value| value.opening_balance_cents()),
-                artifact.map(|value| value.closing_balance_cents()),
+                artifact.map(logos_fetch::FetchedStatementArtifact::opening_balance_cents),
+                artifact.map(logos_fetch::FetchedStatementArtifact::closing_balance_cents),
                 result.error_summary(),
             )
             .map_err(RuntimeError::from)
@@ -1837,7 +1835,7 @@ mod tests {
 
     #[test]
     fn fake_fetch_sources_bypass_external_secret_resolution() {
-        let runtime = CliRuntime::new_in_memory();
+        let _runtime = CliRuntime::new_in_memory();
         let source = StatementSource::new(
             "fixture:checking",
             "fake-fixture",
@@ -1849,8 +1847,7 @@ mod tests {
             bundle: SecretBundle::new("wrong", "wrong", Some("999999")).expect("bundle"),
         };
 
-        let bundle = runtime
-            .secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
+        let bundle = CliRuntime::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
             .expect("bundle");
 
         assert_eq!(
@@ -1861,7 +1858,7 @@ mod tests {
 
     #[test]
     fn real_fetch_sources_use_external_secret_resolution() {
-        let runtime = CliRuntime::new_in_memory();
+        let _runtime = CliRuntime::new_in_memory();
         let source = StatementSource::new(
             "pcu:checking",
             "provident-credit-union",
@@ -1879,8 +1876,7 @@ mod tests {
             bundle: SecretBundle::new("markm", "s3cr3t", Some("123456")).expect("bundle"),
         };
 
-        let bundle = runtime
-            .secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
+        let bundle = CliRuntime::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
             .expect("bundle");
 
         assert_eq!(
