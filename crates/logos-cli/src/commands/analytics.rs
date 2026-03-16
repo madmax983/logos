@@ -316,10 +316,7 @@ pub fn fire_sim(
         let extra_months = months % 12;
         table.add_row(vec![
             "Time to FIRE",
-            &format!(
-                "{} years, {} months ({} months total)",
-                years, extra_months, months
-            ),
+            &format!("{years} years, {extra_months} months ({months} months total)"),
         ]);
     } else {
         table.add_row(vec![
