@@ -1197,6 +1197,7 @@ dependencies = [
  "blake3",
  "chrono",
  "comfy-table",
+ "crossterm 0.29.0",
  "logos-core",
  "logos-fetch",
  "logos-import",
