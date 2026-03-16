@@ -53,7 +53,7 @@ fn render_snapshot_manifest_list(
     manifests: &[logos_store_aletheia::model::StoredAnalyticsArtifactManifest],
 ) -> String {
     if manifests.is_empty() {
-        return "analytics.snapshot.list empty=true count=0".to_owned();
+        return "No analytics snapshots found. Try creating one with 'ledger analytics snapshot create'.".to_owned();
     }
 
     let mut table = comfy_table::Table::new();
