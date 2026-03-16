@@ -514,28 +514,29 @@ impl BudgetDataSource for CliRuntime {
 impl RegisterDataSource for CliRuntime {
     fn fetch_register_snapshot(&self, account: &str) -> Option<RegisterSnapshot> {
         let now_us = current_time_us();
-        let mut activity = self
-            .transactions_as_of_us(now_us, now_us)
-            .ok()?
-            .into_iter()
-            .flat_map(|stored| {
-                let effective_at_us = stored.effective_at().wallclock();
-                let timestamp = date_string_from_wallclock_utc(stored.effective_at().wallclock());
-                let description = stored.transaction().description().to_owned();
-                stored
-                    .transaction()
-                    .postings()
-                    .iter()
-                    .filter(|posting| posting.account().as_str() == account)
-                    .map(move |posting| {
-                        (
-                            effective_at_us,
-                            RegisterActivityRecord::new(&timestamp, &description, posting.amount()),
-                        )
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>();
+        let transactions = self.transactions_as_of_us(now_us, now_us).ok()?;
+
+        let mut activity = Vec::new();
+        for stored in transactions {
+            let effective_at_us = stored.effective_at().wallclock();
+            let mut timestamp_cache = None;
+            for posting in stored.transaction().postings() {
+                if posting.account().as_str() == account {
+                    let timestamp = timestamp_cache.get_or_insert_with(|| {
+                        date_string_from_wallclock_utc(effective_at_us)
+                    });
+                    activity.push((
+                        effective_at_us,
+                        RegisterActivityRecord::new(
+                            timestamp,
+                            stored.transaction().description(),
+                            posting.amount()
+                        ),
+                    ));
+                }
+            }
+        }
+
         activity.sort_by(|left, right| right.0.cmp(&left.0));
         let activity = activity
             .into_iter()
