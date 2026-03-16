@@ -360,12 +360,23 @@ mod tests {
         assert_eq!(plan.investing_sweep_pct(), 50);
 
         assert_eq!(
-            plan.scenario(ScenarioKey::Bear).unwrap().scenario(),
+            plan.scenario(ScenarioKey::Bear)
+                .expect("should succeed")
+                .scenario(),
             ScenarioKey::Bear
         );
-        assert_eq!(plan.bear().unwrap().scenario(), ScenarioKey::Bear);
-        assert_eq!(plan.base().unwrap().scenario(), ScenarioKey::Base);
-        assert_eq!(plan.bull().unwrap().scenario(), ScenarioKey::Bull);
+        assert_eq!(
+            plan.bear().expect("should succeed").scenario(),
+            ScenarioKey::Bear
+        );
+        assert_eq!(
+            plan.base().expect("should succeed").scenario(),
+            ScenarioKey::Base
+        );
+        assert_eq!(
+            plan.bull().expect("should succeed").scenario(),
+            ScenarioKey::Bull
+        );
 
         let sc = plan.scenarios();
         assert_eq!(sc.len(), 3);
@@ -396,12 +407,56 @@ mod tests {
 
     #[test]
     fn test_project_rsu_budget_plan() {
-        let prices = ScenarioPriceInputs::new(100, 200, 300).unwrap();
-        let input = RsuBudgetPlanInput::new(300, 0, prices, 5000, 10, 20).unwrap();
+        let prices = ScenarioPriceInputs::new(100, 200, 300).expect("should succeed");
+        let input = RsuBudgetPlanInput::new(300, 0, prices, 5000, 10, 20).expect("should succeed");
 
-        let plan = project_rsu_budget_plan("2024-01", &input).unwrap();
+        let plan = project_rsu_budget_plan("2024-01", &input).expect("should succeed");
 
         assert_eq!(plan.conservative_budget_cents(), 7500);
         assert_eq!(plan.baseline_remaining_cents(), 7500 - 5000); // 2500
+    }
+
+    #[test]
+    fn test_scenario_price_inputs_validation_errors() {
+        assert_eq!(
+            ScenarioPriceInputs::new(0, 200, 300).unwrap_err(),
+            "scenario prices must be positive"
+        );
+        assert_eq!(
+            ScenarioPriceInputs::new(100, -200, 300).unwrap_err(),
+            "scenario prices must be positive"
+        );
+        assert_eq!(
+            ScenarioPriceInputs::new(100, 200, 0).unwrap_err(),
+            "scenario prices must be positive"
+        );
+        assert_eq!(
+            ScenarioPriceInputs::new(300, 200, 100).unwrap_err(),
+            "scenario prices must satisfy bear <= base <= bull"
+        );
+        assert_eq!(
+            ScenarioPriceInputs::new(100, 300, 200).unwrap_err(),
+            "scenario prices must satisfy bear <= base <= bull"
+        );
+    }
+
+    #[test]
+    fn test_rsu_budget_plan_input_validation_errors() {
+        let valid_prices = ScenarioPriceInputs::new(100, 200, 300).expect("should succeed");
+
+        assert_eq!(
+            RsuBudgetPlanInput::new(0, 10, valid_prices, 5000, 10, 20).unwrap_err(),
+            "quarterly_units must be greater than zero"
+        );
+
+        assert_eq!(
+            RsuBudgetPlanInput::new(100, 10, valid_prices, -5000, 10, 20).unwrap_err(),
+            "fixed_commitments_cents must be non-negative"
+        );
+
+        assert_eq!(
+            RsuBudgetPlanInput::new(100, 10, valid_prices, 5000, 60, 50).unwrap_err(),
+            "reserve_sweep_pct + investing_sweep_pct must be <= 100, got 110"
+        );
     }
 }
