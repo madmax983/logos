@@ -331,6 +331,16 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "attempt to add with overflow")]
+    #[allow(clippy::should_panic_without_expect)]
+    fn havoc_add_assets_liabilities_panics_on_overflow() {
+        let mut sim = FireSimulator::new(500_000);
+        sim.add_assets_liabilities(i64::MAX, 0);
+        // This second call will trigger an integer overflow panic on +=
+        sim.add_assets_liabilities(1, 0);
+    }
+
+    #[test]
     fn test_fire_progress_edge_cases() {
         // 1. fire_num == 0
         let sim_zero_expenses = FireSimulator::new(0);

@@ -44,4 +44,16 @@ proptest! {
 
         let _ = projector.project_timeline(months);
     }
+
+    #[test]
+    #[should_panic(expected = "attempt to add with overflow")]
+    fn add_assets_liabilities_panics_on_overflow(
+        base in i64::MAX / 2..=i64::MAX,
+        addition in i64::MAX / 2..=i64::MAX,
+    ) {
+        use logos_core::planning::fire::FireSimulator;
+        let mut sim = FireSimulator::new(5000);
+        sim.add_assets_liabilities(base, 0);
+        sim.add_assets_liabilities(addition, 0);
+    }
 }
