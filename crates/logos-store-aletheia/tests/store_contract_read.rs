@@ -35,13 +35,22 @@ fn test_transactions_as_of_us_returns_items() {
         )
         .unwrap();
 
+    let _txn_id2 = store
+        .write_transaction_with_valid_time(
+            TransactionBuilder::new("test2")
+                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap())
+                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap()),
+            Some(valid_time),
+        )
+        .unwrap();
+
     let items = store
         .transactions_as_of_us(
             valid_time.wallclock() as i64,
             time::now().wallclock() as i64,
         )
         .unwrap();
-    assert_eq!(items.len(), 1);
+    assert_eq!(items.len(), 2);
     assert_eq!(items[0].id(), &txn_id);
 
     cleanup_store_path(&path);
