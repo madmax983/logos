@@ -1,3 +1,9 @@
+//! State machine and view transitions for the Logos Terminal User Interface.
+//!
+//! The `App` struct is the core orchestrator of the TUI. It holds the active state
+//! (e.g., current view, user input buffers, loaded data snapshots) and exposes methods
+//! to mutate that state based on key events.
+
 use std::{
     collections::HashMap,
     time::{SystemTime, UNIX_EPOCH},
@@ -861,12 +867,42 @@ impl App {
         }
     }
 
+    /// Transitions the application to a new primary view tab.
+    ///
+    /// Clears any active input editors or error states.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::{App, View};
+    ///
+    /// let mut app = App::new();
+    /// app.set_view(View::Register);
+    /// assert_eq!(app.view(), View::Register);
+    /// ```
     pub fn set_view(&mut self, view: View) {
         self.scope_editor = None;
         self.scope_error = None;
         self.view = view;
     }
 
+    /// Reloads data for the Home (Dashboard) view from the provided source.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::{App, HomeDataSource, HomeSnapshot};
+    ///
+    /// struct MockSource;
+    /// impl HomeDataSource for MockSource {
+    ///     fn fetch_home_snapshot(&self, _month: &str, _chk: &str, _exp: &str) -> Option<HomeSnapshot> {
+    ///         None
+    ///     }
+    /// }
+    ///
+    /// let mut app = App::new();
+    /// app.refresh_home(&MockSource);
+    /// ```
     pub fn refresh_home(&mut self, source: &impl HomeDataSource) {
         self.home.snapshot = source.fetch_home_snapshot(
             &self.home.month_key,
@@ -875,15 +911,56 @@ impl App {
         );
     }
 
+    /// Reloads envelope allocations and actual spending for the Budget view.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::{App, BudgetDataSource, BudgetSnapshot};
+    ///
+    /// struct MockSource;
+    /// impl BudgetDataSource for MockSource {
+    ///     fn fetch_budget_snapshot(&self, _month: &str, _exp: &str) -> Option<BudgetSnapshot> { None }
+    /// }
+    ///
+    /// let mut app = App::new();
+    /// app.refresh_budget(&MockSource);
+    /// ```
     pub fn refresh_budget(&mut self, source: &impl BudgetDataSource) {
         self.budget.snapshot = source
             .fetch_budget_snapshot(&self.budget.month_key, &self.budget.expense_account_prefix);
     }
 
+    /// Reloads the chronological transaction list for the active Register account.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::{App, RegisterDataSource, RegisterSnapshot};
+    ///
+    /// struct MockSource;
+    /// impl RegisterDataSource for MockSource {
+    ///     fn fetch_register_snapshot(&self, _account: &str) -> Option<RegisterSnapshot> { None }
+    /// }
+    ///
+    /// let mut app = App::new();
+    /// app.refresh_register(&MockSource);
+    /// ```
     pub fn refresh_register(&mut self, source: &impl RegisterDataSource) {
         self.register.snapshot = source.fetch_register_snapshot(&self.register.account);
     }
 
+    /// Adjusts the global filtering criteria applied to the Reconcile history list.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::App;
+    ///
+    /// let mut app = App::new();
+    /// app.set_reconcile_filters(Some("2026-03"), None);
+    /// assert_eq!(app.reconcile_filter_month_key(), Some("2026-03"));
+    /// ```
     pub fn set_reconcile_filters(
         &mut self,
         month_key: Option<&str>,
@@ -893,6 +970,25 @@ impl App {
         self.reconcile.filter_checking_account = checking_account.map(str::to_owned);
     }
 
+    /// Re-fetches all matching reconciliation runs and their associated statement evidence.
+    ///
+    /// Maintains the current selection index if the previously selected run is still
+    /// present in the newly fetched dataset.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::{App, ReconcileDataSource, ReconcileRunRecord, ReconcileStatementLineRecord};
+    ///
+    /// struct MockSource;
+    /// impl ReconcileDataSource for MockSource {
+    ///     fn fetch_reconciliation_runs(&self, _: Option<&str>, _: Option<&str>) -> Vec<ReconcileRunRecord> { vec![] }
+    ///     fn fetch_statement_lines_for_run(&self, _: &str) -> Vec<ReconcileStatementLineRecord> { vec![] }
+    /// }
+    ///
+    /// let mut app = App::new();
+    /// app.refresh_reconcile(&MockSource);
+    /// ```
     pub fn refresh_reconcile(&mut self, source: &impl ReconcileDataSource) {
         let previously_selected_run_id = self
             .selected_reconcile_run()
@@ -925,6 +1021,28 @@ impl App {
         self.reconcile.evidence_by_run = evidence_by_run;
     }
 
+    /// Dispatches a refresh call to the data source based on the currently active view tab.
+    ///
+    /// This prevents the application from eagerly fetching expensive projections for
+    /// tabs the user isn't even looking at.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::{App, HomeDataSource, HomeSnapshot, BudgetDataSource, BudgetSnapshot, RegisterDataSource, RegisterSnapshot, ReconcileDataSource, ReconcileRunRecord, ReconcileStatementLineRecord};
+    ///
+    /// struct MockSource;
+    /// impl HomeDataSource for MockSource { fn fetch_home_snapshot(&self, _m: &str, _c: &str, _e: &str) -> Option<HomeSnapshot> { None } }
+    /// impl BudgetDataSource for MockSource { fn fetch_budget_snapshot(&self, _m: &str, _e: &str) -> Option<BudgetSnapshot> { None } }
+    /// impl RegisterDataSource for MockSource { fn fetch_register_snapshot(&self, _a: &str) -> Option<RegisterSnapshot> { None } }
+    /// impl ReconcileDataSource for MockSource {
+    ///     fn fetch_reconciliation_runs(&self, _: Option<&str>, _: Option<&str>) -> Vec<ReconcileRunRecord> { vec![] }
+    ///     fn fetch_statement_lines_for_run(&self, _: &str) -> Vec<ReconcileStatementLineRecord> { vec![] }
+    /// }
+    ///
+    /// let mut app = App::new();
+    /// app.refresh_current_view(&MockSource);
+    /// ```
     pub fn refresh_current_view(
         &mut self,
         source: &(impl HomeDataSource + BudgetDataSource + RegisterDataSource + ReconcileDataSource),
@@ -938,6 +1056,17 @@ impl App {
         }
     }
 
+    /// Moves the cursor down one row in the Reconcile view's run list.
+    ///
+    /// Wraps around to the top if the cursor is at the bottom.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::App;
+    /// let mut app = App::new();
+    /// app.select_next_reconcile_run(); // Safe to call on empty lists
+    /// ```
     pub fn select_next_reconcile_run(&mut self) {
         let Some(current_idx) = self.reconcile.selected_run_idx else {
             if !self.reconcile.runs.is_empty() {
@@ -952,6 +1081,17 @@ impl App {
         }
     }
 
+    /// Moves the cursor up one row in the Reconcile view's run list.
+    ///
+    /// Wraps around to the bottom if the cursor is at the top.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::App;
+    /// let mut app = App::new();
+    /// app.select_previous_reconcile_run(); // Safe to call on empty lists
+    /// ```
     pub fn select_previous_reconcile_run(&mut self) {
         let Some(current_idx) = self.reconcile.selected_run_idx else {
             if !self.reconcile.runs.is_empty() {
@@ -966,6 +1106,19 @@ impl App {
         }
     }
 
+    /// Processes a single semantic application input event.
+    ///
+    /// This routes the input based on current mode (e.g. Scope Editor vs Normal Navigation)
+    /// and mutates the application state accordingly.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::{App, AppInput};
+    /// let mut app = App::new();
+    /// app.handle_input(AppInput::Quit);
+    /// assert!(app.should_exit());
+    /// ```
     pub fn handle_input(&mut self, input: AppInput) {
         if input == AppInput::Quit {
             self.request_exit();
@@ -1003,6 +1156,16 @@ impl App {
         }
     }
 
+    /// Convenience wrapper for processing raw character inputs.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_tui::{App, View};
+    /// let mut app = App::new();
+    /// app.handle_key('b');
+    /// assert_eq!(app.view(), View::Budget);
+    /// ```
     pub fn handle_key(&mut self, key: char) {
         self.handle_input(AppInput::Char(key));
     }
