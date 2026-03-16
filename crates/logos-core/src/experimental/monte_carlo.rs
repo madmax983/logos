@@ -1,3 +1,8 @@
+#![allow(
+    clippy::unreadable_literal,
+    clippy::similar_names,
+    clippy::inconsistent_digit_grouping
+)]
 //! Monte Carlo Investment Simulator.
 //!
 //! A simulator to project a range of possible future net worth outcomes
@@ -17,11 +22,13 @@ impl Lcg {
     const A: u64 = 6364136223846793005;
     const C: u64 = 1442695040888963407;
 
+    #[allow(clippy::missing_const_for_fn)]
     fn new(seed: u64) -> Self {
         Self { state: seed }
     }
 
     /// Returns a pseudo-random `u64`.
+    #[allow(clippy::missing_const_for_fn)]
     fn next_u64(&mut self) -> u64 {
         self.state = self.state.wrapping_mul(Self::A).wrapping_add(Self::C);
         self.state
@@ -108,6 +115,7 @@ impl MonteCarloProjector {
 
             for _ in 0..months {
                 let random_norm = lcg.next_normal();
+                #[allow(clippy::suboptimal_flops)]
                 let monthly_return = monthly_mean + monthly_volatility * random_norm;
 
                 #[allow(clippy::cast_precision_loss)]
@@ -130,10 +138,25 @@ impl MonteCarloProjector {
 
         // Calculate percentiles
         #[allow(clippy::cast_precision_loss)]
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            clippy::cast_lossless
+        )]
         let p5_idx = ((paths as f64) * 0.05).floor() as usize;
         #[allow(clippy::cast_precision_loss)]
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            clippy::cast_lossless
+        )]
         let median_idx = ((paths as f64) * 0.50).floor() as usize;
         #[allow(clippy::cast_precision_loss)]
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            clippy::cast_lossless
+        )]
         let p95_idx = ((paths as f64) * 0.95).floor() as usize;
 
         // Ensure indices are within bounds (for very small path counts)

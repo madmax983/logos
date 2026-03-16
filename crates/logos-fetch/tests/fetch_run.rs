@@ -1,3 +1,4 @@
+#![allow(clippy::inconsistent_digit_grouping)]
 use logos_fetch::{FetchRunStatus, FetchedStatementArtifact, OutputFormat};
 
 #[test]

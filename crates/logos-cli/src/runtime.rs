@@ -1,3 +1,13 @@
+#![allow(
+    clippy::single_char_pattern,
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::unused_self,
+    clippy::uninlined_format_args,
+    clippy::redundant_closure_for_method_calls,
+    clippy::needless_pass_by_value,
+    clippy::missing_const_for_fn
+)]
 use std::collections::HashSet;
 use std::env;
 use std::fmt;
@@ -967,7 +977,7 @@ impl CliRuntime {
     ) -> Result<Vec<StoredFetchRun>, RuntimeError> {
         let config = match self.load_statement_source_config() {
             Ok(config) => config,
-            Err(err) if !fetch_required => return Ok(Vec::new()),
+            Err(_err) if !fetch_required => return Ok(Vec::new()),
             Err(err) => return Err(err),
         };
         let Some(config) = config else {

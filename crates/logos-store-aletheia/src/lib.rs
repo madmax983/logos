@@ -194,6 +194,7 @@ impl fmt::Debug for AletheiaStore {
                 &self.statement_line_ids_by_txn.len(),
             )
             .field("reconciliation_runs", &self.reconciliation_runs.len())
+            .field("fetch_runs", &self.fetch_runs.len())
             .field(
                 "reconciliation_statement_line_ids",
                 &self.reconciliation_statement_line_ids.len(),

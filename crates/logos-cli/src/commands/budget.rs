@@ -1,3 +1,4 @@
+#![allow(clippy::cast_precision_loss)]
 use crate::{args::CliError, runtime::CliRuntime};
 use logos_core::experimental::monte_carlo::MonteCarloProjector;
 use logos_reporting::{RsuBudgetPlan, ScenarioKey};
@@ -199,7 +200,9 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
     format!("budget.rsu-plan\n{plan_table}\n{scenario_table}")
 }
 
-fn render_monte_carlo_output(result: &logos_core::experimental::monte_carlo::MonteCarloResult) -> String {
+fn render_monte_carlo_output(
+    result: &logos_core::experimental::monte_carlo::MonteCarloResult,
+) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
     table.set_header(vec!["Percentile", "Projected Outcome"]);

@@ -150,7 +150,7 @@ pub fn show(topic: HelpTopic) -> Result<(), CliError> {
     Ok(())
 }
 
-fn help_text(topic: HelpTopic) -> &'static str {
+const fn help_text(topic: HelpTopic) -> &'static str {
     match topic {
         HelpTopic::General => GENERAL_HELP_TEXT,
         HelpTopic::Txn => TXN_HELP_TEXT,

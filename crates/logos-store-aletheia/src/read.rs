@@ -498,8 +498,7 @@ fn test_store_populated_accessors() {
 
     assert_eq!(store.transaction_count(), 1);
     assert!(store.has_transaction(&txn_id));
-    let txns: Vec<_> = store.transactions().collect();
-    assert_eq!(txns.len(), 1);
+    assert_eq!(store.transactions().count(), 1);
 
     // Write correction
     let corr = Correction::new(txn_id.clone(), "fix").unwrap();
@@ -566,7 +565,7 @@ fn test_store_populated_accessors() {
             1,
             100,
             0,
-            &[txn_id.clone()],
+            std::slice::from_ref(&txn_id),
         )
         .unwrap();
     assert_eq!(store.reconciliation_run_count(), 1);

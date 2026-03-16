@@ -6,10 +6,12 @@ use crate::{FetchError, SecretBundle, StatementSource};
 
 const LOGOS_FETCH_OP_BIN_ENV: &str = "LOGOS_FETCH_OP_BIN";
 
+#[allow(clippy::missing_errors_doc)]
 pub trait SecretResolver {
     fn resolve(&self, source: &StatementSource) -> Result<SecretBundle, FetchError>;
 }
 
+#[allow(clippy::missing_errors_doc)]
 pub trait SecretRefReader {
     fn read_secret_ref(&self, secret_ref: &str) -> Result<String, FetchError>;
 }
@@ -63,9 +65,8 @@ where
 impl OpCliSecretRefReader {
     #[must_use]
     pub fn from_environment() -> Self {
-        let op_bin = env::var_os(LOGOS_FETCH_OP_BIN_ENV)
-            .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from("op"));
+        let op_bin =
+            env::var_os(LOGOS_FETCH_OP_BIN_ENV).map_or_else(|| PathBuf::from("op"), PathBuf::from);
         Self { op_bin }
     }
 }

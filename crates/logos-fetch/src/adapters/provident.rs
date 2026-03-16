@@ -105,6 +105,7 @@ impl ProvidentAdapter {
         }
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     fn map_downloaded_result(
         &self,
         request: &FetchRequest,
@@ -140,6 +141,7 @@ impl ProvidentAdapter {
         Ok(FetchResult::new(status, Some(artifact)))
     }
 
+    #[allow(clippy::needless_pass_by_value, clippy::unused_self)]
     fn map_failure_result(
         &self,
         status: FetchRunStatus,

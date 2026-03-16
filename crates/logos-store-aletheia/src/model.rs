@@ -823,6 +823,7 @@ impl StoredFetchRunStatus {
         }
     }
 
+    #[must_use]
     pub fn parse(value: &str) -> Option<Self> {
         match value {
             "downloaded" => Some(Self::Downloaded),
@@ -852,6 +853,7 @@ impl StoredFetchArtifactFormat {
         }
     }
 
+    #[must_use]
     pub fn parse(value: &str) -> Option<Self> {
         match value {
             "csv" => Some(Self::Csv),
