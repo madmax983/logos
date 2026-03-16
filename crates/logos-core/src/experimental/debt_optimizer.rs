@@ -160,6 +160,8 @@ mod tests {
         assert!(avalanche_result.total_months > 0);
 
         // Avalanche should result in less total interest paid
-        assert!(avalanche_result.total_interest_paid_cents < snowball_result.total_interest_paid_cents);
+        assert!(
+            avalanche_result.total_interest_paid_cents < snowball_result.total_interest_paid_cents
+        );
     }
 }

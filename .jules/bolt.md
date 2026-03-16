@@ -14,3 +14,7 @@
 **Optimize Retain to While Loop**
 **Learning:** `Vec::retain()` inside a loop over $M$ iterations against an array of $N$ thresholds yields an $O(M \times N)$ time complexity because `retain()` sweeps the whole array and shifts elements.
 **Action:** Clone and `sort_unstable()` the thresholds upfront, then maintain an external index across iterations to perform checks in $O(M + N)$ time, avoiding unnecessary shifting and traversal.
+
+**Flatten filter_map allocation under-sizing**
+**Learning:** Chaining `.into_iter().flatten().filter_map(...)` onto an `Option<Vec>` and calling `.collect::<Vec<_>>()` causes multiple intermediate vector allocations or under-sizing due to lost iterator `size_hint` boundaries.
+**Action:** Use `map_or_else(Vec::new, |items| { let mut v = Vec::with_capacity(items.len()); v.extend(items.iter().filter_map(...)); v })` to ensure exactly one heap allocation that covers the upper bound of possible returned items.
