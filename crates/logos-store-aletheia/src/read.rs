@@ -1,3 +1,9 @@
+//! Read operations and fast memory-cache projections for the `AletheiaDB` ledger.
+//!
+//! This module provides the accessors required for driving user interfaces, reporting,
+//! and CLI tools without incurring disk I/O latency for every query. It leverages the
+//! `AletheiaStore`'s in-memory hash maps to stream domain entities instantly.
+
 use std::collections::HashSet;
 
 use aletheiadb::{
@@ -39,6 +45,20 @@ impl AletheiaStore {
         self.corrections.last().map(StoredCorrection::correction)
     }
 
+    /// Provides an iterator over all historical transactions loaded into the cache.
+    ///
+    /// This is typically used by aggregation algorithms or CLI search utilities
+    /// that need to scan the entire ledger history sequentially.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// let count = store.transactions().count();
+    /// assert_eq!(count, 0); // Empty until synchronized
+    /// ```
     pub fn transactions(&self) -> impl Iterator<Item = &StoredTransaction> + '_ {
         self.transactions.values()
     }
@@ -53,6 +73,21 @@ impl AletheiaStore {
             .get(&(month_key.to_owned(), expense_account_prefix.to_owned()))
     }
 
+    /// Iterates over all envelope budget allocations.
+    ///
+    /// Used heavily by the budgeting reconciliation views to calculate variances
+    /// across all envelopes rapidly.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// for target in store.budget_targets() {
+    ///     println!("Budget: {}", target.month_key());
+    /// }
+    /// ```
     pub fn budget_targets(&self) -> impl Iterator<Item = &StoredBudgetTarget> + '_ {
         self.budget_targets.values()
     }
@@ -65,6 +100,17 @@ impl AletheiaStore {
         self.analytics_artifacts.get(artifact_id)
     }
 
+    /// Iterates over manifests for data science or reporting extracts.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// let manifest_count = store.analytics_artifacts().count();
+    /// assert_eq!(manifest_count, 0);
+    /// ```
     pub fn analytics_artifacts(
         &self,
     ) -> impl Iterator<Item = &StoredAnalyticsArtifactManifest> + '_ {
@@ -81,10 +127,34 @@ impl AletheiaStore {
         self.import_records.contains_key(content_hash_key)
     }
 
+    /// Streams all raw import rows (CSV/API) parsed by the system.
+    ///
+    /// Often used to detect duplicates across imports or build lineage graphs.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// let imported = store.import_records().count();
+    /// ```
     pub fn import_records(&self) -> impl Iterator<Item = &StoredImportRecord> + '_ {
         self.import_records.values()
     }
 
+    /// Streams the high-level metadata for distinct ingest operations.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// for batch in store.import_batches() {
+    ///     println!("Ingested batch ID: {}", batch.batch_id());
+    /// }
+    /// ```
     pub fn import_batches(&self) -> impl Iterator<Item = &StoredImportBatch> + '_ {
         self.import_batches.values()
     }
@@ -94,6 +164,16 @@ impl AletheiaStore {
         self.statement_lines.len()
     }
 
+    /// Iterates over individual bank statement line items used for reconciliation.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// let lines = store.statement_lines().count();
+    /// ```
     pub fn statement_lines(&self) -> impl Iterator<Item = &StoredStatementLine> + '_ {
         self.statement_lines.values()
     }
@@ -108,6 +188,18 @@ impl AletheiaStore {
         self.fetch_runs.get(run_id)
     }
 
+    /// Yields metadata about remote API data sync attempts.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// for run in store.fetch_runs() {
+    ///     println!("Sync run: {}", run.run_id());
+    /// }
+    /// ```
     pub fn fetch_runs(&self) -> impl Iterator<Item = &StoredFetchRun> + '_ {
         self.fetch_runs.values()
     }
@@ -138,6 +230,16 @@ impl AletheiaStore {
         self.reconciliation_runs.get(run_id)
     }
 
+    /// Iterates over saved runs that match ledger txns against statement lines.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// let recon_count = store.reconciliation_runs().count();
+    /// ```
     pub fn reconciliation_runs(&self) -> impl Iterator<Item = &StoredReconciliationRun> + '_ {
         self.reconciliation_runs.values()
     }
@@ -164,6 +266,18 @@ impl AletheiaStore {
         self.month_closes.get(close_id)
     }
 
+    /// Streams locked accounting period boundaries to prevent historical drift.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// for close in store.month_closes() {
+    ///     println!("Closed: {}", close.month_key());
+    /// }
+    /// ```
     pub fn month_closes(&self) -> impl Iterator<Item = &StoredMonthClose> + '_ {
         self.month_closes.values()
     }

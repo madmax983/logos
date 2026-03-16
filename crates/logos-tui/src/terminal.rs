@@ -1,3 +1,9 @@
+//! Terminal session lifecycle and raw rendering abstractions.
+//!
+//! Provides the boundary between the internal `App` state and the `ratatui` + `crossterm`
+//! UI primitives. It manages the alternate screen, raw mode, cursor visibility,
+//! and input event polling.
+
 use std::{io, time::Duration};
 
 use crossterm::{
@@ -19,6 +25,19 @@ use crate::{App, AppInput, View};
 
 const EVENT_POLL_INTERVAL: Duration = Duration::from_millis(250);
 
+/// A managed wrapper around the TTY for rendering and input handling.
+///
+/// Ensures the terminal is correctly restored to its original state (cursor visible,
+/// raw mode disabled) when the TUI application exits.
+///
+/// ## Examples
+///
+/// ```rust,no_run
+/// use logos_tui::terminal::TerminalSession;
+///
+/// // Automatically enters alternate screen and raw mode.
+/// let mut session = TerminalSession::enter().unwrap();
+/// ```
 pub struct TerminalSession {
     terminal: Terminal<CrosstermBackend<io::Stdout>>,
 }
@@ -86,6 +105,23 @@ impl Drop for TerminalSession {
     }
 }
 
+/// Draws the primary application layout within the provided terminal frame.
+///
+/// Takes the internal state variables from `App` and paints the Ratatui
+/// borders, tabs, scope panel, and the main view body.
+///
+/// ## Examples
+///
+/// ```rust,no_run
+/// use ratatui::{backend::TestBackend, Terminal};
+/// use logos_tui::App;
+/// use logos_tui::terminal::render;
+///
+/// let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
+/// let app = App::new();
+///
+/// terminal.draw(|frame| render(frame, &app, true)).unwrap();
+/// ```
 pub fn render(frame: &mut Frame<'_>, app: &App, runtime_available: bool) {
     let scope_lines = view_scope_lines(app);
     let status_lines = view_status_lines(app, runtime_available);
