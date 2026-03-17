@@ -1,5 +1,5 @@
 [package]
-name = "logos-cli"
+name = "logos-runtime"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,12 +8,12 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
+blake3 = "1.8.3"
 chrono = { version = "0.4.42", default-features = true, features = ["clock"] }
 logos-core = { path = "../logos-core" }
-logos-runtime = { path = "../logos-runtime" }
-logos-store-aletheia = { path = "../logos-store-aletheia" }
 logos-fetch = { path = "../logos-fetch" }
 logos-import = { path = "../logos-import" }
 logos-reporting = { path = "../logos-reporting" }
-comfy-table = "7.1"
-crossterm = "0.29.0"
+logos-store-aletheia = { path = "../logos-store-aletheia" }
+polars = { version = "0.46.0", features = ["parquet"] }
+tokio = { version = "1.48.0", features = ["rt"] }

@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use chrono::DateTime;
-use logos_cli::runtime::{CliRuntime, MonthAutopilotRequest};
+use logos_runtime::{AppRuntime, MonthAutopilotRequest};
 use logos_core::TransactionId;
 use logos_fetch::{FetchedStatementArtifact, OutputFormat};
 use logos_import::CsvMapping;
@@ -36,7 +36,7 @@ fn timestamp_micros(iso8601: &str) -> i64 {
 
 #[test]
 fn e2e_happy_path_posts_and_reports_register_balance() {
-    let mut runtime = CliRuntime::new_in_memory();
+    let mut runtime = AppRuntime::new_in_memory();
 
     let txn_id = runtime
         .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
@@ -48,7 +48,7 @@ fn e2e_happy_path_posts_and_reports_register_balance() {
 
 #[test]
 fn e2e_import_is_idempotent_by_fingerprint() {
-    let mut runtime = CliRuntime::new_in_memory();
+    let mut runtime = AppRuntime::new_in_memory();
     let mapping = CsvMapping::default();
     let line = "2026-02-01T09:30:00,12345,RSU sale,assets:checking,income:rsu";
 
@@ -71,7 +71,7 @@ fn e2e_import_csv_idempotency_persists_across_reopen() {
     let line = "2026-02-01T09:30:00,12345,RSU sale,assets:checking,income:rsu";
 
     {
-        let mut runtime = CliRuntime::open(&path).expect("open");
+        let mut runtime = AppRuntime::open(&path).expect("open");
         let inserted = runtime
             .import_csv_row(line, &mapping)
             .expect("first import");
@@ -79,7 +79,7 @@ fn e2e_import_csv_idempotency_persists_across_reopen() {
     }
 
     {
-        let mut reopened = CliRuntime::open(&path).expect("reopen");
+        let mut reopened = AppRuntime::open(&path).expect("reopen");
         let inserted = reopened
             .import_csv_row(line, &mapping)
             .expect("second import");
@@ -93,14 +93,14 @@ fn e2e_import_csv_idempotency_persists_across_reopen() {
 fn e2e_runtime_reopen_restores_persisted_transactions() {
     let path = temp_runtime_path("reopen");
     {
-        let mut runtime = CliRuntime::open(&path).expect("open");
+        let mut runtime = AppRuntime::open(&path).expect("open");
         let txn_id = runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
             .expect("post");
         assert!(runtime.transaction_exists(&txn_id));
     }
 
-    let reopened = CliRuntime::open(&path).expect("reopen");
+    let reopened = AppRuntime::open(&path).expect("reopen");
     assert!(reopened.transaction_exists(&TransactionId::new("txn-1").expect("id")));
     assert_eq!(reopened.register_balance_for("assets:checking"), 10_000);
 
@@ -109,8 +109,8 @@ fn e2e_runtime_reopen_restores_persisted_transactions() {
 
 #[test]
 fn e2e_runtime_month_report_and_budget_variance_use_posted_transactions() {
-    let mut runtime = CliRuntime::new_in_memory();
-    let month_key = CliRuntime::current_month_key_utc();
+    let mut runtime = AppRuntime::new_in_memory();
+    let month_key = AppRuntime::current_month_key_utc();
 
     runtime
         .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
@@ -138,8 +138,8 @@ fn e2e_runtime_month_report_and_budget_variance_use_posted_transactions() {
 
 #[test]
 fn e2e_runtime_rsu_budget_plan_returns_conservative_baseline() {
-    let runtime = CliRuntime::new_in_memory();
-    let month_key = CliRuntime::current_month_key_utc();
+    let runtime = AppRuntime::new_in_memory();
+    let month_key = AppRuntime::current_month_key_utc();
 
     let plan = runtime
         .plan_rsu_budget_for_month(&month_key, 300, 45, 10_000, 12_000, 16_000, 250_000, 60, 30)
@@ -156,8 +156,8 @@ fn e2e_runtime_rsu_budget_plan_returns_conservative_baseline() {
 
 #[test]
 fn e2e_runtime_reconcile_month_computes_match_and_variance() {
-    let mut runtime = CliRuntime::new_in_memory();
-    let month_key = CliRuntime::current_month_key_utc();
+    let mut runtime = AppRuntime::new_in_memory();
+    let month_key = AppRuntime::current_month_key_utc();
 
     runtime
         .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
@@ -181,10 +181,10 @@ fn e2e_runtime_reconcile_month_computes_match_and_variance() {
 #[test]
 fn e2e_runtime_reconciliation_run_persists_and_run_ids_continue_after_reopen() {
     let path = temp_runtime_path("reconcile-reopen");
-    let month_key = CliRuntime::current_month_key_utc();
+    let month_key = AppRuntime::current_month_key_utc();
 
     {
-        let mut runtime = CliRuntime::open(&path).expect("open");
+        let mut runtime = AppRuntime::open(&path).expect("open");
         runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
             .expect("post income");
@@ -211,7 +211,7 @@ fn e2e_runtime_reconciliation_run_persists_and_run_ids_continue_after_reopen() {
     }
 
     {
-        let mut reopened = CliRuntime::open(&path).expect("reopen");
+        let mut reopened = AppRuntime::open(&path).expect("reopen");
         assert_eq!(reopened.reconciliation_run_count(), 1);
         assert_eq!(
             reopened
@@ -236,8 +236,8 @@ fn e2e_runtime_reconciliation_run_persists_and_run_ids_continue_after_reopen() {
 fn e2e_runtime_reconcile_list_filters_and_sorts_latest_first() {
     let path = temp_runtime_path("reconcile-list");
     {
-        let mut runtime = CliRuntime::open(&path).expect("open");
-        let month_key = CliRuntime::current_month_key_utc();
+        let mut runtime = AppRuntime::open(&path).expect("open");
+        let month_key = AppRuntime::current_month_key_utc();
         runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
             .expect("post");
@@ -266,11 +266,11 @@ fn e2e_runtime_reconcile_list_filters_and_sorts_latest_first() {
 #[test]
 fn e2e_runtime_month_close_persists_and_blocks_duplicate_scope_close() {
     let path = temp_runtime_path("month-close");
-    let month_key = CliRuntime::current_month_key_utc();
+    let month_key = AppRuntime::current_month_key_utc();
     let run_id;
 
     {
-        let mut runtime = CliRuntime::open(&path).expect("open");
+        let mut runtime = AppRuntime::open(&path).expect("open");
         runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
             .expect("post");
@@ -292,7 +292,7 @@ fn e2e_runtime_month_close_persists_and_blocks_duplicate_scope_close() {
     }
 
     {
-        let reopened = CliRuntime::open(&path).expect("reopen");
+        let reopened = AppRuntime::open(&path).expect("reopen");
         let close = reopened
             .month_close_for_scope(&month_key, "assets:checking")
             .expect("reloaded close");
@@ -317,7 +317,7 @@ fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
     .expect("write statement");
 
     {
-        let mut runtime = CliRuntime::open(&path).expect("open");
+        let mut runtime = AppRuntime::open(&path).expect("open");
         let request = MonthAutopilotRequest::new("2026-02", "assets:checking")
             .with_balances(100_000, 198_766)
             .with_statement_pdf(&statement_path)
@@ -339,7 +339,7 @@ fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
     }
 
     {
-        let reopened = CliRuntime::open(&path).expect("reopen");
+        let reopened = AppRuntime::open(&path).expect("reopen");
         assert_eq!(reopened.reconciliation_run_count(), 1);
         assert!(
             reopened
@@ -366,7 +366,7 @@ fn e2e_runtime_month_autopilot_uses_fetched_statement_metadata_when_balances_are
     .expect("write statement");
 
     {
-        let mut runtime = CliRuntime::open(&path).expect("open");
+        let mut runtime = AppRuntime::open(&path).expect("open");
         runtime.stage_fetched_statement_artifact(
             FetchedStatementArtifact::new(
                 "pcu:checking",
@@ -417,7 +417,7 @@ fn e2e_runtime_month_autopilot_loads_fetch_source_config_and_fetches_before_reco
     .expect("write fetch config");
 
     {
-        let mut runtime = CliRuntime::open(&ledger_path).expect("open");
+        let mut runtime = AppRuntime::open(&ledger_path).expect("open");
         let request =
             MonthAutopilotRequest::new("2026-02", "assets:checking").with_confirm_close(true);
         let summary = runtime
@@ -439,7 +439,7 @@ fn e2e_runtime_month_autopilot_loads_fetch_source_config_and_fetches_before_reco
     }
 
     {
-        let reopened = CliRuntime::open(&ledger_path).expect("reopen");
+        let reopened = AppRuntime::open(&ledger_path).expect("reopen");
         let fetch_runs = reopened.list_fetch_runs(Some("2026-02"), Some("assets:checking"));
         assert_eq!(fetch_runs.len(), 1);
         assert_eq!(fetch_runs[0].run_id(), "fetch-1");
@@ -476,7 +476,7 @@ password_secret_ref = "op://logos/m1/password"
     .expect("write fetch config");
 
     {
-        let mut runtime = CliRuntime::open(&ledger_path).expect("open");
+        let mut runtime = AppRuntime::open(&ledger_path).expect("open");
         let request = MonthAutopilotRequest::new("2026-02", "assets:checking")
             .with_balances(100_000, 100_000)
             .with_confirm_close(true);
@@ -492,7 +492,7 @@ password_secret_ref = "op://logos/m1/password"
     }
 
     {
-        let reopened = CliRuntime::open(&ledger_path).expect("reopen");
+        let reopened = AppRuntime::open(&ledger_path).expect("reopen");
         assert!(
             reopened
                 .list_fetch_runs(Some("2026-02"), Some("assets:checking"))
@@ -534,7 +534,7 @@ totp_secret_ref = "op://logos/m1/totp"
     .expect("write fetch config");
 
     {
-        let mut runtime = CliRuntime::open(&ledger_path).expect("open");
+        let mut runtime = AppRuntime::open(&ledger_path).expect("open");
         let request =
             MonthAutopilotRequest::new("2026-02", "assets:checking").with_confirm_close(true);
         let summary = runtime
@@ -567,7 +567,7 @@ totp_secret_ref = "op://logos/m1/totp"
     }
 
     {
-        let reopened = CliRuntime::open(&ledger_path).expect("reopen");
+        let reopened = AppRuntime::open(&ledger_path).expect("reopen");
         let fetch_runs = reopened.list_fetch_runs(Some("2026-02"), Some("assets:checking"));
         assert_eq!(fetch_runs.len(), 2);
         assert!(
@@ -587,7 +587,7 @@ totp_secret_ref = "op://logos/m1/totp"
 
 #[test]
 fn e2e_runtime_month_autopilot_requires_confirm_close() {
-    let mut runtime = CliRuntime::new_in_memory();
+    let mut runtime = AppRuntime::new_in_memory();
     let request =
         MonthAutopilotRequest::new("2026-02", "assets:checking").with_balances(100_000, 100_000);
 
@@ -608,7 +608,7 @@ fn e2e_runtime_month_autopilot_requires_confirm_close() {
 
 #[test]
 fn e2e_runtime_month_autopilot_rejects_missing_balances_when_no_fetched_metadata_exists() {
-    let mut runtime = CliRuntime::new_in_memory();
+    let mut runtime = AppRuntime::new_in_memory();
     let request = MonthAutopilotRequest::new("2026-02", "assets:checking").with_confirm_close(true);
 
     let err = runtime
@@ -626,13 +626,13 @@ fn e2e_runtime_month_autopilot_rejects_missing_balances_when_no_fetched_metadata
 fn e2e_runtime_reopen_restores_persisted_budget_targets() {
     let path = temp_runtime_path("reopen-budget-target");
     {
-        let mut runtime = CliRuntime::open(&path).expect("open");
+        let mut runtime = AppRuntime::open(&path).expect("open");
         runtime
             .set_budget_target_for_month("2026-03", "expenses:food", 250_000)
             .expect("set budget");
     }
 
-    let reopened = CliRuntime::open(&path).expect("reopen");
+    let reopened = AppRuntime::open(&path).expect("reopen");
     assert_eq!(
         reopened.budget_target_for_month("2026-03", "expenses:food"),
         Some(250_000)
@@ -643,7 +643,7 @@ fn e2e_runtime_reopen_restores_persisted_budget_targets() {
 
 #[test]
 fn e2e_pdf_import_posts_transactions_and_deduplicates() {
-    let mut runtime = CliRuntime::new_in_memory();
+    let mut runtime = AppRuntime::new_in_memory();
     let statement_path = temp_runtime_path("pdf-import")
         .with_extension("pdf")
         .to_string_lossy()
@@ -682,7 +682,7 @@ fn e2e_pdf_import_reconciliation_exposes_statement_line_evidence() {
 
     let run_id;
     {
-        let mut runtime = CliRuntime::open(&path).expect("open");
+        let mut runtime = AppRuntime::open(&path).expect("open");
         let summary = runtime
             .import_pdf_statement(&statement_path, "assets:checking", false, false)
             .expect("import");
@@ -700,7 +700,7 @@ fn e2e_pdf_import_reconciliation_exposes_statement_line_evidence() {
     }
 
     {
-        let reopened = CliRuntime::open(&path).expect("reopen");
+        let reopened = AppRuntime::open(&path).expect("reopen");
         let lines = reopened.statement_lines_for_reconciliation_run(&run_id);
         assert_eq!(lines.len(), 1);
         assert_eq!(lines[0].memo(), "COFFEE SHOP");
@@ -724,7 +724,7 @@ fn e2e_pdf_import_dedupe_persists_across_reopen() {
     .expect("write statement");
 
     {
-        let mut runtime = CliRuntime::open(&ledger_path).expect("open");
+        let mut runtime = AppRuntime::open(&ledger_path).expect("open");
         let summary = runtime
             .import_pdf_statement(&statement_path, "assets:checking", false, false)
             .expect("first import");
@@ -733,7 +733,7 @@ fn e2e_pdf_import_dedupe_persists_across_reopen() {
     }
 
     {
-        let mut reopened = CliRuntime::open(&ledger_path).expect("reopen");
+        let mut reopened = AppRuntime::open(&ledger_path).expect("reopen");
         let summary = reopened
             .import_pdf_statement(&statement_path, "assets:checking", false, false)
             .expect("second import");
@@ -746,7 +746,7 @@ fn e2e_pdf_import_dedupe_persists_across_reopen() {
 
 #[test]
 fn e2e_pdf_import_dry_run_does_not_post_transactions() {
-    let mut runtime = CliRuntime::new_in_memory();
+    let mut runtime = AppRuntime::new_in_memory();
     let statement_path = temp_runtime_path("pdf-dry-run")
         .with_extension("pdf")
         .to_string_lossy()
@@ -766,7 +766,7 @@ fn e2e_pdf_import_dry_run_does_not_post_transactions() {
 
 #[test]
 fn e2e_csv_import_posts_transactions_and_deduplicates() {
-    let mut runtime = CliRuntime::new_in_memory();
+    let mut runtime = AppRuntime::new_in_memory();
     let csv_path = temp_runtime_path("csv-import")
         .with_extension("csv")
         .to_string_lossy()
@@ -800,7 +800,7 @@ fn e2e_csv_import_posts_transactions_and_deduplicates() {
 #[test]
 fn e2e_import_backdates_valid_time_from_statement_timestamp() {
     let ledger_path = temp_runtime_path("csv-valid-time-ledger");
-    let mut runtime = CliRuntime::open(&ledger_path).expect("open runtime");
+    let mut runtime = AppRuntime::open(&ledger_path).expect("open runtime");
     let csv_path = temp_runtime_path("csv-valid-time")
         .with_extension("csv")
         .to_string_lossy()
@@ -840,7 +840,7 @@ fn e2e_import_backdates_valid_time_from_statement_timestamp() {
 
 #[test]
 fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
-    let mut runtime = CliRuntime::new_in_memory();
+    let mut runtime = AppRuntime::new_in_memory();
     let request = MonthAutopilotRequest::new("2026-02", "assets:checking")
         .with_balances(100_000, 100_000)
         .with_analytics_artifact_id("artifact-missing")
@@ -867,7 +867,7 @@ fn e2e_analytics_snapshot_manifest_and_parquet_persist_across_reopen() {
     let root = temp_runtime_path("analytics-snapshot-root");
     let ledger_path = root.join("ledger");
     {
-        let mut runtime = CliRuntime::open(&ledger_path).expect("open");
+        let mut runtime = AppRuntime::open(&ledger_path).expect("open");
         runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
             .expect("post");
@@ -893,7 +893,7 @@ fn e2e_analytics_snapshot_manifest_and_parquet_persist_across_reopen() {
         assert_eq!(second.supersedes_artifact_id(), Some(first.artifact_id()));
     }
 
-    let reopened = CliRuntime::open(&ledger_path).expect("reopen");
+    let reopened = AppRuntime::open(&ledger_path).expect("reopen");
     let manifests = reopened.list_analytics_snapshots();
     assert_eq!(manifests.len(), 2);
     assert!(
@@ -907,7 +907,7 @@ fn e2e_analytics_snapshot_manifest_and_parquet_persist_across_reopen() {
 
 #[test]
 fn e2e_analytics_snapshot_rejects_non_positive_schema_version() {
-    let mut runtime = CliRuntime::new_in_memory();
+    let mut runtime = AppRuntime::new_in_memory();
     let err = runtime
         .create_analytics_snapshot(None, None, 0, None)
         .expect_err("schema version should reject");

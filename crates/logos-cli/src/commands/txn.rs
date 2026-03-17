@@ -1,9 +1,7 @@
 use logos_core::TransactionId;
 
-use crate::{
-    args::CliError,
-    runtime::{CliRuntime, RuntimeError},
-};
+use crate::args::CliError;
+use logos_runtime::{AppRuntime, RuntimeError};
 
 trait TxnPoster {
     fn post_double_entry(
@@ -21,7 +19,7 @@ trait TxnPoster {
     ) -> Result<(), RuntimeError>;
 }
 
-impl TxnPoster for CliRuntime {
+impl TxnPoster for AppRuntime {
     fn post_double_entry(
         &mut self,
         description: &str,
@@ -58,7 +56,7 @@ pub fn add(
     credit_account: &str,
     amount_cents: i64,
 ) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "txn.add".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
@@ -79,7 +77,7 @@ pub fn add(
 ///
 /// Returns an error when correction validation or runtime persistence fails.
 pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "txn.correct".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
@@ -156,9 +154,9 @@ fn apply_correction(
 #[cfg(test)]
 mod tests {
     use super::{TxnPoster, apply_correction, post_double_entry};
-    use crate::runtime::RuntimeError;
     use logos_core::TransactionId;
     use logos_import::ImportError;
+    use logos_runtime::RuntimeError;
 
     #[derive(Debug, Default)]
     struct FakePoster {

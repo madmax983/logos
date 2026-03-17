@@ -1,8 +1,8 @@
-use logos_cli::runtime::CliRuntime;
+use logos_runtime::AppRuntime;
 
 #[test]
 fn e2e_correction_tracks_latest_superseded_transaction() {
-    let mut runtime = CliRuntime::new_in_memory();
+    let mut runtime = AppRuntime::new_in_memory();
     let txn_id = runtime
         .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
         .expect("post");
@@ -16,7 +16,7 @@ fn e2e_correction_tracks_latest_superseded_transaction() {
 
 #[test]
 fn e2e_current_month_key_local_is_yyyy_mm() {
-    let month_key = CliRuntime::current_month_key_local();
+    let month_key = AppRuntime::current_month_key_local();
 
     assert_eq!(month_key.len(), 7);
     assert_eq!(month_key.as_bytes()[4], b'-');

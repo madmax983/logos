@@ -9,7 +9,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use logos_cli::runtime::CliRuntime;
+use logos_runtime::AppRuntime;
 
 use crate::ui::{budget, home, reconcile, register, rsu};
 
@@ -410,7 +410,7 @@ pub trait ReconcileDataSource {
     fn fetch_statement_lines_for_run(&self, run_id: &str) -> Vec<ReconcileStatementLineRecord>;
 }
 
-impl ReconcileDataSource for CliRuntime {
+impl ReconcileDataSource for AppRuntime {
     fn fetch_reconciliation_runs(
         &self,
         month_key: Option<&str>,
@@ -446,7 +446,7 @@ impl ReconcileDataSource for CliRuntime {
     }
 }
 
-impl HomeDataSource for CliRuntime {
+impl HomeDataSource for AppRuntime {
     fn fetch_home_snapshot(
         &self,
         month_key: &str,
@@ -473,7 +473,7 @@ impl HomeDataSource for CliRuntime {
     }
 }
 
-impl BudgetDataSource for CliRuntime {
+impl BudgetDataSource for AppRuntime {
     fn fetch_budget_snapshot(
         &self,
         month_key: &str,
@@ -517,7 +517,7 @@ impl BudgetDataSource for CliRuntime {
     }
 }
 
-impl RegisterDataSource for CliRuntime {
+impl RegisterDataSource for AppRuntime {
     fn fetch_register_snapshot(&self, account: &str) -> Option<RegisterSnapshot> {
         let now_us = current_time_us();
         let transactions = self.transactions_as_of_us(now_us, now_us).ok()?;
@@ -663,7 +663,7 @@ pub struct App {
 
 impl Default for App {
     fn default() -> Self {
-        let current_month_key = CliRuntime::current_month_key_local();
+        let current_month_key = AppRuntime::current_month_key_local();
         Self {
             view: View::Home,
             exit_requested: false,

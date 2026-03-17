@@ -7,6 +7,7 @@ members = [
     "crates/logos-import",
     "crates/logos-reporting",
     "crates/logos-tui",
+    "crates/logos-runtime",
 ]
 resolver = "2"
 

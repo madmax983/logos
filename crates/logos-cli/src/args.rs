@@ -804,7 +804,7 @@ fn parse_analytics_snapshot(args: &[String]) -> Result<ParsedArgs, CliError> {
             let schema_version = parse_optional_parsed_flag::<i64>(
                 &args[3..],
                 "--schema-version",
-                crate::runtime::CliRuntime::default_analytics_schema_version(),
+                logos_runtime::AppRuntime::default_analytics_schema_version(),
             )?;
             let supersedes_artifact_id = parse_optional_flag_value(&args[3..], "--supersedes")?;
             Ok(ParsedArgs {

@@ -1,8 +1,6 @@
 #![allow(clippy::cast_precision_loss)]
-use crate::{
-    args::CliError,
-    runtime::{CliRuntime, MonthAutopilotRequest, MonthAutopilotSummary},
-};
+use crate::args::CliError;
+use logos_runtime::{AppRuntime, MonthAutopilotRequest, MonthAutopilotSummary};
 use logos_store_aletheia::model::StoredFetchRunStatus;
 
 /// Handles `ledger month autopilot`.
@@ -22,12 +20,12 @@ pub fn autopilot(
     analytics_artifact_id: Option<&str>,
     confirm_close: bool,
 ) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "month.autopilot".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
     let resolved_month_key =
-        month_key.map_or_else(CliRuntime::current_month_key_local, str::to_owned);
+        month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
     let mut request = MonthAutopilotRequest::new(&resolved_month_key, checking_account);
     if let (Some(opening_balance_cents), Some(closing_balance_cents)) =
         (opening_balance_cents, closing_balance_cents)
@@ -109,7 +107,7 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
 #[cfg(test)]
 mod tests {
     use super::render_autopilot_output;
-    use crate::runtime::{MonthAutopilotSummary, MonthReport};
+    use logos_runtime::{MonthAutopilotSummary, MonthReport};
     use logos_store_aletheia::model::{
         StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredMonthClose,
         StoredReconciliationRun,

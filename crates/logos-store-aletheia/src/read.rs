@@ -677,10 +677,13 @@ mod tests {
 
         let node_id = db
             .write(|tx: &mut aletheiadb::WriteTransaction| {
-                let n1 = tx.create_node(crate::model::LABEL_LEDGER_TRANSACTION, aletheiadb::PropertyMapBuilder::new()
-                    .insert(crate::model::PROP_TXN_ID, "txn-1")
-                    .insert(crate::model::PROP_DESCRIPTION, "desc")
-                    .build())?;
+                let n1 = tx.create_node(
+                    crate::model::LABEL_LEDGER_TRANSACTION,
+                    aletheiadb::PropertyMapBuilder::new()
+                        .insert(crate::model::PROP_TXN_ID, "txn-1")
+                        .insert(crate::model::PROP_DESCRIPTION, "desc")
+                        .build(),
+                )?;
                 let n2 = tx.create_node("TargetNode", aletheiadb::PropertyMap::default())?;
                 tx.create_edge(n1, n2, "NOT_A_POSTING", aletheiadb::PropertyMap::default())?;
                 Ok::<NodeId, DbError>(n1)
@@ -688,12 +691,18 @@ mod tests {
             .unwrap();
 
         let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
-        let node = super::get_node_at_as_of(&db, node_id, as_of).unwrap().unwrap();
+        let node = super::get_node_at_as_of(&db, node_id, as_of)
+            .unwrap()
+            .unwrap();
         let expected_id = logos_core::TransactionId::new("txn-1").unwrap();
 
-        let result = super::reconstruct_transaction_at_as_of(&db, node_id, &expected_id, &node, as_of);
+        let result =
+            super::reconstruct_transaction_at_as_of(&db, node_id, &expected_id, &node, as_of);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), StoreError::Domain(logos_core::DomainError::EmptyTransactionPostings)));
+        assert!(matches!(
+            result.unwrap_err(),
+            StoreError::Domain(logos_core::DomainError::EmptyTransactionPostings)
+        ));
 
         if path.exists() {
             let _ = std::fs::remove_dir_all(&path);
@@ -709,7 +718,6 @@ mod tests {
         assert!(!super::is_node_not_visible(&err));
         assert!(!super::is_edge_not_visible(&err));
     }
-
 }
 
 #[test]
@@ -1027,7 +1035,12 @@ fn test_current_projection_without_superseded() {
 
     proj = store.current_projection_without_superseded();
     assert_eq!(proj.len(), 1);
-    assert_eq!(proj.iter().map(crate::model::StoredTransaction::id).collect::<Vec<_>>(), vec![&txn_id2]);
+    assert_eq!(
+        proj.iter()
+            .map(crate::model::StoredTransaction::id)
+            .collect::<Vec<_>>(),
+        vec![&txn_id2]
+    );
     assert!(!proj.iter().any(|t| t.id() == &txn_id1));
     assert!(proj.iter().any(|t| t.id() == &txn_id2));
 }
