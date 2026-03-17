@@ -528,15 +528,14 @@ impl RegisterDataSource for CliRuntime {
             let mut timestamp_cache = None;
             for posting in stored.transaction().postings() {
                 if posting.account().as_str() == account {
-                    let timestamp = timestamp_cache.get_or_insert_with(|| {
-                        date_string_from_wallclock_utc(effective_at_us)
-                    });
+                    let timestamp = timestamp_cache
+                        .get_or_insert_with(|| date_string_from_wallclock_utc(effective_at_us));
                     activity.push((
                         effective_at_us,
                         RegisterActivityRecord::new(
                             timestamp,
                             stored.transaction().description(),
-                            posting.amount()
+                            posting.amount(),
                         ),
                     ));
                 }
