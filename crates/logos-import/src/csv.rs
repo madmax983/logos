@@ -199,7 +199,7 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
 /// or amount parsing fails.
 pub fn parse_simple_csv_row(row: &str, mapping: &CsvMapping) -> Result<ImportRecord, ImportError> {
     let columns = parse_csv_columns(row)?;
-    let needed = 1 + [
+    let needed = [
         mapping.timestamp_idx,
         mapping.amount_idx,
         mapping.memo_idx,
@@ -208,7 +208,8 @@ pub fn parse_simple_csv_row(row: &str, mapping: &CsvMapping) -> Result<ImportRec
     ]
     .into_iter()
     .max()
-    .unwrap_or(0);
+    .unwrap_or(0)
+    .saturating_add(1);
 
     if columns.len() < needed {
         return Err(ImportError::MissingColumns {
