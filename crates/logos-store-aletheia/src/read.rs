@@ -642,6 +642,74 @@ mod tests {
             let _ = std::fs::remove_dir_all(&path);
         }
     }
+    #[test]
+    fn test_has_visible_supersedes_edge_returns_true() {
+        use aletheiadb::WriteOps;
+        let path = temp_db_path("edge-vis-true");
+        let db = crate::open_embedded_db(&path).unwrap();
+
+        // Write nodes and edges via a transaction block
+        let node_id = db
+            .write(|tx: &mut aletheiadb::WriteTransaction| {
+                let n1 = tx.create_node("TestNode", aletheiadb::PropertyMap::default())?;
+                let n2 = tx.create_node("TargetNode", aletheiadb::PropertyMap::default())?;
+                tx.create_edge(n1, n2, "SUPERSEDES", aletheiadb::PropertyMap::default())?;
+                Ok::<NodeId, DbError>(n1)
+            })
+            .unwrap();
+
+        let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
+
+        let result = super::has_visible_supersedes_edge(&db, node_id, as_of);
+        assert!(result.is_ok());
+        assert!(result.unwrap());
+
+        if path.exists() {
+            let _ = std::fs::remove_dir_all(&path);
+        }
+    }
+
+    #[test]
+    fn test_reconstruct_transaction_at_as_of_skips_non_posting_edges() {
+        use aletheiadb::WriteOps;
+        let path = temp_db_path("reconstruct-edge-skip");
+        let db = crate::open_embedded_db(&path).unwrap();
+
+        let node_id = db
+            .write(|tx: &mut aletheiadb::WriteTransaction| {
+                let n1 = tx.create_node(crate::model::LABEL_LEDGER_TRANSACTION, aletheiadb::PropertyMapBuilder::new()
+                    .insert(crate::model::PROP_TXN_ID, "txn-1")
+                    .insert(crate::model::PROP_DESCRIPTION, "desc")
+                    .build())?;
+                let n2 = tx.create_node("TargetNode", aletheiadb::PropertyMap::default())?;
+                tx.create_edge(n1, n2, "NOT_A_POSTING", aletheiadb::PropertyMap::default())?;
+                Ok::<NodeId, DbError>(n1)
+            })
+            .unwrap();
+
+        let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
+        let node = super::get_node_at_as_of(&db, node_id, as_of).unwrap().unwrap();
+        let expected_id = logos_core::TransactionId::new("txn-1").unwrap();
+
+        let result = super::reconstruct_transaction_at_as_of(&db, node_id, &expected_id, &node, as_of);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), StoreError::Domain(logos_core::DomainError::EmptyTransactionPostings)));
+
+        if path.exists() {
+            let _ = std::fs::remove_dir_all(&path);
+        }
+    }
+
+    #[test]
+    fn test_get_node_and_edge_at_as_of_pass_through_other_errors() {
+        let err = DbError::Storage(StorageError::DuplicateId {
+            id: "1".into(),
+            kind: "node".into(),
+        });
+        assert!(!super::is_node_not_visible(&err));
+        assert!(!super::is_edge_not_visible(&err));
+    }
+
 }
 
 #[test]
@@ -881,6 +949,47 @@ fn test_store_populated_accessors() {
     assert!(store.month_close("missing_close").is_none());
     assert_eq!(store.month_closes().count(), 2);
     assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 2);
+
+    // Write a second transaction to ensure counts > 1
+    let _txn_id3 = store
+        .write_transaction(
+            TransactionBuilder::new("test3")
+                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap())
+                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap()),
+        )
+        .unwrap();
+
+    // Final assertions to ensure all collections return exactly 2 items
+    // This kills mutants that hardcode return values to 1, true, or std::iter::empty()
+    assert_eq!(store.transaction_count(), 2);
+    assert_eq!(store.transactions().count(), 2);
+    assert_eq!(store.transactions().collect::<Vec<_>>().len(), 2);
+
+    assert_eq!(store.correction_count(), 2);
+
+    assert_eq!(store.budget_targets().count(), 2);
+    assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 2);
+
+    assert_eq!(store.analytics_artifacts().count(), 2);
+    assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 2);
+
+    assert_eq!(store.import_record_count(), 4);
+    assert_eq!(store.import_records().count(), 4);
+    assert_eq!(store.import_records().collect::<Vec<_>>().len(), 4);
+
+    assert_eq!(store.import_batches().count(), 4);
+    assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 4);
+
+    assert_eq!(store.statement_line_count(), 2);
+    assert_eq!(store.statement_lines().count(), 2);
+
+    assert_eq!(store.reconciliation_run_count(), 2);
+    assert_eq!(store.reconciliation_runs().count(), 2);
+    assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 2);
+
+    assert_eq!(store.month_close_count(), 2);
+    assert_eq!(store.month_closes().count(), 2);
+    assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 2);
 }
 
 #[test]
@@ -918,6 +1027,7 @@ fn test_current_projection_without_superseded() {
 
     proj = store.current_projection_without_superseded();
     assert_eq!(proj.len(), 1);
+    assert_eq!(proj.iter().map(crate::model::StoredTransaction::id).collect::<Vec<_>>(), vec![&txn_id2]);
     assert!(!proj.iter().any(|t| t.id() == &txn_id1));
     assert!(proj.iter().any(|t| t.id() == &txn_id2));
 }
