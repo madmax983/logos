@@ -204,6 +204,9 @@ impl AletheiaStore {
         self.fetch_runs.values()
     }
 
+    /// Retrieves statement lines for a reconciliation run.
+    /// ⚡ Bolt Optimization: Uses `Vec::with_capacity` based on the exact count of linked line IDs
+    /// instead of `.collect::<Vec<_>>()`, avoiding intermediate memory reallocations during graph traversal.
     #[must_use]
     pub fn statement_lines_for_reconciliation_run(
         &self,
@@ -212,10 +215,15 @@ impl AletheiaStore {
         let mut lines = self
             .reconciliation_statement_line_ids
             .get(run_id)
-            .into_iter()
-            .flatten()
-            .filter_map(|line_id| self.statement_lines.get(line_id))
-            .collect::<Vec<_>>();
+            .map_or_else(Vec::new, |line_ids| {
+                let mut preallocated = Vec::with_capacity(line_ids.len());
+                preallocated.extend(
+                    line_ids
+                        .iter()
+                        .filter_map(|line_id| self.statement_lines.get(line_id)),
+                );
+                preallocated
+            });
         lines.sort_by(|left, right| left.line_id().cmp(right.line_id()));
         lines
     }
