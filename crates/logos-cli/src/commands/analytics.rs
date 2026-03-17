@@ -297,8 +297,12 @@ pub fn fire_sim(
 
     #[allow(clippy::cast_precision_loss)]
     table.add_row(vec![
-        Cell::new("Target FIRE Number").fg(Color::Green).add_attribute(Attribute::Bold),
-        Cell::new(format!("${:.2}", (fire_number as f64) / 100.0)).fg(Color::Green).add_attribute(Attribute::Bold),
+        Cell::new("Target FIRE Number")
+            .fg(Color::Green)
+            .add_attribute(Attribute::Bold),
+        Cell::new(format!("${:.2}", (fire_number as f64) / 100.0))
+            .fg(Color::Green)
+            .add_attribute(Attribute::Bold),
     ]);
 
     #[allow(clippy::cast_precision_loss)]
@@ -317,13 +321,23 @@ pub fn fire_sim(
         let years = months / 12;
         let extra_months = months % 12;
         table.add_row(vec![
-            Cell::new("Time to FIRE").fg(Color::Yellow).add_attribute(Attribute::Bold),
-            Cell::new(format!("{years} years, {extra_months} months ({months} months total)")).fg(Color::Yellow).add_attribute(Attribute::Bold),
+            Cell::new("Time to FIRE")
+                .fg(Color::Yellow)
+                .add_attribute(Attribute::Bold),
+            Cell::new(format!(
+                "{years} years, {extra_months} months ({months} months total)"
+            ))
+            .fg(Color::Yellow)
+            .add_attribute(Attribute::Bold),
         ]);
     } else {
         table.add_row(vec![
-            Cell::new("Time to FIRE").fg(Color::Yellow).add_attribute(Attribute::Bold),
-            Cell::new("Not reached within 100 years simulation.").fg(Color::Red).add_attribute(Attribute::Bold),
+            Cell::new("Time to FIRE")
+                .fg(Color::Yellow)
+                .add_attribute(Attribute::Bold),
+            Cell::new("Not reached within 100 years simulation.")
+                .fg(Color::Red)
+                .add_attribute(Attribute::Bold),
         ]);
     }
 
