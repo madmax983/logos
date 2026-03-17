@@ -1,5 +1,6 @@
 #![allow(clippy::cast_precision_loss)]
-use crate::{args::CliError, runtime::CliRuntime};
+use crate::args::CliError;
+use logos_runtime::AppRuntime;
 use logos_store_aletheia::model::StoredReconciliationRun;
 
 /// Handles `ledger reconcile month`.
@@ -13,12 +14,12 @@ pub fn month(
     opening_balance_cents: i64,
     closing_balance_cents: i64,
 ) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "reconcile.month".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
     let resolved_month_key =
-        month_key.map_or_else(CliRuntime::current_month_key_local, str::to_owned);
+        month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
     let run = runtime
         .reconcile_and_persist_month_for(
             checking_account,
@@ -46,7 +47,7 @@ pub fn month(
 ///
 /// Returns an error when runtime initialization fails.
 pub fn list(month_key: Option<&str>, checking_account: Option<&str>) -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "reconcile.list".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
@@ -61,7 +62,7 @@ pub fn list(month_key: Option<&str>, checking_account: Option<&str>) -> Result<(
 ///
 /// Returns an error when runtime initialization fails.
 pub fn show(run_id: &str) -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "reconcile.show".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;

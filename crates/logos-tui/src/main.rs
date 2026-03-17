@@ -1,6 +1,6 @@
 use std::io;
 
-use logos_cli::runtime::CliRuntime;
+use logos_runtime::AppRuntime;
 use logos_tui::{App, terminal::TerminalSession};
 
 fn main() {
@@ -12,7 +12,7 @@ fn main() {
 
 fn run() -> io::Result<()> {
     let mut app = App::new();
-    let runtime = CliRuntime::new().ok();
+    let runtime = AppRuntime::new().ok();
     let mut terminal = TerminalSession::enter()?;
 
     loop {

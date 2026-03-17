@@ -1194,7 +1194,6 @@ checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
 name = "logos-cli"
 version = "0.1.0"
 dependencies = [
- "blake3",
  "chrono",
  "comfy-table",
  "crossterm 0.29.0",
@@ -1202,9 +1201,8 @@ dependencies = [
  "logos-fetch",
  "logos-import",
  "logos-reporting",
+ "logos-runtime",
  "logos-store-aletheia",
- "polars",
- "tokio",
 ]
 
 [[package]]
@@ -1241,6 +1239,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "logos-runtime"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "chrono",
+ "logos-core",
+ "logos-fetch",
+ "logos-import",
+ "logos-reporting",
+ "logos-store-aletheia",
+ "polars",
+ "tokio",
+]
+
+[[package]]
 name = "logos-store-aletheia"
 version = "0.1.0"
 dependencies = [
@@ -1254,8 +1267,8 @@ version = "0.1.0"
 dependencies = [
  "comfy-table",
  "crossterm 0.29.0",
- "logos-cli",
  "logos-core",
+ "logos-runtime",
  "ratatui",
 ]
 

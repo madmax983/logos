@@ -1,4 +1,5 @@
-use crate::{args::CliError, runtime::CliRuntime};
+use crate::args::CliError;
+use logos_runtime::AppRuntime;
 
 /// Handles `ledger analytics snapshot create`.
 ///
@@ -11,7 +12,7 @@ pub fn snapshot_create(
     schema_version: i64,
     supersedes_artifact_id: Option<&str>,
 ) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.snapshot.create".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
@@ -40,7 +41,7 @@ pub fn snapshot_create(
 ///
 /// Returns an error when runtime initialization fails.
 pub fn snapshot_list() -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.snapshot.list".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
@@ -99,7 +100,7 @@ fn render_snapshot_manifest_list(
 ///
 /// Returns an error when runtime initialization fails or the manifest id is missing.
 pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.snapshot.show".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
@@ -126,7 +127,7 @@ pub fn sankey() -> Result<(), CliError> {
     use chrono::Utc;
     use logos_core::experimental::mermaid_exporter::MermaidSankeyExporter;
 
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.sankey".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;

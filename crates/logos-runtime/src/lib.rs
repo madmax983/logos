@@ -434,7 +434,7 @@ impl MonthReconciliation {
 }
 
 #[derive(Debug)]
-pub struct CliRuntime {
+pub struct AppRuntime {
     store: AletheiaStore,
     imported_records: usize,
     artifacts_root: PathBuf,
@@ -442,7 +442,7 @@ pub struct CliRuntime {
     fetched_statement_artifacts: Vec<FetchedStatementArtifact>,
 }
 
-impl Default for CliRuntime {
+impl Default for AppRuntime {
     fn default() -> Self {
         let default_store_path = Self::default_store_path();
         Self {
@@ -455,7 +455,7 @@ impl Default for CliRuntime {
     }
 }
 
-impl CliRuntime {
+impl AppRuntime {
     /// Creates a runtime backed by the default durable store path.
     ///
     /// `LOGOS_DB_PATH` overrides the location. Otherwise, the path defaults to:
@@ -1819,7 +1819,7 @@ fn default_fetch_config_path(store_path: &Path) -> PathBuf {
 
 #[cfg(test)]
 mod tests {
-    use super::CliRuntime;
+    use super::AppRuntime;
     use logos_fetch::{FetchError, OutputFormat, SecretBundle, SecretResolver, StatementSource};
 
     #[derive(Debug, Clone)]
@@ -1835,7 +1835,7 @@ mod tests {
 
     #[test]
     fn fake_fetch_sources_bypass_external_secret_resolution() {
-        let _runtime = CliRuntime::new_in_memory();
+        let _runtime = AppRuntime::new_in_memory();
         let source = StatementSource::new(
             "fixture:checking",
             "fake-fixture",
@@ -1847,7 +1847,7 @@ mod tests {
             bundle: SecretBundle::new("wrong", "wrong", Some("999999")).expect("bundle"),
         };
 
-        let bundle = CliRuntime::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
+        let bundle = AppRuntime::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
             .expect("bundle");
 
         assert_eq!(
@@ -1858,7 +1858,7 @@ mod tests {
 
     #[test]
     fn real_fetch_sources_use_external_secret_resolution() {
-        let _runtime = CliRuntime::new_in_memory();
+        let _runtime = AppRuntime::new_in_memory();
         let source = StatementSource::new(
             "pcu:checking",
             "provident-credit-union",
@@ -1876,7 +1876,7 @@ mod tests {
             bundle: SecretBundle::new("markm", "s3cr3t", Some("123456")).expect("bundle"),
         };
 
-        let bundle = CliRuntime::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
+        let bundle = AppRuntime::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
             .expect("bundle");
 
         assert_eq!(

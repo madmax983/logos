@@ -1,5 +1,6 @@
 #![allow(clippy::cast_precision_loss)]
-use crate::{args::CliError, runtime::CliRuntime};
+use crate::args::CliError;
+use logos_runtime::AppRuntime;
 use logos_store_aletheia::model::StoredFetchRun;
 
 /// Handles `ledger fetch list-runs`.
@@ -8,7 +9,7 @@ use logos_store_aletheia::model::StoredFetchRun;
 ///
 /// Returns an error when runtime initialization fails.
 pub fn list_runs(month_key: Option<&str>, checking_account: Option<&str>) -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "fetch.list".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
@@ -23,7 +24,7 @@ pub fn list_runs(month_key: Option<&str>, checking_account: Option<&str>) -> Res
 ///
 /// Returns an error when runtime initialization fails.
 pub fn show_run(run_id: &str) -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "fetch.show".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;

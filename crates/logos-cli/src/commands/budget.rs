@@ -1,7 +1,8 @@
 #![allow(clippy::cast_precision_loss)]
-use crate::{args::CliError, runtime::CliRuntime};
+use crate::args::CliError;
 use logos_core::experimental::monte_carlo::MonteCarloProjector;
 use logos_reporting::{RsuBudgetPlan, ScenarioKey};
+use logos_runtime::AppRuntime;
 
 trait BudgetRuntime {
     fn budget_variance_for_month(
@@ -12,7 +13,7 @@ trait BudgetRuntime {
     ) -> i64;
 }
 
-impl BudgetRuntime for CliRuntime {
+impl BudgetRuntime for AppRuntime {
     fn budget_variance_for_month(
         &self,
         month_key: &str,
@@ -33,12 +34,12 @@ pub fn set(
     budget_cents: i64,
     expense_account_prefix: &str,
 ) -> Result<(), CliError> {
-    let mut runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "budget.set".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
     let resolved_month_key =
-        month_key.map_or_else(CliRuntime::current_month_key_local, str::to_owned);
+        month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
     runtime
         .set_budget_target_for_month(&resolved_month_key, expense_account_prefix, budget_cents)
         .map_err(|err| CliError::CommandRuntimeFailed {
@@ -72,12 +73,12 @@ pub fn rsu_plan(
     reserve_sweep_pct: u8,
     investing_sweep_pct: u8,
 ) -> Result<(), CliError> {
-    let runtime = CliRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "budget.rsu-plan".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
     let resolved_month_key =
-        month_key.map_or_else(CliRuntime::current_month_key_local, str::to_owned);
+        month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
     let plan = runtime
         .plan_rsu_budget_for_month(
             &resolved_month_key,
