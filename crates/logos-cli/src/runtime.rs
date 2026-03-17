@@ -530,7 +530,7 @@ impl CliRuntime {
         self.store.has_transaction(id)
     }
 
-    /// Returns transactions visible at a bi-temporal as-of point (valid-time, tx-time).
+    /// Returns transactions visible at a historical as-of point (valid-time, tx-time).
     ///
     /// # Errors
     ///

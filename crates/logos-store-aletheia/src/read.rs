@@ -290,7 +290,7 @@ impl AletheiaStore {
         self.month_closes.values()
     }
 
-    /// Reconstructs transactions visible at a bi-temporal point in time.
+    /// Reconstructs transactions visible at a historical point in time.
     ///
     /// # Errors
     ///
@@ -318,7 +318,7 @@ impl AletheiaStore {
         self.transactions_as_of(valid_time_us.into(), tx_time_us.into())
     }
 
-    /// Reconstructs transactions visible at a bi-temporal point in time.
+    /// Reconstructs transactions visible at a historical point in time.
     ///
     /// # Errors
     ///
