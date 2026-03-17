@@ -677,10 +677,13 @@ mod tests {
 
         let node_id = db
             .write(|tx: &mut aletheiadb::WriteTransaction| {
-                let n1 = tx.create_node(crate::model::LABEL_LEDGER_TRANSACTION, aletheiadb::PropertyMapBuilder::new()
-                    .insert(crate::model::PROP_TXN_ID, "txn-1")
-                    .insert(crate::model::PROP_DESCRIPTION, "desc")
-                    .build())?;
+                let n1 = tx.create_node(
+                    crate::model::LABEL_LEDGER_TRANSACTION,
+                    aletheiadb::PropertyMapBuilder::new()
+                        .insert(crate::model::PROP_TXN_ID, "txn-1")
+                        .insert(crate::model::PROP_DESCRIPTION, "desc")
+                        .build(),
+                )?;
                 let n2 = tx.create_node("TargetNode", aletheiadb::PropertyMap::default())?;
                 tx.create_edge(n1, n2, "NOT_A_POSTING", aletheiadb::PropertyMap::default())?;
                 Ok::<NodeId, DbError>(n1)
@@ -688,12 +691,18 @@ mod tests {
             .unwrap();
 
         let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
-        let node = super::get_node_at_as_of(&db, node_id, as_of).unwrap().unwrap();
+        let node = super::get_node_at_as_of(&db, node_id, as_of)
+            .unwrap()
+            .unwrap();
         let expected_id = logos_core::TransactionId::new("txn-1").unwrap();
 
-        let result = super::reconstruct_transaction_at_as_of(&db, node_id, &expected_id, &node, as_of);
+        let result =
+            super::reconstruct_transaction_at_as_of(&db, node_id, &expected_id, &node, as_of);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), StoreError::Domain(logos_core::DomainError::EmptyTransactionPostings)));
+        assert!(matches!(
+            result.unwrap_err(),
+            StoreError::Domain(logos_core::DomainError::EmptyTransactionPostings)
+        ));
 
         if path.exists() {
             let _ = std::fs::remove_dir_all(&path);
@@ -709,7 +718,6 @@ mod tests {
         assert!(!super::is_node_not_visible(&err));
         assert!(!super::is_edge_not_visible(&err));
     }
-
 }
 
 #[test]
@@ -962,6 +970,8 @@ fn test_store_populated_accessors() {
     // Final assertions to ensure all collections return exactly 2 items
     // This kills mutants that hardcode return values to 1, true, or std::iter::empty()
     assert_eq!(store.transaction_count(), 2);
+    assert!(store.has_transaction(&txn_id));
+    assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").unwrap()));
     assert_eq!(store.transactions().count(), 2);
     assert_eq!(store.transactions().collect::<Vec<_>>().len(), 2);
 
@@ -974,6 +984,8 @@ fn test_store_populated_accessors() {
     assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 2);
 
     assert_eq!(store.import_record_count(), 4);
+    assert!(store.has_import_record_content_hash("hash1"));
+    assert!(!store.has_import_record_content_hash("missing_hash"));
     assert_eq!(store.import_records().count(), 4);
     assert_eq!(store.import_records().collect::<Vec<_>>().len(), 4);
 
@@ -988,8 +1000,15 @@ fn test_store_populated_accessors() {
     assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 2);
 
     assert_eq!(store.month_close_count(), 2);
+    assert!(store.month_close("close-1").is_some());
+    assert!(store.month_close("missing").is_none());
     assert_eq!(store.month_closes().count(), 2);
     assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 2);
+
+    // transactions_as_of_us returning populated values prevents mutant returning Ok(vec![])
+    // The previous tests write 2 original txns, but one is superseded twice, so projection returns 1
+    let as_of_us_populated = store.transactions_as_of_us(i64::MAX, i64::MAX).unwrap();
+    assert_eq!(as_of_us_populated.len(), 1);
 }
 
 #[test]
@@ -1027,7 +1046,23 @@ fn test_current_projection_without_superseded() {
 
     proj = store.current_projection_without_superseded();
     assert_eq!(proj.len(), 1);
-    assert_eq!(proj.iter().map(crate::model::StoredTransaction::id).collect::<Vec<_>>(), vec![&txn_id2]);
+    assert_eq!(
+        proj.iter()
+            .map(crate::model::StoredTransaction::id)
+            .collect::<Vec<_>>(),
+        vec![&txn_id2]
+    );
     assert!(!proj.iter().any(|t| t.id() == &txn_id1));
     assert!(proj.iter().any(|t| t.id() == &txn_id2));
+
+    // Check missing ids are false to prevent ! negation removal mutants
+    assert!(!store.transactions.values().any(|stored| {
+        store
+            .corrections
+            .iter()
+            .map(crate::model::StoredCorrection::correction)
+            .map(logos_core::Correction::supersedes_id)
+            .any(|s| *s == *stored.id())
+            && proj.iter().any(|p| p.id() == stored.id())
+    }));
 }
