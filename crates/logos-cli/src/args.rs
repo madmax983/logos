@@ -677,9 +677,11 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
                 "--budget-cents",
                 DEFAULT_BUDGET_CENTS,
             )?;
-            let expense_account_prefix =
-                parse_optional_flag_value(&args[2..], "--expense-account-prefix")?
-                    .unwrap_or_else(|| DEFAULT_EXPENSE_ACCOUNT_PREFIX.to_owned());
+            let expense_account_prefix = parse_optional_flag_value_with_default(
+                &args[2..],
+                "--expense-account-prefix",
+                DEFAULT_EXPENSE_ACCOUNT_PREFIX,
+            )?;
             Ok(ParsedArgs {
                 command: Command::Budget(BudgetCommand::Set {
                     month_key,
@@ -852,8 +854,11 @@ fn parse_import(args: &[String]) -> Result<ParsedArgs, CliError> {
         }),
         "pdf" => {
             let file_path = parse_flag_value(&args[2..], "--file")?;
-            let account = parse_optional_flag_value(&args[2..], "--account")?
-                .unwrap_or_else(|| DEFAULT_CHECKING_ACCOUNT.to_owned());
+            let account = parse_optional_flag_value_with_default(
+                &args[2..],
+                "--account",
+                DEFAULT_CHECKING_ACCOUNT,
+            )?;
             let dry_run = parse_flag_present(&args[2..], "--dry-run");
             let ocr = parse_flag_present(&args[2..], "--ocr");
             Ok(ParsedArgs {
@@ -946,8 +951,11 @@ fn parse_report(args: &[String]) -> Result<ParsedArgs, CliError> {
             command: Command::Help(HelpTopic::Report),
         }),
         "month" => {
-            let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?
-                .unwrap_or_else(|| DEFAULT_CHECKING_ACCOUNT.to_owned());
+            let checking_account = parse_optional_flag_value_with_default(
+                &args[2..],
+                "--checking-account",
+                DEFAULT_CHECKING_ACCOUNT,
+            )?;
             let month_key = parse_optional_month_flag(&args[2..], "--month")?;
             Ok(ParsedArgs {
                 command: Command::Report(ReportCommand::Month {
@@ -979,8 +987,11 @@ fn parse_reconcile(args: &[String]) -> Result<ParsedArgs, CliError> {
             command: Command::Help(HelpTopic::Reconcile),
         }),
         "month" => {
-            let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?
-                .unwrap_or_else(|| DEFAULT_CHECKING_ACCOUNT.to_owned());
+            let checking_account = parse_optional_flag_value_with_default(
+                &args[2..],
+                "--checking-account",
+                DEFAULT_CHECKING_ACCOUNT,
+            )?;
             let month_key = parse_optional_month_flag(&args[2..], "--month")?;
             let opening_balance_cents =
                 parse_required_parsed_flag::<i64>(&args[2..], "--opening-balance-cents")?;
@@ -1035,8 +1046,11 @@ fn parse_month(args: &[String]) -> Result<ParsedArgs, CliError> {
         }),
         "autopilot" => {
             let month_key = parse_optional_month_flag(&args[2..], "--month")?;
-            let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?
-                .unwrap_or_else(|| DEFAULT_CHECKING_ACCOUNT.to_owned());
+            let checking_account = parse_optional_flag_value_with_default(
+                &args[2..],
+                "--checking-account",
+                DEFAULT_CHECKING_ACCOUNT,
+            )?;
             let (opening_balance_cents, closing_balance_cents) = parse_paired_i64_flags(
                 &args[2..],
                 "--opening-balance-cents",
@@ -1086,8 +1100,11 @@ fn parse_close(args: &[String]) -> Result<ParsedArgs, CliError> {
         }),
         "month" => {
             let month_key = parse_optional_month_flag(&args[2..], "--month")?;
-            let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?
-                .unwrap_or_else(|| DEFAULT_CHECKING_ACCOUNT.to_owned());
+            let checking_account = parse_optional_flag_value_with_default(
+                &args[2..],
+                "--checking-account",
+                DEFAULT_CHECKING_ACCOUNT,
+            )?;
             let run_id = parse_flag_value(&args[2..], "--run-id")?;
             let analytics_artifact_id =
                 parse_optional_flag_value(&args[2..], "--analytics-artifact-id")?;
@@ -1177,6 +1194,14 @@ fn parse_optional_flag_value(args: &[String], flag: &str) -> Result<Option<Strin
         flag: flag.to_owned(),
     })?;
     Ok(Some(value.clone()))
+}
+
+fn parse_optional_flag_value_with_default(
+    args: &[String],
+    flag: &str,
+    default_value: &str,
+) -> Result<String, CliError> {
+    Ok(parse_optional_flag_value(args, flag)?.unwrap_or_else(|| default_value.to_owned()))
 }
 
 fn parse_flag_present(args: &[String], flag: &str) -> bool {
