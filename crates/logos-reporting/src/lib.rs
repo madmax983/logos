@@ -1,3 +1,13 @@
+//! # The `logos-reporting` Library
+//!
+//! This crate contains the projection and aggregation engines for `logos`.
+//! While `logos-core` handles the strict double-entry mechanics and isolated planning
+//! primitives, `logos-reporting` is responsible for answering the high-level questions:
+//! "How am I doing compared to my budget?", "What is my net worth?", and "What is my cashflow?".
+//!
+//! It provides pure functions that take raw primitive data (e.g., balances, amounts) and
+//! project them into meaningful financial indicators.
+
 pub mod budget_vs_actual;
 pub mod cashflow;
 pub mod net_worth;
