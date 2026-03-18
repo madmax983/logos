@@ -124,3 +124,20 @@ fn csv_row_invalid_amount_reports_column_and_value() {
         }
     );
 }
+
+#[test]
+fn test_parse_csv_columns_ignores_whitespace_after_quote() {
+    let mapping = CsvMapping {
+        source_id: "test".to_owned(),
+        timestamp_idx: 0,
+        amount_idx: 1,
+        memo_idx: 2,
+        account_idx: 3,
+        category_idx: 4,
+    };
+
+    // The amount column is "100.00" followed by a space
+    let row = r#"2026-02-01,"10000" ,"memo","assets:checking","income:imported""#;
+    let result = parse_simple_csv_row(row, &mapping).unwrap();
+    assert_eq!(result.amount_cents(), 10000);
+}

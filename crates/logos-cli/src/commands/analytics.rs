@@ -1,3 +1,4 @@
+use comfy_table::{Attribute, Cell, Color};
 use crate::args::CliError;
 use logos_runtime::AppRuntime;
 
@@ -283,8 +284,6 @@ pub fn fire_sim(
             break;
         }
     }
-
-    use comfy_table::{Attribute, Cell, Color};
 
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
