@@ -251,6 +251,8 @@ mod tests {
     }
 }
 
+use comfy_table::{Attribute, Cell, Color};
+
 /// Handles `ledger analytics fire-sim`.
 ///
 /// # Errors
@@ -283,8 +285,6 @@ pub fn fire_sim(
             break;
         }
     }
-
-    use comfy_table::{Attribute, Cell, Color};
 
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
