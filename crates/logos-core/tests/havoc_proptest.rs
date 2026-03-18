@@ -2,7 +2,7 @@
 
 use logos_core::domain::account::AccountId;
 use logos_core::domain::rsu::AllocationPolicy;
-use logos_core::planning::fire::UpcomingVest;
+use logos_core::planning::fire::{FireSimulator, UpcomingVest};
 use logos_core::planning::net_worth_projector::NetWorthProjector;
 use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
 use proptest::prelude::*;
@@ -43,5 +43,15 @@ proptest! {
         });
 
         let _ = projector.project_timeline(months);
+    }
+
+    #[test]
+    #[should_panic(expected = "attempt to add with overflow")]
+    fn add_assets_liabilities_panics_on_overflow(
+        assets in i64::MAX / 2..i64::MAX,
+    ) {
+        let mut sim = FireSimulator::new(5000);
+        sim.add_assets_liabilities(assets, 0);
+        sim.add_assets_liabilities(assets, 0);
     }
 }

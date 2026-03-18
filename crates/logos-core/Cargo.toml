@@ -11,4 +11,5 @@ workspace = true
 nova = []
 
 [dev-dependencies]
+loom = "0.7.2"
 proptest = "1.10.0"
