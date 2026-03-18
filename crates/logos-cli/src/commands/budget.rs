@@ -127,6 +127,8 @@ pub fn monte_carlo(
     Ok(())
 }
 
+use comfy_table::{Attribute, Cell, Color};
+
 fn render_budget_set_output(
     runtime: &impl BudgetRuntime,
     month_key: &str,
@@ -139,14 +141,24 @@ fn render_budget_set_output(
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
     table.set_header(vec!["Month", "Budget", "Actual Prefix", "Variance"]);
+
+    let variance_color = if variance_cents >= 0 {
+        Color::Green
+    } else {
+        Color::Red
+    };
+    let variance_cell = Cell::new(format!("${:.2}", (variance_cents as f64) / 100.0))
+        .fg(variance_color)
+        .add_attribute(Attribute::Bold);
+
     table.add_row(vec![
-        month_key.to_string(),
-        format!("${:.2}", (budget_cents as f64) / 100.0),
-        expense_account_prefix.to_string(),
-        format!("${:.2}", (variance_cents as f64) / 100.0),
+        Cell::new(month_key.to_string()),
+        Cell::new(format!("${:.2}", (budget_cents as f64) / 100.0)),
+        Cell::new(expense_account_prefix.to_string()),
+        variance_cell,
     ]);
 
-    format!("budget.set\n{table}")
+    format!("{table}")
 }
 
 fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
@@ -182,21 +194,38 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
 
     for key in [ScenarioKey::Bear, ScenarioKey::Base, ScenarioKey::Bull] {
         if let Some(scenario) = plan.scenario(key) {
+            let color = match key {
+                ScenarioKey::Bear => Color::Red,
+                ScenarioKey::Base => Color::Yellow,
+                ScenarioKey::Bull => Color::Green,
+            };
+
             scenario_table.add_row(vec![
-                scenario_name(key).to_string(),
-                format!("${:.2}", (scenario.monthly_income_cents() as f64) / 100.0),
-                format!("${:.2}", (scenario.surplus_cents() as f64) / 100.0),
-                format!("${:.2}", (scenario.reserve_sweep_cents() as f64) / 100.0),
-                format!("${:.2}", (scenario.investing_sweep_cents() as f64) / 100.0),
-                format!(
+                Cell::new(scenario_name(key))
+                    .fg(color)
+                    .add_attribute(Attribute::Bold),
+                Cell::new(format!(
+                    "${:.2}",
+                    (scenario.monthly_income_cents() as f64) / 100.0
+                )),
+                Cell::new(format!("${:.2}", (scenario.surplus_cents() as f64) / 100.0)),
+                Cell::new(format!(
+                    "${:.2}",
+                    (scenario.reserve_sweep_cents() as f64) / 100.0
+                )),
+                Cell::new(format!(
+                    "${:.2}",
+                    (scenario.investing_sweep_cents() as f64) / 100.0
+                )),
+                Cell::new(format!(
                     "${:.2}",
                     (scenario.available_after_sweeps_cents() as f64) / 100.0
-                ),
+                )),
             ]);
         }
     }
 
-    format!("budget.rsu-plan\n{plan_table}\n{scenario_table}")
+    format!("{plan_table}\n{scenario_table}")
 }
 
 fn render_monte_carlo_output(
@@ -207,19 +236,23 @@ fn render_monte_carlo_output(
     table.set_header(vec!["Percentile", "Projected Outcome"]);
 
     table.add_row(vec![
-        "P5 (Pessimistic)",
-        &format!("${:.2}", (result.p5_cents as f64) / 100.0),
+        Cell::new("P5 (Pessimistic)").fg(Color::Red),
+        Cell::new(format!("${:.2}", (result.p5_cents as f64) / 100.0)).fg(Color::Red),
     ]);
     table.add_row(vec![
-        "Median (Expected)",
-        &format!("${:.2}", (result.median_cents as f64) / 100.0),
+        Cell::new("Median (Expected)")
+            .fg(Color::Green)
+            .add_attribute(Attribute::Bold),
+        Cell::new(format!("${:.2}", (result.median_cents as f64) / 100.0))
+            .fg(Color::Green)
+            .add_attribute(Attribute::Bold),
     ]);
     table.add_row(vec![
-        "P95 (Optimistic)",
-        &format!("${:.2}", (result.p95_cents as f64) / 100.0),
+        Cell::new("P95 (Optimistic)").fg(Color::Blue),
+        Cell::new(format!("${:.2}", (result.p95_cents as f64) / 100.0)).fg(Color::Blue),
     ]);
 
-    format!("budget.monte-carlo\n{table}")
+    format!("{table}")
 }
 
 const fn scenario_name(key: ScenarioKey) -> &'static str {
@@ -257,7 +290,6 @@ mod tests {
         };
         let output = render_budget_set_output(&runtime, "2026-03", 5_000, "expenses:");
 
-        assert!(output.contains("budget.set"));
         assert!(output.contains("Month"));
         assert!(output.contains("Budget"));
         assert!(output.contains("Actual Prefix"));
@@ -283,7 +315,6 @@ mod tests {
 
         let output = render_rsu_plan_output(&plan);
 
-        assert!(output.contains("budget.rsu-plan"));
         assert!(output.contains("2026-03"));
         assert!(output.contains("Conservative Budget"));
         assert!(output.contains("Monthly Income"));

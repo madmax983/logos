@@ -284,61 +284,62 @@ pub fn fire_sim(
         }
     }
 
-    use comfy_table::{Attribute, Cell, Color};
-
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
     table.set_header(vec!["Metric", "Value"]);
 
     #[allow(clippy::cast_precision_loss)]
     table.add_row(vec![
-        Cell::new("Monthly Expenses"),
-        Cell::new(format!("${:.2}", (monthly_expenses_cents as f64) / 100.0)).fg(Color::Red),
+        comfy_table::Cell::new("Monthly Expenses"),
+        comfy_table::Cell::new(format!("${:.2}", (monthly_expenses_cents as f64) / 100.0))
+            .fg(comfy_table::Color::Red),
     ]);
 
     #[allow(clippy::cast_precision_loss)]
     table.add_row(vec![
-        Cell::new("Target FIRE Number")
-            .fg(Color::Green)
-            .add_attribute(Attribute::Bold),
-        Cell::new(format!("${:.2}", (fire_number as f64) / 100.0))
-            .fg(Color::Green)
-            .add_attribute(Attribute::Bold),
+        comfy_table::Cell::new("Target FIRE Number")
+            .fg(comfy_table::Color::Green)
+            .add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new(format!("${:.2}", (fire_number as f64) / 100.0))
+            .fg(comfy_table::Color::Green)
+            .add_attribute(comfy_table::Attribute::Bold),
     ]);
 
     #[allow(clippy::cast_precision_loss)]
     table.add_row(vec![
-        Cell::new("Current Safe Net Worth"),
-        Cell::new(format!("${:.2}", (current_net_worth as f64) / 100.0)).fg(Color::Blue),
+        comfy_table::Cell::new("Current Safe Net Worth"),
+        comfy_table::Cell::new(format!("${:.2}", (current_net_worth as f64) / 100.0))
+            .fg(comfy_table::Color::Blue),
     ]);
 
     #[allow(clippy::cast_precision_loss)]
     table.add_row(vec![
-        Cell::new("Monthly Savings"),
-        Cell::new(format!("${:.2}", (monthly_savings_cents as f64) / 100.0)).fg(Color::Green),
+        comfy_table::Cell::new("Monthly Savings"),
+        comfy_table::Cell::new(format!("${:.2}", (monthly_savings_cents as f64) / 100.0))
+            .fg(comfy_table::Color::Green),
     ]);
 
     if let Some(months) = months_to_fire {
         let years = months / 12;
         let extra_months = months % 12;
         table.add_row(vec![
-            Cell::new("Time to FIRE")
-                .fg(Color::Yellow)
-                .add_attribute(Attribute::Bold),
-            Cell::new(format!(
+            comfy_table::Cell::new("Time to FIRE")
+                .fg(comfy_table::Color::Yellow)
+                .add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new(format!(
                 "{years} years, {extra_months} months ({months} months total)"
             ))
-            .fg(Color::Yellow)
-            .add_attribute(Attribute::Bold),
+            .fg(comfy_table::Color::Yellow)
+            .add_attribute(comfy_table::Attribute::Bold),
         ]);
     } else {
         table.add_row(vec![
-            Cell::new("Time to FIRE")
-                .fg(Color::Yellow)
-                .add_attribute(Attribute::Bold),
-            Cell::new("Not reached within 100 years simulation.")
-                .fg(Color::Red)
-                .add_attribute(Attribute::Bold),
+            comfy_table::Cell::new("Time to FIRE")
+                .fg(comfy_table::Color::Yellow)
+                .add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("Not reached within 100 years simulation.")
+                .fg(comfy_table::Color::Red)
+                .add_attribute(comfy_table::Attribute::Bold),
         ]);
     }
 
