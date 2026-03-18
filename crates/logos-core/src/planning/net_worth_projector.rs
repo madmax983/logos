@@ -155,6 +155,7 @@ impl NetWorthProjector {
     /// ```
     pub fn add_milestone_cents(&mut self, milestone_cents: i64) {
         self.milestones_cents.push(milestone_cents);
+        self.milestones_cents.sort_unstable();
     }
 
     /// Simulates net worth month-by-month for `months` iterations.
@@ -188,8 +189,6 @@ impl NetWorthProjector {
         let mut current_net_worth = self.initial_net_worth_cents;
 
         // Keep track of which milestones have been crossed
-        let mut sorted_milestones = self.milestones_cents.clone();
-        sorted_milestones.sort_unstable(); // Sort so we cross smaller milestones first
         let mut next_milestone_idx = 0;
 
         for month_index in 1..=months {
@@ -218,10 +217,10 @@ impl NetWorthProjector {
 
             // Check for crossed milestones
             // Optimize milestone checking by leveraging the sorted order to only check uncrossed milestones without O(N) traversal.
-            while next_milestone_idx < sorted_milestones.len()
-                && current_net_worth >= sorted_milestones[next_milestone_idx]
+            while next_milestone_idx < self.milestones_cents.len()
+                && current_net_worth >= self.milestones_cents[next_milestone_idx]
             {
-                crossed_milestones.push((sorted_milestones[next_milestone_idx], month_index));
+                crossed_milestones.push((self.milestones_cents[next_milestone_idx], month_index));
                 next_milestone_idx += 1;
             }
 

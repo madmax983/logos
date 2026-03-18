@@ -1,4 +1,5 @@
 use crate::args::CliError;
+use comfy_table::{Attribute, Cell, Color};
 use logos_runtime::AppRuntime;
 
 /// Handles `ledger analytics snapshot create`.
@@ -277,6 +278,7 @@ pub fn fire_sim(
     let (timeline, _milestones) = projector.project_timeline(months_to_simulate);
 
     let mut months_to_fire = None;
+
     for month in timeline {
         if month.net_worth_cents >= fire_number {
             months_to_fire = Some(month.month_index);

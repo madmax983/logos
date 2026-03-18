@@ -18,3 +18,7 @@
 **Flatten filter_map allocation under-sizing**
 **Learning:** Chaining `.into_iter().flatten().filter_map(...)` onto an `Option<Vec>` and calling `.collect::<Vec<_>>()` causes multiple intermediate vector allocations or under-sizing due to lost iterator `size_hint` boundaries.
 **Action:** Use `map_or_else(Vec::new, |items| { let mut v = Vec::with_capacity(items.len()); v.extend(items.iter().filter_map(...)); v })` to ensure exactly one heap allocation that covers the upper bound of possible returned items.
+
+**Pre-Sorted State for Projections**
+**Learning:** In read-heavy projection or simulation methods (e.g. `project_timeline`), cloning a vector just to `.sort_unstable()` it before a hot loop introduces unnecessary heap allocations.
+**Action:** Move the sorting logic (`.sort_unstable()`) to the data insertion methods (e.g. `add_milestone_cents`) to maintain a pre-sorted state, eliminating the need to `.clone()` the vector inside the projection method.
