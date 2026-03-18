@@ -1,47 +1,91 @@
+//! Domain models for statement fetching and artifacts.
+//!
+//! This module defines the core data structures used by `logos-fetch` to describe
+//! what statements should be fetched ([`StatementSource`]), the formats they are available in
+//! ([`OutputFormat`]), and the resulting artifacts ([`FetchedStatementArtifact`]).
+
 use serde::Deserialize;
 
 use crate::FetchError;
 
+/// The expected file format of a downloaded statement artifact.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OutputFormat {
+    /// Comma-separated values format.
     Csv,
+    /// Portable Document Format.
     Pdf,
 }
 
+/// Configuration for a specific statement source that can be fetched.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StatementSource {
+    /// A unique identifier for this source configuration.
     source_id: String,
+    /// The identifier of the institution this source connects to (e.g. `chase`, `amex`).
     institution_id: String,
+    /// The target ledger account this statement belongs to.
     ledger_account: String,
+    /// An ordered list of preferred output formats (e.g., trying CSV first, then PDF).
     format_preference: Vec<OutputFormat>,
+    /// A 1Password secret reference URI pointing to the username.
     username_secret_ref: String,
+    /// A 1Password secret reference URI pointing to the password.
     password_secret_ref: String,
+    /// An optional 1Password secret reference URI pointing to the TOTP seed or code.
     totp_secret_ref: Option<String>,
 }
 
+/// The status resulting from a fetch operation attempt.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FetchRunStatus {
+    /// A new statement was successfully downloaded to the artifact path.
     Downloaded,
+    /// The statement was already downloaded and is ready to be imported or already imported.
     Imported,
+    /// The remote institution does not have a new statement available for the requested period.
     NoNewStatement,
+    /// The fetch runner requires human intervention (e.g., an SMS challenge or unknown error).
     NeedsAttention,
+    /// The fetch runner failed due to an error.
     Failed,
 }
 
+/// Metadata about a successfully downloaded statement.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchedStatementArtifact {
+    /// The ID of the source that produced this artifact.
     source_id: String,
+    /// The target ledger account.
     ledger_account: String,
+    /// The format of the downloaded artifact file.
     output_format: OutputFormat,
+    /// The local path to the downloaded artifact file.
     artifact_path: String,
+    /// The YYYY-MM month key this artifact applies to.
     month_key: String,
+    /// The opening balance on the statement, in cents.
     opening_balance_cents: i64,
+    /// The closing balance on the statement, in cents.
     closing_balance_cents: i64,
 }
 
 impl StatementSource {
     /// Creates a statement source with minimal config validation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    ///
+    /// let source = StatementSource::new(
+    ///     "chase_checking",
+    ///     "chase",
+    ///     "Assets:Checking",
+    ///     vec![OutputFormat::Csv]
+    /// ).unwrap();
+    /// ```
     ///
     /// # Errors
     ///
@@ -105,6 +149,21 @@ impl StatementSource {
 
     /// Attaches secret references for runtime credential lookup.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    ///
+    /// let source = StatementSource::new(
+    ///     "chase", "chase", "Assets:Checking", vec![OutputFormat::Csv]
+    /// ).unwrap()
+    /// .with_secret_refs(
+    ///     "op://vault/item/username",
+    ///     "op://vault/item/password",
+    ///     Some("op://vault/item/totp")
+    /// ).unwrap();
+    /// ```
+    ///
     /// # Errors
     ///
     /// Returns an error when required secret references are empty or not 1Password refs.
@@ -141,6 +200,19 @@ impl StatementSource {
 }
 
 impl FetchRunStatus {
+    /// Returns `true` if the fetch run was successful.
+    ///
+    /// Success includes states where a new statement was downloaded,
+    /// a statement was already imported, or no new statement is available yet.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::FetchRunStatus;
+    ///
+    /// assert!(FetchRunStatus::Downloaded.is_success());
+    /// assert!(!FetchRunStatus::Failed.is_success());
+    /// ```
     #[must_use]
     pub const fn is_success(self) -> bool {
         matches!(
@@ -152,6 +224,22 @@ impl FetchRunStatus {
 
 impl FetchedStatementArtifact {
     /// Creates extracted metadata for a fetched statement artifact.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchedStatementArtifact, OutputFormat};
+    ///
+    /// let artifact = FetchedStatementArtifact::new(
+    ///     "chase",
+    ///     "Assets:Checking",
+    ///     OutputFormat::Csv,
+    ///     "/path/to/statement.csv",
+    ///     "2023-10",
+    ///     1000_00,
+    ///     1500_00
+    /// ).unwrap();
+    /// ```
     ///
     /// # Errors
     ///
