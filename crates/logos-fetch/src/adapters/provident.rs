@@ -1,3 +1,7 @@
+//! Implementation of the Provident statement adapter.
+//!
+//! This adapter wraps the execution and output parsing of the external `provident` tool.
+
 use core::future::Future;
 use core::pin::Pin;
 use std::fs;
@@ -10,6 +14,7 @@ use crate::{
     SecretBundle, StatementAdapter, model::is_valid_month_key,
 };
 
+/// An adapter that integrates with the external `provident` tool via JSON output.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProvidentAdapter {
     runner_output_path: PathBuf,
@@ -37,6 +42,7 @@ struct ProvidentRunnerOutput {
 }
 
 impl ProvidentAdapter {
+    /// Creates a Provident adapter pointing to a test fixture.
     #[must_use]
     pub fn fixture_runner_output() -> Self {
         Self {
@@ -48,6 +54,14 @@ impl ProvidentAdapter {
     }
 
     /// Creates a Provident adapter from one runner output JSON file.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::adapters::ProvidentAdapter;
+    ///
+    /// let adapter = ProvidentAdapter::from_runner_output_path("output.json").unwrap();
+    /// ```
     ///
     /// # Errors
     ///

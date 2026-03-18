@@ -1,3 +1,9 @@
+//! Traits and models for adapters that fetch financial statements.
+//!
+//! This module defines the `StatementAdapter` interface that must be
+//! implemented to perform statement downloads from an external institution.
+//! It also provides the core I/O models: [`FetchRequest`] and [`FetchResult`].
+
 use core::future::Future;
 use core::pin::Pin;
 use std::path::PathBuf;
@@ -7,12 +13,14 @@ use crate::{
     StatementSource, model::is_valid_month_key,
 };
 
+/// A request to fetch a statement from a source for a specific month.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchRequest {
     source: StatementSource,
     month_key: String,
 }
 
+/// The result of attempting to fetch a statement.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchResult {
     status: FetchRunStatus,
@@ -20,7 +28,9 @@ pub struct FetchResult {
     error_summary: Option<String>,
 }
 
+/// A trait defining the contract for adapters capable of downloading statements.
 pub trait StatementAdapter {
+    /// Attempt to fetch a statement for the specified request using the provided credentials.
     fn fetch<'a>(
         &'a self,
         request: &'a FetchRequest,
@@ -28,6 +38,7 @@ pub trait StatementAdapter {
     ) -> Pin<Box<dyn Future<Output = Result<FetchResult, FetchError>> + Send + 'a>>;
 }
 
+/// A fake implementation of [`StatementAdapter`] for testing purposes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FakeStatementAdapter {
     mode: FakeStatementAdapterMode,
@@ -41,6 +52,17 @@ enum FakeStatementAdapterMode {
 
 impl FetchRequest {
     /// Creates a fetch request for one source and month.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchRequest, StatementSource, OutputFormat};
+    ///
+    /// let source = StatementSource::new(
+    ///     "chase", "chase", "Assets:Checking", vec![OutputFormat::Csv]
+    /// ).unwrap();
+    /// let request = FetchRequest::new(&source, "2023-10").unwrap();
+    /// ```
     ///
     /// # Errors
     ///
@@ -68,6 +90,7 @@ impl FetchRequest {
 }
 
 impl FetchResult {
+    /// Creates a new fetch result.
     #[must_use]
     pub const fn new(status: FetchRunStatus, artifact: Option<FetchedStatementArtifact>) -> Self {
         Self {
@@ -88,6 +111,15 @@ impl FetchResult {
     }
 
     /// Attaches an operator-facing summary for non-success fetch results.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchResult, FetchRunStatus};
+    ///
+    /// let result = FetchResult::new(FetchRunStatus::NeedsAttention, None)
+    ///     .with_error_summary("Requires SMS OTP challenge").unwrap();
+    /// ```
     ///
     /// # Errors
     ///
@@ -111,6 +143,9 @@ impl FetchResult {
 }
 
 impl FakeStatementAdapter {
+    /// Creates a fake adapter that successfully "downloads" a test fixture.
+    ///
+    /// It only supports the `2026-02` statement month.
     #[must_use]
     pub fn download_fixture_statement() -> Self {
         Self {
@@ -125,6 +160,7 @@ impl FakeStatementAdapter {
         }
     }
 
+    /// Creates a fake adapter that always requires manual operator attention.
     #[must_use]
     pub fn needs_attention(error_summary: &str) -> Self {
         let trimmed = error_summary.trim();

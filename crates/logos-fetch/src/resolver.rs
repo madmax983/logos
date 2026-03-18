@@ -1,3 +1,8 @@
+//! Traits and implementations for resolving secrets.
+//!
+//! This module provides the [`SecretResolver`] and [`SecretRefReader`] traits,
+//! along with implementations that integrate with the 1Password CLI (`op`).
+
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
@@ -6,6 +11,7 @@ use crate::{FetchError, SecretBundle, StatementSource};
 
 const LOGOS_FETCH_OP_BIN_ENV: &str = "LOGOS_FETCH_OP_BIN";
 
+/// A trait for resolving secret references from a source into a complete bundle.
 pub trait SecretResolver {
     /// Resolves secrets required for a given source.
     ///
@@ -14,6 +20,7 @@ pub trait SecretResolver {
     fn resolve(&self, source: &StatementSource) -> Result<SecretBundle, FetchError>;
 }
 
+/// A trait for retrieving the actual secret value from a reference URI.
 pub trait SecretRefReader {
     /// Reads a secret by its reference.
     ///
@@ -22,17 +29,33 @@ pub trait SecretRefReader {
     fn read_secret_ref(&self, secret_ref: &str) -> Result<String, FetchError>;
 }
 
+/// A secret resolver that uses a `SecretRefReader` to retrieve values.
+///
+/// It delegates the resolution of individual URIs to the inner `R`
+/// to create a combined [`SecretBundle`].
 #[derive(Debug, Clone)]
 pub struct OnePasswordCliSecretResolver<R = OpCliSecretRefReader> {
     reader: R,
 }
 
+/// A `SecretRefReader` that invokes the 1Password command-line interface.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OpCliSecretRefReader {
     op_bin: PathBuf,
 }
 
 impl OnePasswordCliSecretResolver<OpCliSecretRefReader> {
+    /// Creates a resolver initialized from environment variables.
+    ///
+    /// This sets up an underlying `OpCliSecretRefReader` configured by the environment.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::OnePasswordCliSecretResolver;
+    ///
+    /// let resolver = OnePasswordCliSecretResolver::from_environment();
+    /// ```
     #[must_use]
     pub fn from_environment() -> Self {
         Self {
@@ -42,6 +65,16 @@ impl OnePasswordCliSecretResolver<OpCliSecretRefReader> {
 }
 
 impl<R> OnePasswordCliSecretResolver<R> {
+    /// Creates a resolver with a specific `SecretRefReader`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::{OnePasswordCliSecretResolver, OpCliSecretRefReader};
+    ///
+    /// let reader = OpCliSecretRefReader::from_environment();
+    /// let resolver = OnePasswordCliSecretResolver::with_reader(reader);
+    /// ```
     #[must_use]
     pub const fn with_reader(reader: R) -> Self {
         Self { reader }
@@ -69,6 +102,18 @@ where
 }
 
 impl OpCliSecretRefReader {
+    /// Configures the reader using environment variables.
+    ///
+    /// It looks for the `LOGOS_FETCH_OP_BIN` environment variable to locate
+    /// the 1Password executable. If absent, it defaults to `"op"`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::OpCliSecretRefReader;
+    ///
+    /// let reader = OpCliSecretRefReader::from_environment();
+    /// ```
     #[must_use]
     pub fn from_environment() -> Self {
         let op_bin =

@@ -1,7 +1,13 @@
+//! Configuration models for statement sources.
+//!
+//! This module provides parsing and deserialization for the overall fetch configuration,
+//! mapping TOML files into an executable list of [`StatementSource`] items.
+
 use serde::Deserialize;
 
 use crate::{FetchError, OutputFormat, StatementSource};
 
+/// The aggregated configuration of all statement sources.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StatementSourceConfig {
     sources: Vec<StatementSource>,
@@ -25,11 +31,31 @@ struct RawStatementSource {
 }
 
 impl StatementSourceConfig {
-    /// Parses statement source config from TOML text.
+    /// Parses a complete statement source configuration from a TOML document.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::StatementSourceConfig;
+    ///
+    /// let toml = r#"
+    /// [[sources]]
+    /// source_id = "chase_checking"
+    /// institution_id = "chase"
+    /// ledger_account = "Assets:Checking"
+    /// format_preference = ["csv", "pdf"]
+    /// username_secret_ref = "op://vault/item/username"
+    /// password_secret_ref = "op://vault/item/password"
+    /// "#;
+    ///
+    /// let config = StatementSourceConfig::from_toml(toml).unwrap();
+    /// assert_eq!(config.sources().len(), 1);
+    /// ```
     ///
     /// # Errors
     ///
-    /// Returns an error when TOML is invalid or a source fails validation.
+    /// Returns an error when the TOML syntax is invalid, if required fields are missing,
+    /// or if a source fails internal validation.
     pub fn from_toml(input: &str) -> Result<Self, FetchError> {
         let raw: RawStatementSourceConfig = toml::from_str(input)
             .map_err(|err| FetchError::new(format!("invalid config: {err}")))?;

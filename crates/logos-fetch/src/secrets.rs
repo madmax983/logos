@@ -1,14 +1,32 @@
+//! Models for resolved secrets used during a fetch run.
+//!
+//! This module defines the [`SecretBundle`] which holds the actual
+//! sensitive credentials after they have been successfully resolved
+//! from an external store (like 1Password).
+
 use crate::FetchError;
 
+/// A securely resolved bundle of credentials for a specific fetch operation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecretBundle {
+    /// The resolved username.
     username: String,
+    /// The resolved password.
     password: String,
+    /// The resolved Time-Based One-Time Password, if required.
     totp_code: Option<String>,
 }
 
 impl SecretBundle {
     /// Creates a runtime bundle of resolved credentials.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_fetch::SecretBundle;
+    ///
+    /// let bundle = SecretBundle::new("user_123", "hunter2", Some("123456")).unwrap();
+    /// ```
     ///
     /// # Errors
     ///
