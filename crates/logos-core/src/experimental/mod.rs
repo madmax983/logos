@@ -7,3 +7,5 @@ pub mod inflation;
 pub mod mermaid_exporter;
 pub mod monte_carlo;
 pub mod recurrence_detector;
+#[cfg(feature = "nova")]
+pub mod trinity_simulator;
