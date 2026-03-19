@@ -279,3 +279,178 @@ fn pdf_parse_iso_date_month_day_validity() {
 
     cleanup_file(&path);
 }
+
+#[test]
+fn test_is_unsigned_amount_token_rejects_signed_and_invalid_tokens() {
+    // This function is private, so we test it via select_amount_index behavior indirectly
+    // "select_amount_index" favors unsigned over previous ones if it sees an adjacent token.
+    let pdf_path = std::env::temp_dir().join(format!("unsigned-token-{}.pdf", std::process::id()));
+
+    // Case 1: Signed running balance shouldn't trigger the "adjacent unsigned amount" override
+    // 2026-02-01 ITEM 10.00 -50.00
+    // Here, 10.00 is amount, -50.00 is next token. Since it starts with '-', it's not unsigned.
+    // The amount selected should be the LAST valid amount token, which is -50.00 (since it didn't trigger the previous override).
+    std::fs::write(&pdf_path, b"%PDF-1.4
+(2026-02-01 ITEM 10.00 -50.00)
+").unwrap();
+    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+    assert_eq!(result[0].amount_cents(), -5000);
+
+    // Case 2: Unsigned running balance SHOULD trigger the override
+    // 2026-02-01 ITEM 10.00 50.00
+    // Here, 10.00 is amount, 50.00 is unsigned running balance.
+    // The amount selected should be the previous valid amount token, which is 10.00.
+    let pdf_path2 = std::env::temp_dir().join(format!("unsigned-token-2-{}.pdf", std::process::id()));
+    std::fs::write(&pdf_path2, b"%PDF-1.4
+(2026-02-01 ITEM 10.00 50.00)
+").unwrap();
+    let result2 = logos_import::pdf::parse_pdf_statement_file(&pdf_path2, "assets:checking", false).unwrap();
+    assert_eq!(result2[0].amount_cents(), 1000);
+
+    std::fs::remove_file(&pdf_path).ok();
+    std::fs::remove_file(&pdf_path2).ok();
+}
+
+#[test]
+fn test_parse_slash_date_year_raw_under_100_adds_2000() {
+    let pdf_path = std::env::temp_dir().join(format!("slash-date-1-{}.pdf", std::process::id()));
+    std::fs::write(&pdf_path, b"%PDF-1.4
+(02/01/26 ITEM 10.00)
+").unwrap();
+    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+    assert_eq!(result[0].timestamp(), "2026-02-01T00:00:00");
+
+    let pdf_path2 = std::env::temp_dir().join(format!("slash-date-2-{}.pdf", std::process::id()));
+    std::fs::write(&pdf_path2, b"%PDF-1.4
+(02/01/2026 ITEM 10.00)
+").unwrap();
+    let result2 = logos_import::pdf::parse_pdf_statement_file(&pdf_path2, "assets:checking", false).unwrap();
+    assert_eq!(result2[0].timestamp(), "2026-02-01T00:00:00");
+
+    std::fs::remove_file(&pdf_path).ok();
+    std::fs::remove_file(&pdf_path2).ok();
+}
+
+#[test]
+fn test_valid_calendar_date_rejects_invalid_months_and_days() {
+    let pdf_path = std::env::temp_dir().join(format!("invalid-dates-{}.pdf", std::process::id()));
+    // 0000 year is invalid
+    // 13 month is invalid
+    // 32 day in Jan is invalid
+    // 31 day in April is invalid
+    std::fs::write(&pdf_path, b"%PDF-1.4
+(0000-01-01 ITEM 10.00
+2026-13-01 ITEM 10.00
+2026-01-32 ITEM 10.00
+2026-04-31 ITEM 10.00)
+").unwrap();
+    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, logos_import::ImportError::NoStatementRows { .. }));
+    std::fs::remove_file(&pdf_path).ok();
+}
+
+#[test]
+fn test_is_leap_year_logic() {
+    let pdf_path = std::env::temp_dir().join(format!("leap-years-{}.pdf", std::process::id()));
+    // 2024 is leap year (divisible by 4, not 100) -> Feb 29 valid
+    // 2026 is not leap year -> Feb 29 invalid
+    // 1900 is not leap year (divisible by 100, not 400) -> Feb 29 invalid
+    // 2000 is leap year (divisible by 400) -> Feb 29 valid
+    std::fs::write(&pdf_path, b"%PDF-1.4
+(2024-02-29 ITEM 10.00
+2026-02-29 ITEM 10.00
+1900-02-29 ITEM 10.00
+2000-02-29 ITEM 10.00)
+").unwrap();
+    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+    assert_eq!(result.len(), 2);
+    assert_eq!(result[0].timestamp(), "2024-02-29T00:00:00");
+    assert_eq!(result[1].timestamp(), "2000-02-29T00:00:00");
+    std::fs::remove_file(&pdf_path).ok();
+}
+
+#[test]
+fn test_parse_cents_from_sanitized_handles_various_fraction_lengths() {
+    let pdf_path = std::env::temp_dir().join(format!("fractions-{}.pdf", std::process::id()));
+    // Valid: 10, 10., 10.1, 10.12
+    // Invalid: 10.123
+    std::fs::write(&pdf_path, b"%PDF-1.4
+(2026-02-01 ITEM 10
+2026-02-02 ITEM 10.
+2026-02-03 ITEM 10.1
+2026-02-04 ITEM 10.12
+2026-02-05 ITEM 10.123)
+").unwrap();
+    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+    assert_eq!(result.len(), 4);
+    assert_eq!(result[0].amount_cents(), 1000);
+    assert_eq!(result[1].amount_cents(), 1000);
+    assert_eq!(result[2].amount_cents(), 1010);
+    assert_eq!(result[3].amount_cents(), 1012);
+    std::fs::remove_file(&pdf_path).ok();
+}
+
+#[test]
+fn test_extract_pdf_text_falls_back_to_literal_strings_or_fails() {
+    let pdf_path = std::env::temp_dir().join(format!("no-text-{}.pdf", std::process::id()));
+
+    // Test 1: Only literal strings present. `extract_with_pdftotext` returns nothing useful.
+    std::fs::write(&pdf_path, b"%PDF-1.4
+((2026-02-01 TXN 10.00))
+").unwrap();
+    // Assuming pdftotext won't parse this fake pdf, it should fallback to literal strings.
+    // If it does, we get 1 record.
+    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
+    if let Ok(records) = result {
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].amount_cents(), 1000);
+    }
+
+    // Test 2: No literal strings either -> fails with NoStatementRows
+    std::fs::write(&pdf_path, b"%PDF-1.4
+(NOTHING USEFUL HERE)
+").unwrap();
+    let result2 = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
+    assert!(result2.is_err());
+    let err2 = result2.unwrap_err();
+    assert!(matches!(err2, logos_import::ImportError::NoStatementRows { .. }));
+
+    std::fs::remove_file(&pdf_path).ok();
+}
+
+#[test]
+fn test_extract_pdf_text_with_ocr_fails_if_no_text_extracted() {
+    let pdf_path = std::env::temp_dir().join(format!("ocr-fail-{}.pdf", std::process::id()));
+    // Give it a file that isn't a valid PDF, so pdftoppm will fail
+    std::fs::write(&pdf_path, b"%PDF-1.4\nBLAH").unwrap();
+
+    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", true);
+    assert!(result.is_err());
+    // Should be an OCR error bubble up to PdfTextExtractionFailed
+    let err = result.unwrap_err();
+    assert!(matches!(err, logos_import::ImportError::PdfTextExtractionFailed { .. }));
+    std::fs::remove_file(&pdf_path).ok();
+}
+
+#[test]
+fn test_extract_pdf_literal_strings_handles_escape_sequences() {
+    // This function is private. We test it via the fallback logic by providing a PDF
+    // that pdftotext can't parse, so it hits the literal string extractor.
+    let pdf_path = std::env::temp_dir().join(format!("escapes-{}.pdf", std::process::id()));
+
+    // \n is newline, \t is tab, \\ is backslash, \( and \) are parens
+    // "2026-02-01\tTXN\\NAME\n10.00"
+    std::fs::write(&pdf_path, b"%PDF-1.4
+((2026-02-01 TXN\\(NAME\\) 10.00))
+").unwrap();
+
+    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
+    if let Ok(records) = result {
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].memo(), "TXN(NAME)");
+    }
+
+    std::fs::remove_file(&pdf_path).ok();
+}

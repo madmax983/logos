@@ -109,3 +109,12 @@ fn one_password_resolver_propagates_missing_required_secret_refs() {
         "unexpected error: {err}"
     );
 }
+
+#[test]
+fn secret_bundle_accessors() {
+    use logos_fetch::SecretBundle;
+    let bundle = SecretBundle::new("user", "pass", Some("123456")).expect("bundle");
+    assert_eq!(bundle.username(), "user");
+    assert_eq!(bundle.password(), "pass");
+    assert_eq!(bundle.totp_code(), Some("123456"));
+}

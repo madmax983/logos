@@ -25,3 +25,18 @@ fn statement_source_rejects_empty_ids() {
         .is_err()
     );
 }
+
+#[test]
+fn statement_source_accessors() {
+    use logos_fetch::{StatementSource, OutputFormat};
+    let source = StatementSource::new(
+        "pcu:checking",
+        "provident-credit-union",
+        "assets:checking",
+        vec![OutputFormat::Pdf, OutputFormat::Csv],
+    )
+    .expect("source");
+
+    assert_eq!(source.institution_id(), "provident-credit-union");
+    assert_eq!(source.format_preference(), &[OutputFormat::Pdf, OutputFormat::Csv]);
+}
