@@ -155,21 +155,25 @@ impl AllocationPolicy {
         })
     }
 
+    /// The percentage allocated to tax withholding.
     #[must_use]
     pub const fn tax_reserve_pct(&self) -> u8 {
         self.tax_reserve
     }
 
+    /// The percentage allocated to an income smoothing buffer.
     #[must_use]
     pub const fn smoothing_buffer_pct(&self) -> u8 {
         self.smoothing_buffer
     }
 
+    /// The percentage allocated to specific financial goals.
     #[must_use]
     pub const fn goals_pct(&self) -> u8 {
         self.goals
     }
 
+    /// The percentage allocated to discretionary spending.
     #[must_use]
     pub const fn discretionary_pct(&self) -> u8 {
         self.discretionary

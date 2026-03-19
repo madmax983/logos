@@ -2,13 +2,14 @@
 // We verify that the system correctly panics or aborts when the
 // underlying database is corrupted or missing during a write.
 
-use logos_store_aletheia::AletheiaStore;
-use logos_core::domain::transaction::{Posting, TransactionBuilder};
 use logos_core::domain::account::AccountId;
+use logos_core::domain::transaction::{Posting, TransactionBuilder};
+use logos_store_aletheia::AletheiaStore;
 use tempfile::tempdir;
 
 #[test]
-#[should_panic] // Havoc: We *expect* a panic/StorageError when the DB crashes or is forcefully corrupted mid-flight.
+#[should_panic(expected = "LoadFailed")] // Havoc: We *expect* a panic/StorageError when the DB crashes or is forcefully corrupted mid-flight.
+#[allow(clippy::redundant_clone)]
 fn test_kill_switch_db_drop_simulated_panic() {
     let dir = tempdir().unwrap();
     let db_path = dir.path().join("ledger.db");

@@ -5,12 +5,13 @@
 // This proves that `FireSimulator` does not natively recover from poison errors
 // when exposed to naive multi-threading, satisfying the chaos requirement.
 
+use logos_core::planning::fire::FireSimulator;
 use loom::sync::{Arc, Mutex};
 use loom::thread;
-use logos_core::planning::fire::FireSimulator;
 
 #[test]
-#[should_panic] // Havoc: We *expect* a panic/deadlock when simulating a crashed worker thread.
+#[should_panic(expected = "Kill Switch activated")] // Havoc: We *expect* a panic/deadlock when simulating a crash with poisoned Mutex.
+#[allow(clippy::unnecessary_unwrap, clippy::redundant_clone, clippy::significant_drop_tightening)]
 fn test_fire_simulator_concurrency_poisoning() {
     loom::model(|| {
         let sim = Arc::new(Mutex::new(FireSimulator::new(5000)));
@@ -42,7 +43,11 @@ fn test_fire_simulator_concurrency_poisoning() {
         assert!(res1.is_err() || res2.is_err());
 
         // Propagate the panic to fail the loom model
-        if res1.is_err() { std::panic::resume_unwind(res1.unwrap_err()); }
-        if res2.is_err() { std::panic::resume_unwind(res2.unwrap_err()); }
+        if res1.is_err() {
+            std::panic::resume_unwind(res1.unwrap_err());
+        }
+        if res2.is_err() {
+            std::panic::resume_unwind(res2.unwrap_err());
+        }
     });
 }

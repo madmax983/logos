@@ -73,11 +73,13 @@ impl Posting {
         Ok(Self { account, amount })
     }
 
+    /// The account affected by this posting.
     #[must_use]
     pub const fn account(&self) -> &AccountId {
         &self.account
     }
 
+    /// The signed amount of the posting in cents (debits are positive, credits are negative).
     #[must_use]
     pub const fn amount(&self) -> i64 {
         self.amount
@@ -96,11 +98,13 @@ pub struct Transaction {
 }
 
 impl Transaction {
+    /// The user-provided description or memo for this transaction.
     #[must_use]
     pub fn description(&self) -> &str {
         &self.description
     }
 
+    /// The list of balanced line-items ([`Posting`]) that make up this transaction.
     #[must_use]
     pub fn postings(&self) -> &[Posting] {
         &self.postings

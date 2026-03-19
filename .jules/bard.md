@@ -21,3 +21,7 @@
 ## 2026-03-10 - [FireSimulator Primitives]
 **Confusion:** The `FireSimulator` and its configuration primitives in `logos-core::planning::fire` had dry, terse docstrings that repeated function names without explaining the underlying "why" (e.g. why risk haircut tiers exist or what a FIRE number represents practically). The module lacked a high-level explanation of its core purpose.
 **Clarification:** Added a module-level `//!` narrative ("The Great Escape") explaining the goal of projecting financial independence. Upgraded struct and method docstrings to use storytelling analogies (war chest, burn rate) and added standalone, executable `## Examples` doc-tests to `FireConfig` and all public `FireSimulator` methods to demonstrate integration points clearly.
+
+## 2026-03-12 - [Logos Core Domain Gaps]
+**Confusion:** The core domain logic within `logos-core` lacked module-level summaries, struct field descriptions, and method docs (the "Ghost" Param and the "Missing" Link gaps). This required users to repeatedly inspect source code to understand fundamental ledger primitives like `CategoryGroup`, `Correction`, and `RsuDistributorConfig`.
+**Clarification:** Documented all missing fields and methods, added `//!` module documentation to `logos-core` root, and elaborated on experimental projections (e.g., Cashflow, Mermaid Exporter). Verified 100% doc coverage with `-W missing_docs`.

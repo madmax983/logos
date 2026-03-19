@@ -49,6 +49,7 @@ impl CategoryGroupId {
         Ok(Self(normalized))
     }
 
+    /// Returns the string representation.
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
@@ -93,11 +94,13 @@ impl CategoryGroup {
         })
     }
 
+    /// The unique normalized identifier for this group.
     #[must_use]
     pub const fn id(&self) -> &CategoryGroupId {
         &self.id
     }
 
+    /// The display name of the group.
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name
@@ -147,11 +150,13 @@ impl Category {
         })
     }
 
+    /// The ID of the parent [`CategoryGroup`] this category belongs to.
     #[must_use]
     pub const fn group_id(&self) -> &CategoryGroupId {
         &self.group_id
     }
 
+    /// The display name of the category.
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name

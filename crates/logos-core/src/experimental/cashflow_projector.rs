@@ -9,9 +9,13 @@ use crate::domain::transaction::{Posting, TransactionBuilder};
 /// This template is used to automatically generate future `Transaction`s.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecurringTemplate {
+    /// A description for the recurring template transaction.
     pub description: String,
+    /// The absolute amount transferred in cents.
     pub amount_cents: i64,
+    /// The account string identifier to credit.
     pub credit_account: String,
+    /// The account string identifier to debit.
     pub debit_account: String,
 }
 
@@ -26,6 +30,7 @@ pub struct CashflowProjector {
 }
 
 impl CashflowProjector {
+    /// Creates a new, empty cashflow projector.
     #[must_use]
     pub fn new() -> Self {
         Self::default()

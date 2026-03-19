@@ -14,9 +14,13 @@
 //! - **[`planning`]**: High-level financial forecasting. From automated RSU distribution to FIRE simulations and Net Worth Projection.
 //! - **[`experimental`]**: Beta features or proofs of concept. Use at your own risk.
 
+/// Foundational domain models and logic for double-entry accounting.
 pub mod domain;
+/// Error definitions mapping to domain rule violations.
 pub mod error;
+/// Unstable/beta features and utilities.
 pub mod experimental;
+/// High-level modules for financial planning and forecasting.
 pub mod planning;
 
 pub use domain::account::{AccountId, AccountType};

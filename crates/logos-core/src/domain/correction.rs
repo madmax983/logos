@@ -26,6 +26,7 @@ impl TransactionId {
         Ok(Self(trimmed.to_owned()))
     }
 
+    /// Returns the string representation.
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
@@ -84,11 +85,13 @@ impl Correction {
         })
     }
 
+    /// The ID of the older transaction being replaced by this correction.
     #[must_use]
     pub const fn supersedes_id(&self) -> &TransactionId {
         &self.supersedes_id
     }
 
+    /// The mandatory explanation for why the correction occurred.
     #[must_use]
     pub fn reason(&self) -> &str {
         &self.reason

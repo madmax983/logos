@@ -40,21 +40,25 @@ impl BudgetMonth {
         }
     }
 
+    /// The string identifier for this month (e.g. `2026-03`).
     #[must_use]
     pub fn month_key(&self) -> &str {
         &self.month_key
     }
 
+    /// The balance rolled over from the previous month in cents.
     #[must_use]
     pub const fn start_balance(&self) -> i64 {
         self.start_balance
     }
 
+    /// The new funds assigned to the envelope in cents.
     #[must_use]
     pub const fn assigned(&self) -> i64 {
         self.assigned
     }
 
+    /// The total funds spent from the envelope in cents.
     #[must_use]
     pub const fn spent(&self) -> i64 {
         self.spent

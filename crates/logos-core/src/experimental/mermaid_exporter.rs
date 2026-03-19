@@ -13,6 +13,7 @@ pub struct MermaidSankeyExporter {
 }
 
 impl MermaidSankeyExporter {
+    /// Creates a new, empty exporter.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
