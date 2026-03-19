@@ -2,13 +2,14 @@
 // We verify that the system correctly panics or aborts when the
 // underlying database is corrupted or missing during a write.
 
-use logos_store_aletheia::AletheiaStore;
-use logos_core::domain::transaction::{Posting, TransactionBuilder};
 use logos_core::domain::account::AccountId;
+use logos_core::domain::transaction::{Posting, TransactionBuilder};
+use logos_store_aletheia::AletheiaStore;
 use tempfile::tempdir;
 
 #[test]
-#[should_panic] // Havoc: We *expect* a panic/StorageError when the DB crashes or is forcefully corrupted mid-flight.
+#[should_panic(expected = "")]
+// Havoc: We *expect* a panic/StorageError when the DB crashes or is forcefully corrupted mid-flight.
 fn test_kill_switch_db_drop_simulated_panic() {
     let dir = tempdir().unwrap();
     let db_path = dir.path().join("ledger.db");
@@ -19,11 +20,11 @@ fn test_kill_switch_db_drop_simulated_panic() {
     let account_salary = AccountId::new("income:salary").unwrap();
 
     let txn_builder = TransactionBuilder::new("Valid txn")
-        .posting(Posting::debit(account_checking.clone(), 100).unwrap())
-        .posting(Posting::credit(account_salary.clone(), 100).unwrap());
+        .posting(Posting::debit(account_checking, 100).unwrap())
+        .posting(Posting::credit(account_salary, 100).unwrap());
 
     // Normal operation
-    let _ = store.write_transaction(txn_builder.clone()).unwrap();
+    let _ = store.write_transaction(txn_builder).unwrap();
 
     // Kill switch: Forcefully drop the underlying database directory or connection!
     // We recreate a conflicting path as a plain file, so when Aletheiadb tries to use it as a dir it fails

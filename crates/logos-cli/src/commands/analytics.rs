@@ -1,5 +1,5 @@
 use crate::args::CliError;
-use comfy_table::{Attribute, Cell, Color};
+
 use logos_runtime::AppRuntime;
 
 /// Handles `ledger analytics snapshot create`.
@@ -251,8 +251,6 @@ mod tests {
         assert_eq!(output, expected);
     }
 }
-
-use comfy_table::{Attribute, Cell, Color};
 
 /// Handles `ledger analytics fire-sim`.
 ///
