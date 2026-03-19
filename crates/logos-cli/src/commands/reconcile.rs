@@ -1,4 +1,5 @@
 #![allow(clippy::cast_precision_loss)]
+use comfy_table::{Cell, Color};
 use crate::args::CliError;
 use logos_runtime::AppRuntime;
 use logos_store_aletheia::model::StoredReconciliationRun;
@@ -100,27 +101,24 @@ fn render_month_output(
         "Outflow",
         "Created At",
     ]);
+    let variance_color = if run.variance_cents() == 0 { Color::Green } else { Color::Red };
+    let reconciled_color = if run.reconciled() { Color::Green } else { Color::Red };
+
     table.add_row(vec![
-        run.run_id().to_owned(),
-        month_key.to_owned(),
-        checking_account.to_owned(),
-        format!("${:.2}", (opening_balance_cents as f64) / 100.0),
-        format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0),
-        format!(
-            "${:.2}",
-            (run.expected_closing_balance_cents() as f64) / 100.0
-        ),
-        format!(
-            "${:.2}",
-            (run.statement_closing_balance_cents() as f64) / 100.0
-        ),
-        format!("${:.2}", (run.variance_cents() as f64) / 100.0),
-        run.reconciled().to_string(),
-        run.matched_postings().to_string(),
-        run.matched_transaction_count().to_string(),
-        format!("${:.2}", (run.inflow_cents() as f64) / 100.0),
-        format!("${:.2}", (run.outflow_cents() as f64) / 100.0),
-        run.created_at().wallclock().to_string(),
+        Cell::new(run.run_id()),
+        Cell::new(month_key),
+        Cell::new(checking_account),
+        Cell::new(format!("${:.2}", (opening_balance_cents as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (run.expected_closing_balance_cents() as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (run.statement_closing_balance_cents() as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (run.variance_cents() as f64) / 100.0)).fg(variance_color),
+        Cell::new(run.reconciled().to_string()).fg(reconciled_color),
+        Cell::new(run.matched_postings().to_string()),
+        Cell::new(run.matched_transaction_count().to_string()),
+        Cell::new(format!("${:.2}", (run.inflow_cents() as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (run.outflow_cents() as f64) / 100.0)),
+        Cell::new(run.created_at().wallclock().to_string()),
     ]);
     table.to_string()
 }
@@ -144,27 +142,24 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
         "Outflow",
         "Created At",
     ]);
+    let variance_color = if run.variance_cents() == 0 { Color::Green } else { Color::Red };
+    let reconciled_color = if run.reconciled() { Color::Green } else { Color::Red };
+
     table.add_row(vec![
-        run.run_id().to_owned(),
-        run.month_key().to_owned(),
-        run.checking_account().to_owned(),
-        format!("${:.2}", (run.opening_balance_cents() as f64) / 100.0),
-        format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0),
-        format!(
-            "${:.2}",
-            (run.expected_closing_balance_cents() as f64) / 100.0
-        ),
-        format!(
-            "${:.2}",
-            (run.statement_closing_balance_cents() as f64) / 100.0
-        ),
-        format!("${:.2}", (run.variance_cents() as f64) / 100.0),
-        run.reconciled().to_string(),
-        run.matched_postings().to_string(),
-        run.matched_transaction_count().to_string(),
-        format!("${:.2}", (run.inflow_cents() as f64) / 100.0),
-        format!("${:.2}", (run.outflow_cents() as f64) / 100.0),
-        run.created_at().wallclock().to_string(),
+        Cell::new(run.run_id()),
+        Cell::new(run.month_key()),
+        Cell::new(run.checking_account()),
+        Cell::new(format!("${:.2}", (run.opening_balance_cents() as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (run.expected_closing_balance_cents() as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (run.statement_closing_balance_cents() as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (run.variance_cents() as f64) / 100.0)).fg(variance_color),
+        Cell::new(run.reconciled().to_string()).fg(reconciled_color),
+        Cell::new(run.matched_postings().to_string()),
+        Cell::new(run.matched_transaction_count().to_string()),
+        Cell::new(format!("${:.2}", (run.inflow_cents() as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (run.outflow_cents() as f64) / 100.0)),
+        Cell::new(run.created_at().wallclock().to_string()),
     ]);
     table.to_string()
 }
@@ -195,14 +190,17 @@ fn render_list_output(
     ]);
 
     for run in runs {
+        let variance_color = if run.variance_cents() == 0 { Color::Green } else { Color::Red };
+        let reconciled_color = if run.reconciled() { Color::Green } else { Color::Red };
+
         table.add_row(vec![
-            run.run_id().to_owned(),
-            run.month_key().to_owned(),
-            run.checking_account().to_owned(),
-            format!("${:.2}", (run.variance_cents() as f64) / 100.0),
-            run.reconciled().to_string(),
-            run.matched_transaction_count().to_string(),
-            run.created_at().wallclock().to_string(),
+            Cell::new(run.run_id()),
+            Cell::new(run.month_key()),
+            Cell::new(run.checking_account()),
+            Cell::new(format!("${:.2}", (run.variance_cents() as f64) / 100.0)).fg(variance_color),
+            Cell::new(run.reconciled().to_string()).fg(reconciled_color),
+            Cell::new(run.matched_transaction_count().to_string()),
+            Cell::new(run.created_at().wallclock().to_string()),
         ]);
     }
 
