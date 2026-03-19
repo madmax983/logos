@@ -1,25 +1,14 @@
-Title: "👺 Havoc: `parse_simple_csv_row` Panics on Arithmetic Overflow"
+👺 Havoc: Proving Integer Fragility in Core Planning Modules
 
-🧨 **The Trigger:**
-Passing `usize::MAX` as indices in `CsvMapping` causes an arithmetic buffer overflow when validating the required column length.
+🧨 **The Trigger:** Inputting an upcoming vest with `avg_close_price_cents` approaching `i64::MAX / 100` and `units` > 100_000 causes a buffer overflow when summing the values in `safe_net_worth_cents()`.
 
 📉 **The Stack Trace:**
 ```
-thread 'parse_simple_csv_row_panics_on_overflow' panicked at crates/logos-import/src/csv.rs:202:18:
+thread 'safe_net_worth_cents_panics_on_overflow' panicked at core/src/num/mod.rs:1145:5:
 attempt to add with overflow
-stack backtrace:
-   0: __rustc::rust_begin_unwind
-             at /rustc/4a4ef493e3a1488c6e321570238084b38948f6db/library/std/src/panicking.rs:689:5
-   1: core::panicking::panic_fmt
-             at /rustc/4a4ef493e3a1488c6e321570238084b38948f6db/library/core/src/panicking.rs:80:14
-   2: core::panicking::panic_const::panic_const_add_overflow
-             at /rustc/4a4ef493e3a1488c6e321570238084b38948f6db/library/core/src/panicking.rs:175:17
-   3: logos_import::csv::parse_simple_csv_row
-             at ./src/csv.rs:202:18
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 ```
 
-🧪 **Reproduction:**
-Run `cargo test -p logos-import --test havoc_proptest`
+🧪 **Reproduction:** Run `cargo test --test havoc_proptest safe_net_worth_cents_panics_on_overflow`.
 
-😈 **Comment:**
-"You assumed CSV column indices would never exceed hardware limits when computing required sizes. You were wrong."
+😈 **Comment:** You assumed the user wouldn't vest millions of dollars. You were wrong.

@@ -252,7 +252,6 @@ mod tests {
     }
 }
 
-use comfy_table::{Attribute, Cell, Color};
 
 /// Handles `ledger analytics fire-sim`.
 ///

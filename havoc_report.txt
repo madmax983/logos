@@ -1,0 +1,9 @@
+Havoc successfully found the integer overflow vulnerabilities:
+
+crates/logos-core/tests/havoc_proptest.rs
+distribute_rsu_vest_panics_on_overflow - attempt to multiply with overflow
+project_timeline_panics_on_overflow - attempt to multiply with overflow
+add_assets_liabilities_panics_on_overflow - attempt to add with overflow
+safe_net_worth_cents_panics_on_overflow - attempt to add with overflow
+
+I will make a PR with this wreckage

@@ -21,7 +21,6 @@ proptest! {
         let distributor = RsuAutoDistributor::new(config);
         let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
 
-        // This will panic when multiplied by percent, if gross_vest is very large
         let _ = distributor.distribute_rsu_vest("Vest 1", gross_vest, &policy);
     }
 
@@ -53,5 +52,24 @@ proptest! {
         let mut sim = FireSimulator::new(5000);
         sim.add_assets_liabilities(assets, 0);
         sim.add_assets_liabilities(assets, 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "attempt to add with overflow")]
+    fn safe_net_worth_cents_panics_on_overflow(
+        units in 100_000..200_000_u32,
+    ) {
+        let mut sim = FireSimulator::new(500_000);
+        let gross = i64::MAX / 100;
+        let avg_close_price_cents = gross / i64::from(units);
+
+        for _ in 0..200 {
+            sim.add_upcoming_vest(UpcomingVest {
+                avg_close_price_cents,
+                units,
+                days_to_vest: 15,
+            });
+        }
+        let _ = sim.safe_net_worth_cents();
     }
 }
