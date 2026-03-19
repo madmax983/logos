@@ -10,14 +10,16 @@ use loom::thread;
 use logos_core::planning::fire::FireSimulator;
 
 #[test]
-#[should_panic] // Havoc: We *expect* a panic/deadlock when simulating a crashed worker thread.
+#[allow(clippy::should_panic_without_expect)]
+#[should_panic(expected = "Kill Switch activated: Simulated crashed worker thread")] // Havoc: We *expect* a panic/deadlock when simulating a crashed worker thread.
 fn test_fire_simulator_concurrency_poisoning() {
     loom::model(|| {
         let sim = Arc::new(Mutex::new(FireSimulator::new(5000)));
 
         let sim_clone1 = sim.clone();
-        let sim_clone2 = sim.clone();
+        let sim_clone2 = sim;
 
+        #[allow(clippy::significant_drop_tightening)]
         let t1 = thread::spawn(move || {
             let mut s = sim_clone1.lock().unwrap();
             s.add_assets_liabilities(100_000, 0);
@@ -42,7 +44,9 @@ fn test_fire_simulator_concurrency_poisoning() {
         assert!(res1.is_err() || res2.is_err());
 
         // Propagate the panic to fail the loom model
+        #[allow(clippy::unnecessary_unwrap)]
         if res1.is_err() { std::panic::resume_unwind(res1.unwrap_err()); }
+        #[allow(clippy::unnecessary_unwrap)]
         if res2.is_err() { std::panic::resume_unwind(res2.unwrap_err()); }
     });
 }
