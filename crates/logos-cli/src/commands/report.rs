@@ -69,7 +69,7 @@ mod tests {
 
     impl ReportRuntime for FakeReportRuntime {
         fn month_report_for(&self, _checking_account: &str, _month_key: &str) -> MonthReport {
-            self.report.clone()
+            self.report
         }
     }
 

@@ -488,11 +488,15 @@ fn get_node_at_as_of(
     node_id: NodeId,
     as_of: AsOf,
 ) -> Result<Option<Node>, StoreError> {
-    match db.get_node_at_time(node_id, as_of.valid_time(), as_of.tx_time()) {
-        Ok(node) => Ok(Some(node)),
-        Err(error) if is_node_not_visible(&error) => Ok(None),
-        Err(error) => Err(map_load_error("unable to read node at as-of time", error)),
+    let result = db.get_node_at_time(node_id, as_of.valid_time(), as_of.tx_time());
+    if let Err(error) = &result {
+        if is_node_not_visible(error) {
+            return Ok(None);
+        }
     }
+    result
+        .map(Some)
+        .map_err(|error| map_load_error("unable to read node at as-of time", error))
 }
 
 fn get_edge_at_as_of(
@@ -500,11 +504,15 @@ fn get_edge_at_as_of(
     edge_id: EdgeId,
     as_of: AsOf,
 ) -> Result<Option<aletheiadb::Edge>, StoreError> {
-    match db.get_edge_at_time(edge_id, as_of.valid_time(), as_of.tx_time()) {
-        Ok(edge) => Ok(Some(edge)),
-        Err(error) if is_edge_not_visible(&error) => Ok(None),
-        Err(error) => Err(map_load_error("unable to read edge at as-of time", error)),
+    let result = db.get_edge_at_time(edge_id, as_of.valid_time(), as_of.tx_time());
+    if let Err(error) = &result {
+        if is_edge_not_visible(error) {
+            return Ok(None);
+        }
     }
+    result
+        .map(Some)
+        .map_err(|error| map_load_error("unable to read edge at as-of time", error))
 }
 
 const fn is_node_not_visible(error: &DbError) -> bool {
@@ -718,351 +726,367 @@ mod tests {
         assert!(!super::is_node_not_visible(&err));
         assert!(!super::is_edge_not_visible(&err));
     }
-}
 
-#[test]
-#[allow(clippy::needless_collect)]
-fn test_store_empty_accessors() {
-    let store = crate::AletheiaStore::new();
-    assert_eq!(store.transaction_count(), 0);
-    assert_eq!(store.correction_count(), 0);
-    assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").unwrap()));
-    assert!(store.latest_correction().is_none());
-    assert_eq!(store.transactions().count(), 0);
-    assert_eq!(store.transactions().collect::<Vec<_>>().len(), 0);
-    assert!(store.budget_target("2026-03", "expenses:food").is_none());
-    assert_eq!(store.budget_targets().count(), 0);
-    assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 0);
-    assert!(store.analytics_artifact("missing").is_none());
-    assert_eq!(store.analytics_artifacts().count(), 0);
-    assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 0);
-    assert_eq!(store.import_record_count(), 0);
-    assert!(!store.has_import_record_content_hash("missing"));
-    assert_eq!(store.import_records().count(), 0);
-    assert_eq!(store.import_records().collect::<Vec<_>>().len(), 0);
-    assert_eq!(store.import_batches().count(), 0);
-    assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 0);
-    assert_eq!(store.statement_line_count(), 0);
-    assert_eq!(store.statement_lines().count(), 0);
-    assert!(
+    #[test]
+    #[allow(clippy::needless_collect)]
+    fn test_store_empty_accessors() {
+        let store = crate::AletheiaStore::new();
+        assert_eq!(store.transaction_count(), 0);
+        assert_eq!(store.correction_count(), 0);
+        assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").unwrap()));
+        assert!(store.latest_correction().is_none());
+        assert_eq!(store.transactions().count(), 0);
+        assert_eq!(store.transactions().collect::<Vec<_>>().len(), 0);
+        assert!(store.budget_target("2026-03", "expenses:food").is_none());
+        assert_eq!(store.budget_targets().count(), 0);
+        assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 0);
+        assert!(store.analytics_artifact("missing").is_none());
+        assert_eq!(store.analytics_artifacts().count(), 0);
+        assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 0);
+        assert_eq!(store.import_record_count(), 0);
+        assert!(!store.has_import_record_content_hash("missing"));
+        assert_eq!(store.import_records().count(), 0);
+        assert_eq!(store.import_records().collect::<Vec<_>>().len(), 0);
+        assert_eq!(store.import_batches().count(), 0);
+        assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 0);
+        assert_eq!(store.statement_line_count(), 0);
+        assert_eq!(store.statement_lines().count(), 0);
+        assert!(
+            store
+                .statement_lines_for_reconciliation_run("missing")
+                .is_empty()
+        );
+        assert_eq!(store.reconciliation_run_count(), 0);
+        assert!(store.reconciliation_run("missing").is_none());
+        assert_eq!(store.reconciliation_runs().count(), 0);
+        assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 0);
+        assert_eq!(store.month_close_count(), 0);
+        assert!(store.month_close("missing").is_none());
+        assert!(
+            store
+                .month_close_for_scope("2026-03", "assets:checking")
+                .is_none()
+        );
+        assert_eq!(store.month_closes().count(), 0);
+        assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 0);
+
+        // transactions_as_of_us
+        let as_of_us = store.transactions_as_of_us(1000, 2000).unwrap();
+        assert!(as_of_us.is_empty());
+
+        let proj = store.current_projection_without_superseded();
+        assert!(proj.is_empty());
+    }
+
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::needless_collect)]
+    fn test_store_populated_accessors() {
+        use logos_core::{AccountId, Correction, Posting, TransactionBuilder};
+        let mut store = crate::AletheiaStore::new();
+
+        // Write transaction
+        let txn_id = store
+            .write_transaction(
+                TransactionBuilder::new("test")
+                    .posting(
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap(),
+                    ),
+            )
+            .unwrap();
+
+        assert_eq!(store.transaction_count(), 1);
+        assert!(store.has_transaction(&txn_id));
+        assert_eq!(store.transactions().count(), 1);
+        assert_eq!(store.transactions().collect::<Vec<_>>().len(), 1);
+
+        // Write correction
+        let corr = Correction::new(txn_id.clone(), "fix").unwrap();
+        store.write_correction(corr).unwrap();
+        assert_eq!(store.correction_count(), 1);
+
+        // Write a second correction
+        let corr2 = Correction::new(txn_id.clone(), "fix2").unwrap();
+        store.write_correction(corr2).unwrap();
+        assert_eq!(store.correction_count(), 2);
+
+        // Write budget target
         store
-            .statement_lines_for_reconciliation_run("missing")
-            .is_empty()
-    );
-    assert_eq!(store.reconciliation_run_count(), 0);
-    assert!(store.reconciliation_run("missing").is_none());
-    assert_eq!(store.reconciliation_runs().count(), 0);
-    assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 0);
-    assert_eq!(store.month_close_count(), 0);
-    assert!(store.month_close("missing").is_none());
-    assert!(
+            .write_budget_target("2026-03", "expenses:food", 500)
+            .unwrap();
+        assert_eq!(store.budget_targets().count(), 1);
+        assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 1);
+
+        // Write a second budget target
         store
-            .month_close_for_scope("2026-03", "assets:checking")
-            .is_none()
-    );
-    assert_eq!(store.month_closes().count(), 0);
-    assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 0);
+            .write_budget_target("2026-03", "expenses:rent", 1500)
+            .unwrap();
+        assert_eq!(store.budget_targets().count(), 2);
+        assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 2);
 
-    // transactions_as_of_us
-    let as_of_us = store.transactions_as_of_us(1000, 2000).unwrap();
-    assert!(as_of_us.is_empty());
-
-    let proj = store.current_projection_without_superseded();
-    assert!(proj.is_empty());
-}
-
-#[test]
-#[allow(clippy::too_many_lines)]
-#[allow(clippy::needless_collect)]
-fn test_store_populated_accessors() {
-    use logos_core::{AccountId, Correction, Posting, TransactionBuilder};
-    let mut store = crate::AletheiaStore::new();
-
-    // Write transaction
-    let txn_id = store
-        .write_transaction(
-            TransactionBuilder::new("test")
-                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
-                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap()),
-        )
-        .unwrap();
-
-    assert_eq!(store.transaction_count(), 1);
-    assert!(store.has_transaction(&txn_id));
-    assert_eq!(store.transactions().count(), 1);
-    assert_eq!(store.transactions().collect::<Vec<_>>().len(), 1);
-
-    // Write correction
-    let corr = Correction::new(txn_id.clone(), "fix").unwrap();
-    store.write_correction(corr).unwrap();
-    assert_eq!(store.correction_count(), 1);
-
-    // Write a second correction
-    let corr2 = Correction::new(txn_id.clone(), "fix2").unwrap();
-    store.write_correction(corr2).unwrap();
-    assert_eq!(store.correction_count(), 2);
-
-    // Write budget target
-    store
-        .write_budget_target("2026-03", "expenses:food", 500)
-        .unwrap();
-    assert_eq!(store.budget_targets().count(), 1);
-    assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 1);
-
-    // Write a second budget target
-    store
-        .write_budget_target("2026-03", "expenses:rent", 1500)
-        .unwrap();
-    assert_eq!(store.budget_targets().count(), 2);
-    assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 2);
-
-    // Write analytics artifact
-    store
-        .write_analytics_artifact_manifest(
-            "test_kind",
-            "test_uri",
-            "test_hash",
-            1,
-            1,
-            aletheiadb::time::now(),
-            aletheiadb::time::now(),
-            None,
-        )
-        .unwrap();
-    assert_eq!(store.analytics_artifacts().count(), 1);
-    assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 1);
-
-    store
-        .write_analytics_artifact_manifest(
-            "test_kind2",
-            "test_uri2",
-            "test_hash2",
-            1,
-            1,
-            aletheiadb::time::now(),
-            aletheiadb::time::now(),
-            None,
-        )
-        .unwrap();
-    assert_eq!(store.analytics_artifacts().count(), 2);
-    assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 2);
-
-    // Write import batch
-    let rec = crate::model::NewImportRecord::new("hash1", Some(&txn_id));
-    store
-        .write_import_batch("kind", "uri", "batch1", 0, false, false, &[rec])
-        .unwrap();
-    assert_eq!(store.import_record_count(), 1);
-    assert!(store.has_import_record_content_hash("hash1"));
-    assert!(!store.has_import_record_content_hash("missing_hash"));
-    assert_eq!(store.import_records().count(), 1);
-    assert_eq!(store.import_records().collect::<Vec<_>>().len(), 1);
-    assert_eq!(store.import_batches().count(), 1);
-    assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 1);
-
-    let rec2 = crate::model::NewImportRecord::new("hash2", Some(&txn_id));
-    store
-        .write_import_batch("kind", "uri", "batch2", 0, false, false, &[rec2])
-        .unwrap();
-    assert_eq!(store.import_record_count(), 2);
-    assert_eq!(store.import_records().count(), 2);
-    assert_eq!(store.import_records().collect::<Vec<_>>().len(), 2);
-    assert_eq!(store.import_batches().count(), 2);
-    assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 2);
-
-    // Write statement line
-    let line_rec = crate::model::NewImportRecord::with_statement_line(
-        "line1",
-        Some(&txn_id),
-        "uri",
-        "2026-03-01T00:00:00",
-        "memo",
-        -100,
-    );
-    store
-        .write_import_batch("stmt", "uri", "batch3", 0, false, false, &[line_rec])
-        .unwrap();
-    assert_eq!(store.statement_line_count(), 1);
-    assert_eq!(store.statement_lines().count(), 1);
-
-    let line_rec2 = crate::model::NewImportRecord::with_statement_line(
-        "line2",
-        Some(&txn_id),
-        "uri",
-        "2026-03-01T00:00:00",
-        "memo",
-        -100,
-    );
-    store
-        .write_import_batch("stmt", "uri", "batch4", 0, false, false, &[line_rec2])
-        .unwrap();
-    assert_eq!(store.statement_line_count(), 2);
-    assert_eq!(store.statement_lines().count(), 2);
-
-    // Write reconciliation run
-    let run = store
-        .write_reconciliation_run(
-            "2026-03",
-            "assets:checking",
-            0,
-            100,
-            100,
-            100,
-            0,
-            true,
-            1,
-            100,
-            0,
-            std::slice::from_ref(&txn_id),
-        )
-        .unwrap();
-    assert_eq!(store.reconciliation_run_count(), 1);
-    assert_eq!(store.reconciliation_runs().count(), 1);
-    assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 1);
-
-    let run2 = store
-        .write_reconciliation_run(
-            "2026-03",
-            "assets:savings",
-            0,
-            100,
-            100,
-            100,
-            0,
-            true,
-            1,
-            100,
-            0,
-            std::slice::from_ref(&txn_id),
-        )
-        .unwrap();
-    assert_eq!(store.reconciliation_run_count(), 2);
-    assert_eq!(store.reconciliation_runs().count(), 2);
-    assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 2);
-
-    // Write month close
-    store
-        .write_month_close("2026-03", "assets:checking", run.run_id(), None)
-        .unwrap();
-    assert_eq!(store.month_close_count(), 1);
-    assert!(store.month_close("close-1").is_some());
-    assert_eq!(store.month_closes().count(), 1);
-    assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 1);
-
-    store
-        .write_month_close("2026-03", "assets:savings", run2.run_id(), None)
-        .unwrap();
-    assert_eq!(store.month_close_count(), 2);
-    assert!(store.month_close("close-2").is_some());
-    assert!(store.month_close("missing_close").is_none());
-    assert_eq!(store.month_closes().count(), 2);
-    assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 2);
-
-    // Write a second transaction to ensure counts > 1
-    let _txn_id3 = store
-        .write_transaction(
-            TransactionBuilder::new("test3")
-                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap())
-                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap()),
-        )
-        .unwrap();
-
-    // Final assertions to ensure all collections return exactly 2 items
-    // This kills mutants that hardcode return values to 1, true, or std::iter::empty()
-    assert_eq!(store.transaction_count(), 2);
-    assert!(store.has_transaction(&txn_id));
-    assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").unwrap()));
-    assert_eq!(store.transactions().count(), 2);
-    assert_eq!(store.transactions().collect::<Vec<_>>().len(), 2);
-
-    assert_eq!(store.correction_count(), 2);
-
-    assert_eq!(store.budget_targets().count(), 2);
-    assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 2);
-
-    assert_eq!(store.analytics_artifacts().count(), 2);
-    assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 2);
-
-    assert_eq!(store.import_record_count(), 4);
-    assert!(store.has_import_record_content_hash("hash1"));
-    assert!(!store.has_import_record_content_hash("missing_hash"));
-    assert_eq!(store.import_records().count(), 4);
-    assert_eq!(store.import_records().collect::<Vec<_>>().len(), 4);
-
-    assert_eq!(store.import_batches().count(), 4);
-    assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 4);
-
-    assert_eq!(store.statement_line_count(), 2);
-    assert_eq!(store.statement_lines().count(), 2);
-
-    assert_eq!(store.reconciliation_run_count(), 2);
-    assert_eq!(store.reconciliation_runs().count(), 2);
-    assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 2);
-
-    assert_eq!(store.month_close_count(), 2);
-    assert!(store.month_close("close-1").is_some());
-    assert!(store.month_close("missing").is_none());
-    assert_eq!(store.month_closes().count(), 2);
-    assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 2);
-
-    // transactions_as_of_us returning populated values prevents mutant returning Ok(vec![])
-    // The previous tests write 2 original txns, but one is superseded twice, so projection returns 1
-    let as_of_us_populated = store.transactions_as_of_us(i64::MAX, i64::MAX).unwrap();
-    assert_eq!(as_of_us_populated.len(), 1);
-}
-
-#[test]
-fn test_current_projection_without_superseded() {
-    use logos_core::{AccountId, Correction, Posting, TransactionBuilder};
-    let mut store = crate::AletheiaStore::new();
-
-    // Write transaction 1
-    let txn_id1 = store
-        .write_transaction(
-            TransactionBuilder::new("test1")
-                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
-                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap()),
-        )
-        .unwrap();
-
-    // Write transaction 2
-    let txn_id2 = store
-        .write_transaction(
-            TransactionBuilder::new("test2")
-                .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap())
-                .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap()),
-        )
-        .unwrap();
-
-    let mut proj = store.current_projection_without_superseded();
-    assert!(!proj.iter().any(|t| t.id().as_str() == "missing"));
-    assert_eq!(proj.len(), 2);
-    assert!(proj.iter().any(|t| t.id() == &txn_id1));
-    assert!(proj.iter().any(|t| t.id() == &txn_id2));
-
-    // Supersede transaction 1
-    let corr = Correction::new(txn_id1.clone(), "fix").unwrap();
-    store.write_correction(corr).unwrap();
-
-    proj = store.current_projection_without_superseded();
-    assert_eq!(proj.len(), 1);
-    assert_eq!(
-        proj.iter()
-            .map(crate::model::StoredTransaction::id)
-            .collect::<Vec<_>>(),
-        vec![&txn_id2]
-    );
-    assert!(!proj.iter().any(|t| t.id() == &txn_id1));
-    assert!(proj.iter().any(|t| t.id() == &txn_id2));
-
-    // Check missing ids are false to prevent ! negation removal mutants
-    assert!(!store.transactions.values().any(|stored| {
+        // Write analytics artifact
         store
-            .corrections
-            .iter()
-            .map(crate::model::StoredCorrection::correction)
-            .map(logos_core::Correction::supersedes_id)
-            .any(|s| *s == *stored.id())
-            && proj.iter().any(|p| p.id() == stored.id())
-    }));
+            .write_analytics_artifact_manifest(
+                "test_kind",
+                "test_uri",
+                "test_hash",
+                1,
+                1,
+                aletheiadb::time::now(),
+                aletheiadb::time::now(),
+                None,
+            )
+            .unwrap();
+        assert_eq!(store.analytics_artifacts().count(), 1);
+        assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 1);
+
+        store
+            .write_analytics_artifact_manifest(
+                "test_kind2",
+                "test_uri2",
+                "test_hash2",
+                1,
+                1,
+                aletheiadb::time::now(),
+                aletheiadb::time::now(),
+                None,
+            )
+            .unwrap();
+        assert_eq!(store.analytics_artifacts().count(), 2);
+        assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 2);
+
+        // Write import batch
+        let rec = crate::model::NewImportRecord::new("hash1", Some(&txn_id));
+        store
+            .write_import_batch("kind", "uri", "batch1", 0, false, false, &[rec])
+            .unwrap();
+        assert_eq!(store.import_record_count(), 1);
+        assert!(store.has_import_record_content_hash("hash1"));
+        assert!(!store.has_import_record_content_hash("missing_hash"));
+        assert_eq!(store.import_records().count(), 1);
+        assert_eq!(store.import_records().collect::<Vec<_>>().len(), 1);
+        assert_eq!(store.import_batches().count(), 1);
+        assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 1);
+
+        let rec2 = crate::model::NewImportRecord::new("hash2", Some(&txn_id));
+        store
+            .write_import_batch("kind", "uri", "batch2", 0, false, false, &[rec2])
+            .unwrap();
+        assert_eq!(store.import_record_count(), 2);
+        assert_eq!(store.import_records().count(), 2);
+        assert_eq!(store.import_records().collect::<Vec<_>>().len(), 2);
+        assert_eq!(store.import_batches().count(), 2);
+        assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 2);
+
+        // Write statement line
+        let line_rec = crate::model::NewImportRecord::with_statement_line(
+            "line1",
+            Some(&txn_id),
+            "uri",
+            "2026-03-01T00:00:00",
+            "memo",
+            -100,
+        );
+        store
+            .write_import_batch("stmt", "uri", "batch3", 0, false, false, &[line_rec])
+            .unwrap();
+        assert_eq!(store.statement_line_count(), 1);
+        assert_eq!(store.statement_lines().count(), 1);
+
+        let line_rec2 = crate::model::NewImportRecord::with_statement_line(
+            "line2",
+            Some(&txn_id),
+            "uri",
+            "2026-03-01T00:00:00",
+            "memo",
+            -100,
+        );
+        store
+            .write_import_batch("stmt", "uri", "batch4", 0, false, false, &[line_rec2])
+            .unwrap();
+        assert_eq!(store.statement_line_count(), 2);
+        assert_eq!(store.statement_lines().count(), 2);
+
+        // Write reconciliation run
+        let run = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                0,
+                100,
+                100,
+                100,
+                0,
+                true,
+                1,
+                100,
+                0,
+                std::slice::from_ref(&txn_id),
+            )
+            .unwrap();
+        assert_eq!(store.reconciliation_run_count(), 1);
+        assert_eq!(store.reconciliation_runs().count(), 1);
+        assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 1);
+
+        let run2 = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:savings",
+                0,
+                100,
+                100,
+                100,
+                0,
+                true,
+                1,
+                100,
+                0,
+                std::slice::from_ref(&txn_id),
+            )
+            .unwrap();
+        assert_eq!(store.reconciliation_run_count(), 2);
+        assert_eq!(store.reconciliation_runs().count(), 2);
+        assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 2);
+
+        // Write month close
+        store
+            .write_month_close("2026-03", "assets:checking", run.run_id(), None)
+            .unwrap();
+        assert_eq!(store.month_close_count(), 1);
+        assert!(store.month_close("close-1").is_some());
+        assert_eq!(store.month_closes().count(), 1);
+        assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 1);
+
+        store
+            .write_month_close("2026-03", "assets:savings", run2.run_id(), None)
+            .unwrap();
+        assert_eq!(store.month_close_count(), 2);
+        assert!(store.month_close("close-2").is_some());
+        assert!(store.month_close("missing_close").is_none());
+        assert_eq!(store.month_closes().count(), 2);
+        assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 2);
+
+        // Write a second transaction to ensure counts > 1
+        let _txn_id3 = store
+            .write_transaction(
+                TransactionBuilder::new("test3")
+                    .posting(
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap(),
+                    ),
+            )
+            .unwrap();
+
+        // Final assertions to ensure all collections return exactly 2 items
+        // This kills mutants that hardcode return values to 1, true, or std::iter::empty()
+        assert_eq!(store.transaction_count(), 2);
+        assert!(store.has_transaction(&txn_id));
+        assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").unwrap()));
+        assert_eq!(store.transactions().count(), 2);
+        assert_eq!(store.transactions().collect::<Vec<_>>().len(), 2);
+
+        assert_eq!(store.correction_count(), 2);
+
+        assert_eq!(store.budget_targets().count(), 2);
+        assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 2);
+
+        assert_eq!(store.analytics_artifacts().count(), 2);
+        assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 2);
+
+        assert_eq!(store.import_record_count(), 4);
+        assert!(store.has_import_record_content_hash("hash1"));
+        assert!(!store.has_import_record_content_hash("missing_hash"));
+        assert_eq!(store.import_records().count(), 4);
+        assert_eq!(store.import_records().collect::<Vec<_>>().len(), 4);
+
+        assert_eq!(store.import_batches().count(), 4);
+        assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 4);
+
+        assert_eq!(store.statement_line_count(), 2);
+        assert_eq!(store.statement_lines().count(), 2);
+
+        assert_eq!(store.reconciliation_run_count(), 2);
+        assert_eq!(store.reconciliation_runs().count(), 2);
+        assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 2);
+
+        assert_eq!(store.month_close_count(), 2);
+        assert!(store.month_close("close-1").is_some());
+        assert!(store.month_close("missing").is_none());
+        assert_eq!(store.month_closes().count(), 2);
+        assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 2);
+
+        // transactions_as_of_us returning populated values prevents mutant returning Ok(vec![])
+        // The previous tests write 2 original txns, but one is superseded twice, so projection returns 1
+        let as_of_us_populated = store.transactions_as_of_us(i64::MAX, i64::MAX).unwrap();
+        assert_eq!(as_of_us_populated.len(), 1);
+    }
+
+    #[test]
+    fn test_current_projection_without_superseded() {
+        use logos_core::{AccountId, Correction, Posting, TransactionBuilder};
+        let mut store = crate::AletheiaStore::new();
+
+        // Write transaction 1
+        let txn_id1 = store
+            .write_transaction(
+                TransactionBuilder::new("test1")
+                    .posting(
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap(),
+                    ),
+            )
+            .unwrap();
+
+        // Write transaction 2
+        let txn_id2 = store
+            .write_transaction(
+                TransactionBuilder::new("test2")
+                    .posting(
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap(),
+                    ),
+            )
+            .unwrap();
+
+        let mut proj = store.current_projection_without_superseded();
+        assert!(!proj.iter().any(|t| t.id().as_str() == "missing"));
+        assert_eq!(proj.len(), 2);
+        assert!(proj.iter().any(|t| t.id() == &txn_id1));
+        assert!(proj.iter().any(|t| t.id() == &txn_id2));
+
+        // Supersede transaction 1
+        let corr = Correction::new(txn_id1.clone(), "fix").unwrap();
+        store.write_correction(corr).unwrap();
+
+        proj = store.current_projection_without_superseded();
+        assert_eq!(proj.len(), 1);
+        assert_eq!(
+            proj.iter()
+                .map(crate::model::StoredTransaction::id)
+                .collect::<Vec<_>>(),
+            vec![&txn_id2]
+        );
+        assert!(!proj.iter().any(|t| t.id() == &txn_id1));
+        assert!(proj.iter().any(|t| t.id() == &txn_id2));
+
+        // Check missing ids are false to prevent ! negation removal mutants
+        assert!(!store.transactions.values().any(|stored| {
+            store
+                .corrections
+                .iter()
+                .map(crate::model::StoredCorrection::correction)
+                .map(logos_core::Correction::supersedes_id)
+                .any(|s| *s == *stored.id())
+                && proj.iter().any(|p| p.id() == stored.id())
+        }));
+    }
 }

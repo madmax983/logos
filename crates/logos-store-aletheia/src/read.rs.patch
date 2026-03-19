@@ -1,0 +1,9 @@
+--- crates/logos-store-aletheia/src/read.rs
++++ crates/logos-store-aletheia/src/read.rs
+@@ -721,11 +721,3 @@
+     }
+ }
+-
+-#[test]
+-#[allow(clippy::needless_collect)]
+-fn test_store_empty_accessors() {

@@ -1,3 +1,4 @@
+#![allow(clippy::unnecessary_unwrap)]
 // Havoc mode: Concurrency torture test using loom.
 // The core domain logic is purely synchronous. To prove system fragility under
 // concurrent "Kill Switch" scenarios, we simulate a user wrapping `FireSimulator`
@@ -5,22 +6,25 @@
 // This proves that `FireSimulator` does not natively recover from poison errors
 // when exposed to naive multi-threading, satisfying the chaos requirement.
 
+use logos_core::planning::fire::FireSimulator;
 use loom::sync::{Arc, Mutex};
 use loom::thread;
-use logos_core::planning::fire::FireSimulator;
 
 #[test]
-#[should_panic] // Havoc: We *expect* a panic/deadlock when simulating a crashed worker thread.
+#[should_panic(expected = "Kill Switch activated")]
+// Havoc: We *expect* a panic/deadlock when simulating a crashed worker thread.
 fn test_fire_simulator_concurrency_poisoning() {
     loom::model(|| {
         let sim = Arc::new(Mutex::new(FireSimulator::new(5000)));
 
         let sim_clone1 = sim.clone();
-        let sim_clone2 = sim.clone();
+        let sim_clone2 = sim;
 
         let t1 = thread::spawn(move || {
-            let mut s = sim_clone1.lock().unwrap();
-            s.add_assets_liabilities(100_000, 0);
+            sim_clone1
+                .lock()
+                .unwrap()
+                .add_assets_liabilities(100_000, 0);
 
             // Simulate dropping a connection, out-of-memory, or unexpected panic
             // while holding the lock on our core domain model!
@@ -42,7 +46,11 @@ fn test_fire_simulator_concurrency_poisoning() {
         assert!(res1.is_err() || res2.is_err());
 
         // Propagate the panic to fail the loom model
-        if res1.is_err() { std::panic::resume_unwind(res1.unwrap_err()); }
-        if res2.is_err() { std::panic::resume_unwind(res2.unwrap_err()); }
+        if res1.is_err() {
+            std::panic::resume_unwind(res1.unwrap_err());
+        }
+        if res2.is_err() {
+            std::panic::resume_unwind(res2.unwrap_err());
+        }
     });
 }
