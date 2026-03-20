@@ -1,9 +1,15 @@
 //! Net worth projection and milestone tracking over time.
 //!
-//! This module contains primitives to simulate how a user's net worth will grow
-//! over a period of months, factoring in monthly cash savings and upcoming RSU vests.
-//! It also identifies exactly when specific financial milestones (like a FIRE number)
-//! will be achieved.
+//! # The Crystal Ball
+//!
+//! While the `fire` module answers the question *How much do I need?*, this module
+//! answers the equally terrifying question: *When will I actually get there?*
+//!
+//! This module contains primitives to simulate how your net worth will grow
+//! month over month. It projects future cash flow by combining your steady monthly
+//! savings with the "lumpy" risk-adjusted value of your upcoming RSU vests. By
+//! establishing milestones (like your FIRE number or a down payment), you can see
+//! exactly when you will cross the finish line.
 
 use crate::domain::rsu::{HaircutTierTable, forecast_value_cents};
 use crate::planning::fire::UpcomingVest;
@@ -42,9 +48,12 @@ pub struct ProjectedMonth {
 
 /// Projects net worth over time based on steady savings and upcoming RSU vests.
 ///
-/// This provides a crystal ball to see *when* financial milestones (e.g., FIRE number)
-/// will be reached. The simulation runs forward month-by-month. It assumes that every month
-/// represents exactly 30 days when determining if a vest has occurred.
+/// The [`NetWorthProjector`] is a timeline simulation tool. Instead of just modeling a
+/// static snapshot, it walks forward in time month-by-month. In each 30-day window, it
+/// aggregates your baseline monthly cash savings and any RSUs that are scheduled to vest,
+/// automatically applying risk haircuts to future stock values to keep expectations grounded.
+/// It continuously checks this running total against your requested milestones to pinpoint
+/// the exact month a goal is achieved.
 ///
 /// ## Examples
 ///
