@@ -6,6 +6,8 @@ pub mod fire_ascent;
 pub mod inflation;
 pub mod mermaid_exporter;
 pub mod monte_carlo;
+#[cfg(feature = "nova")]
+pub mod opportunity_analyzer;
 pub mod recurrence_detector;
 #[cfg(feature = "nova")]
 pub mod trinity_simulator;
