@@ -13,4 +13,5 @@ aletheiadb = { git = "https://github.com/madmax983/AletheiaDB.git", branch = "tr
 
 [dev-dependencies]
 loom = "0.7.2"
+proptest = "1.10.0"
 tempfile = "3.27.0"
