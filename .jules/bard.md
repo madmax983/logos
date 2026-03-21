@@ -21,3 +21,7 @@
 ## 2026-03-10 - [FireSimulator Primitives]
 **Confusion:** The `FireSimulator` and its configuration primitives in `logos-core::planning::fire` had dry, terse docstrings that repeated function names without explaining the underlying "why" (e.g. why risk haircut tiers exist or what a FIRE number represents practically). The module lacked a high-level explanation of its core purpose.
 **Clarification:** Added a module-level `//!` narrative ("The Great Escape") explaining the goal of projecting financial independence. Upgraded struct and method docstrings to use storytelling analogies (war chest, burn rate) and added standalone, executable `## Examples` doc-tests to `FireConfig` and all public `FireSimulator` methods to demonstrate integration points clearly.
+
+## 2026-03-11 - [NetWorthProjector Narration]
+**Confusion:** The `NetWorthProjector` lacked a narrative explaining its purpose as a timeline simulation tool, unlike the highly descriptive `FireSimulator`. Users were left to read the implementation to understand how time and monthly cash flow aggregation worked.
+**Clarification:** Added a high-level "The Crystal Ball" module narrative to `crates/logos-core/src/planning/net_worth_projector.rs` explaining its purpose as the "when" to FIRE's "how much". Expanded the struct-level documentation to explain the 30-day window aggregation logic.
