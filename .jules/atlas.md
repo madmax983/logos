@@ -8,3 +8,7 @@
 **Extract Runtime to Break UI Coupling**
 **Tangle:** The `logos-tui` executable crate depended directly on the `logos-cli` executable crate just to use `CliRuntime`, creating a frontend-to-frontend dependency ("The Sprawl").
 **Blueprint:** Extracted `CliRuntime` (renamed to `AppRuntime`) into a new workspace crate `logos-runtime`. Updated both `logos-cli` and `logos-tui` to depend on `logos-runtime` instead, enforcing unidirectional architectural bounds.
+
+**[The Shared Linear Congruential Generator]**
+**Tangle:** The `Lcg` struct (Linear Congruential Generator) was duplicated in both `monte_carlo.rs` and `trinity_simulator.rs` within `logos-core::experimental`. This violated DRY principles and added unnecessary bloat to the modules.
+**Blueprint:** Extracted the `Lcg` struct and its methods into a new `lcg.rs` module (`pub(crate) mod lcg;`). Refactored both `monte_carlo.rs` and `trinity_simulator.rs` to import and utilize the shared `Lcg` implementation, reducing code duplication and centralizing random number generation logic for simulators.
