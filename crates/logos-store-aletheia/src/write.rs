@@ -231,40 +231,39 @@ impl AletheiaStore {
             imported_at,
         );
 
-        let statement_lines = records
-            .iter()
-            .map(|record| {
-                record.statement_line().map(|line| {
-                    StoredStatementLine::new(
-                        &self.next_statement_line_id(),
-                        batch.batch_id(),
-                        line.source_uri(),
-                        line.statement_timestamp(),
-                        line.memo(),
-                        line.amount_cents(),
-                        record.imported_txn_id().cloned(),
-                        imported_at,
-                    )
-                })
-            })
-            .collect::<Vec<_>>();
+        let mut statement_lines = Vec::with_capacity(records.len());
+        for record in records.iter() {
+            let stored_line = record.statement_line().map(|line| {
+                StoredStatementLine::new(
+                    &self.next_statement_line_id(),
+                    batch.batch_id(),
+                    line.source_uri(),
+                    line.statement_timestamp(),
+                    line.memo(),
+                    line.amount_cents(),
+                    record.imported_txn_id().cloned(),
+                    imported_at,
+                )
+            });
 
-        for line in statement_lines.iter().flatten() {
-            if line.source_uri().is_empty() {
-                return Err(StoreError::PersistFailed {
-                    message: "statement line source_uri must not be empty".to_owned(),
-                });
+            if let Some(line) = &stored_line {
+                if line.source_uri().is_empty() {
+                    return Err(StoreError::PersistFailed {
+                        message: "statement line source_uri must not be empty".to_owned(),
+                    });
+                }
+                if line.statement_timestamp().is_empty() {
+                    return Err(StoreError::PersistFailed {
+                        message: "statement line timestamp must not be empty".to_owned(),
+                    });
+                }
+                if line.memo().is_empty() {
+                    return Err(StoreError::PersistFailed {
+                        message: "statement line memo must not be empty".to_owned(),
+                    });
+                }
             }
-            if line.statement_timestamp().is_empty() {
-                return Err(StoreError::PersistFailed {
-                    message: "statement line timestamp must not be empty".to_owned(),
-                });
-            }
-            if line.memo().is_empty() {
-                return Err(StoreError::PersistFailed {
-                    message: "statement line memo must not be empty".to_owned(),
-                });
-            }
+            statement_lines.push(stored_line);
         }
 
         self.persist_import_batch_graph(&batch, records, &statement_lines)?;
