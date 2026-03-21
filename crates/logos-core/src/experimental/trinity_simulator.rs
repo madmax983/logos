@@ -6,7 +6,7 @@
 use crate::experimental::inflation::InflationProjector;
 
 /// A simple Linear Congruential Generator for deterministic randomness.
-/// Lifted from monte_carlo.rs for reuse in this module.
+/// Lifted from `monte_carlo.rs` for reuse in this module.
 #[derive(Debug, Clone)]
 struct Lcg {
     state: u64,
@@ -152,7 +152,7 @@ impl TrinitySimulator {
         }
 
         #[allow(clippy::cast_precision_loss)]
-        let success_rate_f64 = (successful_paths as f64 / paths as f64) * 100.0;
+        let success_rate_f64 = (f64::from(successful_paths) / f64::from(paths)) * 100.0;
 
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let success_rate_pct = success_rate_f64.round() as u8;

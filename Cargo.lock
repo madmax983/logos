@@ -1282,6 +1282,7 @@ dependencies = [
  "aletheiadb",
  "logos-core",
  "loom",
+ "proptest",
  "tempfile",
 ]
 
