@@ -177,7 +177,10 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
         Cell::new(run.run_id()).fg(Color::DarkGrey),
         Cell::new(run.month_key()),
         Cell::new(run.checking_account()),
-        Cell::new(format!("${:.2}", (run.opening_balance_cents() as f64) / 100.0)),
+        Cell::new(format!(
+            "${:.2}",
+            (run.opening_balance_cents() as f64) / 100.0
+        )),
         Cell::new(format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0)),
         Cell::new(format!(
             "${:.2}",
