@@ -1,9 +1,16 @@
 //! Automated distribution of restricted stock unit (RSU) vests.
 //!
-//! When an RSU vests, the gross value needs to be tracked and distributed across
-//! several financial buckets (e.g., tax reserves, savings goals, discretionary spending).
-//! This module automates the generation of perfectly balanced, multi-posting ledger
-//! transactions according to a user's defined [`AllocationPolicy`].
+//! # The Vesting Waterfall
+//!
+//! When an RSU vests, the gross value isn't just a pile of free money—it's a taxable
+//! event that needs to be carefully routed into different financial buckets (e.g., tax reserves,
+//! savings goals, discretionary spending).
+//!
+//! This module acts as the automated routing engine. It takes a gross vest amount and an
+//! [`AllocationPolicy`] and generates perfectly balanced, multi-posting ledger
+//! transactions. It handles the messy reality of fractional cents by mathematically sweeping
+//! any remainder cents into the tax reserve account, ensuring the resulting `Transaction`
+//! perfectly abides by double-entry accounting rules.
 
 use crate::domain::account::AccountId;
 use crate::domain::rsu::AllocationPolicy;

@@ -1,15 +1,9 @@
 //! Net worth projection and milestone tracking over time.
 //!
-//! # The Crystal Ball
-//!
 //! This module contains primitives to simulate how a user's net worth will grow
-//! over a period of months, factoring in steady monthly cash savings and the
-//! bumpy, non-linear growth from upcoming RSU vests.
-//!
-//! It also identifies exactly when specific financial milestones (like a FIRE number,
-//! a house down payment, or a college fund target) will be achieved. Because
-//! future RSUs carry risk, they are discounted based on their vesting horizon using
-//! `HaircutTierTable` before being added to the projected net worth.
+//! over a period of months, factoring in monthly cash savings and upcoming RSU vests.
+//! It also identifies exactly when specific financial milestones (like a FIRE number)
+//! will be achieved.
 
 use crate::domain::rsu::{HaircutTierTable, forecast_value_cents};
 use crate::planning::fire::UpcomingVest;

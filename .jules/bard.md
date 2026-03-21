@@ -21,3 +21,7 @@
 ## 2026-03-10 - [FireSimulator Primitives]
 **Confusion:** The `FireSimulator` and its configuration primitives in `logos-core::planning::fire` had dry, terse docstrings that repeated function names without explaining the underlying "why" (e.g. why risk haircut tiers exist or what a FIRE number represents practically). The module lacked a high-level explanation of its core purpose.
 **Clarification:** Added a module-level `//!` narrative ("The Great Escape") explaining the goal of projecting financial independence. Upgraded struct and method docstrings to use storytelling analogies (war chest, burn rate) and added standalone, executable `## Examples` doc-tests to `FireConfig` and all public `FireSimulator` methods to demonstrate integration points clearly.
+
+## 2026-03-11 - [NetWorthProjector and RsuDistributor Primitives]
+**Confusion:** The modules `net_worth_projector` and `rsu_distributor` had basic module-level documentation and struct-level docstrings, but lacked storytelling narratives. Specifically, what `ProjectedMonth` meant practically in the output of the projector was left to interpretation.
+**Clarification:** Added module-level `//!` narrative sections ("The Crystal Ball" and "The Vesting Waterfall") explaining the context of these tools. Upgraded `ProjectedMonth`'s documentation with a concrete `## Examples` executable doc-test.
