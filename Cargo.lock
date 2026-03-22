@@ -1273,6 +1273,7 @@ dependencies = [
  "logos-reporting",
  "logos-store-aletheia",
  "polars",
+ "proptest",
  "tokio",
 ]
 
