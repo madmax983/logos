@@ -232,7 +232,7 @@ impl AletheiaStore {
         );
 
         let mut statement_lines = Vec::with_capacity(records.len());
-        for record in records.iter() {
+        for record in records {
             let stored_line = record.statement_line().map(|line| {
                 StoredStatementLine::new(
                     &self.next_statement_line_id(),
