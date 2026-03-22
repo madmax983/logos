@@ -14,6 +14,15 @@ pub struct TransactionId(String);
 impl TransactionId {
     /// Creates a normalized transaction id.
     ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::correction::TransactionId;
+    ///
+    /// let id = TransactionId::new(" tx-123 ").unwrap();
+    /// assert_eq!(id.as_str(), "tx-123");
+    /// ```
+    ///
     /// # Errors
     ///
     /// Returns an error when `value` is empty after trimming.
@@ -26,6 +35,16 @@ impl TransactionId {
         Ok(Self(trimmed.to_owned()))
     }
 
+    /// Retrieves the string representation of the transaction id.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::correction::TransactionId;
+    ///
+    /// let id = TransactionId::new("tx-123").unwrap();
+    /// assert_eq!(id.as_str(), "tx-123");
+    /// ```
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
@@ -89,6 +108,17 @@ impl Correction {
         &self.supersedes_id
     }
 
+    /// Retrieves the mandatory reason for why the correction was made.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::correction::{Correction, TransactionId};
+    ///
+    /// let old_tx = TransactionId::new("tx-123").unwrap();
+    /// let correction = Correction::new(old_tx, "Fixed wrong account").unwrap();
+    /// assert_eq!(correction.reason(), "Fixed wrong account");
+    /// ```
     #[must_use]
     pub fn reason(&self) -> &str {
         &self.reason
@@ -98,6 +128,18 @@ impl Correction {
     ///
     /// This helper makes the "not self-superseding" invariant explicit at
     /// construction time whenever the candidate id is available.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::correction::{Correction, TransactionId};
+    ///
+    /// let old_tx = TransactionId::new("tx-123").unwrap();
+    /// let new_tx = TransactionId::new("tx-456").unwrap();
+    /// let correction = Correction::new_for_candidate(old_tx, &new_tx, "Typo").unwrap();
+    ///
+    /// assert_eq!(correction.reason(), "Typo");
+    /// ```
     ///
     /// # Errors
     ///

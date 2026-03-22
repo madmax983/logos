@@ -25,3 +25,7 @@
 ## 2026-03-11 - [NetWorthProjector Narration]
 **Confusion:** The `NetWorthProjector` lacked a narrative explaining its purpose as a timeline simulation tool, unlike the highly descriptive `FireSimulator`. Users were left to read the implementation to understand how time and monthly cash flow aggregation worked.
 **Clarification:** Added a high-level "The Crystal Ball" module narrative to `crates/logos-core/src/planning/net_worth_projector.rs` explaining its purpose as the "when" to FIRE's "how much". Expanded the struct-level documentation to explain the 30-day window aggregation logic.
+
+## 2026-03-22 - [Domain Primitives Documentation]
+**Confusion:** Many core domain primitives (`AccountId`, `Category`, `Transaction`, `Correction`, `BudgetMonth`) were missing executable examples and detailed docstrings explaining their usage, leading to potential confusion about how to instantiate and use them correctly.
+**Clarification:** Added comprehensive, executable `## Examples` doc-tests and descriptive `///` comments to key methods across `crates/logos-core/src/domain/`, replacing unhelpful "noise" getter docs with functional descriptions.

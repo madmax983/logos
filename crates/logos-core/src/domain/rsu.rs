@@ -73,6 +73,15 @@ impl HaircutTierTable {
     }
 
     /// Creates a table with default conservative haircut tiers.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::rsu::HaircutTierTable;
+    ///
+    /// let tiers = HaircutTierTable::conservative_defaults();
+    /// assert_eq!(tiers.haircut_for_days(15), 25);
+    /// ```
     #[must_use]
     pub fn conservative_defaults() -> Self {
         Self::default()

@@ -49,6 +49,16 @@ impl CategoryGroupId {
         Ok(Self(normalized))
     }
 
+    /// Retrieves the string representation of the category group id.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::category::CategoryGroupId;
+    ///
+    /// let id = CategoryGroupId::from_name("Housing").unwrap();
+    /// assert_eq!(id.as_str(), "housing");
+    /// ```
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
@@ -98,6 +108,17 @@ impl CategoryGroup {
         &self.id
     }
 
+    /// Retrieves the original name of the category.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::category::{Category, CategoryGroup};
+    ///
+    /// let group = CategoryGroup::new("Housing").unwrap();
+    /// let category = Category::new(group.id().clone(), "Rent").unwrap();
+    /// assert_eq!(category.name(), "Rent");
+    /// ```
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name
@@ -152,6 +173,17 @@ impl Category {
         &self.group_id
     }
 
+    /// Retrieves the original name of the category.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::category::{Category, CategoryGroup};
+    ///
+    /// let group = CategoryGroup::new("Housing").unwrap();
+    /// let category = Category::new(group.id().clone(), "Rent").unwrap();
+    /// assert_eq!(category.name(), "Rent");
+    /// ```
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name

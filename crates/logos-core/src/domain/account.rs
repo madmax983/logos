@@ -17,6 +17,15 @@ pub struct AccountId(String);
 impl AccountId {
     /// Creates a new `AccountId`, trimming whitespace.
     ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::AccountId;
+    ///
+    /// let id = AccountId::new(" assets:checking ").unwrap();
+    /// assert_eq!(id.as_str(), "assets:checking");
+    /// ```
+    ///
     /// # Errors
     ///
     /// Returns an error when `id` is empty after trimming.
@@ -29,7 +38,16 @@ impl AccountId {
         Ok(Self(trimmed.to_owned()))
     }
 
-    /// Returns the string representation.
+    /// Retrieves the string representation of the account id.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::AccountId;
+    ///
+    /// let id = AccountId::new("assets:checking").unwrap();
+    /// assert_eq!(id.as_str(), "assets:checking");
+    /// ```
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
