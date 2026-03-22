@@ -271,20 +271,11 @@ pub fn fire_sim(
     let fire_number = sim.fire_number_cents();
     let current_net_worth = sim.safe_net_worth_cents();
 
-    let mut projector = NetWorthProjector::new(current_net_worth, monthly_savings_cents);
-    projector.add_milestone_cents(fire_number);
-
+    let projector = NetWorthProjector::new(current_net_worth, monthly_savings_cents);
     let months_to_simulate = 1200; // up to 100 years
-    let (timeline, _milestones) = projector.project_timeline(months_to_simulate);
 
-    let mut months_to_fire = None;
-
-    for month in timeline {
-        if month.net_worth_cents >= fire_number {
-            months_to_fire = Some(month.month_index);
-            break;
-        }
-    }
+    let ascent_sim = logos_core::experimental::fire_ascent::FireAscentSimulator::new(sim, projector, months_to_simulate);
+    let ascent_result = ascent_sim.ascend();
 
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
@@ -321,31 +312,46 @@ pub fn fire_sim(
             .fg(comfy_table::Color::Green),
     ]);
 
-    if let Some(months) = months_to_fire {
-        let years = months / 12;
-        let extra_months = months % 12;
-        table.add_row(vec![
-            comfy_table::Cell::new("Time to FIRE")
-                .fg(comfy_table::Color::Yellow)
-                .add_attribute(comfy_table::Attribute::Bold),
-            comfy_table::Cell::new(format!(
-                "{years} years, {extra_months} months ({months} months total)"
-            ))
-            .fg(comfy_table::Color::Yellow)
-            .add_attribute(comfy_table::Attribute::Bold),
+    let mut journey_table = comfy_table::Table::new();
+    journey_table.load_preset(comfy_table::presets::UTF8_FULL);
+    journey_table.set_header(vec!["Milestone", "Target", "Status"]);
+
+    if ascent_result.impossible {
+        journey_table.add_row(vec![
+            comfy_table::Cell::new("Simulation").fg(comfy_table::Color::Red),
+            comfy_table::Cell::new("Infinite Summit").fg(comfy_table::Color::Red),
+            comfy_table::Cell::new("Impossible").fg(comfy_table::Color::Red).add_attribute(comfy_table::Attribute::Bold),
+        ]);
+    } else if ascent_result.instant_summit {
+        journey_table.add_row(vec![
+            comfy_table::Cell::new("Simulation").fg(comfy_table::Color::Green),
+            comfy_table::Cell::new("$0.00 Expenses").fg(comfy_table::Color::Green),
+            comfy_table::Cell::new("Instant Summit!").fg(comfy_table::Color::Green).add_attribute(comfy_table::Attribute::Bold),
         ]);
     } else {
-        table.add_row(vec![
-            comfy_table::Cell::new("Time to FIRE")
-                .fg(comfy_table::Color::Yellow)
-                .add_attribute(comfy_table::Attribute::Bold),
-            comfy_table::Cell::new("Not reached within 100 years simulation.")
-                .fg(comfy_table::Color::Red)
-                .add_attribute(comfy_table::Attribute::Bold),
-        ]);
+        for milestone in ascent_result.milestones {
+            #[allow(clippy::cast_precision_loss)]
+            let target_dollars = format!("${:.2}", (milestone.target_cents as f64) / 100.0);
+
+            if let Some(month) = milestone.month_reached {
+                let years = month / 12;
+                let extra_months = month % 12;
+                journey_table.add_row(vec![
+                    comfy_table::Cell::new(milestone.name).fg(comfy_table::Color::Green),
+                    comfy_table::Cell::new(target_dollars).fg(comfy_table::Color::Green),
+                    comfy_table::Cell::new(format!("Reached in {years}y {extra_months}m (Month {month})")).fg(comfy_table::Color::Green).add_attribute(comfy_table::Attribute::Bold),
+                ]);
+            } else {
+                journey_table.add_row(vec![
+                    comfy_table::Cell::new(milestone.name).fg(comfy_table::Color::Red),
+                    comfy_table::Cell::new(target_dollars).fg(comfy_table::Color::Red),
+                    comfy_table::Cell::new("Pending").fg(comfy_table::Color::Red),
+                ]);
+            }
+        }
     }
 
-    println!("analytics.fire-sim\n{table}");
+    println!("analytics.fire-sim\n{}\n\n{}", table, journey_table);
 
     Ok(())
 }
