@@ -439,10 +439,10 @@ fn reconstruct_transaction_at_as_of(
     let expected_txn_id = expected_id.as_str();
     let description = required_node_string_property(transaction_node, PROP_DESCRIPTION)?;
 
-    let mut postings = Vec::new();
-    for edge_id in
-        db.get_outgoing_edges_at_time(transaction_node_id, as_of.valid_time(), as_of.tx_time())
-    {
+    let outgoing_edges =
+        db.get_outgoing_edges_at_time(transaction_node_id, as_of.valid_time(), as_of.tx_time());
+    let mut postings = Vec::with_capacity(outgoing_edges.len());
+    for edge_id in outgoing_edges {
         let Some(edge) = get_edge_at_as_of(db, edge_id, as_of)? else {
             continue;
         };

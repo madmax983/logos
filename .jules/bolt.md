@@ -22,3 +22,7 @@
 **Pre-Sorted State for Projections**
 **Learning:** In read-heavy projection or simulation methods (e.g. `project_timeline`), cloning a vector just to `.sort_unstable()` it before a hot loop introduces unnecessary heap allocations.
 **Action:** Move the sorting logic (`.sort_unstable()`) to the data insertion methods (e.g. `add_milestone_cents`) to maintain a pre-sorted state, eliminating the need to `.clone()` the vector inside the projection method.
+
+**Pre-allocate Vector for Outgoing Edges**
+**Learning:** Initializing vectors with `Vec::new()` and then continuously pushing into them on a hot path causes multiple heap allocations, which degrades performance. Additionally, using `records.iter()` for a loop that can consume the records without borrowing is less efficient.
+**Action:** Replace `Vec::new()` with `Vec::with_capacity(outgoing_edges.len())` when the capacity is known beforehand to avoid continuous heap allocations. Remove explicit `.iter()` where appropriate.
