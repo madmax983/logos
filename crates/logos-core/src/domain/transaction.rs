@@ -47,6 +47,16 @@ pub struct Posting {
 impl Posting {
     /// Creates a debit posting.
     ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::AccountId;
+    ///
+    /// let posting = Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).unwrap();
+    /// assert_eq!(posting.amount(), 1000);
+    /// ```
+    ///
     /// # Errors
     ///
     /// Returns an error when `amount` is not strictly positive.
@@ -59,6 +69,16 @@ impl Posting {
     }
 
     /// Creates a credit posting, negating the provided amount.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::AccountId;
+    ///
+    /// let posting = Posting::credit(AccountId::new("income:salary").unwrap(), 1000).unwrap();
+    /// assert_eq!(posting.amount(), -1000); // Credits are strictly negative
+    /// ```
     ///
     /// # Errors
     ///
@@ -96,11 +116,43 @@ pub struct Transaction {
 }
 
 impl Transaction {
+    /// Retrieves the description of the transaction.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+    /// use logos_core::AccountId;
+    ///
+    /// let txn = TransactionBuilder::new("Buy groceries")
+    ///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000).unwrap())
+    ///     .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 5000).unwrap())
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// assert_eq!(txn.description(), "Buy groceries");
+    /// ```
     #[must_use]
     pub fn description(&self) -> &str {
         &self.description
     }
 
+    /// Retrieves the list of postings associated with the transaction.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+    /// use logos_core::AccountId;
+    ///
+    /// let txn = TransactionBuilder::new("Buy groceries")
+    ///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000).unwrap())
+    ///     .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 5000).unwrap())
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// assert_eq!(txn.postings().len(), 2);
+    /// ```
     #[must_use]
     pub fn postings(&self) -> &[Posting] {
         &self.postings
@@ -149,6 +201,14 @@ pub struct TransactionBuilder {
 
 impl TransactionBuilder {
     /// Initiates a new transaction builder with the given description.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::TransactionBuilder;
+    ///
+    /// let builder = TransactionBuilder::new("Buy groceries");
+    /// ```
     #[must_use]
     pub fn new(description: &str) -> Self {
         Self {
@@ -158,6 +218,16 @@ impl TransactionBuilder {
     }
 
     /// Adds a [`Posting`] to the transaction.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+    /// use logos_core::AccountId;
+    ///
+    /// let builder = TransactionBuilder::new("Buy groceries")
+    ///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000).unwrap());
+    /// ```
     #[must_use]
     pub fn posting(mut self, posting: Posting) -> Self {
         self.postings.push(posting);
@@ -170,6 +240,20 @@ impl TransactionBuilder {
     ///
     /// Returns an error when the description is empty, there are no postings,
     /// or postings do not sum to zero.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+    /// use logos_core::AccountId;
+    ///
+    /// let txn = TransactionBuilder::new("Buy groceries")
+    ///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 5000).unwrap())
+    ///     .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 5000).unwrap())
+    ///     .build();
+    ///
+    /// assert!(txn.is_ok());
+    /// ```
     pub fn build(self) -> Result<Transaction, DomainError> {
         if self.description.trim().is_empty() {
             return Err(DomainError::EmptyTransactionDescription);

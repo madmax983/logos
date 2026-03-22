@@ -20,15 +20,24 @@ pub struct BudgetMonth {
 impl BudgetMonth {
     /// Creates a new `BudgetMonth` record.
     ///
+    /// In envelope budgeting, money from previous months flows forward. `start_balance` represents
+    /// the unspent funds (or overspending deficit) from the previous month. `assigned` represents
+    /// the new funds injected into this envelope for the current month. `spent` represents what
+    /// has left the envelope.
+    ///
     /// ## Examples
     ///
     /// ```
     /// use logos_core::domain::budget::BudgetMonth;
     ///
-    /// // Create a budget for March 2026 starting with $100 rolled over from February,
-    /// // assigning $500 this month, and having spent $200 so far.
-    /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
-    /// assert_eq!(budget.end_balance(), 400_00);
+    /// // February's envelope had $100 unspent at the end of the month.
+    /// // In March, we "rollover" that $100 as the `start_balance`.
+    /// // We assign a new $500 to the envelope for March.
+    /// // We spend $200 during March.
+    /// let march_budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
+    ///
+    /// // At the end of March, $400 remains. This will become April's `start_balance`.
+    /// assert_eq!(march_budget.end_balance(), 400_00);
     /// ```
     #[must_use]
     pub fn new(month_key: &str, start_balance: i64, assigned: i64, spent: i64) -> Self {
@@ -40,6 +49,16 @@ impl BudgetMonth {
         }
     }
 
+    /// Retrieves the month key for this budget envelope.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::budget::BudgetMonth;
+    ///
+    /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
+    /// assert_eq!(budget.month_key(), "2026-03");
+    /// ```
     #[must_use]
     pub fn month_key(&self) -> &str {
         &self.month_key
