@@ -1,13 +1,30 @@
-use std::fmt::Write;
-
 use crate::planning::fire::FireSimulator;
 use crate::planning::net_worth_projector::NetWorthProjector;
+
+/// Represents a milestone in the journey to FIRE.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AscentMilestone {
+    pub name: &'static str,
+    pub target_cents: i64,
+    pub month_reached: Option<u16>,
+}
+
+/// The result of simulating a FIRE ascent.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AscentResult {
+    pub summit_cents: i64,
+    pub max_months: u16,
+    pub final_net_worth_cents: i64,
+    pub milestones: Vec<AscentMilestone>,
+    pub success: bool,
+    pub instant_summit: bool,
+    pub impossible: bool,
+}
 
 /// A simulator that visualizes the journey to FIRE as a mountain ascent.
 ///
 /// It combines the `FireSimulator` (to determine the goal) and the
-/// `NetWorthProjector` (to calculate the timeline) to produce a textual
-/// dashboard mapping financial progress to milestones on a mountain.
+/// `NetWorthProjector` (to calculate the timeline) to produce milestones.
 #[derive(Debug, Clone)]
 pub struct FireAscentSimulator {
     fire_sim: FireSimulator,
@@ -30,21 +47,34 @@ impl FireAscentSimulator {
         }
     }
 
-    /// Simulates the ascent and returns a textual log of the journey.
+    /// Simulates the ascent and returns the milestones reached and final outcome.
     #[must_use]
-    pub fn ascend(&self) -> String {
+    pub fn ascend(&self) -> AscentResult {
         let fire_number = self.fire_sim.fire_number_cents();
 
         if fire_number == 0 {
-            return String::from("Summit reached instantly: Expenses are zero!\n");
+            return AscentResult {
+                summit_cents: 0,
+                max_months: self.max_months,
+                final_net_worth_cents: 0,
+                milestones: Vec::new(),
+                success: true,
+                instant_summit: true,
+                impossible: false,
+            };
         }
         if fire_number == i64::MAX {
-            return String::from(
-                "The Summit is infinite (Safe Withdrawal Rate is 0%). The ascent is impossible.\n",
-            );
+            return AscentResult {
+                summit_cents: i64::MAX,
+                max_months: self.max_months,
+                final_net_worth_cents: 0,
+                milestones: Vec::new(),
+                success: false,
+                instant_summit: false,
+                impossible: true,
+            };
         }
 
-        // Add milestones for the ascent (25%, 50%, 75%, 100%)
         let mut ascent_projector = self.projector.clone();
 
         let camp1 = fire_number / 4;
@@ -59,19 +89,6 @@ impl FireAscentSimulator {
 
         let (timeline, crossed_milestones) = ascent_projector.project_timeline(self.max_months);
 
-        let mut output = String::new();
-        #[allow(clippy::cast_precision_loss)]
-        let summit_dollars = summit as f64 / 100.0;
-        let _ = writeln!(
-            output,
-            "🏔️  FIRE Ascent Simulation  🏔️\nTarget Summit: ${summit_dollars:.2}"
-        );
-        let _ = writeln!(output, "Maximum Duration: {} months\n", self.max_months);
-
-        let mut reached_summit = false;
-        let mut summit_month = 0;
-
-        // Process milestones in order of achievement
         let mut sorted_milestones = crossed_milestones;
         sorted_milestones.sort_by_key(|&(_, month)| month);
 
@@ -82,65 +99,34 @@ impl FireAscentSimulator {
             (summit, "🚩 SUMMIT (100%)"),
         ];
 
-        // Let's refine the loop to just iterate through our predefined milestones and check if they were crossed
+        let mut milestones = Vec::new();
+        let mut success = false;
+
         for (target_cents, target_name) in milestone_names {
-            #[allow(clippy::cast_precision_loss)]
-            let target_dollars = target_cents as f64 / 100.0;
-            if let Some(&(_, month)) = sorted_milestones.iter().find(|&&(c, _)| c == target_cents) {
-                let _ = writeln!(
-                    output,
-                    "[{:^10}] Reached {} at ${:.2}",
-                    format!("Month {}", month),
-                    target_name,
-                    target_dollars
-                );
-
+            let month_reached = sorted_milestones.iter().find(|&&(c, _)| c == target_cents).map(|&(_, m)| m);
+            if let Some(_) = month_reached {
                 if target_cents == summit {
-                    reached_summit = true;
-                    summit_month = month;
+                    success = true;
                 }
-            } else {
-                let _ = writeln!(
-                    output,
-                    "[  PENDING ] {target_name} at ${target_dollars:.2} remains unreached."
-                );
             }
+            milestones.push(AscentMilestone {
+                name: target_name,
+                target_cents,
+                month_reached,
+            });
         }
 
-        let _ = writeln!(output);
+        let final_net_worth_cents = timeline.last().map_or(0, |m| m.net_worth_cents);
 
-        if reached_summit {
-            let years = summit_month / 12;
-            let months = summit_month % 12;
-            let _ = writeln!(
-                output,
-                "🎉 Ascent Successful! Summit reached in {years} years and {months} months."
-            );
-        } else {
-            let final_nw = timeline.last().map_or(0, |m| m.net_worth_cents);
-            #[allow(clippy::cast_precision_loss)]
-            let final_nw_dollars = final_nw as f64 / 100.0;
-            #[allow(clippy::cast_precision_loss)]
-            let progress_pct = (final_nw as f64 / summit as f64) * 100.0;
-            let _ = writeln!(
-                output,
-                "⚠️  Expedition halted after {} months.",
-                self.max_months
-            );
-            let _ = writeln!(
-                output,
-                "Final Net Worth: ${final_nw_dollars:.2} ({progress_pct:.1}% of Summit)",
-            );
-
-            if progress_pct < 0.0 {
-                let _ = writeln!(
-                    output,
-                    "The mountain is too steep. Consider increasing savings or reducing expenses."
-                );
-            }
+        AscentResult {
+            summit_cents: summit,
+            max_months: self.max_months,
+            final_net_worth_cents,
+            milestones,
+            success,
+            instant_summit: false,
+            impossible: false,
         }
-
-        output
     }
 }
 
@@ -162,13 +148,13 @@ mod tests {
         let projector = NetWorthProjector::new(80_000_000, 1_000_000);
 
         let ascent_sim = FireAscentSimulator::new(fire_sim, projector, 60);
-        let log = ascent_sim.ascend();
+        let result = ascent_sim.ascend();
 
-        assert!(log.contains("Target Summit: $1200000.00"));
-        assert!(log.contains("Reached ⛺ Camp 1 (25%) at $300000.00")); // Because we start at 800k, this is instantly crossed in simulation? Wait, the projector will only say it's crossed if it crosses it *during* the projection.
-        // Actually, projector checks if `current_net_worth >= milestone`. If it starts >= milestone, it will cross it in month 1.
-        assert!(log.contains("Reached 🚩 SUMMIT (100%) at $1200000.00"));
-        assert!(log.contains("Ascent Successful!"));
+        assert_eq!(result.summit_cents, 120_000_000);
+        assert_eq!(result.milestones.len(), 4);
+        assert!(result.milestones[0].month_reached.is_some());
+        assert!(result.milestones[3].month_reached.is_some());
+        assert!(result.success);
     }
 
     #[test]
@@ -183,11 +169,11 @@ mod tests {
 
         // Simulate for only 12 months.
         let ascent_sim = FireAscentSimulator::new(fire_sim, projector, 12);
-        let log = ascent_sim.ascend();
+        let result = ascent_sim.ascend();
 
-        assert!(log.contains("Expedition halted after 12 months."));
-        assert!(log.contains("Final Net Worth: $112000.00"));
-        assert!(log.contains("[  PENDING ] 🚩 SUMMIT (100%) at $1500000.00 remains unreached."));
+        assert!(!result.success);
+        assert_eq!(result.final_net_worth_cents, 11_200_000);
+        assert!(result.milestones[3].month_reached.is_none());
     }
 
     #[test]
@@ -196,8 +182,9 @@ mod tests {
         let projector = NetWorthProjector::new(0, 0);
 
         let ascent_sim = FireAscentSimulator::new(fire_sim, projector, 12);
-        let log = ascent_sim.ascend();
+        let result = ascent_sim.ascend();
 
-        assert_eq!(log, "Summit reached instantly: Expenses are zero!\n");
+        assert!(result.instant_summit);
+        assert!(result.success);
     }
 }
