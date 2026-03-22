@@ -3,6 +3,8 @@ pub mod cashflow_projector;
 pub mod debt_optimizer;
 pub mod fire_ascent;
 #[cfg(feature = "nova")]
+pub mod goal_seeker;
+#[cfg(feature = "nova")]
 pub mod inflation;
 pub mod mermaid_exporter;
 pub mod monte_carlo;
