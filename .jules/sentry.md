@@ -10,3 +10,7 @@
 ## 2026-03-18 - Ensure mocked PDF files have proper PDF structure for fallback logic
 **Learning:** When testing PDF literal string extraction fallback logic (e.g. `extract_pdf_literal_strings`), providing a plain text file is insufficient. The file must contain a valid PDF header like `%PDF-1.4\n` AND the text must be enclosed in parentheses `(...)` as per the PDF specification for literal strings.
 **Action:** When mocking PDF files for fallback parsing tests, wrap the text content in parentheses and prepend a valid PDF header.
+
+## 2024-03-22 - [Clippy Catch]
+**Learning:** `clippy::cast_possible_truncation` and `clippy::cast_lossless` catch subtle, but critical, overflow potentials when converting between integers for bounding math in property tests.
+**Action:** Use `i128::from()` when casting up to guarantee lossless execution, and explicitly `#[allow(clippy::cast_possible_truncation)]` in property tests *only* when the output values are already bounded via external `if/else` logic that enforces boundaries (like `i64::MIN` or `i64::MAX`).
