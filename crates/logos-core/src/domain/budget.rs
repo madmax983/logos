@@ -103,3 +103,26 @@ pub const fn rollover_end_balance(start: i64, assigned: i64, spent: i64) -> i64 
         end as i64
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        #[allow(clippy::cast_possible_truncation)]
+        fn test_rollover_end_balance_never_panics_and_clamps(start in any::<i64>(), assigned in any::<i64>(), spent in any::<i64>()) {
+            let result = rollover_end_balance(start, assigned, spent);
+
+            let expected = i128::from(start) + i128::from(assigned) - i128::from(spent);
+            if expected > i128::from(i64::MAX) {
+                assert_eq!(result, i64::MAX);
+            } else if expected < i128::from(i64::MIN) {
+                assert_eq!(result, i64::MIN);
+            } else {
+                assert_eq!(result, expected as i64);
+            }
+        }
+    }
+}
