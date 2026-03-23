@@ -10,7 +10,7 @@ pub struct AscentMilestone {
 }
 
 /// The result of simulating a FIRE ascent.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AscentResult {
     pub summit_cents: i64,
     pub max_months: u16,
@@ -103,11 +103,12 @@ impl FireAscentSimulator {
         let mut success = false;
 
         for (target_cents, target_name) in milestone_names {
-            let month_reached = sorted_milestones.iter().find(|&&(c, _)| c == target_cents).map(|&(_, m)| m);
-            if let Some(_) = month_reached {
-                if target_cents == summit {
-                    success = true;
-                }
+            let month_reached = sorted_milestones
+                .iter()
+                .find(|&&(c, _)| c == target_cents)
+                .map(|&(_, m)| m);
+            if month_reached.is_some() && target_cents == summit {
+                success = true;
             }
             milestones.push(AscentMilestone {
                 name: target_name,
