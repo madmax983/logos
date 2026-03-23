@@ -104,7 +104,7 @@ fn render_month_output(
     let variance_cell = if run.variance_cents() == 0 {
         Cell::new("$0.00").fg(Color::Green)
     } else {
-        Cell::new(format!("${:.2}", (run.variance_cents() as f64) / 100.0))
+        Cell::new(crate::format::format_cents(run.variance_cents()))
             .fg(Color::Red)
             .add_attribute(Attribute::Bold)
     };
@@ -119,22 +119,16 @@ fn render_month_output(
         Cell::new(run.run_id()).fg(Color::DarkGrey),
         Cell::new(month_key),
         Cell::new(checking_account),
-        Cell::new(format!("${:.2}", (opening_balance_cents as f64) / 100.0)),
-        Cell::new(format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0)),
-        Cell::new(format!(
-            "${:.2}",
-            (run.expected_closing_balance_cents() as f64) / 100.0
-        )),
-        Cell::new(format!(
-            "${:.2}",
-            (run.statement_closing_balance_cents() as f64) / 100.0
-        )),
+        Cell::new(crate::format::format_cents(opening_balance_cents)),
+        Cell::new(crate::format::format_cents(run.ledger_delta_cents())),
+        Cell::new(crate::format::format_cents(run.expected_closing_balance_cents())),
+        Cell::new(crate::format::format_cents(run.statement_closing_balance_cents())),
         variance_cell,
         reconciled_cell,
         Cell::new(run.matched_postings()),
         Cell::new(run.matched_transaction_count()),
-        Cell::new(format!("${:.2}", (run.inflow_cents() as f64) / 100.0)).fg(Color::Green),
-        Cell::new(format!("${:.2}", (run.outflow_cents() as f64) / 100.0)).fg(Color::Red),
+        Cell::new(crate::format::format_cents(run.inflow_cents())).fg(Color::Green),
+        Cell::new(crate::format::format_cents(run.outflow_cents())).fg(Color::Red),
         Cell::new(run.created_at().wallclock()).fg(Color::DarkGrey),
     ]);
     table.to_string()
@@ -162,7 +156,7 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
     let variance_cell = if run.variance_cents() == 0 {
         Cell::new("$0.00").fg(Color::Green)
     } else {
-        Cell::new(format!("${:.2}", (run.variance_cents() as f64) / 100.0))
+        Cell::new(crate::format::format_cents(run.variance_cents()))
             .fg(Color::Red)
             .add_attribute(Attribute::Bold)
     };
@@ -177,25 +171,16 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
         Cell::new(run.run_id()).fg(Color::DarkGrey),
         Cell::new(run.month_key()),
         Cell::new(run.checking_account()),
-        Cell::new(format!(
-            "${:.2}",
-            (run.opening_balance_cents() as f64) / 100.0
-        )),
-        Cell::new(format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0)),
-        Cell::new(format!(
-            "${:.2}",
-            (run.expected_closing_balance_cents() as f64) / 100.0
-        )),
-        Cell::new(format!(
-            "${:.2}",
-            (run.statement_closing_balance_cents() as f64) / 100.0
-        )),
+        Cell::new(crate::format::format_cents(run.opening_balance_cents())),
+        Cell::new(crate::format::format_cents(run.ledger_delta_cents())),
+        Cell::new(crate::format::format_cents(run.expected_closing_balance_cents())),
+        Cell::new(crate::format::format_cents(run.statement_closing_balance_cents())),
         variance_cell,
         reconciled_cell,
         Cell::new(run.matched_postings()),
         Cell::new(run.matched_transaction_count()),
-        Cell::new(format!("${:.2}", (run.inflow_cents() as f64) / 100.0)).fg(Color::Green),
-        Cell::new(format!("${:.2}", (run.outflow_cents() as f64) / 100.0)).fg(Color::Red),
+        Cell::new(crate::format::format_cents(run.inflow_cents())).fg(Color::Green),
+        Cell::new(crate::format::format_cents(run.outflow_cents())).fg(Color::Red),
         Cell::new(run.created_at().wallclock()).fg(Color::DarkGrey),
     ]);
     table.to_string()
@@ -230,7 +215,7 @@ fn render_list_output(
         let variance_cell = if run.variance_cents() == 0 {
             Cell::new("$0.00").fg(Color::Green)
         } else {
-            Cell::new(format!("${:.2}", (run.variance_cents() as f64) / 100.0))
+            Cell::new(crate::format::format_cents(run.variance_cents()))
                 .fg(Color::Red)
                 .add_attribute(Attribute::Bold)
         };
@@ -284,11 +269,11 @@ mod tests {
         let output = render_month_output("assets:checking", "2026-03", 100_000, &run);
 
         assert!(output.contains("recon-7"));
-        assert!(output.contains("$1000.00"));
+        assert!(output.contains("$1,000.00"));
         assert!(output.contains("$75.00"));
-        assert!(output.contains("$1075.00"));
-        assert!(output.contains("$1060.00"));
-        assert!(output.contains("$-15.00"));
+        assert!(output.contains("$1,075.00"));
+        assert!(output.contains("$1,060.00"));
+        assert!(output.contains("-$15.00"));
         assert!(output.contains("$100.00"));
         assert!(output.contains("$25.00"));
     }
@@ -314,10 +299,10 @@ mod tests {
         let output = render_show_output(&run);
 
         assert!(output.contains("recon-8"));
-        assert!(output.contains("$2000.00"));
+        assert!(output.contains("$2,000.00"));
         assert!(output.contains("$120.00"));
-        assert!(output.contains("$2120.00"));
-        assert!(output.contains("$2125.00"));
+        assert!(output.contains("$2,120.00"));
+        assert!(output.contains("$2,125.00"));
         assert!(output.contains("$5.00"));
         assert!(output.contains("$150.00"));
         assert!(output.contains("$30.00"));
@@ -366,6 +351,6 @@ mod tests {
         assert!(output.contains("recon-9"));
         assert!(output.contains("$0.00"));
         assert!(output.contains("recon-10"));
-        assert!(output.contains("$-5.00"));
+        assert!(output.contains("-$5.00"));
     }
 }

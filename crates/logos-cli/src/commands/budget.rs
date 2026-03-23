@@ -147,13 +147,13 @@ fn render_budget_set_output(
     } else {
         Color::Red
     };
-    let variance_cell = Cell::new(format!("${:.2}", (variance_cents as f64) / 100.0))
+    let variance_cell = Cell::new(crate::format::format_cents(variance_cents))
         .fg(variance_color)
         .add_attribute(Attribute::Bold);
 
     table.add_row(vec![
         Cell::new(month_key.to_string()),
-        Cell::new(format!("${:.2}", (budget_cents as f64) / 100.0)),
+        Cell::new(crate::format::format_cents(budget_cents)),
         Cell::new(expense_account_prefix.to_string()),
         variance_cell,
     ]);
@@ -174,9 +174,9 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
     ]);
     plan_table.add_row(vec![
         plan.month_key().to_string(),
-        format!("${:.2}", (plan.conservative_budget_cents() as f64) / 100.0),
-        format!("${:.2}", (plan.fixed_commitments_cents() as f64) / 100.0),
-        format!("${:.2}", (plan.baseline_remaining_cents() as f64) / 100.0),
+        crate::format::format_cents(plan.conservative_budget_cents()),
+        crate::format::format_cents(plan.fixed_commitments_cents()),
+        crate::format::format_cents(plan.baseline_remaining_cents()),
         plan.reserve_sweep_pct().to_string(),
         plan.investing_sweep_pct().to_string(),
     ]);
@@ -204,23 +204,11 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
                 Cell::new(scenario_name(key))
                     .fg(color)
                     .add_attribute(Attribute::Bold),
-                Cell::new(format!(
-                    "${:.2}",
-                    (scenario.monthly_income_cents() as f64) / 100.0
-                )),
-                Cell::new(format!("${:.2}", (scenario.surplus_cents() as f64) / 100.0)),
-                Cell::new(format!(
-                    "${:.2}",
-                    (scenario.reserve_sweep_cents() as f64) / 100.0
-                )),
-                Cell::new(format!(
-                    "${:.2}",
-                    (scenario.investing_sweep_cents() as f64) / 100.0
-                )),
-                Cell::new(format!(
-                    "${:.2}",
-                    (scenario.available_after_sweeps_cents() as f64) / 100.0
-                )),
+                Cell::new(crate::format::format_cents(scenario.monthly_income_cents())),
+                Cell::new(crate::format::format_cents(scenario.surplus_cents())),
+                Cell::new(crate::format::format_cents(scenario.reserve_sweep_cents())),
+                Cell::new(crate::format::format_cents(scenario.investing_sweep_cents())),
+                Cell::new(crate::format::format_cents(scenario.available_after_sweeps_cents())),
             ]);
         }
     }
@@ -237,19 +225,19 @@ fn render_monte_carlo_output(
 
     table.add_row(vec![
         Cell::new("P5 (Pessimistic)").fg(Color::Red),
-        Cell::new(format!("${:.2}", (result.p5_cents as f64) / 100.0)).fg(Color::Red),
+        Cell::new(crate::format::format_cents(result.p5_cents)).fg(Color::Red),
     ]);
     table.add_row(vec![
         Cell::new("Median (Expected)")
             .fg(Color::Green)
             .add_attribute(Attribute::Bold),
-        Cell::new(format!("${:.2}", (result.median_cents as f64) / 100.0))
+        Cell::new(crate::format::format_cents(result.median_cents))
             .fg(Color::Green)
             .add_attribute(Attribute::Bold),
     ]);
     table.add_row(vec![
         Cell::new("P95 (Optimistic)").fg(Color::Blue),
-        Cell::new(format!("${:.2}", (result.p95_cents as f64) / 100.0)).fg(Color::Blue),
+        Cell::new(crate::format::format_cents(result.p95_cents)).fg(Color::Blue),
     ]);
 
     format!("{table}")
@@ -297,7 +285,7 @@ mod tests {
         assert!(output.contains("2026-03"));
         assert!(output.contains("$50.00"));
         assert!(output.contains("expenses:"));
-        assert!(output.contains("$-12.50"));
+        assert!(output.contains("-$12.50"));
     }
 
     #[test]

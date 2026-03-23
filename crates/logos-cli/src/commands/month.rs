@@ -91,12 +91,9 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
         summary.fetch_runs().len().to_string(),
         fetch_needs_attention_count.to_string(),
         summary.reconciliation_run().run_id().to_owned(),
-        format!(
-            "${:.2}",
-            (summary.reconciliation_run().variance_cents() as f64) / 100.0
-        ),
+        crate::format::format_cents(summary.reconciliation_run().variance_cents()),
         summary.reconciliation_run().reconciled().to_string(),
-        format!("${:.2}", (summary.report().cashflow_cents() as f64) / 100.0),
+        crate::format::format_cents(summary.report().cashflow_cents()),
         summary.close().close_id().to_owned(),
         summary.close().closed_at().wallclock().to_string(),
     ]);

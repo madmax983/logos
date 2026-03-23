@@ -105,11 +105,11 @@ fn render_show_output(run: &StoredFetchRun) -> String {
         run.artifact_path().unwrap_or("-").to_owned(),
         run.opening_balance_cents().map_or_else(
             || "-".to_owned(),
-            |value| format!("${:.2}", (value as f64) / 100.0),
+            crate::format::format_cents,
         ),
         run.closing_balance_cents().map_or_else(
             || "-".to_owned(),
-            |value| format!("${:.2}", (value as f64) / 100.0),
+            crate::format::format_cents,
         ),
         run.error_summary().unwrap_or("-").to_owned(),
         run.created_at().wallclock().to_string(),
@@ -169,8 +169,8 @@ mod tests {
         assert!(output.contains("fetch-3"));
         assert!(output.contains("provident-credit-union"));
         assert!(output.contains("downloaded"));
-        assert!(output.contains("$1000.00"));
-        assert!(output.contains("$1987.66"));
+        assert!(output.contains("$1,000.00"));
+        assert!(output.contains("$1,987.66"));
     }
 
     #[test]
