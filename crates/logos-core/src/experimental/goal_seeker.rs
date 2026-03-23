@@ -34,7 +34,7 @@ impl GoalSeeker {
     }
 
     /// Sets custom risk haircuts for the RSU projections.
-    pub fn set_haircut_tiers(&mut self, tiers: HaircutTierTable) {
+    pub const fn set_haircut_tiers(&mut self, tiers: HaircutTierTable) {
         self.haircut_tiers = Some(tiers);
     }
 

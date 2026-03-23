@@ -128,6 +128,14 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
 
+    #[test]
+    fn test_rollover_end_balance_exact_bounds() {
+        // Test exactly i64::MAX
+        assert_eq!(rollover_end_balance(i64::MAX, 0, 0), i64::MAX);
+        // Test exactly i64::MIN
+        assert_eq!(rollover_end_balance(i64::MIN, 0, 0), i64::MIN);
+    }
+
     proptest! {
         #[test]
         #[allow(clippy::cast_possible_truncation)]

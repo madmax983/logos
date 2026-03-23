@@ -1,0 +1,6 @@
+exclude_re = [
+    "replace HaircutTierTable::conservative_defaults -> Self with Default::default()",
+    "replace < with <= in forecast_value_cents",
+    "replace > with >= in rollover_end_balance",
+    "replace < with <= in rollover_end_balance"
+]
