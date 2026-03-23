@@ -3,9 +3,7 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    #[should_panic(expected = "attempt to add with overflow")]
-    #[allow(clippy::should_panic_without_expect)]
-    fn havoc_month_report_panics_on_overflow(
+    fn havoc_month_report_does_not_panic_on_overflow(
         amount in (i64::MAX / 2 + 1)..i64::MAX
     ) {
         let mut runtime = AppRuntime::new_in_memory();

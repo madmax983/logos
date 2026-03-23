@@ -26,3 +26,6 @@
 **Pre-allocate Vector for Outgoing Edges**
 **Learning:** Initializing vectors with `Vec::new()` and then continuously pushing into them on a hot path causes multiple heap allocations, which degrades performance. Additionally, using `records.iter()` for a loop that can consume the records without borrowing is less efficient.
 **Action:** Replace `Vec::new()` with `Vec::with_capacity(outgoing_edges.len())` when the capacity is known beforehand to avoid continuous heap allocations. Remove explicit `.iter()` where appropriate.
+**[AppRuntime::month_report_for Redundant Iteration]**
+**Learning:** `AppRuntime::month_report_for` was iterating over the entire transaction history three separate times to calculate `checking_balance_cents`, `income_cents`, and `expense_cents` via `.filter().flat_map().filter().sum()`. This caused excessive allocations and redundant work on hot paths. Additionally, `.sum()` and `i64::abs()` were vulnerable to panic on overflow with extremely large numbers.
+**Action:** Replaced the three separate iterator chains with a single `for` loop over `self.store.transactions().filter(transaction_in_month)` that aggregates all three variables using `saturating_add` and `checked_abs().unwrap_or(i64::MAX)`. This eliminates redundant scans and protects against panic.

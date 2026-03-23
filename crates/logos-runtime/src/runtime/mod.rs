@@ -240,37 +240,38 @@ impl AppRuntime {
         project_budget_variance(budget_cents, actual_expense_cents)
     }
 
+    /// Computes the monthly report.
+    ///
+    /// ⚡ Bolt Optimization: Aggregates `checking_balance_cents`, `income_cents`, and `expense_cents`
+    /// in a single pass over the transactions iterator, preventing multiple redundant iterations
+    /// over the entire ledger history and using `saturating_add` to prevent overflow panics.
     #[must_use]
     pub fn month_report_for(&self, checking_account: &str, month_key: &str) -> MonthReport {
-        let checking_balance_cents: i64 = self
-            .store
-            .transactions()
-            .filter(|stored| transaction_in_month(stored, month_key))
-            .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().as_str() == checking_account)
-            .map(Posting::amount)
-            .sum();
+        let mut checking_balance_cents = 0_i64;
+        let mut income_cents = 0_i64;
+        let mut expense_cents = 0_i64;
 
-        let income_cents: i64 = self
+        for stored in self
             .store
             .transactions()
             .filter(|stored| transaction_in_month(stored, month_key))
-            .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().as_str().starts_with("income:"))
-            .map(Posting::amount)
-            .filter(|amount| *amount < 0)
-            .map(i64::abs)
-            .sum();
+        {
+            for posting in stored.transaction().postings() {
+                let account = posting.account().as_str();
+                let amount = posting.amount();
 
-        let expense_cents: i64 = self
-            .store
-            .transactions()
-            .filter(|stored| transaction_in_month(stored, month_key))
-            .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().as_str().starts_with("expenses:"))
-            .map(Posting::amount)
-            .filter(|amount| *amount > 0)
-            .sum();
+                if account == checking_account {
+                    checking_balance_cents = checking_balance_cents.saturating_add(amount);
+                }
+
+                if account.starts_with("income:") && amount < 0 {
+                    income_cents =
+                        income_cents.saturating_add(amount.checked_abs().unwrap_or(i64::MAX));
+                } else if account.starts_with("expenses:") && amount > 0 {
+                    expense_cents = expense_cents.saturating_add(amount);
+                }
+            }
+        }
 
         let cashflow_cents = project_cashflow(income_cents, expense_cents);
         MonthReport::new(
