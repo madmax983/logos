@@ -274,7 +274,11 @@ pub fn fire_sim(
     let projector = NetWorthProjector::new(current_net_worth, monthly_savings_cents);
     let months_to_simulate = 1200; // up to 100 years
 
-    let ascent_sim = logos_core::experimental::fire_ascent::FireAscentSimulator::new(sim, projector, months_to_simulate);
+    let ascent_sim = logos_core::experimental::fire_ascent::FireAscentSimulator::new(
+        sim,
+        projector,
+        months_to_simulate,
+    );
     let ascent_result = ascent_sim.ascend();
 
     let mut table = comfy_table::Table::new();
@@ -320,13 +324,17 @@ pub fn fire_sim(
         journey_table.add_row(vec![
             comfy_table::Cell::new("Simulation").fg(comfy_table::Color::Red),
             comfy_table::Cell::new("Infinite Summit").fg(comfy_table::Color::Red),
-            comfy_table::Cell::new("Impossible").fg(comfy_table::Color::Red).add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("Impossible")
+                .fg(comfy_table::Color::Red)
+                .add_attribute(comfy_table::Attribute::Bold),
         ]);
     } else if ascent_result.instant_summit {
         journey_table.add_row(vec![
             comfy_table::Cell::new("Simulation").fg(comfy_table::Color::Green),
             comfy_table::Cell::new("$0.00 Expenses").fg(comfy_table::Color::Green),
-            comfy_table::Cell::new("Instant Summit!").fg(comfy_table::Color::Green).add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("Instant Summit!")
+                .fg(comfy_table::Color::Green)
+                .add_attribute(comfy_table::Attribute::Bold),
         ]);
     } else {
         for milestone in ascent_result.milestones {
@@ -339,7 +347,11 @@ pub fn fire_sim(
                 journey_table.add_row(vec![
                     comfy_table::Cell::new(milestone.name).fg(comfy_table::Color::Green),
                     comfy_table::Cell::new(target_dollars).fg(comfy_table::Color::Green),
-                    comfy_table::Cell::new(format!("Reached in {years}y {extra_months}m (Month {month})")).fg(comfy_table::Color::Green).add_attribute(comfy_table::Attribute::Bold),
+                    comfy_table::Cell::new(format!(
+                        "Reached in {years}y {extra_months}m (Month {month})"
+                    ))
+                    .fg(comfy_table::Color::Green)
+                    .add_attribute(comfy_table::Attribute::Bold),
                 ]);
             } else {
                 journey_table.add_row(vec![

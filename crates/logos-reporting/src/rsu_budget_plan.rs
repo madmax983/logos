@@ -1,3 +1,15 @@
+//! Scenario-based RSU budget modeling.
+//!
+//! # The Multi-Verse
+//!
+//! When RSUs make up a significant portion of total compensation, a static monthly budget
+//! can be dangerous. The actual cash realized from a vest depends entirely on the stock price
+//! on the vesting day.
+//!
+//! This module projects a set of monthly budget models representing three distinct
+//! scenarios (Bear, Base, and Bull) based on a quarterly RSU vest. It calculates how
+//! much disposable income you would have under each market condition.
+
 use logos_core::{HaircutTierTable, forecast_value_cents};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,6 +28,22 @@ pub struct ScenarioPriceInputs {
 
 impl ScenarioPriceInputs {
     /// Creates a monotonic bear/base/bull scenario price set.
+    ///
+    /// The prices must form a strictly non-decreasing sequence, meaning the bear
+    /// price must be lower than or equal to the base price, which must be lower than
+    /// or equal to the bull price.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_reporting::ScenarioPriceInputs;
+    ///
+    /// // A stock with a bear case of $50, base case of $100, and bull case of $150.
+    /// let prices = ScenarioPriceInputs::new(50_00, 100_00, 150_00).unwrap();
+    ///
+    /// // Invalid: bear case is higher than base case
+    /// assert!(ScenarioPriceInputs::new(100_00, 50_00, 150_00).is_err());
+    /// ```
     ///
     /// # Errors
     ///

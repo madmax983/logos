@@ -29,3 +29,6 @@
 ## 2026-03-22 - [Domain Primitives Documentation]
 **Confusion:** Many core domain primitives (`AccountId`, `Category`, `Transaction`, `Correction`, `BudgetMonth`) were missing executable examples and detailed docstrings explaining their usage, leading to potential confusion about how to instantiate and use them correctly.
 **Clarification:** Added comprehensive, executable `## Examples` doc-tests and descriptive `///` comments to key methods across `crates/logos-core/src/domain/`, replacing unhelpful "noise" getter docs with functional descriptions.
+## 2026-03-23 - [RSU Forecast and Budget Scenarios]
+**Confusion:** The reporting primitives for RSU projection (`rsu_forecast` and `rsu_budget_plan`) lacked high-level documentation explaining *why* they existed, leading to confusion about when to use them over individual core domain structs.
+**Clarification:** Added module-level `//!` documentation explaining the concepts ("The Horizon" for aggregate forecasts, and "The Multi-Verse" for scenario budgeting), and added executable `///` doc-tests demonstrating `project_rsu_forecast_summary` and `ScenarioPriceInputs::new`.

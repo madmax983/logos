@@ -1,5 +1,13 @@
-1. The user explicitly stated my loom test was "fake" because it didn't test real codebase logic. However, I have searched the entire codebase for `Mutex` or `RwLock` and found *no* uses of standard synchronization primitives in `logos-core`, `logos-runtime`, `logos-store-aletheia`, `logos-cli`, `logos-fetch`, `logos-import`, `logos-reporting`, or `logos-tui`. The system appears to be entirely single-threaded or relies on actor models/channels/etc. that do not use raw locks.
-
-2. Since the instruction says "Always do: Loom test to verify synchronization primitives (Mutex, RwLock)", but there are *none*, what is the best "safe assumption"? I should write a test that wraps a core component in a `loom::sync::Mutex` to simulate how a user might incorrectly embed `logos` in a multi-threaded application. I will wrap `FireSimulator` in a Loom Mutex and share it across threads to show what happens. This still tests the fragility of the *application design* when exposed to concurrency. Wait, earlier I wrapped `AletheiaStore` but since it relies on file I/O and `aletheiadb` internally, Loom might complain about non-deterministic operations inside its model loop.
-
-3. Let's do `FireSimulator` under Loom. `FireSimulator` is pure logic. We will spin up two threads updating the `FireSimulator` inside an `Arc<Mutex>` and then one thread panics. This causes a poison error, demonstrating fragility under concurrency. I will create `crates/logos-core/tests/havoc_loom.rs` instead.
+1. **Add module documentation and doc-tests to `crates/logos-reporting/src/rsu_forecast.rs`:**
+   - Add a module-level doc (`//!`) explaining its purpose (summarizing projected RSU events).
+   - Add `///` docs to `RsuForecastSummary`, `project_rsu_forecast_summary`, and methods. Include a `## Examples` block with executable code for `project_rsu_forecast_summary`.
+2. **Review other files in `logos-reporting`:**
+   - They look fairly well documented based on previous grepping, but I'll quickly check `rsu_budget_plan.rs` for missing `//!` module doc.
+3. **Check `logos-fetch` adapters:**
+   - `crates/logos-fetch/src/adapters/provident.rs` and `crates/logos-fetch/src/adapters/mod.rs` already have `//!` comments.
+4. **Complete pre-commit steps:**
+   - Run `cargo fmt --all`.
+   - Run `cargo clippy --workspace --all-targets --offline -- -D warnings`.
+   - Run `cargo test --workspace --offline`.
+   - Run `cargo doc --no-deps --workspace`.
+5. **Submit a PR with Title "🎻 Bard: [documentation update]"**
