@@ -1,5 +1,7 @@
 pub mod cashflow_projector;
 #[cfg(feature = "nova")]
+pub mod coast_fire;
+#[cfg(feature = "nova")]
 pub mod debt_optimizer;
 pub mod fire_ascent;
 #[cfg(feature = "nova")]

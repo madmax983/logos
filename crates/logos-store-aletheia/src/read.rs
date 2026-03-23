@@ -789,16 +789,24 @@ mod tests {
         let txn_id1 = store
             .write_transaction(
                 TransactionBuilder::new("test1")
-                    .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
-                    .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap()),
+                    .posting(
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap(),
+                    ),
             )
             .unwrap();
 
         let txn_id2 = store
             .write_transaction(
                 TransactionBuilder::new("test2")
-                    .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap())
-                    .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap()),
+                    .posting(
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap(),
+                    ),
             )
             .unwrap();
 
@@ -817,22 +825,52 @@ mod tests {
         assert_eq!(store.correction_count(), 2);
 
         // Write TWO budget targets
-        store.write_budget_target("2026-03", "expenses:food", 500).unwrap();
-        store.write_budget_target("2026-03", "expenses:rent", 1500).unwrap();
+        store
+            .write_budget_target("2026-03", "expenses:food", 500)
+            .unwrap();
+        store
+            .write_budget_target("2026-03", "expenses:rent", 1500)
+            .unwrap();
         assert_eq!(store.budget_targets().count(), 2);
         assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 2);
 
         // Write TWO analytics artifacts
-        store.write_analytics_artifact_manifest("k1", "u1", "h1", 1, 1, aletheiadb::time::now(), aletheiadb::time::now(), None).unwrap();
-        store.write_analytics_artifact_manifest("k2", "u2", "h2", 1, 1, aletheiadb::time::now(), aletheiadb::time::now(), None).unwrap();
+        store
+            .write_analytics_artifact_manifest(
+                "k1",
+                "u1",
+                "h1",
+                1,
+                1,
+                aletheiadb::time::now(),
+                aletheiadb::time::now(),
+                None,
+            )
+            .unwrap();
+        store
+            .write_analytics_artifact_manifest(
+                "k2",
+                "u2",
+                "h2",
+                1,
+                1,
+                aletheiadb::time::now(),
+                aletheiadb::time::now(),
+                None,
+            )
+            .unwrap();
         assert_eq!(store.analytics_artifacts().count(), 2);
         assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 2);
 
         // Write TWO import batches
         let rec1 = crate::model::NewImportRecord::new("hash1", Some(&txn_id1));
-        store.write_import_batch("kind", "uri", "batch1", 0, false, false, &[rec1]).unwrap();
+        store
+            .write_import_batch("kind", "uri", "batch1", 0, false, false, &[rec1])
+            .unwrap();
         let rec2 = crate::model::NewImportRecord::new("hash2", Some(&txn_id2));
-        store.write_import_batch("kind", "uri", "batch2", 0, false, false, &[rec2]).unwrap();
+        store
+            .write_import_batch("kind", "uri", "batch2", 0, false, false, &[rec2])
+            .unwrap();
         assert_eq!(store.import_record_count(), 2);
         assert!(store.has_import_record_content_hash("hash1"));
         assert!(!store.has_import_record_content_hash("missing_hash"));
@@ -842,23 +880,75 @@ mod tests {
         assert_eq!(store.import_batches().collect::<Vec<_>>().len(), 2);
 
         // Write TWO statement lines via import batch
-        let sl1 = crate::model::NewImportRecord::with_statement_line("line1", Some(&txn_id1), "uri", "2026-03-01T00:00:00", "memo", -100);
-        store.write_import_batch("stmt", "uri", "batch3", 0, false, false, &[sl1]).unwrap();
-        let sl2 = crate::model::NewImportRecord::with_statement_line("line2", Some(&txn_id2), "uri", "2026-03-01T00:00:00", "memo", -100);
-        store.write_import_batch("stmt", "uri", "batch4", 0, false, false, &[sl2]).unwrap();
+        let sl1 = crate::model::NewImportRecord::with_statement_line(
+            "line1",
+            Some(&txn_id1),
+            "uri",
+            "2026-03-01T00:00:00",
+            "memo",
+            -100,
+        );
+        store
+            .write_import_batch("stmt", "uri", "batch3", 0, false, false, &[sl1])
+            .unwrap();
+        let sl2 = crate::model::NewImportRecord::with_statement_line(
+            "line2",
+            Some(&txn_id2),
+            "uri",
+            "2026-03-01T00:00:00",
+            "memo",
+            -100,
+        );
+        store
+            .write_import_batch("stmt", "uri", "batch4", 0, false, false, &[sl2])
+            .unwrap();
         assert_eq!(store.statement_line_count(), 2);
         assert_eq!(store.statement_lines().count(), 2);
 
         // Write TWO reconciliation runs
-        let run1 = store.write_reconciliation_run("2026-03", "assets:checking", 0, 100, 100, 100, 0, true, 1, 100, 0, std::slice::from_ref(&txn_id1)).unwrap();
-        let run2 = store.write_reconciliation_run("2026-03", "assets:savings", 0, 100, 100, 100, 0, true, 1, 100, 0, std::slice::from_ref(&txn_id2)).unwrap();
+        let run1 = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                0,
+                100,
+                100,
+                100,
+                0,
+                true,
+                1,
+                100,
+                0,
+                std::slice::from_ref(&txn_id1),
+            )
+            .unwrap();
+        let run2 = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:savings",
+                0,
+                100,
+                100,
+                100,
+                0,
+                true,
+                1,
+                100,
+                0,
+                std::slice::from_ref(&txn_id2),
+            )
+            .unwrap();
         assert_eq!(store.reconciliation_run_count(), 2);
         assert_eq!(store.reconciliation_runs().count(), 2);
         assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 2);
 
         // Write TWO month closes
-        store.write_month_close("2026-03", "assets:checking", run1.run_id(), None).unwrap();
-        store.write_month_close("2026-03", "assets:savings", run2.run_id(), None).unwrap();
+        store
+            .write_month_close("2026-03", "assets:checking", run1.run_id(), None)
+            .unwrap();
+        store
+            .write_month_close("2026-03", "assets:savings", run2.run_id(), None)
+            .unwrap();
         assert_eq!(store.month_close_count(), 2);
         assert!(store.month_close("close-1").is_some());
         assert!(store.month_close("close-2").is_some());

@@ -34,7 +34,7 @@ impl GoalSeeker {
     }
 
     /// Sets custom risk haircuts for the RSU projections.
-    pub fn set_haircut_tiers(&mut self, tiers: HaircutTierTable) {
+    pub const fn set_haircut_tiers(&mut self, tiers: HaircutTierTable) {
         self.haircut_tiers = Some(tiers);
     }
 
@@ -114,13 +114,13 @@ mod tests {
 
     #[test]
     fn test_goal_seeker_zero_months() {
-        let seeker = GoalSeeker::new(100_000_00);
+        let seeker = GoalSeeker::new(10_000_000);
         // Target is already met
-        assert_eq!(seeker.find_required_savings(50_000_00, 0), Some(0));
-        assert_eq!(seeker.find_required_savings(100_000_00, 0), Some(0));
+        assert_eq!(seeker.find_required_savings(5_000_000, 0), Some(0));
+        assert_eq!(seeker.find_required_savings(10_000_000, 0), Some(0));
 
         // Target is impossible in 0 months
-        assert_eq!(seeker.find_required_savings(150_000_00, 0), None);
+        assert_eq!(seeker.find_required_savings(15_000_000, 0), None);
     }
 
     #[test]
@@ -130,22 +130,22 @@ mod tests {
         let seeker = GoalSeeker::new(0);
 
         let required = seeker
-            .find_required_savings(120_000_00, 12)
+            .find_required_savings(12_000_000, 12)
             .expect("should find a solution");
         // Due to binary search exactness, it should find exactly 10,000.
-        assert_eq!(required, 10_000_00);
+        assert_eq!(required, 1_000_000);
     }
 
     #[test]
     fn test_goal_seeker_with_initial_net_worth() {
         // Start with $50,000. Want $150,000 in 10 months.
         // Difference is $100,000. Needs $10,000 / month.
-        let seeker = GoalSeeker::new(50_000_00);
+        let seeker = GoalSeeker::new(5_000_000);
 
         let required = seeker
-            .find_required_savings(150_000_00, 10)
+            .find_required_savings(15_000_000, 10)
             .expect("should find a solution");
-        assert_eq!(required, 10_000_00);
+        assert_eq!(required, 1_000_000);
     }
 
     #[test]
@@ -161,7 +161,7 @@ mod tests {
         seeker.set_haircut_tiers(HaircutTierTable::new(0, 0, 0).unwrap()); // 0% haircut
 
         seeker.add_upcoming_vest(UpcomingVest {
-            avg_close_price_cents: 100_00, // $100
+            avg_close_price_cents: 10_000, // $100
             units: 500,                    // $50,000 total
             days_to_vest: 150,             // Month 5
         });
@@ -170,8 +170,8 @@ mod tests {
         // Need to save remaining $100,000 over 10 months.
         // Required savings: $10,000 / month.
         let required = seeker
-            .find_required_savings(150_000_00, 10)
+            .find_required_savings(15_000_000, 10)
             .expect("should find a solution");
-        assert_eq!(required, 10_000_00);
+        assert_eq!(required, 1_000_000);
     }
 }
