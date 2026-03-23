@@ -276,4 +276,12 @@ mod tests {
         let tiers = HaircutTierTable::default();
         assert_eq!(forecast_value_cents(i64::MAX, 2, 15, &tiers), 0);
     }
+
+    #[test]
+    fn should_reject_invalid_allocation_total() {
+        assert_eq!(
+            AllocationPolicy::new(40, 20, 30, 20),
+            Err(DomainError::InvalidAllocationTotal { total: 110 })
+        );
+    }
 }

@@ -14,3 +14,6 @@
 ## 2024-03-22 - [Clippy Catch]
 **Learning:** `clippy::cast_possible_truncation` and `clippy::cast_lossless` catch subtle, but critical, overflow potentials when converting between integers for bounding math in property tests.
 **Action:** Use `i128::from()` when casting up to guarantee lossless execution, and explicitly `#[allow(clippy::cast_possible_truncation)]` in property tests *only* when the output values are already bounded via external `if/else` logic that enforces boundaries (like `i64::MIN` or `i64::MAX`).
+## 2026-03-23 - [Test All Error Paths]
+**Learning:** Found an untested error branch for `AllocationPolicy::new` when percentages did not sum to 100. Always ensure custom constructor error paths are covered to prevent panics during invalid business state configuration.
+**Action:** Use `cargo tarpaulin` to find untested `Err` branches in business logic files.
