@@ -1,6 +1,6 @@
 #![allow(clippy::should_panic_without_expect)]
 
-use logos_reporting::register::{project_register_balance_iter, RegisterEntry};
+use logos_reporting::register::{RegisterEntry, project_register_balance_iter};
 use proptest::prelude::*;
 
 proptest! {
