@@ -141,3 +141,24 @@ fn test_parse_csv_columns_ignores_whitespace_after_quote() {
     let result = parse_simple_csv_row(row, &mapping).unwrap();
     assert_eq!(result.amount_cents(), 10000);
 }
+
+#[test]
+fn test_csv_field_after_quote_non_whitespace() {
+    let mapping = CsvMapping {
+        source_id: "test".to_owned(),
+        timestamp_idx: 0,
+        amount_idx: 1,
+        memo_idx: 2,
+        account_idx: 3,
+        category_idx: 4,
+    };
+
+    let row = r#"2026-02-01,"10000"X,"memo","assets:checking","income:imported""#;
+    let err = parse_simple_csv_row(row, &mapping).unwrap_err();
+    assert_eq!(
+        err,
+        ImportError::InvalidCsvRow {
+            message: "unexpected characters after closing quote".to_string(),
+        }
+    );
+}
