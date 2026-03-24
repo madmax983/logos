@@ -29,3 +29,7 @@
 ## 2026-03-22 - [Domain Primitives Documentation]
 **Confusion:** Many core domain primitives (`AccountId`, `Category`, `Transaction`, `Correction`, `BudgetMonth`) were missing executable examples and detailed docstrings explaining their usage, leading to potential confusion about how to instantiate and use them correctly.
 **Clarification:** Added comprehensive, executable `## Examples` doc-tests and descriptive `///` comments to key methods across `crates/logos-core/src/domain/`, replacing unhelpful "noise" getter docs with functional descriptions.
+
+## 2026-03-24 - [Missing Getter Documentation]
+**Confusion:** Accessor methods and counts across core and storage models (`logos-core::domain::rsu` allocation policies and `logos-store-aletheia::read` iterator methods) lacked any docstrings or examples, requiring users to read source code to verify iteration counts and structure logic.
+**Clarification:** Added missing `///` comments and `## Examples` doc-tests explaining what each getter returns, avoiding noise comments ("Gets the x") and instead providing context on the stream or domain concept.
