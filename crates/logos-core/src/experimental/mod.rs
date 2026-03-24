@@ -5,6 +5,8 @@ pub mod coast_fire;
 pub mod debt_optimizer;
 pub mod fire_ascent;
 #[cfg(feature = "nova")]
+pub mod fire_goal_seeker;
+#[cfg(feature = "nova")]
 pub mod goal_seeker;
 #[cfg(feature = "nova")]
 pub mod inflation;
