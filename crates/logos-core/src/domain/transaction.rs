@@ -361,4 +361,25 @@ mod tests {
         let result = builder.build();
         assert_eq!(result, Err(DomainError::AmountOverflow));
     }
+
+    #[test]
+    fn should_return_error_when_transaction_description_is_empty() {
+        let result = TransactionBuilder::new("   ")
+            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
+            .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap())
+            .build();
+        assert_eq!(result, Err(DomainError::EmptyTransactionDescription));
+    }
+
+    #[test]
+    fn should_return_error_when_transaction_is_unbalanced() {
+        let result = TransactionBuilder::new("Groceries")
+            .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 150).unwrap())
+            .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
+            .build();
+        assert_eq!(
+            result,
+            Err(DomainError::UnbalancedTransaction { total: 50 })
+        );
+    }
 }
