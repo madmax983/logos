@@ -199,7 +199,7 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
 /// or amount parsing fails.
 pub fn parse_simple_csv_row(row: &str, mapping: &CsvMapping) -> Result<ImportRecord, ImportError> {
     let columns = parse_csv_columns(row)?;
-    let needed = [
+    let max_idx = [
         mapping.timestamp_idx,
         mapping.amount_idx,
         mapping.memo_idx,
@@ -208,12 +208,23 @@ pub fn parse_simple_csv_row(row: &str, mapping: &CsvMapping) -> Result<ImportRec
     ]
     .into_iter()
     .max()
-    .unwrap_or(0)
-    .saturating_add(1);
+    .unwrap_or(0);
 
-    if columns.len() < needed {
+    let needed = max_idx.saturating_add(1);
+
+    // If max_idx is usize::MAX, needed becomes usize::MAX because of saturating_add.
+    // We need at least max_idx + 1 columns to safely access max_idx.
+    // If max_idx is usize::MAX, we can never have enough columns (since columns.len() <= usize::MAX),
+    // so it's guaranteed to be MissingColumns or out of bounds.
+    if max_idx == usize::MAX || columns.len() < needed {
+        // If max_idx is MAX, the 'expected' value conceptually exceeds usize,
+        // we can just cap it at usize::MAX for the error reporting.
         return Err(ImportError::MissingColumns {
-            expected: needed,
+            expected: if max_idx == usize::MAX {
+                usize::MAX
+            } else {
+                needed
+            },
             found: columns.len(),
         });
     }

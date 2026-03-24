@@ -1174,6 +1174,10 @@ fn open_embedded_db(root_path: &Path) -> Result<AletheiaDB, StoreError> {
     let mut config = AletheiaDBConfig::builder().wal(wal_config).build();
     config.persistence.data_dir = root_path.join("index-data");
 
+    // Temporarily capture and discard stderr to suppress verbose jargon from aletheiadb's
+    // index restoration process during standard CLI execution.
+    let _gag = gag::Gag::stderr().ok();
+
     AletheiaDB::with_unified_config(config).map_err(|err| StoreError::LoadFailed {
         message: format!(
             "unable to initialize embedded AletheiaDB at '{}': {err}",

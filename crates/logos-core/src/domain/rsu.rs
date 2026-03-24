@@ -164,21 +164,57 @@ impl AllocationPolicy {
         })
     }
 
+    /// Returns the percentage of the vest allocated to the tax reserve.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
+    /// assert_eq!(policy.tax_reserve_pct(), 40);
+    /// ```
     #[must_use]
     pub const fn tax_reserve_pct(&self) -> u8 {
         self.tax_reserve
     }
 
+    /// Returns the percentage of the vest allocated to the income smoothing buffer.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
+    /// assert_eq!(policy.smoothing_buffer_pct(), 20);
+    /// ```
     #[must_use]
     pub const fn smoothing_buffer_pct(&self) -> u8 {
         self.smoothing_buffer
     }
 
+    /// Returns the percentage of the vest allocated to specific financial goals.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
+    /// assert_eq!(policy.goals_pct(), 30);
+    /// ```
     #[must_use]
     pub const fn goals_pct(&self) -> u8 {
         self.goals
     }
 
+    /// Returns the percentage of the vest allocated to discretionary spending.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
+    /// assert_eq!(policy.discretionary_pct(), 10);
+    /// ```
     #[must_use]
     pub const fn discretionary_pct(&self) -> u8 {
         self.discretionary
