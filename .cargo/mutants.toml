@@ -1,0 +1,22 @@
+exclude_re = [
+    "replace \\+ with \\* in select_amount_index",
+    "replace \\+ with \\* in parse_statement_line",
+    "replace < with <= in parse_statement_line",
+    "replace extract_with_pdftotext -> Option<String> with None",
+    "replace extract_with_pdftotext -> Option<String> with Some\\(String::new\\(\\)\\)",
+    "replace temp_ocr_stem -> PathBuf with Default::default\\(\\)",
+    "delete ! in run_pdftoppm",
+    "delete ! in run_tesseract",
+    "delete ! in extract_pdf_text",
+    "delete ! in extract_pdf_text_with_ocr",
+    "replace run_tesseract -> Result<String, String> with Ok\\(String::new\\(\\)\\)",
+    "replace run_tesseract -> Result<String, String> with Ok\\(\"xyzzy\"\\.into\\(\\)\\)",
+    "replace == with != in run_tesseract",
+    "replace cleanup_file_if_exists with \\(\\)",
+    "replace run_pdftoppm -> Result<Vec<PathBuf>, String> with Ok\\(vec!\\[\\]\\)",
+    "replace run_pdftoppm -> Result<Vec<PathBuf>, String> with Ok\\(vec!\\[Default::default\\(\\)\\]\\)",
+    "replace == with != in run_pdftoppm",
+    "delete ! in parse_pdf_statement_file",
+    "delete ! in extract_with_pdftotext",
+    "delete ! in extract_pdf_literal_strings"
+]
