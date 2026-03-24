@@ -241,7 +241,7 @@ impl FireSimulator {
                     &self.haircut_tiers,
                 )
             })
-            .sum();
+            .fold(0_i64, i64::saturating_add);
         base_nw.saturating_add(rsu_value)
     }
 
@@ -359,8 +359,6 @@ mod tests {
     use proptest::prelude::*;
     proptest! {
         #[test]
-        #[should_panic(expected = "attempt to add with overflow")]
-        #[allow(clippy::should_panic_without_expect)]
         fn havoc_safe_net_worth_cents_panics_on_overflow(
             units in 100_000..200_000_u32,
         ) {
