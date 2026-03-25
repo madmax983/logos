@@ -33,3 +33,6 @@
 ## 2026-03-24 - [Missing Getter Documentation]
 **Confusion:** Accessor methods and counts across core and storage models (`logos-core::domain::rsu` allocation policies and `logos-store-aletheia::read` iterator methods) lacked any docstrings or examples, requiring users to read source code to verify iteration counts and structure logic.
 **Clarification:** Added missing `///` comments and `## Examples` doc-tests explaining what each getter returns, avoiding noise comments ("Gets the x") and instead providing context on the stream or domain concept.
+## 2026-03-24 - [Storage Accessors Documentation]
+**Confusion:** The many accessor methods on `AletheiaStore` in `crates/logos-store-aletheia/src/read.rs` lacked `///` narrative documentation explaining *why* they existed (e.g., telemetry, UI point queries, deduplication) and had no executable `## Examples` doc-tests, making the API opaque to new developers.
+**Clarification:** Rewrote the documentation for 25+ public accessor methods on `AletheiaStore` to strictly avoid "getter noise" (e.g. "Returns the count..."). Instead, the docs now explain the business purpose of the methods alongside executable doctests that verify their exact behavior against a new instance.

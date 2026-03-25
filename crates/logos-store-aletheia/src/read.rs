@@ -25,30 +25,78 @@ use crate::{
 };
 
 impl AletheiaStore {
+    /// Useful for telemetry or health checks to verify how many [`logos_core::Transaction`]s
+    /// are currently held in the fast-access projection cache.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert_eq!(store.transaction_count(), 0);
+    /// ```
     #[must_use]
     pub fn transaction_count(&self) -> usize {
         self.transactions.len()
     }
 
+    /// Exposes the length of the internal append-only [`logos_core::Correction`] log.
+    /// Used primarily to determine if the local cache needs syncing with the graph database.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert_eq!(store.correction_count(), 0);
+    /// ```
     #[must_use]
     pub fn correction_count(&self) -> usize {
         self.corrections.len()
     }
 
+    /// Avoids linear scans when checking if a specific [`TransactionId`] has already been imported
+    /// or created, which is crucial during idempotency checks in the data pipeline.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_core::TransactionId;
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// let id = TransactionId::new("txn-123").unwrap();
+    /// assert!(!store.has_transaction(&id));
+    /// ```
     #[must_use]
     pub fn has_transaction(&self, id: &TransactionId) -> bool {
         self.transactions.contains_key(id)
     }
 
+    /// Reads the tip of the append-only [`logos_core::Correction`] ledger.
+    /// This represents the most recent mutation to historical data, allowing syncing algorithms
+    /// to resume pulling updates from this exact point.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert!(store.latest_correction().is_none());
+    /// ```
     #[must_use]
     pub fn latest_correction(&self) -> Option<&Correction> {
         self.corrections.last().map(StoredCorrection::correction)
     }
 
-    /// Provides an iterator over all historical transactions loaded into the cache.
+    /// Yields every active, non-superseded transaction in the ledger cache.
     ///
-    /// This is typically used by aggregation algorithms or CLI search utilities
-    /// that need to scan the entire ledger history sequentially.
+    /// Useful for reporting modules that need to aggregate balances by iterating over
+    /// all historical postings. It intentionally omits superseded records, ensuring
+    /// engines only see the "current truth" view of the world.
     ///
     /// ## Examples
     ///
@@ -63,6 +111,18 @@ impl AletheiaStore {
         self.transactions.values()
     }
 
+    /// Point-queries a specific envelope budget limit for rendering progress bars in UI layers.
+    /// Allows the UI to fetch a targeted [`StoredBudgetTarget`] without scanning all allocations.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// let target = store.budget_target("2026-03", "expenses:food");
+    /// assert!(target.is_none());
+    /// ```
     #[must_use]
     pub fn budget_target(
         &self,
@@ -73,10 +133,10 @@ impl AletheiaStore {
             .get(&(month_key.to_owned(), expense_account_prefix.to_owned()))
     }
 
-    /// Iterates over all envelope budget allocations.
+    /// Provides a complete view of all envelope allocations across all time.
     ///
     /// Used heavily by the budgeting reconciliation views to calculate variances
-    /// across all envelopes rapidly.
+    /// across all envelopes rapidly, allowing them to summarize monthly planning vs. spending metrics.
     ///
     /// ## Examples
     ///
@@ -92,6 +152,19 @@ impl AletheiaStore {
         self.budget_targets.values()
     }
 
+    /// Looks up a specific reporting manifest by its primary key.
+    /// Crucial for verifying that an external data science report or visual analytics dashboard
+    /// matches the exact internal state from which it was generated.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// let artifact = store.analytics_artifact("report-abc");
+    /// assert!(artifact.is_none());
+    /// ```
     #[must_use]
     pub fn analytics_artifact(
         &self,
@@ -100,7 +173,10 @@ impl AletheiaStore {
         self.analytics_artifacts.get(artifact_id)
     }
 
-    /// Iterates over manifests for data science or reporting extracts.
+    /// Streams all data-warehouse export metadata.
+    ///
+    /// Important for determining the last successful export checkpoint when scheduling
+    /// bulk ETL syncs out to other platforms.
     ///
     /// ## Examples
     ///
@@ -117,19 +193,43 @@ impl AletheiaStore {
         self.analytics_artifacts.values()
     }
 
+    /// Exposes the footprint of all imported payloads. Useful for diagnostic utilities determining
+    /// database scale and import density.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert_eq!(store.import_record_count(), 0);
+    /// ```
     #[must_use]
     pub fn import_record_count(&self) -> usize {
         self.import_records.len()
     }
 
+    /// Verifies if a specific data snippet has already been ingested into the system.
+    /// The content hash is a deterministic SHA hash representing a single imported line or API
+    /// payload. This method prevents duplicating identical statement line imports.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert!(!store.has_import_record_content_hash("sha256:abcd123"));
+    /// ```
     #[must_use]
     pub fn has_import_record_content_hash(&self, content_hash_key: &str) -> bool {
         self.import_records.contains_key(content_hash_key)
     }
 
-    /// Streams all raw import rows (CSV/API) parsed by the system.
+    /// Yields every raw, untyped row parsed from external imports (e.g. CSV lines).
     ///
-    /// Often used to detect duplicates across imports or build lineage graphs.
+    /// Often used to audit what exact text was provided by a bank before it was categorized
+    /// and normalized into a true [`logos_core::Transaction`].
     ///
     /// ## Examples
     ///
@@ -143,7 +243,9 @@ impl AletheiaStore {
         self.import_records.values()
     }
 
-    /// Streams the high-level metadata for distinct ingest operations.
+    /// Yields grouped collections of imported raw statements.
+    /// These track the source (e.g., CSV upload, Plaid sync) and deduplication stats
+    /// so that users can verify exactly what arrived during a manual or automated sync.
     ///
     /// ## Examples
     ///
@@ -159,12 +261,26 @@ impl AletheiaStore {
         self.import_batches.values()
     }
 
+    /// Useful for determining if there is pending evidence waiting to be processed into
+    /// finalized ledgers.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert_eq!(store.statement_line_count(), 0);
+    /// ```
     #[must_use]
     pub fn statement_line_count(&self) -> usize {
         self.statement_lines.len()
     }
 
-    /// Iterates over individual bank statement line items used for reconciliation.
+    /// Exposes raw external bank proof items.
+    ///
+    /// Used heavily by interactive UIs to present un-reconciled items for manual clearing,
+    /// or by heuristic matching algorithms that look for unlinked statement lines.
     ///
     /// ## Examples
     ///
@@ -178,17 +294,42 @@ impl AletheiaStore {
         self.statement_lines.values()
     }
 
+    /// Reports the total quantity of external sync logs recorded.
+    /// Helpful for diagnosing runaway fetchers or ensuring daily syncs are firing.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert_eq!(store.fetch_run_count(), 0);
+    /// ```
     #[must_use]
     pub fn fetch_run_count(&self) -> usize {
         self.fetch_runs.len()
     }
 
+    /// Loads the success/failure envelope for a specific API sync operation.
+    /// Usually accessed when a user clicks a "sync failed" notification to see the payload.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert!(store.fetch_run("run-123").is_none());
+    /// ```
     #[must_use]
     pub fn fetch_run(&self, run_id: &str) -> Option<&StoredFetchRun> {
         self.fetch_runs.get(run_id)
     }
 
-    /// Yields metadata about remote API data sync attempts.
+    /// Iterates through history logs of API synchronization runs.
+    ///
+    /// Allows diagnostic screens to render a timeline of when Plaid, Teller, or other
+    /// integrations successfully or unsuccessfully polled for new data.
     ///
     /// ## Examples
     ///
@@ -204,9 +345,22 @@ impl AletheiaStore {
         self.fetch_runs.values()
     }
 
-    /// Retrieves statement lines for a reconciliation run.
+    /// Re-hydrates the exact set of bank statement lines that were cleared during a specific
+    /// reconciliation event. Essential for auditors to verify *why* a set of transactions
+    /// was considered closed.
+    ///
     /// ⚡ Bolt Optimization: Uses `Vec::with_capacity` based on the exact count of linked line IDs
     /// instead of `.collect::<Vec<_>>()`, avoiding intermediate memory reallocations during graph traversal.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// let lines = store.statement_lines_for_reconciliation_run("run-123");
+    /// assert!(lines.is_empty());
+    /// ```
     #[must_use]
     pub fn statement_lines_for_reconciliation_run(
         &self,
@@ -228,17 +382,39 @@ impl AletheiaStore {
         lines
     }
 
+    /// Exposes the footprint of reconciliation events in the system.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert_eq!(store.reconciliation_run_count(), 0);
+    /// ```
     #[must_use]
     pub fn reconciliation_run_count(&self) -> usize {
         self.reconciliation_runs.len()
     }
 
+    /// Looks up a specific [`StoredReconciliationRun`] to view matching metadata,
+    /// usually invoked when a user clicks to drill down into historical matching data.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert!(store.reconciliation_run("run-123").is_none());
+    /// ```
     #[must_use]
     pub fn reconciliation_run(&self, run_id: &str) -> Option<&StoredReconciliationRun> {
         self.reconciliation_runs.get(run_id)
     }
 
-    /// Iterates over saved runs that match ledger txns against statement lines.
+    /// Sequences all historical matching operations where external evidence was paired with
+    /// internal ledger transactions.
     ///
     /// ## Examples
     ///
@@ -252,16 +428,49 @@ impl AletheiaStore {
         self.reconciliation_runs.values()
     }
 
+    /// Monitors the total number of finalized, locked accounting periods in the ledger.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert_eq!(store.month_close_count(), 0);
+    /// ```
     #[must_use]
     pub fn month_close_count(&self) -> usize {
         self.month_closes.len()
     }
 
+    /// Retrieves a specific [`StoredMonthClose`] lock boundary by its primary identifier.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// assert!(store.month_close("close-123").is_none());
+    /// ```
     #[must_use]
     pub fn month_close(&self, close_id: &str) -> Option<&StoredMonthClose> {
         self.month_closes.get(close_id)
     }
 
+    /// Finds a finalized closing statement for a specific account inside a specific month window.
+    /// Crucial for verifying if past transactions in a scope can still be modified,
+    /// or if they are permanently locked.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use logos_store_aletheia::AletheiaStore;
+    ///
+    /// let store = AletheiaStore::new();
+    /// let close = store.month_close_for_scope("2026-03", "assets:checking");
+    /// assert!(close.is_none());
+    /// ```
     #[must_use]
     pub fn month_close_for_scope(
         &self,
@@ -274,7 +483,9 @@ impl AletheiaStore {
         self.month_closes.get(close_id)
     }
 
-    /// Streams locked accounting period boundaries to prevent historical drift.
+    /// Yields all locked boundaries across all accounts and periods.
+    /// Used by reconciliation and reporting engines to determine which historical periods
+    /// can no longer accept mutations.
     ///
     /// ## Examples
     ///
