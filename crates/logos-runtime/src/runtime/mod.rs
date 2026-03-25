@@ -198,7 +198,7 @@ impl AppRuntime {
             })
             .map(Posting::amount)
             .filter(|amount| *amount > 0)
-            .sum();
+            .fold(0_i64, i64::saturating_add);
         project_budget_variance(budget_cents, actual_expense_cents)
     }
 
@@ -1351,7 +1351,7 @@ impl AppRuntime {
             })
             .map(Posting::amount)
             .filter(|amount| *amount > 0)
-            .sum()
+            .fold(0_i64, i64::saturating_add)
     }
 
     fn reconciliation_transaction_ids_for(

@@ -504,7 +504,7 @@ impl BudgetDataSource for AppRuntime {
                 })
                 .map(|posting| posting.amount())
                 .filter(|amount| *amount > 0)
-                .sum()
+                .fold(0_i64, i64::saturating_add)
         };
 
         Some(BudgetSnapshot::new(
