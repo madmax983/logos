@@ -513,18 +513,18 @@ fn test_extract_pdf_literal_strings_handles_escape_sequences() {
 
 #[test]
 fn pdf_parse_date_and_amount_token_distances_swapped_exact() {
-    let pdf_path = std::env::temp_dir().join(format!("date-amount-distance-{}.pdf", std::process::id()));
+    let pdf_path =
+        std::env::temp_dir().join(format!("date-amount-distance-{}.pdf", std::process::id()));
 
     // Testing amount_index <= date_index + 1 bounds.
     // So if date_index is 0, amount_index cannot be 1 (meaning no memo between date and amount).
-    std::fs::write(
-        &pdf_path,
-        b"%PDF-1.4\n(01/01/2026 10.00)\n",
-    )
-    .unwrap();
+    std::fs::write(&pdf_path, b"%PDF-1.4\n(01/01/2026 10.00)\n").unwrap();
     let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
     // The row has no memo (date token, then amount token), so parse_statement_line should return None.
-    assert!(matches!(result, Err(logos_import::ImportError::NoStatementRows { .. })));
+    assert!(matches!(
+        result,
+        Err(logos_import::ImportError::NoStatementRows { .. })
+    ));
     std::fs::remove_file(&pdf_path).ok();
 }
 
@@ -534,12 +534,9 @@ fn test_parse_slash_date_year_raw_100_does_not_add_2000() {
 
     // Testing boundary of `< 100` condition -> year 100 should remain 100, which is valid but won't be 2100.
     // 01/01/100 should be parsed as year 100.
-    std::fs::write(
-        &pdf_path,
-        b"%PDF-1.4\n(01/01/100 ITEM 10.00)\n",
-    )
-    .unwrap();
-    let records = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+    std::fs::write(&pdf_path, b"%PDF-1.4\n(01/01/100 ITEM 10.00)\n").unwrap();
+    let records =
+        logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
     assert_eq!(records.len(), 1);
     assert_eq!(records[0].timestamp(), "0100-01-01T00:00:00");
     std::fs::remove_file(&pdf_path).ok();
@@ -555,23 +552,20 @@ fn test_valid_calendar_date_all_months() {
         b"%PDF-1.4\n(2026-01-31 ITEM 10.00\n2026-02-28 ITEM 10.00\n2026-03-31 ITEM 10.00\n2026-04-30 ITEM 10.00\n2026-05-31 ITEM 10.00\n2026-06-30 ITEM 10.00\n2026-07-31 ITEM 10.00\n2026-08-31 ITEM 10.00\n2026-09-30 ITEM 10.00\n2026-10-31 ITEM 10.00\n2026-11-30 ITEM 10.00\n2026-12-31 ITEM 10.00)\n",
     )
     .unwrap();
-    let records = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+    let records =
+        logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
     assert_eq!(records.len(), 12);
     std::fs::remove_file(&pdf_path).ok();
 }
-
 
 #[test]
 fn pdf_parse_zero_amount_category() {
     let pdf_path = std::env::temp_dir().join(format!("zero-amount-{}.pdf", std::process::id()));
 
     // Testing boundary of `< 0`. If amount is 0, it should be "income:imported"
-    std::fs::write(
-        &pdf_path,
-        b"%PDF-1.4\n(01/01/2026 TEST 0.00)\n",
-    )
-    .unwrap();
-    let records = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+    std::fs::write(&pdf_path, b"%PDF-1.4\n(01/01/2026 TEST 0.00)\n").unwrap();
+    let records =
+        logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
     assert_eq!(records.len(), 1);
     assert_eq!(records[0].amount_cents(), 0);
     assert_eq!(records[0].category(), "income:imported");

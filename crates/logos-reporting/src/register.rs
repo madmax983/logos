@@ -79,6 +79,6 @@ where
     entries
         .into_iter()
         .fold(opening_balance_cents, |balance, entry| {
-            balance + entry.delta_cents()
+            balance.saturating_add(entry.delta_cents())
         })
 }

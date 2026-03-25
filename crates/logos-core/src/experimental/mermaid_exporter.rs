@@ -35,7 +35,10 @@ impl MermaidSankeyExporter {
             let (credits, debits): (Vec<&Posting>, Vec<&Posting>) =
                 tx.postings().iter().partition(|p| p.amount() < 0);
 
-            let total_credit: i64 = credits.iter().map(|p| p.amount().abs()).sum();
+            let total_credit: i64 = credits
+                .iter()
+                .map(|p| p.amount().abs())
+                .fold(0_i64, i64::saturating_add);
 
             if total_credit == 0 {
                 continue; // Prevent division by zero, though valid txns shouldn't have 0 total
