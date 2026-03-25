@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 00167f03161826edc99dcccb3479d91c30951aad4ddb61a38393d70a8c176074 # shrinks to _opening_balance = 9223372036854775807, _delta = 1
