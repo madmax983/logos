@@ -997,15 +997,13 @@ impl App {
             self.reconcile.filter_checking_account.as_deref(),
         );
 
-        let evidence_by_run = runs
-            .iter()
-            .map(|run| {
-                (
-                    run.run_id().to_owned(),
-                    source.fetch_statement_lines_for_run(run.run_id()),
-                )
-            })
-            .collect::<HashMap<_, _>>();
+        let mut evidence_by_run = HashMap::with_capacity(runs.len());
+        for run in &runs {
+            evidence_by_run.insert(
+                run.run_id().to_owned(),
+                source.fetch_statement_lines_for_run(run.run_id()),
+            );
+        }
 
         let selected_run_idx = if runs.is_empty() {
             None

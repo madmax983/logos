@@ -1312,8 +1312,10 @@ fn load_corrections(
     transaction_nodes: &HashMap<TransactionId, NodeId>,
 ) -> Result<Vec<StoredCorrection>, StoreError> {
     let correction_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_CORRECTION);
+    let (lower, upper) = correction_node_ids.size_hint();
+    let capacity = upper.unwrap_or(lower);
     // Pre-allocate vector based on known node count to prevent multiple heap reallocations.
-    let mut corrections = Vec::new();
+    let mut corrections = Vec::with_capacity(capacity);
 
     for correction_node_id in correction_node_ids {
         let correction_node = db
@@ -2336,7 +2338,12 @@ fn collect_statement_line_ids_for_transactions(
     statement_line_ids_by_txn: &HashMap<TransactionId, Vec<String>>,
     txn_ids: &[TransactionId],
 ) -> Vec<String> {
-    let mut line_ids = Vec::new();
+    let capacity = txn_ids
+        .iter()
+        .filter_map(|id| statement_line_ids_by_txn.get(id))
+        .map(std::vec::Vec::len)
+        .sum();
+    let mut line_ids = Vec::with_capacity(capacity);
     for txn_id in txn_ids {
         if let Some(ids) = statement_line_ids_by_txn.get(txn_id) {
             line_ids.extend(ids.iter().cloned());

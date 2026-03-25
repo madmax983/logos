@@ -29,3 +29,15 @@
 **[AppRuntime::month_report_for Redundant Iteration]**
 **Learning:** `AppRuntime::month_report_for` was iterating over the entire transaction history three separate times to calculate `checking_balance_cents`, `income_cents`, and `expense_cents` via `.filter().flat_map().filter().sum()`. This caused excessive allocations and redundant work on hot paths. Additionally, `.sum()` and `i64::abs()` were vulnerable to panic on overflow with extremely large numbers.
 **Action:** Replaced the three separate iterator chains with a single `for` loop over `self.store.transactions().filter(transaction_in_month)` that aggregates all three variables using `saturating_add` and `checked_abs().unwrap_or(i64::MAX)`. This eliminates redundant scans and protects against panic.
+
+**[HashMap Preallocation]**
+**Learning:** `HashMap::with_capacity()` avoids intermediate allocations and resizing when constructing maps from an iterator with a known size, compared to `.collect::<HashMap<_, _>>()`.
+**Action:** Replace `.collect::<HashMap<_, _>>()` with `HashMap::with_capacity(len)` and a simple `.insert` loop when the item count is statically known (e.g. from `.len()`).
+
+**[Sum Capacity for FlatMap Extends]**
+**Learning:** When pushing multiple smaller vectors into a single output vector inside a loop, `Vec::new()` causes multiple reallocations. `Vec::with_capacity()` can eliminate this if the exact or upper-bound total size is calculated beforehand by summing the inner lengths.
+**Action:** Replace `Vec::new()` with `Vec::with_capacity(capacity)` where `capacity` is pre-calculated by summing `.len()` over the sub-collections before `.extend()`.
+
+**[Preallocate Vec from exact len]**
+**Learning:** `Vec::new()` requires multiple allocations when the upper bound of the length is known from another collection being mapped or iterated over.
+**Action:** Use `Vec::with_capacity(collection.len())` instead of `Vec::new()` when initializing a vector that will be populated by an iterator with a known length.
