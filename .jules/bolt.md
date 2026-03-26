@@ -41,3 +41,6 @@
 **[Preallocate Vec from exact len]**
 **Learning:** `Vec::new()` requires multiple allocations when the upper bound of the length is known from another collection being mapped or iterated over.
 **Action:** Use `Vec::with_capacity(collection.len())` instead of `Vec::new()` when initializing a vector that will be populated by an iterator with a known length.
+## 2026-03-26 - Optimize Vector and HashSet Allocation in Graph Deserialization
+**Learning:** Rustdoc (`///`) generates documentation for items, not statements. Using `///` inside a function body triggers an `unused_doc_comments` warning, which fails the build under strict clippy settings (`-D warnings`). When iterating over graph edges, assigning the result to a variable allows for exact capacity checking and prevents unneeded dynamic resizing.
+**Action:** Use standard comments (`//`) for internal logic and implementation details inside functions instead of rustdoc comments. Always pre-allocate `Vec` and `HashSet` when the exact size of the incoming iterator is known, such as when processing graph edges.
