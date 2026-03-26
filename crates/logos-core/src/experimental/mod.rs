@@ -12,6 +12,8 @@ pub mod goal_seeker;
 pub mod inflation;
 pub mod mermaid_exporter;
 pub mod monte_carlo;
+#[cfg(feature = "nova")]
+pub mod predictive_ledger;
 pub mod recurrence_detector;
 #[cfg(feature = "nova")]
 pub mod trinity_simulator;
