@@ -113,6 +113,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_goal_seeker_large_target_kills_linear_mutants() {
+        // Target is $100 Billion.
+        let seeker = GoalSeeker::new(0);
+        let required = seeker
+            .find_required_savings(10_000_000_000_000, 1) // 1 month
+            .expect("should find a solution");
+
+        // Required savings for 1 month to reach 10,000,000,000,000 is 10,000,000,000,000
+        assert_eq!(required, 10_000_000_000_000);
+    }
+
+    #[test]
     fn test_goal_seeker_zero_months() {
         let seeker = GoalSeeker::new(10_000_000);
         // Target is already met
