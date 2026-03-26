@@ -64,16 +64,27 @@ impl BudgetMonth {
         &self.month_key
     }
 
+    /// Retrieves the rolled-over balance from the previous month.
+    ///
+    /// Useful for determining if there are surplus funds carrying forward,
+    /// or if the envelope started in a deficit due to overspending.
     #[must_use]
     pub const fn start_balance(&self) -> i64 {
         self.start_balance
     }
 
+    /// Retrieves the amount of new money injected into this envelope for the current month.
+    ///
+    /// This represents explicit budgeting decisions made this month, separate
+    /// from rolled-over funds.
     #[must_use]
     pub const fn assigned(&self) -> i64 {
         self.assigned
     }
 
+    /// Retrieves the total amount of money that has left the envelope this month.
+    ///
+    /// This is used to track burn rate against the sum of starting and assigned funds.
     #[must_use]
     pub const fn spent(&self) -> i64 {
         self.spent
