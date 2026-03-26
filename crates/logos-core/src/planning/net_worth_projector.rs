@@ -310,4 +310,16 @@ mod tests {
         assert_eq!(crossed_milestones.len(), 1);
         assert_eq!(crossed_milestones[0], (100_000, 2)); // Crossed 100k in month 2
     }
+
+    use proptest::prelude::*;
+    proptest! {
+        #[test]
+        #[should_panic(expected = "attempt to multiply with overflow")]
+        fn havoc_project_timeline_panics_on_u16_overflow(
+            months in 3000..=u16::MAX,
+        ) {
+            let projector = NetWorthProjector::new(100_000, 10_000);
+            let _ = projector.project_timeline(months);
+        }
+    }
 }
