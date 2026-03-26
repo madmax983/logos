@@ -2051,9 +2051,12 @@ fn load_reconciliation_runs(
             outflow_cents,
             created_at,
         );
-        let mut statement_line_ids = Vec::new();
-        let mut seen_statement_line_ids = HashSet::new();
-        for edge_id in db.get_outgoing_edges_with_label(node_id, EDGE_RECONCILES_STMT_LINE) {
+        let statement_line_edge_ids =
+            db.get_outgoing_edges_with_label(node_id, EDGE_RECONCILES_STMT_LINE);
+        // ⚡ Bolt Optimization: Uses `Vec::with_capacity` and `HashSet::with_capacity` based on the exact count of linked line IDs to prevent runtime heap reallocations.
+        let mut statement_line_ids = Vec::with_capacity(statement_line_edge_ids.len());
+        let mut seen_statement_line_ids = HashSet::with_capacity(statement_line_edge_ids.len());
+        for edge_id in statement_line_edge_ids {
             let edge = db
                 .get_edge(edge_id)
                 .map_err(|err| map_load_error("unable to read RECONCILES_STMT_LINE edge", err))?;
