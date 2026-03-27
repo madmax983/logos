@@ -15,6 +15,8 @@ pub mod inflation;
 pub mod mermaid_exporter;
 pub mod monte_carlo;
 #[cfg(feature = "nova")]
+pub mod monte_carlo_net_worth;
+#[cfg(feature = "nova")]
 pub mod predictive_ledger;
 pub mod recurrence_detector;
 #[cfg(feature = "nova")]
