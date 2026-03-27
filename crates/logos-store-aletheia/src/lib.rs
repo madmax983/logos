@@ -1228,9 +1228,11 @@ type TransactionLoad = (
 
 fn load_transactions(db: &AletheiaDB) -> Result<TransactionLoad, StoreError> {
     let txn_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_TRANSACTION);
+    let (lower, upper) = txn_node_ids.size_hint();
+    let capacity = upper.unwrap_or(lower);
     // Pre-allocate hash map based on known node count to eliminate runtime hashing reallocations.
-    let mut transactions = HashMap::new();
-    let mut transaction_nodes = HashMap::new();
+    let mut transactions = HashMap::with_capacity(capacity);
+    let mut transaction_nodes = HashMap::with_capacity(capacity);
 
     for txn_node_id in txn_node_ids {
         let txn_node = db
@@ -1420,9 +1422,11 @@ type ArtifactLoad = (
 
 fn load_analytics_artifacts(db: &AletheiaDB) -> Result<ArtifactLoad, StoreError> {
     let artifact_node_ids = db.scan_nodes_by_label(LABEL_ANALYTICS_ARTIFACT_MANIFEST);
+    let (lower, upper) = artifact_node_ids.size_hint();
+    let capacity = upper.unwrap_or(lower);
     // Pre-allocate hash map based on known node count to eliminate runtime hashing reallocations.
-    let mut artifacts = HashMap::new();
-    let mut artifact_nodes = HashMap::new();
+    let mut artifacts = HashMap::with_capacity(capacity);
+    let mut artifact_nodes = HashMap::with_capacity(capacity);
 
     for node_id in artifact_node_ids {
         let node = db
@@ -1540,9 +1544,11 @@ type ImportBatchLoad = (HashMap<String, StoredImportBatch>, HashMap<String, Node
 
 fn load_import_batches(db: &AletheiaDB) -> Result<ImportBatchLoad, StoreError> {
     let batch_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_IMPORT_BATCH);
+    let (lower, upper) = batch_node_ids.size_hint();
+    let capacity = upper.unwrap_or(lower);
     // Pre-allocate hash map based on known batch count to eliminate runtime hashing reallocations.
-    let mut batches = HashMap::new();
-    let mut batch_nodes = HashMap::new();
+    let mut batches = HashMap::with_capacity(capacity);
+    let mut batch_nodes = HashMap::with_capacity(capacity);
 
     for node_id in batch_node_ids {
         let node = db
@@ -1714,9 +1720,11 @@ fn load_statement_lines(
     records: &HashMap<String, StoredImportRecord>,
 ) -> Result<StatementLineLoad, StoreError> {
     let line_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_STATEMENT_LINE);
+    let (lower, upper) = line_node_ids.size_hint();
+    let capacity = upper.unwrap_or(lower);
     // Pre-allocate hash map based on known line node count to eliminate runtime hashing reallocations.
-    let mut lines = HashMap::new();
-    let mut line_nodes = HashMap::new();
+    let mut lines = HashMap::with_capacity(capacity);
+    let mut line_nodes = HashMap::with_capacity(capacity);
     let transaction_ids_by_node: HashMap<_, _> = transaction_nodes
         .iter()
         .map(|(txn_id, node_id)| (*node_id, txn_id.clone()))
@@ -1943,10 +1951,12 @@ fn load_reconciliation_runs(
     statement_line_nodes: &HashMap<String, NodeId>,
 ) -> Result<ReconciliationLoad, StoreError> {
     let run_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_RECONCILIATION_RUN);
+    let (lower, upper) = run_node_ids.size_hint();
+    let capacity = upper.unwrap_or(lower);
     // Pre-allocate hash maps based on known run node count to eliminate runtime hashing reallocations.
-    let mut runs = HashMap::new();
-    let mut run_nodes = HashMap::new();
-    let mut run_statement_line_ids = HashMap::new();
+    let mut runs = HashMap::with_capacity(capacity);
+    let mut run_nodes = HashMap::with_capacity(capacity);
+    let mut run_statement_line_ids = HashMap::with_capacity(capacity);
     let transaction_ids_by_node: HashMap<_, _> = transaction_nodes
         .iter()
         .map(|(txn_id, node_id)| (*node_id, txn_id.clone()))
@@ -2104,9 +2114,11 @@ fn load_month_closes(
         .collect();
 
     let close_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_MONTH_CLOSE);
+    let (lower, upper) = close_node_ids.size_hint();
+    let capacity = upper.unwrap_or(lower);
     // Pre-allocate hash maps based on known close node count to eliminate runtime hashing reallocations.
-    let mut closes = HashMap::new();
-    let mut close_nodes = HashMap::new();
+    let mut closes = HashMap::with_capacity(capacity);
+    let mut close_nodes = HashMap::with_capacity(capacity);
 
     for node_id in close_node_ids {
         let node = db

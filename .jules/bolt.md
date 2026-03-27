@@ -44,3 +44,7 @@
 ## 2026-03-26 - Optimize Vector and HashSet Allocation in Graph Deserialization
 **Learning:** Rustdoc (`///`) generates documentation for items, not statements. Using `///` inside a function body triggers an `unused_doc_comments` warning, which fails the build under strict clippy settings (`-D warnings`). When iterating over graph edges, assigning the result to a variable allows for exact capacity checking and prevents unneeded dynamic resizing.
 **Action:** Use standard comments (`//`) for internal logic and implementation details inside functions instead of rustdoc comments. Always pre-allocate `Vec` and `HashSet` when the exact size of the incoming iterator is known, such as when processing graph edges.
+
+## 2024-05-18 - Pre-allocate HashMaps when Loading Graph Nodes
+**Learning:** Found several `HashMap` instances initialized with `HashMap::new()` during database node loading (e.g. `load_transactions`, `load_statement_lines`), despite comments claiming they were pre-allocated. This causes unnecessary reallocation and rehashing while loading large datasets into memory.
+**Action:** Use the iterator's `.size_hint()` method on the node ID iterators (e.g. `let (lower, upper) = node_ids.size_hint(); let capacity = upper.unwrap_or(lower);`) and initialize the maps using `HashMap::with_capacity(capacity)` to eliminate runtime rehashing and reallocation.
