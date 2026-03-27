@@ -164,7 +164,9 @@ impl AllocationPolicy {
         })
     }
 
-    /// Returns the percentage of the vest allocated to the tax reserve.
+    /// The critical reserve meant to cover unexpected tax liabilities when filing.
+    /// Because equity vests are often under-withheld by employers, this bucket ensures
+    /// you are not caught empty-handed when a tax bill arrives.
     ///
     /// ## Examples
     ///
@@ -178,7 +180,10 @@ impl AllocationPolicy {
         self.tax_reserve
     }
 
-    /// Returns the percentage of the vest allocated to the income smoothing buffer.
+    /// The liquidity buffer used to decouple your monthly budget from market volatility.
+    /// By continuously funding a smoothing buffer, you can pay yourself a stable
+    /// "salary" every month, rather than experiencing feast-or-famine cycles based
+    /// on vest schedules.
     ///
     /// ## Examples
     ///
@@ -192,7 +197,9 @@ impl AllocationPolicy {
         self.smoothing_buffer
     }
 
-    /// Returns the percentage of the vest allocated to specific financial goals.
+    /// The allocation strictly reserved for long-term aspirations (e.g., house down payment).
+    /// These funds bypass daily discretionary budgets to ensure substantial progress
+    /// toward primary life milestones.
     ///
     /// ## Examples
     ///
@@ -206,7 +213,9 @@ impl AllocationPolicy {
         self.goals
     }
 
-    /// Returns the percentage of the vest allocated to discretionary spending.
+    /// The portion of the vest explicitly permitted for guilt-free immediate use.
+    /// While other buckets are locked into specific purposes, this slice is designed
+    /// for quality-of-life improvements today.
     ///
     /// ## Examples
     ///

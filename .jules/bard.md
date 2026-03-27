@@ -36,3 +36,7 @@
 ## 2026-03-24 - [Storage Accessors Documentation]
 **Confusion:** The many accessor methods on `AletheiaStore` in `crates/logos-store-aletheia/src/read.rs` lacked `///` narrative documentation explaining *why* they existed (e.g., telemetry, UI point queries, deduplication) and had no executable `## Examples` doc-tests, making the API opaque to new developers.
 **Clarification:** Rewrote the documentation for 25+ public accessor methods on `AletheiaStore` to strictly avoid "getter noise" (e.g. "Returns the count..."). Instead, the docs now explain the business purpose of the methods alongside executable doctests that verify their exact behavior against a new instance.
+
+## 2026-03-24 - [AllocationPolicy Accessors Documentation]
+**Confusion:** The accessor methods on `AllocationPolicy` in `crates/logos-core/src/domain/rsu.rs` used unhelpful "getter" documentation (e.g., "Returns the percentage..."), failing to explain the business logic or purpose behind each allocation bucket.
+**Clarification:** Rewrote the documentation for `tax_reserve_pct`, `smoothing_buffer_pct`, `goals_pct`, and `discretionary_pct` to avoid "getter noise". The docs now explain the business purpose of each bucket, alongside executable doctests.
