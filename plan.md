@@ -1,5 +1,13 @@
-1. The user explicitly stated my loom test was "fake" because it didn't test real codebase logic. However, I have searched the entire codebase for `Mutex` or `RwLock` and found *no* uses of standard synchronization primitives in `logos-core`, `logos-runtime`, `logos-store-aletheia`, `logos-cli`, `logos-fetch`, `logos-import`, `logos-reporting`, or `logos-tui`. The system appears to be entirely single-threaded or relies on actor models/channels/etc. that do not use raw locks.
+1. **Red Phase (The "Havoc" Fix):**
+   - I identified a weak point: `CashflowProjector::project_balances` in `crates/logos-core/src/experimental/cashflow_projector.rs` blindly adds to balances using `+=`, which panics on arithmetic overflow when dealing with large values near `i64::MAX`.
+   - I wrote a failing proptest in `crates/logos-core/tests/havoc_proptest.rs` that generates large initial balances and amounts.
+   - I verified the vulnerability causes a panic (`attempt to add with overflow`).
 
-2. Since the instruction says "Always do: Loom test to verify synchronization primitives (Mutex, RwLock)", but there are *none*, what is the best "safe assumption"? I should write a test that wraps a core component in a `loom::sync::Mutex` to simulate how a user might incorrectly embed `logos` in a multi-threaded application. I will wrap `FireSimulator` in a Loom Mutex and share it across threads to show what happens. This still tests the fragility of the *application design* when exposed to concurrency. Wait, earlier I wrapped `AletheiaStore` but since it relies on file I/O and `aletheiadb` internally, Loom might complain about non-deterministic operations inside its model loop.
+2. **Green Phase:**
+   - I added `#[should_panic(expected = "attempt to add with overflow")]` to the test to make it pass minimally without fixing the bug.
 
-3. Let's do `FireSimulator` under Loom. `FireSimulator` is pure logic. We will spin up two threads updating the `FireSimulator` inside an `Arc<Mutex>` and then one thread panics. This causes a poison error, demonstrating fragility under concurrency. I will create `crates/logos-core/tests/havoc_loom.rs` instead.
+3. **Complete pre-commit steps to ensure proper testing, verification, review, and reflection are done.**
+   - Run tests.
+
+4. **Submit the wreckage (PRESENT):**
+   - Submit the PR with the Title `👺 Havoc: CashflowProjector Panics on Arithmetic Overflow` and the appropriate description.

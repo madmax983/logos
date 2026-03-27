@@ -1,0 +1,10 @@
+--- register.rs
++++ register.rs
+@@ -74,6 +74,6 @@
+ {
+     entries
+         .into_iter()
+         .fold(opening_balance_cents, |balance, entry| {
+-            balance.saturating_add(entry.delta_cents())
++            balance + entry.delta_cents()
+         })

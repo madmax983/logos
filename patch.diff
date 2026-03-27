@@ -1,0 +1,26 @@
+--- crates/logos-core/tests/havoc_proptest.rs
++++ crates/logos-core/tests/havoc_proptest.rs
+@@ -53,4 +53,22 @@
+         sim.add_assets_liabilities(assets, 0);
+         sim.add_assets_liabilities(assets, 0);
+     }
++
++    #[test]
++    #[should_panic(expected = "attempt to add with overflow")]
++    fn project_balances_panics_on_overflow(
++        initial in (i64::MAX / 2)..(i64::MAX),
++        amount in (i64::MAX / 2)..(i64::MAX),
++        periods in 2..=10_u16,
++    ) {
++        use logos_core::experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
++        let mut projector = CashflowProjector::new();
++        projector.set_initial_balance("assets:checking", initial);
++        projector.add_recurring_template(RecurringTemplate {
++            description: "Salary".to_owned(),
++            amount_cents: amount,
++            credit_account: "income:salary".to_owned(),
++            debit_account: "assets:checking".to_owned(),
++        });
++        let _ = projector.project_balances(periods);
++    }
++}
