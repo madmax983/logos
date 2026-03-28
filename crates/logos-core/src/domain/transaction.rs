@@ -93,11 +93,43 @@ impl Posting {
         Ok(Self { account, amount })
     }
 
+    /// Identifies the specific ledger account this posting mutates.
+    ///
+    /// In double-entry accounting, every posting must target exactly one account
+    /// (e.g., drawing from `assets:checking` to fund `expenses:food`). This ID
+    /// is used during transaction balancing and reporting to group cash flows.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::AccountId;
+    ///
+    /// let posting = Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).unwrap();
+    /// assert_eq!(posting.account().as_str(), "assets:checking");
+    /// ```
     #[must_use]
     pub const fn account(&self) -> &AccountId {
         &self.account
     }
 
+    /// Retrieves the monetary amount of the posting in cents.
+    ///
+    /// **Important:** The value strictly adheres to the sign convention:
+    /// Debits are positive, and credits are negative.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::AccountId;
+    ///
+    /// let debit = Posting::debit(AccountId::new("assets:checking").unwrap(), 5000).unwrap();
+    /// assert_eq!(debit.amount(), 5000);
+    ///
+    /// let credit = Posting::credit(AccountId::new("income:salary").unwrap(), 5000).unwrap();
+    /// assert_eq!(credit.amount(), -5000);
+    /// ```
     #[must_use]
     pub const fn amount(&self) -> i64 {
         self.amount

@@ -68,6 +68,15 @@ impl BudgetMonth {
     ///
     /// Useful for determining if there are surplus funds carrying forward,
     /// or if the envelope started in a deficit due to overspending.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::budget::BudgetMonth;
+    ///
+    /// let budget = BudgetMonth::new("2026-03", 150_00, 500_00, 200_00);
+    /// assert_eq!(budget.start_balance(), 150_00);
+    /// ```
     #[must_use]
     pub const fn start_balance(&self) -> i64 {
         self.start_balance
@@ -77,6 +86,15 @@ impl BudgetMonth {
     ///
     /// This represents explicit budgeting decisions made this month, separate
     /// from rolled-over funds.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::budget::BudgetMonth;
+    ///
+    /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
+    /// assert_eq!(budget.assigned(), 500_00);
+    /// ```
     #[must_use]
     pub const fn assigned(&self) -> i64 {
         self.assigned
@@ -85,6 +103,15 @@ impl BudgetMonth {
     /// Retrieves the total amount of money that has left the envelope this month.
     ///
     /// This is used to track burn rate against the sum of starting and assigned funds.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::budget::BudgetMonth;
+    ///
+    /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
+    /// assert_eq!(budget.spent(), 200_00);
+    /// ```
     #[must_use]
     pub const fn spent(&self) -> i64 {
         self.spent
@@ -93,6 +120,16 @@ impl BudgetMonth {
     /// Calculates the final balance of the envelope at the end of the month.
     ///
     /// This value will become the `start_balance` for the next month.
+    /// It effectively equals: `start_balance + assigned - spent`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::budget::BudgetMonth;
+    ///
+    /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
+    /// assert_eq!(budget.end_balance(), 400_00); // 100 + 500 - 200 = 400
+    /// ```
     #[must_use]
     pub const fn end_balance(&self) -> i64 {
         rollover_end_balance(self.start_balance, self.assigned, self.spent)

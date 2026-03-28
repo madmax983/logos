@@ -103,6 +103,19 @@ impl CategoryGroup {
         })
     }
 
+    /// Retrieves the normalized identifier for this category group.
+    ///
+    /// The ID is generated from the original name and is guaranteed to be lowercase,
+    /// trimmed, and safe for internal indexing or comparisons.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::category::CategoryGroup;
+    ///
+    /// let group = CategoryGroup::new(" Living Expenses ").unwrap();
+    /// assert_eq!(group.id().as_str(), "living-expenses");
+    /// ```
     #[must_use]
     pub const fn id(&self) -> &CategoryGroupId {
         &self.id
@@ -168,6 +181,20 @@ impl Category {
         })
     }
 
+    /// Retrieves the ID of the parent [`CategoryGroup`] this envelope belongs to.
+    ///
+    /// Categories in `logos` are strictly hierarchical. Knowing the parent group
+    /// allows for aggregating spending (e.g., viewing all "Housing" costs together).
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::category::{Category, CategoryGroup};
+    ///
+    /// let group = CategoryGroup::new("Housing").unwrap();
+    /// let category = Category::new(group.id().clone(), "Rent").unwrap();
+    /// assert_eq!(category.group_id().as_str(), "housing");
+    /// ```
     #[must_use]
     pub const fn group_id(&self) -> &CategoryGroupId {
         &self.group_id
