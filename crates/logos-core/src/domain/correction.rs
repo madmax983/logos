@@ -103,6 +103,21 @@ impl Correction {
         })
     }
 
+    /// Retrieves the ID of the original transaction that this correction intends to replace.
+    ///
+    /// This is used to link the new, correct transaction back to the mistake, creating
+    /// an immutable audit trail rather than modifying history in place.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::correction::{Correction, TransactionId};
+    ///
+    /// let mistake_id = TransactionId::new("tx-123").unwrap();
+    /// let correction = Correction::new(mistake_id.clone(), "Typo in amount").unwrap();
+    ///
+    /// assert_eq!(correction.supersedes_id(), &mistake_id);
+    /// ```
     #[must_use]
     pub const fn supersedes_id(&self) -> &TransactionId {
         &self.supersedes_id
