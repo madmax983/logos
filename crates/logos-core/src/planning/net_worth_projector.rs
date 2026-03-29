@@ -274,6 +274,55 @@ mod tests {
         assert_eq!(crossed_milestones[1], (130_000, 3)); // Crossed 130k in month 3 (130k >= 130k)
     }
 
+    use crate::HaircutTierTable;
+
+    #[test]
+    fn test_project_timeline_custom_haircut_tiers() {
+        let mut projector = NetWorthProjector::new(5_000_000, 200_000);
+
+        let custom_tiers = HaircutTierTable::new(10, 20, 30).unwrap();
+        projector.set_haircut_tiers(custom_tiers);
+
+        projector.add_upcoming_vest(UpcomingVest {
+            avg_close_price_cents: 10_000,
+            units: 100,
+            days_to_vest: 45, // < 90 days, tier 1 is 10% haircut, so 90% kept
+        });
+
+        let (timeline, _) = projector.project_timeline(2);
+
+        // Month 1: vest doesn't happen
+        assert_eq!(timeline[0].vested_value_cents, 0);
+
+        // Month 2: vest happens. Total value = 100 * 10,000 = 1,000,000 cents.
+        // Custom tiers: 10%, 20%, 30%. Days is 45 (between 30 and 60, so tier 2).
+        // Tier 2 custom haircut is 20%, meaning safe value is 80% = 800,000 cents.
+        // Default tier 2 is 40% haircut (60% kept) which would be 600,000 cents.
+        // If `set_haircut_tiers` is deleted, this will fail.
+        assert_eq!(timeline[1].vested_value_cents, 800_000);
+    }
+
+    #[test]
+    fn test_project_timeline_vest_boundary() {
+        let mut projector = NetWorthProjector::new(100_000, 10_000);
+
+        // Schedule vest exactly on month 1 boundary (30 days).
+        projector.add_upcoming_vest(UpcomingVest {
+            avg_close_price_cents: 10_000,
+            units: 10,
+            days_to_vest: 30,
+        });
+
+        let (timeline, _) = projector.project_timeline(2);
+
+        // Vested value should be assigned to month 1
+        assert!(timeline[0].vested_value_cents > 0);
+
+        // If `> month_start_days` is mutated to `>=`, this will fail because month 2 (start = 30)
+        // would incorrectly also claim this vest.
+        assert_eq!(timeline[1].vested_value_cents, 0);
+    }
+
     #[test]
     fn test_project_timeline_with_vests() {
         let mut projector = NetWorthProjector::new(50_000, 5_000); // 500 initial, +50 per month
