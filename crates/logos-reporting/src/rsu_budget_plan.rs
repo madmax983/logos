@@ -459,4 +459,16 @@ mod tests {
             "reserve_sweep_pct + investing_sweep_pct must be <= 100, got 110"
         );
     }
+
+    #[test]
+    fn should_return_error_when_month_key_is_empty() {
+        let valid_prices = ScenarioPriceInputs::new(100, 200, 300).expect("should succeed");
+        let input =
+            RsuBudgetPlanInput::new(100, 10, valid_prices, 5000, 10, 20).expect("should succeed");
+
+        assert_eq!(
+            project_rsu_budget_plan("", &input).unwrap_err(),
+            "month_key must not be empty"
+        );
+    }
 }
