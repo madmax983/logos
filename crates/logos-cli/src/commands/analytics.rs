@@ -288,7 +288,7 @@ pub fn fire_sim(
     #[allow(clippy::cast_precision_loss)]
     table.add_row(vec![
         comfy_table::Cell::new("Monthly Expenses"),
-        comfy_table::Cell::new(format!("${:.2}", (monthly_expenses_cents as f64) / 100.0))
+        comfy_table::Cell::new(crate::format::format_cents(monthly_expenses_cents))
             .fg(comfy_table::Color::Red),
     ]);
 
@@ -297,7 +297,7 @@ pub fn fire_sim(
         comfy_table::Cell::new("Target FIRE Number")
             .fg(comfy_table::Color::Green)
             .add_attribute(comfy_table::Attribute::Bold),
-        comfy_table::Cell::new(format!("${:.2}", (fire_number as f64) / 100.0))
+        comfy_table::Cell::new(crate::format::format_cents(fire_number))
             .fg(comfy_table::Color::Green)
             .add_attribute(comfy_table::Attribute::Bold),
     ]);
@@ -305,14 +305,14 @@ pub fn fire_sim(
     #[allow(clippy::cast_precision_loss)]
     table.add_row(vec![
         comfy_table::Cell::new("Current Safe Net Worth"),
-        comfy_table::Cell::new(format!("${:.2}", (current_net_worth as f64) / 100.0))
+        comfy_table::Cell::new(crate::format::format_cents(current_net_worth))
             .fg(comfy_table::Color::Blue),
     ]);
 
     #[allow(clippy::cast_precision_loss)]
     table.add_row(vec![
         comfy_table::Cell::new("Monthly Savings"),
-        comfy_table::Cell::new(format!("${:.2}", (monthly_savings_cents as f64) / 100.0))
+        comfy_table::Cell::new(crate::format::format_cents(monthly_savings_cents))
             .fg(comfy_table::Color::Green),
     ]);
 
@@ -339,7 +339,7 @@ pub fn fire_sim(
     } else {
         for milestone in ascent_result.milestones {
             #[allow(clippy::cast_precision_loss)]
-            let target_dollars = format!("${:.2}", (milestone.target_cents as f64) / 100.0);
+            let target_dollars = crate::format::format_cents(milestone.target_cents);
 
             if let Some(month) = milestone.month_reached {
                 let years = month / 12;

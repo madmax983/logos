@@ -49,10 +49,10 @@ fn render_month_output(
     table.add_row(vec![
         month_key.to_owned(),
         checking_account.to_owned(),
-        format!("${:.2}", (report.checking_balance_cents() as f64) / 100.0),
-        format!("${:.2}", (report.income_cents() as f64) / 100.0),
-        format!("${:.2}", (report.expense_cents() as f64) / 100.0),
-        format!("${:.2}", (report.cashflow_cents() as f64) / 100.0),
+        crate::format::format_cents(report.checking_balance_cents()),
+        crate::format::format_cents(report.income_cents()),
+        crate::format::format_cents(report.expense_cents()),
+        crate::format::format_cents(report.cashflow_cents()),
     ]);
 
     format!("report.month\n{table}")
