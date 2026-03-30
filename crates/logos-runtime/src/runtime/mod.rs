@@ -28,14 +28,16 @@ use logos_reporting::{
     RegisterEntry, RsuBudgetPlan, RsuBudgetPlanInput, ScenarioPriceInputs, project_budget_variance,
     project_cashflow, project_register_balance, project_rsu_budget_plan,
 };
-use logos_store_aletheia::{
-    AletheiaStore, StoreError,
+use logos_store::{
+    error::StoreError,
     model::{
         NewImportRecord, StoredAnalyticsArtifactManifest, StoredFetchArtifactFormat,
         StoredFetchRun, StoredFetchRunStatus, StoredMonthClose, StoredReconciliationRun,
         StoredStatementLine, StoredTransaction,
     },
+    traits::LedgerStore,
 };
+use logos_store_aletheia::AletheiaStore;
 use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
 use std::collections::HashSet;
 use std::env;
@@ -60,28 +62,43 @@ const PARQUET_DIRECTORY: &str = "parquet";
 const DEFAULT_ANALYTICS_SCHEMA_VERSION: i64 = 1;
 
 #[derive(Debug)]
-pub struct AppRuntime {
-    store: AletheiaStore,
+pub struct AppRuntime<S = AletheiaStore> {
+    store: S,
     imported_records: usize,
     artifacts_root: PathBuf,
     fetch_config_path: Option<PathBuf>,
     fetched_statement_artifacts: Vec<FetchedStatementArtifact>,
 }
 
-impl Default for AppRuntime {
-    fn default() -> Self {
-        let default_store_path = Self::default_store_path();
+impl<S> AppRuntime<S> {
+    #[must_use]
+    pub fn with_store(
+        store: S,
+        artifacts_root: PathBuf,
+        fetch_config_path: Option<PathBuf>,
+    ) -> Self {
         Self {
-            store: AletheiaStore::new_in_memory(),
+            store,
             imported_records: 0,
-            artifacts_root: default_artifacts_root(&default_store_path),
-            fetch_config_path: None,
+            artifacts_root,
+            fetch_config_path,
             fetched_statement_artifacts: Vec::new(),
         }
     }
 }
 
-impl AppRuntime {
+impl Default for AppRuntime<AletheiaStore> {
+    fn default() -> Self {
+        let default_store_path = Self::default_store_path();
+        Self::with_store(
+            AletheiaStore::new_in_memory(),
+            default_artifacts_root(&default_store_path),
+            None,
+        )
+    }
+}
+
+impl AppRuntime<AletheiaStore> {
     /// Creates a runtime backed by the default durable store path.
     ///
     /// `LOGOS_DB_PATH` overrides the location. Otherwise, the path defaults to:
@@ -103,13 +120,11 @@ impl AppRuntime {
     /// Returns an error when opening the embedded store fails.
     pub fn open(path: impl AsRef<Path>) -> Result<Self, RuntimeError> {
         let store_path = path.as_ref().to_path_buf();
-        Ok(Self {
-            store: AletheiaStore::open(&store_path)?,
-            imported_records: 0,
-            artifacts_root: default_artifacts_root(&store_path),
-            fetch_config_path: Some(default_fetch_config_path(&store_path)),
-            fetched_statement_artifacts: Vec::new(),
-        })
+        Ok(Self::with_store(
+            AletheiaStore::open(&store_path).map_err(StoreError::from)?,
+            default_artifacts_root(&store_path),
+            Some(default_fetch_config_path(&store_path)),
+        ))
     }
 
     #[must_use]
@@ -135,6 +150,56 @@ impl AppRuntime {
             .join(DEFAULT_DB_NAME)
     }
 
+    #[must_use]
+    pub fn current_month_key_local() -> String {
+        Local::now().format("%Y-%m").to_string()
+    }
+
+    #[must_use]
+    pub fn current_month_key_utc() -> String {
+        let wallclock_us = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|duration| duration.as_micros())
+            .ok()
+            .and_then(|micros| i64::try_from(micros).ok())
+            .unwrap_or(0);
+        month_key_from_wallclock_utc(wallclock_us)
+    }
+
+    #[must_use]
+    pub const fn default_analytics_schema_version() -> i64 {
+        DEFAULT_ANALYTICS_SCHEMA_VERSION
+    }
+
+    fn secret_bundle_for_fetch_source(
+        source: &StatementSource,
+    ) -> Result<SecretBundle, RuntimeError> {
+        let resolver = OnePasswordCliSecretResolver::from_environment();
+        Self::secret_bundle_for_fetch_source_with_resolver(source, &resolver)
+    }
+
+    fn secret_bundle_for_fetch_source_with_resolver<R>(
+        source: &StatementSource,
+        resolver: &R,
+    ) -> Result<SecretBundle, RuntimeError>
+    where
+        R: SecretResolver,
+    {
+        match source.institution_id() {
+            "fake-fixture" => SecretBundle::new("fixture-user", "fixture-pass", Some("000000"))
+                .map_err(|err| fetch_error_to_runtime(&err)),
+            "fake-needs-attention" => {
+                SecretBundle::new("fixture-user", "fixture-pass", Some("000000"))
+                    .map_err(|err| fetch_error_to_runtime(&err))
+            }
+            _ => resolver
+                .resolve(source)
+                .map_err(|err| fetch_error_to_runtime(&err)),
+        }
+    }
+}
+
+impl<S: LedgerStore> AppRuntime<S> {
     /// Posts a balanced double-entry transaction and persists it.
     ///
     /// # Errors
@@ -173,32 +238,36 @@ impl AppRuntime {
 
     #[must_use]
     pub fn register_balance_for(&self, account: &str) -> i64 {
-        let entries: Vec<RegisterEntry> = self
-            .store
-            .transactions()
-            .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().as_str() == account)
-            .map(|posting| RegisterEntry::new(posting.amount()))
-            .collect();
+        let mut entries = Vec::new();
+        for stored in self.store.transactions() {
+            for posting in stored.transaction().postings() {
+                if posting.account().as_str() == account {
+                    entries.push(RegisterEntry::new(posting.amount()));
+                }
+            }
+        }
 
         project_register_balance(0, &entries)
     }
 
     #[must_use]
     pub fn budget_variance_for(&self, budget_cents: i64, expense_account_prefix: &str) -> i64 {
-        let actual_expense_cents: i64 = self
-            .store
-            .transactions()
-            .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| {
-                posting
+        let mut actual_expense_cents = 0_i64;
+        for stored in self.store.transactions() {
+            for posting in stored.transaction().postings() {
+                if posting
                     .account()
                     .as_str()
                     .starts_with(expense_account_prefix)
-            })
-            .map(Posting::amount)
-            .filter(|amount| *amount > 0)
-            .fold(0_i64, i64::saturating_add);
+                {
+                    let amount = posting.amount();
+                    if amount > 0 {
+                        actual_expense_cents = actual_expense_cents.saturating_add(amount);
+                    }
+                }
+            }
+        }
+
         project_budget_variance(budget_cents, actual_expense_cents)
     }
 
@@ -226,7 +295,7 @@ impl AppRuntime {
     ) -> Option<i64> {
         self.store
             .budget_target(month_key, expense_account_prefix)
-            .map(logos_store_aletheia::model::StoredBudgetTarget::budget_cents)
+            .map(|target| target.budget_cents())
     }
 
     #[must_use]
@@ -254,6 +323,7 @@ impl AppRuntime {
         for stored in self
             .store
             .transactions()
+            .into_iter()
             .filter(|stored| transaction_in_month(stored, month_key))
         {
             for posting in stored.transaction().postings() {
@@ -295,21 +365,27 @@ impl AppRuntime {
         let mut outflow_cents = 0_i64;
         let mut matched_postings = 0_usize;
 
-        for posting in self
+        for stored in self
             .store
             .transactions()
+            .into_iter()
             .filter(|stored| transaction_in_month(stored, month_key))
-            .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| posting.account().as_str() == checking_account)
         {
-            let amount = posting.amount();
-            matched_postings = matched_postings.saturating_add(1);
-            ledger_delta_cents = ledger_delta_cents.saturating_add(amount);
-            if amount >= 0 {
-                inflow_cents = inflow_cents.saturating_add(amount);
-            } else {
-                outflow_cents =
-                    outflow_cents.saturating_add(amount.checked_abs().unwrap_or(i64::MAX));
+            for posting in stored
+                .transaction()
+                .postings()
+                .iter()
+                .filter(|posting| posting.account().as_str() == checking_account)
+            {
+                let amount = posting.amount();
+                matched_postings = matched_postings.saturating_add(1);
+                ledger_delta_cents = ledger_delta_cents.saturating_add(amount);
+                if amount >= 0 {
+                    inflow_cents = inflow_cents.saturating_add(amount);
+                } else {
+                    outflow_cents =
+                        outflow_cents.saturating_add(amount.checked_abs().unwrap_or(i64::MAX));
+                }
             }
         }
 
@@ -374,7 +450,7 @@ impl AppRuntime {
 
     #[must_use]
     pub fn reconciliation_run(&self, run_id: &str) -> Option<StoredReconciliationRun> {
-        self.store.reconciliation_run(run_id).cloned()
+        self.store.reconciliation_run(run_id)
     }
 
     #[must_use]
@@ -386,15 +462,14 @@ impl AppRuntime {
         let mut runs: Vec<_> = self
             .store
             .reconciliation_runs()
+            .into_iter()
             .filter(|run| month_key.is_none_or(|month| run.month_key() == month))
             .filter(|run| checking_account.is_none_or(|account| run.checking_account() == account))
-            .cloned()
             .collect();
         runs.sort_by(|left, right| {
             right
                 .created_at()
-                .wallclock()
-                .cmp(&left.created_at().wallclock())
+                .cmp(&left.created_at())
                 .then_with(|| left.run_id().cmp(right.run_id()))
         });
         runs
@@ -402,7 +477,7 @@ impl AppRuntime {
 
     #[must_use]
     pub fn fetch_run(&self, run_id: &str) -> Option<StoredFetchRun> {
-        self.store.fetch_run(run_id).cloned()
+        self.store.fetch_run(run_id)
     }
 
     #[must_use]
@@ -414,15 +489,14 @@ impl AppRuntime {
         let mut runs: Vec<_> = self
             .store
             .fetch_runs()
+            .into_iter()
             .filter(|run| month_key.is_none_or(|month| run.month_key() == month))
             .filter(|run| checking_account.is_none_or(|account| run.ledger_account() == account))
-            .cloned()
             .collect();
         runs.sort_by(|left, right| {
             right
                 .created_at()
-                .wallclock()
-                .cmp(&left.created_at().wallclock())
+                .cmp(&left.created_at())
                 .then_with(|| left.run_id().cmp(right.run_id()))
         });
         runs
@@ -458,7 +532,6 @@ impl AppRuntime {
     ) -> Option<StoredMonthClose> {
         self.store
             .month_close_for_scope(month_key, checking_account)
-            .cloned()
     }
 
     /// Stages fetched statement metadata for later month-autopilot resolution.
@@ -641,7 +714,8 @@ impl AppRuntime {
                     continue;
                 }
             };
-            let secrets = match Self::secret_bundle_for_fetch_source(&source) {
+            let secrets = match AppRuntime::<AletheiaStore>::secret_bundle_for_fetch_source(&source)
+            {
                 Ok(secrets) => secrets,
                 Err(err) => {
                     if fetch_required && first_required_error.is_none() {
@@ -838,33 +912,6 @@ impl AppRuntime {
             .map_err(|err| fetch_error_to_runtime(&err))
     }
 
-    fn secret_bundle_for_fetch_source(
-        source: &StatementSource,
-    ) -> Result<SecretBundle, RuntimeError> {
-        let resolver = OnePasswordCliSecretResolver::from_environment();
-        Self::secret_bundle_for_fetch_source_with_resolver(source, &resolver)
-    }
-
-    fn secret_bundle_for_fetch_source_with_resolver<R>(
-        source: &StatementSource,
-        resolver: &R,
-    ) -> Result<SecretBundle, RuntimeError>
-    where
-        R: SecretResolver,
-    {
-        match source.institution_id() {
-            "fake-fixture" => SecretBundle::new("fixture-user", "fixture-pass", Some("000000"))
-                .map_err(|err| fetch_error_to_runtime(&err)),
-            "fake-needs-attention" => {
-                SecretBundle::new("fixture-user", "fixture-pass", Some("000000"))
-                    .map_err(|err| fetch_error_to_runtime(&err))
-            }
-            _ => resolver
-                .resolve(source)
-                .map_err(|err| fetch_error_to_runtime(&err)),
-        }
-    }
-
     fn run_fetch_adapter(
         fetch_runtime: &tokio::runtime::Runtime,
         source: &StatementSource,
@@ -971,22 +1018,6 @@ impl AppRuntime {
         .map_err(|message| RuntimeError::Analytics { message })?;
         project_rsu_budget_plan(month_key, &input)
             .map_err(|message| RuntimeError::Analytics { message })
-    }
-
-    #[must_use]
-    pub fn current_month_key_local() -> String {
-        Local::now().format("%Y-%m").to_string()
-    }
-
-    #[must_use]
-    pub fn current_month_key_utc() -> String {
-        let wallclock_us = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|duration| duration.as_micros())
-            .ok()
-            .and_then(|micros| i64::try_from(micros).ok())
-            .unwrap_or(0);
-        month_key_from_wallclock_utc(wallclock_us)
     }
 
     /// Imports one CSV row with deterministic idempotency.
@@ -1207,16 +1238,7 @@ impl AppRuntime {
 
     #[must_use]
     pub fn statement_lines_for_reconciliation_run(&self, run_id: &str) -> Vec<StoredStatementLine> {
-        self.store
-            .statement_lines_for_reconciliation_run(run_id)
-            .into_iter()
-            .cloned()
-            .collect()
-    }
-
-    #[must_use]
-    pub const fn default_analytics_schema_version() -> i64 {
-        DEFAULT_ANALYTICS_SCHEMA_VERSION
+        self.store.statement_lines_for_reconciliation_run(run_id)
     }
 
     /// Creates an immutable Parquet analytics snapshot and records its manifest in Aletheia.
@@ -1273,12 +1295,11 @@ impl AppRuntime {
 
     #[must_use]
     pub fn list_analytics_snapshots(&self) -> Vec<StoredAnalyticsArtifactManifest> {
-        let mut manifests: Vec<_> = self.store.analytics_artifacts().cloned().collect();
+        let mut manifests = self.store.analytics_artifacts();
         manifests.sort_by(|left, right| {
             right
                 .created_at()
-                .wallclock()
-                .cmp(&left.created_at().wallclock())
+                .cmp(&left.created_at())
                 .then_with(|| left.artifact_id().cmp(right.artifact_id()))
         });
         manifests
@@ -1289,7 +1310,7 @@ impl AppRuntime {
         &self,
         artifact_id: &str,
     ) -> Option<StoredAnalyticsArtifactManifest> {
-        self.store.analytics_artifact(artifact_id).cloned()
+        self.store.analytics_artifact(artifact_id)
     }
 
     /// Applies an append-only correction to a previously written transaction.
@@ -1339,19 +1360,28 @@ impl AppRuntime {
     }
 
     fn expense_total_for_month(&self, month_key: &str, expense_account_prefix: &str) -> i64 {
-        self.store
+        let mut total = 0_i64;
+        for stored in self
+            .store
             .transactions()
+            .into_iter()
             .filter(|stored| transaction_in_month(stored, month_key))
-            .flat_map(|stored| stored.transaction().postings().iter())
-            .filter(|posting| {
-                posting
+        {
+            for posting in stored.transaction().postings() {
+                if posting
                     .account()
                     .as_str()
                     .starts_with(expense_account_prefix)
-            })
-            .map(Posting::amount)
-            .filter(|amount| *amount > 0)
-            .fold(0_i64, i64::saturating_add)
+                {
+                    let amount = posting.amount();
+                    if amount > 0 {
+                        total = total.saturating_add(amount);
+                    }
+                }
+            }
+        }
+
+        total
     }
 
     fn reconciliation_transaction_ids_for(
@@ -1362,6 +1392,7 @@ impl AppRuntime {
         let mut ids: Vec<_> = self
             .store
             .transactions()
+            .into_iter()
             .filter(|stored| transaction_in_month(stored, month_key))
             .filter(|stored| {
                 stored
@@ -1487,7 +1518,7 @@ fn snapshot_rows(transactions: Vec<StoredTransaction>) -> Vec<SnapshotPostingRow
             rows.push(SnapshotPostingRow {
                 txn_id: stored.id().as_str().to_owned(),
                 description: stored.transaction().description().to_owned(),
-                effective_at_us: stored.effective_at().wallclock(),
+                effective_at_us: stored.effective_at(),
                 posting_ordinal,
                 account: posting.account().as_str().to_owned(),
                 amount_cents: posting.amount(),
@@ -1619,7 +1650,7 @@ fn parse_import_timestamp(timestamp: &str) -> Option<i64> {
 }
 
 fn transaction_in_month(stored: &StoredTransaction, month_key: &str) -> bool {
-    month_key_from_wallclock_utc(stored.effective_at().wallclock()) == month_key
+    month_key_from_wallclock_utc(stored.effective_at()) == month_key
 }
 
 fn month_key_from_wallclock_utc(wallclock_us: i64) -> String {

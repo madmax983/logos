@@ -12,6 +12,7 @@ chrono = { version = "0.4.42", default-features = true, features = ["clock"] }
 logos-core = { path = "../logos-core" }
 logos-runtime = { path = "../logos-runtime" }
 logos-store-aletheia = { path = "../logos-store-aletheia" }
+logos-store = { path = "../logos-store" }
 logos-fetch = { path = "../logos-fetch" }
 logos-import = { path = "../logos-import" }
 logos-reporting = { path = "../logos-reporting" }

@@ -1,7 +1,7 @@
 #![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
 use logos_runtime::{AppRuntime, MonthAutopilotRequest, MonthAutopilotSummary};
-use logos_store_aletheia::model::StoredFetchRunStatus;
+use logos_store::model::StoredFetchRunStatus;
 
 /// Handles `ledger month autopilot`.
 ///
@@ -98,7 +98,7 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
         summary.reconciliation_run().reconciled().to_string(),
         format!("${:.2}", (summary.report().cashflow_cents() as f64) / 100.0),
         summary.close().close_id().to_owned(),
-        summary.close().closed_at().wallclock().to_string(),
+        summary.close().closed_at().to_string(),
     ]);
 
     format!("month.autopilot\n{table}")
@@ -108,7 +108,7 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
 mod tests {
     use super::render_autopilot_output;
     use logos_runtime::{MonthAutopilotSummary, MonthReport};
-    use logos_store_aletheia::model::{
+    use logos_store::model::{
         StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredMonthClose,
         StoredReconciliationRun,
     };

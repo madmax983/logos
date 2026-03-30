@@ -6,7 +6,7 @@ use logos_core::TransactionId;
 use logos_fetch::{FetchedStatementArtifact, OutputFormat};
 use logos_import::CsvMapping;
 use logos_runtime::{AppRuntime, MonthAutopilotRequest};
-use logos_store_aletheia::model::StoredFetchRunStatus;
+use logos_store::model::StoredFetchRunStatus;
 
 fn temp_runtime_path(prefix: &str) -> PathBuf {
     let nanos = SystemTime::now()

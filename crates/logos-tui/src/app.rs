@@ -492,9 +492,7 @@ impl BudgetDataSource for AppRuntime {
             self.transactions_as_of_us(now_us, now_us)
                 .ok()?
                 .into_iter()
-                .filter(|stored| {
-                    month_key_from_wallclock_utc(stored.effective_at().wallclock()) == month_key
-                })
+                .filter(|stored| month_key_from_wallclock_utc(stored.effective_at()) == month_key)
                 .flat_map(|stored| stored.transaction().postings().to_vec())
                 .filter(|posting| {
                     posting
@@ -524,7 +522,7 @@ impl RegisterDataSource for AppRuntime {
 
         let mut activity = Vec::new();
         for stored in transactions {
-            let effective_at_us = stored.effective_at().wallclock();
+            let effective_at_us = stored.effective_at();
             let mut timestamp_cache = None;
             for posting in stored.transaction().postings() {
                 if posting.account().as_str() == account {

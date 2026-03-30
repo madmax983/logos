@@ -1,6 +1,6 @@
 use crate::args::CliError;
 use logos_runtime::AppRuntime;
-use logos_store_aletheia::model::StoredMonthClose;
+use logos_store::model::StoredMonthClose;
 
 /// Handles `ledger close month`.
 ///
@@ -73,7 +73,7 @@ fn render_close_month_output(
         close.checking_account().to_owned(),
         close.reconciliation_run_id().to_owned(),
         analytics_artifact_id.unwrap_or("").to_owned(),
-        close.closed_at().wallclock().to_string(),
+        close.closed_at().to_string(),
     ]);
 
     format!("close.month\n{table}")
@@ -82,7 +82,7 @@ fn render_close_month_output(
 #[cfg(test)]
 mod tests {
     use super::render_close_month_output;
-    use logos_store_aletheia::model::StoredMonthClose;
+    use logos_store::model::StoredMonthClose;
 
     #[test]
     fn render_close_month_output_is_deterministic() {

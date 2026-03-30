@@ -2,7 +2,7 @@
 use crate::args::CliError;
 use comfy_table::{Attribute, Cell, Color};
 use logos_runtime::AppRuntime;
-use logos_store_aletheia::model::StoredReconciliationRun;
+use logos_store::model::StoredReconciliationRun;
 
 /// Handles `ledger reconcile month`.
 ///
@@ -135,7 +135,7 @@ fn render_month_output(
         Cell::new(run.matched_transaction_count()),
         Cell::new(format!("${:.2}", (run.inflow_cents() as f64) / 100.0)).fg(Color::Green),
         Cell::new(format!("${:.2}", (run.outflow_cents() as f64) / 100.0)).fg(Color::Red),
-        Cell::new(run.created_at().wallclock()).fg(Color::DarkGrey),
+        Cell::new(run.created_at()).fg(Color::DarkGrey),
     ]);
     table.to_string()
 }
@@ -196,7 +196,7 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
         Cell::new(run.matched_transaction_count()),
         Cell::new(format!("${:.2}", (run.inflow_cents() as f64) / 100.0)).fg(Color::Green),
         Cell::new(format!("${:.2}", (run.outflow_cents() as f64) / 100.0)).fg(Color::Red),
-        Cell::new(run.created_at().wallclock()).fg(Color::DarkGrey),
+        Cell::new(run.created_at()).fg(Color::DarkGrey),
     ]);
     table.to_string()
 }
@@ -248,7 +248,7 @@ fn render_list_output(
             variance_cell,
             reconciled_cell,
             Cell::new(run.matched_transaction_count()),
-            Cell::new(run.created_at().wallclock()).fg(Color::DarkGrey),
+            Cell::new(run.created_at()).fg(Color::DarkGrey),
         ]);
     }
 
@@ -261,7 +261,7 @@ fn render_list_output(
 #[cfg(test)]
 mod tests {
     use super::{render_list_output, render_month_output, render_show_output};
-    use logos_store_aletheia::model::StoredReconciliationRun;
+    use logos_store::model::StoredReconciliationRun;
 
     #[test]
     fn render_month_output_is_deterministic() {
