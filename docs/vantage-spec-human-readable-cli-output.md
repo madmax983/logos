@@ -4,11 +4,11 @@
 "As an everyday user of Logos, I want to see simple, clear status messages when running basic commands like setting a budget or running a report, so that I understand what the system is doing without needing to parse complex technical database jargon."
 
 💼 **Business Problem:**
-The application is confusing new and non-technical users by exposing internal database implementation details ("temporal adjacency index", "Index restoration completed successfully") in the standard CLI output. This technical jargon increases perceived complexity, creates friction during onboarding, and damages the user's trust in the tool as a simple personal finance solution. Complexity is a cost; clear communication is utility.
+The application is confusing new and non-technical users by exposing internal database implementation details (e.g., "temporal adjacency index", "Index restoration completed successfully") in the standard CLI output. This technical jargon increases perceived complexity, creates friction during onboarding, and damages the user's trust in the tool as a simple personal finance solution. Complexity is a cost. Utility is a revenue.
 
 ✅ **Acceptance Criteria:**
-- **Success Metric:** Standard, non-error CLI output for basic commands (`budget set`, `report month`, etc.) contains zero instances of internal database jargon (e.g., "temporal", "adjacency", "index", "restoration").
-- The system must display simplified, human-readable status messages during startup/loading phases (e.g., "Loading history", "Database loaded").
+- **Success Metric:** Standard, non-error CLI output for basic commands (e.g., `budget set`, `report month`) contains zero instances of internal database jargon (e.g., "temporal", "adjacency", "index", "restoration").
+- The system must display simplified, human-readable status messages during startup/loading phases (e.g., "Loading history...", "Database loaded.").
 - Technical and diagnostic messages must be hidden by default during standard execution.
 - If deep technical logs are required for debugging, they must be gated behind an explicit verbose or debug flag (e.g., `-v`, `--debug`, or via `RUST_LOG`).
 
