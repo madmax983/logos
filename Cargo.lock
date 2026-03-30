@@ -1299,6 +1299,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "logos-store"
+version = "0.1.0"
+dependencies = [
+ "logos-core",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "logos-store-aletheia"
 version = "0.1.0"
 dependencies = [
