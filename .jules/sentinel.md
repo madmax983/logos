@@ -24,3 +24,8 @@
 - Several mutators like `replace < with <=` or `replace + with *` in `date_index + 1` yield the identical operational outcome because either the `enumerate()` offset preserves the skipped index anyway or boundary cases naturally fail upstream checks (Equivalent Mutant).
 - Modifying return types or swallowed error handling paths (e.g., in OCR fallbacks) represent IO issues.
 **Kill Shot:** Documented and excluded via `.cargo/mutants.toml`. Added specific test coverage to boundary checks in `valid_calendar_date` and zero-amount edge cases.
+
+**[Register Balance Projection Overflow]**
+**Mutant:** HAVOC_REPORT.md (Havoc Fuzzer: `project_register_balance_iter` panics on overflow)
+**Diagnosis:** SUSPECTED_BUG - The code assumes register entries will never sum to more than the 64-bit integer limit, which causes a panic on overflow. It should likely saturate instead of panicking.
+**Kill Shot:** None - Flagged for Atlas or Forge as a suspected bug to fix.

@@ -1,0 +1,16 @@
+Found 21 mutants to test
+ok       Unmutated baseline in 125s build + 9s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:23:5: replace start -> Result<(), CliError> with Ok(()) in 11s build + 7s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:24:8: delete ! in start in 9s build + 7s test
+TIMEOUT  crates/logos-cli/src/commands/aletheia.rs:61:5: replace status -> Result<(), CliError> with Ok(()) in 10s build + 60s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:107:52: replace || with && in status in 11s build + 7s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:119:5: replace resolve_manifest_path -> String with String::new() in 10s build + 7s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:119:5: replace resolve_manifest_path -> String with "xyzzy".into() in 10s build + 7s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:123:5: replace resolve_status_host -> String with String::new() in 9s build + 7s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:123:5: replace resolve_status_host -> String with "xyzzy".into() in 10s build + 8s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:127:5: replace resolve_status_port -> u16 with 0 in 10s build + 7s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:127:5: replace resolve_status_port -> u16 with 1 in 10s build + 7s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:137:24: replace match guard !value.trim().is_empty() with true in status_host_from_env in 9s build + 7s test
+MISSED   crates/logos-cli/src/commands/aletheia.rs:137:24: replace match guard !value.trim().is_empty() with false in status_host_from_env in 10s build + 7s test
+TIMEOUT  crates/logos-cli/src/commands/aletheia.rs:137:24: delete ! in status_host_from_env in 9s build + 60s test
+21 mutants tested in 9m: 11 missed, 8 caught, 2 timeouts
