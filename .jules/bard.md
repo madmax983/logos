@@ -36,3 +36,7 @@
 ## 2026-03-24 - [Storage Accessors Documentation]
 **Confusion:** The many accessor methods on `AletheiaStore` in `crates/logos-store-aletheia/src/read.rs` lacked `///` narrative documentation explaining *why* they existed (e.g., telemetry, UI point queries, deduplication) and had no executable `## Examples` doc-tests, making the API opaque to new developers.
 **Clarification:** Rewrote the documentation for 25+ public accessor methods on `AletheiaStore` to strictly avoid "getter noise" (e.g. "Returns the count..."). Instead, the docs now explain the business purpose of the methods alongside executable doctests that verify their exact behavior against a new instance.
+
+## 2026-03-25 - [RSU Reporting Module Documentation]
+**Confusion:** The `logos-reporting` RSU forecasting and budgeting models (`rsu_forecast` and `rsu_budget_plan`) lacked descriptive module narratives and executable examples. Users had to reverse-engineer how scenarios (Bear/Base/Bull) mapped to strict inputs and outputs.
+**Clarification:** Added module-level narratives and comprehensive executable doctests to all structs and the main projection functions (`project_rsu_forecast_summary`, `project_rsu_budget_plan`) to demonstrate instantiation and scenario sweeping semantics.
