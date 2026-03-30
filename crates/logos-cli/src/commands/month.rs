@@ -20,10 +20,7 @@ pub fn autopilot(
     analytics_artifact_id: Option<&str>,
     confirm_close: bool,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "month.autopilot".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("month.autopilot", format!("runtime initialization failed: {err}")))?;
     let resolved_month_key =
         month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
     let mut request = MonthAutopilotRequest::new(&resolved_month_key, checking_account);
@@ -51,10 +48,7 @@ pub fn autopilot(
     let summary =
         runtime
             .run_month_autopilot(&request)
-            .map_err(|err| CliError::CommandRuntimeFailed {
-                command: "month.autopilot".to_owned(),
-                message: err.to_string(),
-            })?;
+            .map_err(|err| CliError::runtime_error("month.autopilot", err))?;
     println!("{}", render_autopilot_output(&summary));
     Ok(())
 }

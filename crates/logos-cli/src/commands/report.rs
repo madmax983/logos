@@ -18,10 +18,7 @@ impl ReportRuntime for AppRuntime {
 ///
 /// Returns an error when runtime initialization fails.
 pub fn month(checking_account: &str, month_key: Option<&str>) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "report.month".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("report.month", format!("runtime initialization failed: {err}")))?;
     let resolved_month_key =
         month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
     let output = render_month_output(&runtime, checking_account, &resolved_month_key);

@@ -10,16 +10,10 @@ use logos_runtime::AppRuntime;
 ///
 /// Returns an error when runtime initialization or import execution fails.
 pub fn pdf(file_path: &str, account: &str, dry_run: bool, ocr: bool) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "import.pdf".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("import.pdf", format!("runtime initialization failed: {err}")))?;
     let summary = runtime
         .import_pdf_statement(Path::new(file_path), account, dry_run, ocr)
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "import.pdf".to_owned(),
-            message: err.to_string(),
-        })?;
+        .map_err(|err| CliError::runtime_error("import.pdf", err))?;
 
     println!(
         "{}",
@@ -52,10 +46,7 @@ pub fn csv(
     skip_header: bool,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "import.csv".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("import.csv", format!("runtime initialization failed: {err}")))?;
     let source_id = source_id.map_or_else(
         || {
             Path::new(file_path)
@@ -76,10 +67,7 @@ pub fn csv(
     };
     let summary = runtime
         .import_csv_statement(Path::new(file_path), &mapping, dry_run, skip_header)
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "import.csv".to_owned(),
-            message: err.to_string(),
-        })?;
+        .map_err(|err| CliError::runtime_error("import.csv", err))?;
 
     println!(
         "{}",

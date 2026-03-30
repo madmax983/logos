@@ -56,10 +56,7 @@ pub fn add(
     credit_account: &str,
     amount_cents: i64,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "txn.add".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("txn.add", format!("runtime initialization failed: {err}")))?;
     let transaction_id = post_double_entry(
         description,
         debit_account,
@@ -77,10 +74,7 @@ pub fn add(
 ///
 /// Returns an error when correction validation or runtime persistence fails.
 pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "txn.correct".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("txn.correct", format!("runtime initialization failed: {err}")))?;
     apply_correction(supersedes_id, reason, &mut runtime)?;
     println!("txn.correct supersedes_id={supersedes_id}");
     Ok(())
@@ -116,10 +110,7 @@ fn post_double_entry(
 
     runtime
         .post_double_entry(description, debit_account, credit_account, amount_cents)
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "txn.add".to_owned(),
-            message: err.to_string(),
-        })
+        .map_err(|err| CliError::runtime_error("txn.add", err))
 }
 
 fn apply_correction(
@@ -145,10 +136,7 @@ fn apply_correction(
 
     runtime
         .apply_correction(supersedes_id, reason)
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "txn.correct".to_owned(),
-            message: err.to_string(),
-        })
+        .map_err(|err| CliError::runtime_error("txn.correct", err))
 }
 
 #[cfg(test)]

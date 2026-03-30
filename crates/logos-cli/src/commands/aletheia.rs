@@ -63,46 +63,28 @@ pub fn status() -> Result<(), CliError> {
     let endpoint = format!("http://{host}:{port}{STATUS_PATH}");
     let address = format!("{host}:{port}");
     let mut stream =
-        TcpStream::connect(&address).map_err(|err| CliError::AletheiaStatusFailed {
-            endpoint: endpoint.clone(),
-            message: format!("connection failed: {err}"),
-        })?;
+        TcpStream::connect(&address).map_err(|err| CliError::aletheia_status(&endpoint, format!("connection failed: {err}")))?;
 
     stream
         .set_read_timeout(Some(Duration::from_secs(IO_TIMEOUT_SECONDS)))
-        .map_err(|err| CliError::AletheiaStatusFailed {
-            endpoint: endpoint.clone(),
-            message: format!("failed setting read timeout: {err}"),
-        })?;
+        .map_err(|err| CliError::aletheia_status(&endpoint, format!("failed setting read timeout: {err}")))?;
     stream
         .set_write_timeout(Some(Duration::from_secs(IO_TIMEOUT_SECONDS)))
-        .map_err(|err| CliError::AletheiaStatusFailed {
-            endpoint: endpoint.clone(),
-            message: format!("failed setting write timeout: {err}"),
-        })?;
+        .map_err(|err| CliError::aletheia_status(&endpoint, format!("failed setting write timeout: {err}")))?;
 
     let request =
         format!("GET {STATUS_PATH} HTTP/1.1\r\nHost: {host}:{port}\r\nConnection: close\r\n\r\n");
     stream
         .write_all(request.as_bytes())
-        .map_err(|err| CliError::AletheiaStatusFailed {
-            endpoint: endpoint.clone(),
-            message: format!("request write failed: {err}"),
-        })?;
+        .map_err(|err| CliError::aletheia_status(&endpoint, format!("request write failed: {err}")))?;
     stream
         .flush()
-        .map_err(|err| CliError::AletheiaStatusFailed {
-            endpoint: endpoint.clone(),
-            message: format!("request flush failed: {err}"),
-        })?;
+        .map_err(|err| CliError::aletheia_status(&endpoint, format!("request flush failed: {err}")))?;
 
     let mut response = String::new();
     stream
         .read_to_string(&mut response)
-        .map_err(|err| CliError::AletheiaStatusFailed {
-            endpoint: endpoint.clone(),
-            message: format!("response read failed: {err}"),
-        })?;
+        .map_err(|err| CliError::aletheia_status(&endpoint, format!("response read failed: {err}")))?;
 
     if response.contains("\"status\":\"healthy\"") || response.contains("\"status\": \"healthy\"") {
         println!("aletheia.status healthy ({endpoint})");

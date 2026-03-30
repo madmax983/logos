@@ -60,6 +60,22 @@ pub struct ParsedArgs {
     command: Command,
 }
 
+impl CliError {
+    pub fn aletheia_status(endpoint: &str, err: impl std::fmt::Display) -> Self {
+        Self::AletheiaStatusFailed {
+            endpoint: endpoint.to_owned(),
+            message: err.to_string(),
+        }
+    }
+
+    pub fn runtime_error(command: &str, err: impl std::fmt::Display) -> Self {
+        Self::CommandRuntimeFailed {
+            command: command.to_owned(),
+            message: err.to_string(),
+        }
+    }
+}
+
 impl ParsedArgs {
     #[must_use]
     pub const fn command(&self) -> &Command {

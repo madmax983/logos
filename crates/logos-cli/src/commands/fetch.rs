@@ -9,10 +9,7 @@ use logos_store_aletheia::model::StoredFetchRun;
 ///
 /// Returns an error when runtime initialization fails.
 pub fn list_runs(month_key: Option<&str>, checking_account: Option<&str>) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "fetch.list".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("fetch.list", format!("runtime initialization failed: {err}")))?;
     let runs = runtime.list_fetch_runs(month_key, checking_account);
     println!("{}", render_list_output(month_key, checking_account, &runs));
     Ok(())
@@ -24,10 +21,7 @@ pub fn list_runs(month_key: Option<&str>, checking_account: Option<&str>) -> Res
 ///
 /// Returns an error when runtime initialization fails.
 pub fn show_run(run_id: &str) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "fetch.show".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("fetch.show", format!("runtime initialization failed: {err}")))?;
     let Some(run) = runtime.fetch_run(run_id) else {
         return Err(CliError::CommandRuntimeFailed {
             command: "fetch.show".to_owned(),

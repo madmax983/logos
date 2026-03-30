@@ -14,10 +14,7 @@ pub fn month(
     opening_balance_cents: i64,
     closing_balance_cents: i64,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "reconcile.month".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("reconcile.month", format!("runtime initialization failed: {err}")))?;
     let resolved_month_key =
         month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
     let run = runtime
@@ -27,10 +24,7 @@ pub fn month(
             opening_balance_cents,
             closing_balance_cents,
         )
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "reconcile.month".to_owned(),
-            message: err.to_string(),
-        })?;
+        .map_err(|err| CliError::runtime_error("reconcile.month", err))?;
     let output = render_month_output(
         checking_account,
         &resolved_month_key,
@@ -47,10 +41,7 @@ pub fn month(
 ///
 /// Returns an error when runtime initialization fails.
 pub fn list(month_key: Option<&str>, checking_account: Option<&str>) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "reconcile.list".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("reconcile.list", format!("runtime initialization failed: {err}")))?;
     let runs = runtime.list_reconciliation_runs(month_key, checking_account);
     println!("{}", render_list_output(month_key, checking_account, &runs));
     Ok(())
@@ -62,10 +53,7 @@ pub fn list(month_key: Option<&str>, checking_account: Option<&str>) -> Result<(
 ///
 /// Returns an error when runtime initialization fails.
 pub fn show(run_id: &str) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "reconcile.show".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("reconcile.show", format!("runtime initialization failed: {err}")))?;
     let Some(run) = runtime.reconciliation_run(run_id) else {
         return Err(CliError::CommandRuntimeFailed {
             command: "reconcile.show".to_owned(),

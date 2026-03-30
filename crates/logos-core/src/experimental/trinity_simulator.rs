@@ -6,7 +6,7 @@
 use crate::experimental::inflation::InflationProjector;
 
 /// A simple Linear Congruential Generator for deterministic randomness.
-/// Lifted from monte_carlo.rs for reuse in this module.
+/// Lifted from `monte_carlo.rs` for reuse in this module.
 #[derive(Debug, Clone)]
 struct Lcg {
     state: u64,
@@ -90,6 +90,43 @@ impl TrinitySimulator {
     /// The simulation runs `paths` independent trials. Each trial spans `years`.
     /// Each year, the annual withdrawal is taken out first, then market returns are applied.
     /// The annual withdrawal amount increases each year by the inflation rate.
+    /// Runs a single Monte Carlo trial, returning true if the portfolio survived.
+    fn simulate_path(&self, years: u16, lcg: &mut Lcg) -> bool {
+        let mut current_portfolio = self.initial_portfolio_cents;
+
+        for year in 0..years {
+            let withdrawal = self
+                .inflation_projector
+                .future_nominal_cost_cents(self.initial_annual_withdrawal_cents, year);
+
+            current_portfolio = current_portfolio.saturating_sub(withdrawal);
+
+            if current_portfolio <= 0 {
+                return false;
+            }
+
+            let random_norm = lcg.next_normal();
+            #[allow(clippy::suboptimal_flops)]
+            let annual_return = self.annual_mean_return + self.annual_volatility * random_norm;
+
+            #[allow(clippy::cast_precision_loss)]
+            let current_f64 = current_portfolio as f64;
+
+            let gain = current_f64 * annual_return;
+
+            #[allow(clippy::cast_possible_truncation)]
+            let gain_cents = gain.round() as i64;
+
+            current_portfolio = current_portfolio.saturating_add(gain_cents);
+
+            if current_portfolio <= 0 {
+                return false;
+            }
+        }
+
+        true
+    }
+
     #[must_use]
     pub fn run(&self, years: u16, paths: u32) -> TrinityResult {
         if paths == 0 {
@@ -108,51 +145,13 @@ impl TrinitySimulator {
         let mut lcg = Lcg::new(self.seed);
 
         for _ in 0..paths {
-            let mut current_portfolio = self.initial_portfolio_cents;
-            let mut survived = true;
-
-            for year in 0..years {
-                // Determine this year's withdrawal adjusted for inflation.
-                // The inflation projector formula is FV = PV * (1 + r)^n
-                let withdrawal = self
-                    .inflation_projector
-                    .future_nominal_cost_cents(self.initial_annual_withdrawal_cents, year);
-
-                current_portfolio = current_portfolio.saturating_sub(withdrawal);
-
-                if current_portfolio <= 0 {
-                    survived = false;
-                    break;
-                }
-
-                // Apply market return for the remaining portfolio
-                let random_norm = lcg.next_normal();
-                #[allow(clippy::suboptimal_flops)]
-                let annual_return = self.annual_mean_return + self.annual_volatility * random_norm;
-
-                #[allow(clippy::cast_precision_loss)]
-                let current_f64 = current_portfolio as f64;
-
-                let gain = current_f64 * annual_return;
-
-                #[allow(clippy::cast_possible_truncation)]
-                let gain_cents = gain.round() as i64;
-
-                current_portfolio = current_portfolio.saturating_add(gain_cents);
-
-                if current_portfolio <= 0 {
-                    survived = false;
-                    break;
-                }
-            }
-
-            if survived {
+            if self.simulate_path(years, &mut lcg) {
                 successful_paths += 1;
             }
         }
 
         #[allow(clippy::cast_precision_loss)]
-        let success_rate_f64 = (successful_paths as f64 / paths as f64) * 100.0;
+        let success_rate_f64 = (f64::from(successful_paths) / f64::from(paths)) * 100.0;
 
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let success_rate_pct = success_rate_f64.round() as u8;

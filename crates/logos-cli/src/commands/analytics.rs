@@ -1,5 +1,4 @@
 use crate::args::CliError;
-use comfy_table::{Attribute, Cell, Color};
 
 use logos_runtime::AppRuntime;
 
@@ -14,10 +13,7 @@ pub fn snapshot_create(
     schema_version: i64,
     supersedes_artifact_id: Option<&str>,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "analytics.snapshot.create".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("analytics.snapshot.create", format!("runtime initialization failed: {err}")))?;
     let manifest = runtime
         .create_analytics_snapshot(
             as_of_valid_time_us,
@@ -25,10 +21,7 @@ pub fn snapshot_create(
             schema_version,
             supersedes_artifact_id,
         )
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "analytics.snapshot.create".to_owned(),
-            message: err.to_string(),
-        })?;
+        .map_err(|err| CliError::runtime_error("analytics.snapshot.create", err))?;
 
     println!(
         "{}",
@@ -43,10 +36,7 @@ pub fn snapshot_create(
 ///
 /// Returns an error when runtime initialization fails.
 pub fn snapshot_list() -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "analytics.snapshot.list".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("analytics.snapshot.list", format!("runtime initialization failed: {err}")))?;
     let manifests = runtime.list_analytics_snapshots();
     println!("{}", render_snapshot_manifest_list(&manifests));
     Ok(())
@@ -102,10 +92,7 @@ fn render_snapshot_manifest_list(
 ///
 /// Returns an error when runtime initialization fails or the manifest id is missing.
 pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "analytics.snapshot.show".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("analytics.snapshot.show", format!("runtime initialization failed: {err}")))?;
     let Some(manifest) = runtime.get_analytics_snapshot(artifact_id) else {
         return Err(CliError::CommandRuntimeFailed {
             command: "analytics.snapshot.show".to_owned(),
@@ -129,10 +116,7 @@ pub fn sankey() -> Result<(), CliError> {
     use chrono::Utc;
     use logos_core::experimental::mermaid_exporter::MermaidSankeyExporter;
 
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "analytics.sankey".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("analytics.sankey", format!("runtime initialization failed: {err}")))?;
 
     let now_us = Utc::now().timestamp_micros();
     let transactions = runtime

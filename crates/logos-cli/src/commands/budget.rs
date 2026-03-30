@@ -34,18 +34,12 @@ pub fn set(
     budget_cents: i64,
     expense_account_prefix: &str,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "budget.set".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let mut runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("budget.set", format!("runtime initialization failed: {err}")))?;
     let resolved_month_key =
         month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
     runtime
         .set_budget_target_for_month(&resolved_month_key, expense_account_prefix, budget_cents)
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "budget.set".to_owned(),
-            message: err.to_string(),
-        })?;
+        .map_err(|err| CliError::runtime_error("budget.set", err))?;
     let output = render_budget_set_output(
         &runtime,
         &resolved_month_key,
@@ -73,10 +67,7 @@ pub fn rsu_plan(
     reserve_sweep_pct: u8,
     investing_sweep_pct: u8,
 ) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "budget.rsu-plan".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
-    })?;
+    let runtime = AppRuntime::new().map_err(|err| CliError::runtime_error("budget.rsu-plan", format!("runtime initialization failed: {err}")))?;
     let resolved_month_key =
         month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
     let plan = runtime
@@ -91,10 +82,7 @@ pub fn rsu_plan(
             reserve_sweep_pct,
             investing_sweep_pct,
         )
-        .map_err(|err| CliError::CommandRuntimeFailed {
-            command: "budget.rsu-plan".to_owned(),
-            message: err.to_string(),
-        })?;
+        .map_err(|err| CliError::runtime_error("budget.rsu-plan", err))?;
 
     println!("{}", render_rsu_plan_output(&plan));
     Ok(())
