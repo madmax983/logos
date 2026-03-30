@@ -1174,6 +1174,12 @@ fn open_embedded_db(root_path: &Path) -> Result<AletheiaDB, StoreError> {
     let mut config = AletheiaDBConfig::builder().wal(wal_config).build();
     config.persistence.data_dir = root_path.join("index-data");
 
+    let _gag = if std::env::var("RUST_LOG").unwrap_or_default() == "debug" {
+        None
+    } else {
+        shh::stderr().ok()
+    };
+
     AletheiaDB::with_unified_config(config).map_err(|err| StoreError::LoadFailed {
         message: format!(
             "unable to initialize embedded AletheiaDB at '{}': {err}",
