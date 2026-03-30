@@ -1,4 +1,7 @@
-use logos_fetch::{FetchRequest, ProvidentAdapter, SecretBundle, StatementSource, OutputFormat, FetchRunStatus, StatementAdapter};
+use logos_fetch::{
+    FetchRequest, FetchRunStatus, OutputFormat, ProvidentAdapter, SecretBundle, StatementAdapter,
+    StatementSource,
+};
 
 #[tokio::test]
 async fn provident_adapter_normalize_statement_month_yyyy_mm_dd() {
@@ -12,7 +15,8 @@ async fn provident_adapter_normalize_statement_month_yyyy_mm_dd() {
     let request = FetchRequest::new(&source, "2026-02").expect("request");
     let secrets = SecretBundle::new("user", "pass", Some("123456")).expect("secrets");
 
-    let runner_output_path = std::env::temp_dir().join("provident-normalize-statement-month-YYYY-MM-DD.json");
+    let runner_output_path =
+        std::env::temp_dir().join("provident-normalize-statement-month-YYYY-MM-DD.json");
     std::fs::write(
         &runner_output_path,
         r#"{
@@ -48,7 +52,8 @@ async fn provident_adapter_normalize_statement_month_invalid_format() {
     let request = FetchRequest::new(&source, "2026-02").expect("request");
     let secrets = SecretBundle::new("user", "pass", Some("123456")).expect("secrets");
 
-    let runner_output_path = std::env::temp_dir().join("provident-normalize-statement-month-invalid-format.json");
+    let runner_output_path =
+        std::env::temp_dir().join("provident-normalize-statement-month-invalid-format.json");
     std::fs::write(
         &runner_output_path,
         r#"{
@@ -66,7 +71,10 @@ async fn provident_adapter_normalize_statement_month_invalid_format() {
     let result = adapter.fetch(&request, &secrets).await;
 
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err().to_string(), "provident runner output month '2026-02x28' must be YYYY-MM or YYYY-MM-DD");
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "provident runner output month '2026-02x28' must be YYYY-MM or YYYY-MM-DD"
+    );
 
     std::fs::remove_file(&runner_output_path).ok();
 }
@@ -83,7 +91,8 @@ async fn provident_adapter_normalize_statement_month_invalid_month_key() {
     let request = FetchRequest::new(&source, "2026-02").expect("request");
     let secrets = SecretBundle::new("user", "pass", Some("123456")).expect("secrets");
 
-    let runner_output_path = std::env::temp_dir().join("provident-normalize-statement-month-invalid-month-key.json");
+    let runner_output_path =
+        std::env::temp_dir().join("provident-normalize-statement-month-invalid-month-key.json");
     std::fs::write(
         &runner_output_path,
         r#"{
@@ -101,7 +110,10 @@ async fn provident_adapter_normalize_statement_month_invalid_month_key() {
     let result = adapter.fetch(&request, &secrets).await;
 
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err().to_string(), "provident runner output month '202x-02' must be YYYY-MM or YYYY-MM-DD");
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "provident runner output month '202x-02' must be YYYY-MM or YYYY-MM-DD"
+    );
 
     std::fs::remove_file(&runner_output_path).ok();
 }
@@ -118,7 +130,8 @@ async fn provident_adapter_normalize_statement_month_invalid_date_yyyy_mm_dd() {
     let request = FetchRequest::new(&source, "2026-02").expect("request");
     let secrets = SecretBundle::new("user", "pass", Some("123456")).expect("secrets");
 
-    let runner_output_path = std::env::temp_dir().join("provident-normalize-statement-month-invalid-date-YYYY-MM-DD.json");
+    let runner_output_path = std::env::temp_dir()
+        .join("provident-normalize-statement-month-invalid-date-YYYY-MM-DD.json");
     std::fs::write(
         &runner_output_path,
         r#"{
@@ -136,7 +149,10 @@ async fn provident_adapter_normalize_statement_month_invalid_date_yyyy_mm_dd() {
     let result = adapter.fetch(&request, &secrets).await;
 
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err().to_string(), "provident runner output month '202x-02-28' must be YYYY-MM or YYYY-MM-DD");
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "provident runner output month '202x-02-28' must be YYYY-MM or YYYY-MM-DD"
+    );
 
     std::fs::remove_file(&runner_output_path).ok();
 }

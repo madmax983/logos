@@ -535,9 +535,74 @@ fn optional_node_timestamp_property(node: &Node, key: &str) -> Option<Timestamp>
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_transactions_as_of_us_mutant() {
+        use logos_core::{AccountId, Posting, TransactionBuilder};
+        let mut store = crate::AletheiaStore::new();
+
+        store
+            .write_transaction(
+                TransactionBuilder::new("test")
+                    .posting(
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap(),
+                    ),
+            )
+            .unwrap();
+
+        let txns = store.transactions_as_of_us(i64::MAX, i64::MAX).unwrap();
+        assert_eq!(txns.len(), 1);
+
+        let txns = store
+            .transactions_as_of(i64::MAX.into(), i64::MAX.into())
+            .unwrap();
+        assert_eq!(txns.len(), 1);
+
+        let txns = store
+            .transactions_at(crate::model::AsOf::new(i64::MAX.into(), i64::MAX.into()))
+            .unwrap();
+        assert_eq!(txns.len(), 1);
+
+        let proj = store.current_projection_without_superseded();
+        assert_eq!(proj.len(), 1);
+    }
+
+    #[test]
+    fn test_supersedes_edge_mutant() {
+        use aletheiadb::{EdgeId, Error as DbError, StorageError};
+        let err = DbError::Storage(StorageError::EdgeNotFound(EdgeId::new(1).unwrap()));
+        assert!(crate::read::is_edge_not_visible(&err));
+    }
+
+    #[test]
+    fn test_optional_node_timestamp_property_usage() {
+        use aletheiadb::core::hlc::HybridTimestamp;
+        use logos_core::{AccountId, Posting, TransactionBuilder};
+        let mut store = crate::AletheiaStore::new();
+
+        let _txn_id = store
+            .write_transaction_with_valid_time(
+                TransactionBuilder::new("test")
+                    .posting(
+                        Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap(),
+                    )
+                    .posting(
+                        Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap(),
+                    ),
+                Some(HybridTimestamp::new(123_456_789, 0).unwrap()),
+            )
+            .unwrap();
+
+        let txns = store.transactions_as_of_us(i64::MAX, i64::MAX).unwrap();
+        assert_eq!(txns.len(), 1);
+        assert_eq!(txns[0].effective_at().wallclock(), 123_456_789);
+    }
     #[test]
     fn test_transactions_as_of_error_when_mismatched_txn_id() {
-        use aletheiadb::{EdgeId, Error as DbError, NodeId, StorageError};
+        use aletheiadb::{EdgeId, Error as DbError, StorageError};
         let node_err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
         assert!(is_node_not_visible(&node_err));
 
