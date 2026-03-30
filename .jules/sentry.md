@@ -17,3 +17,6 @@
 ## 2026-03-23 - [Test All Error Paths]
 **Learning:** Found an untested error branch for `AllocationPolicy::new` when percentages did not sum to 100. Always ensure custom constructor error paths are covered to prevent panics during invalid business state configuration.
 **Action:** Use `cargo tarpaulin` to find untested `Err` branches in business logic files.
+## 2025-04-18 - Replacing `unwrap` with `expect` in tests and handling overflows
+**Learning:** In the `logos-store-aletheia/src/read.rs` module, tests heavily used `unwrap()`, which could cause unclear panics and violate the correctness principle. In `logos-reporting/src/rsu_forecast.rs`, summing over unbounded integers could trigger a runtime panic instead of handling overflows gracefully.
+**Action:** Replaced `unwrap()` with descriptive `expect(...)` blocks in tests. Changed `sum::<i64>()` to `.fold(0i64, i64::saturating_add)` to ensure that reporting pipelines safely cap out at maximum boundaries rather than crashing the application unexpectedly.

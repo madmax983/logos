@@ -67,7 +67,7 @@ impl AletheiaStore {
     /// use logos_store_aletheia::AletheiaStore;
     ///
     /// let store = AletheiaStore::new();
-    /// let id = TransactionId::new("txn-123").unwrap();
+    /// let id = TransactionId::new("txn-123").expect("should succeed");
     /// assert!(!store.has_transaction(&id));
     /// ```
     #[must_use]
@@ -749,10 +749,10 @@ mod tests {
     #[test]
     fn test_transactions_as_of_error_when_mismatched_txn_id() {
         use aletheiadb::{EdgeId, Error as DbError, NodeId, StorageError};
-        let node_err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
+        let node_err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).expect("should succeed")));
         assert!(is_node_not_visible(&node_err));
 
-        let edge_err = DbError::Storage(StorageError::EdgeNotFound(EdgeId::new(1).unwrap()));
+        let edge_err = DbError::Storage(StorageError::EdgeNotFound(EdgeId::new(1).expect("should succeed")));
         assert!(is_edge_not_visible(&edge_err));
     }
 
@@ -761,32 +761,32 @@ mod tests {
 
     #[test]
     fn test_is_edge_not_visible() {
-        let err = DbError::Storage(StorageError::EdgeNotFound(EdgeId::new(1).unwrap()));
+        let err = DbError::Storage(StorageError::EdgeNotFound(EdgeId::new(1).expect("should succeed")));
         assert!(is_edge_not_visible(&err));
 
-        let err2 = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
+        let err2 = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).expect("should succeed")));
         assert!(!is_edge_not_visible(&err2));
     }
 
     #[test]
     fn test_is_node_not_visible() {
-        let err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
+        let err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).expect("should succeed")));
         assert!(is_node_not_visible(&err));
 
         let err2 = DbError::Temporal(TemporalError::NodeNotFoundAtTime {
-            node_id: NodeId::new(1).unwrap(),
-            valid_time: HybridTimestamp::new(0, 0).unwrap(),
-            transaction_time: HybridTimestamp::new(0, 0).unwrap(),
+            node_id: NodeId::new(1).expect("should succeed"),
+            valid_time: HybridTimestamp::new(0, 0).expect("should succeed"),
+            transaction_time: HybridTimestamp::new(0, 0).expect("should succeed"),
         });
         assert!(is_node_not_visible(&err2));
 
-        let err3 = DbError::Storage(StorageError::EdgeNotFound(EdgeId::new(1).unwrap()));
+        let err3 = DbError::Storage(StorageError::EdgeNotFound(EdgeId::new(1).expect("should succeed")));
         assert!(!is_node_not_visible(&err3));
     }
 
     #[test]
     fn test_map_load_error() {
-        let err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
+        let err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).expect("should succeed")));
         let mapped = map_load_error("test context", err);
         assert!(mapped.to_string().contains("test context"));
     }
@@ -802,15 +802,15 @@ mod tests {
     #[test]
     fn test_get_node_at_as_of_error_handling() {
         let path = temp_db_path("node-error");
-        let db = crate::open_embedded_db(&path).unwrap();
-        let node_id = NodeId::new(999).unwrap();
+        let db = crate::open_embedded_db(&path).expect("should succeed");
+        let node_id = NodeId::new(999).expect("should succeed");
         let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
 
         // This will naturally throw a NodeNotFound error because the DB is empty
         // NodeNotFound maps to None via is_node_not_visible
         let result = super::get_node_at_as_of(&db, node_id, as_of);
         assert!(result.is_ok());
-        assert!(result.unwrap().is_none());
+        assert!(result.expect("should succeed").is_none());
 
         if path.exists() {
             let _ = std::fs::remove_dir_all(&path);
@@ -820,15 +820,15 @@ mod tests {
     #[test]
     fn test_get_edge_at_as_of_error_handling() {
         let path = temp_db_path("edge-error");
-        let db = crate::open_embedded_db(&path).unwrap();
-        let edge_id = EdgeId::new(999).unwrap();
+        let db = crate::open_embedded_db(&path).expect("should succeed");
+        let edge_id = EdgeId::new(999).expect("should succeed");
         let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
 
         // This will naturally throw an EdgeNotFound error because the DB is empty
         // EdgeNotFound maps to None via is_edge_not_visible
         let result = super::get_edge_at_as_of(&db, edge_id, as_of);
         assert!(result.is_ok());
-        assert!(result.unwrap().is_none());
+        assert!(result.expect("should succeed").is_none());
 
         if path.exists() {
             let _ = std::fs::remove_dir_all(&path);
@@ -839,7 +839,7 @@ mod tests {
     fn test_has_visible_supersedes_edge_returns_false() {
         use aletheiadb::WriteOps;
         let path = temp_db_path("edge-vis-error");
-        let db = crate::open_embedded_db(&path).unwrap();
+        let db = crate::open_embedded_db(&path).expect("should succeed");
 
         // Write nodes and edges via a transaction block, mapping errors correctly
         let node_id = db
@@ -849,13 +849,13 @@ mod tests {
                 tx.create_edge(n1, n2, "NotSupersedes", aletheiadb::PropertyMap::default())?;
                 Ok::<NodeId, DbError>(n1)
             })
-            .unwrap();
+            .expect("should succeed");
 
         let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
 
         let result = super::has_visible_supersedes_edge(&db, node_id, as_of);
         assert!(result.is_ok());
-        assert!(!result.unwrap());
+        assert!(!result.expect("should succeed"));
 
         if path.exists() {
             let _ = std::fs::remove_dir_all(&path);
@@ -865,7 +865,7 @@ mod tests {
     fn test_has_visible_supersedes_edge_returns_true() {
         use aletheiadb::WriteOps;
         let path = temp_db_path("edge-vis-true");
-        let db = crate::open_embedded_db(&path).unwrap();
+        let db = crate::open_embedded_db(&path).expect("should succeed");
 
         // Write nodes and edges via a transaction block
         let node_id = db
@@ -875,13 +875,13 @@ mod tests {
                 tx.create_edge(n1, n2, "SUPERSEDES", aletheiadb::PropertyMap::default())?;
                 Ok::<NodeId, DbError>(n1)
             })
-            .unwrap();
+            .expect("should succeed");
 
         let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
 
         let result = super::has_visible_supersedes_edge(&db, node_id, as_of);
         assert!(result.is_ok());
-        assert!(result.unwrap());
+        assert!(result.expect("should succeed"));
 
         if path.exists() {
             let _ = std::fs::remove_dir_all(&path);
@@ -892,7 +892,7 @@ mod tests {
     fn test_reconstruct_transaction_at_as_of_skips_non_posting_edges() {
         use aletheiadb::WriteOps;
         let path = temp_db_path("reconstruct-edge-skip");
-        let db = crate::open_embedded_db(&path).unwrap();
+        let db = crate::open_embedded_db(&path).expect("should succeed");
 
         let node_id = db
             .write(|tx: &mut aletheiadb::WriteTransaction| {
@@ -907,13 +907,13 @@ mod tests {
                 tx.create_edge(n1, n2, "NOT_A_POSTING", aletheiadb::PropertyMap::default())?;
                 Ok::<NodeId, DbError>(n1)
             })
-            .unwrap();
+            .expect("should succeed");
 
         let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
         let node = super::get_node_at_as_of(&db, node_id, as_of)
-            .unwrap()
-            .unwrap();
-        let expected_id = logos_core::TransactionId::new("txn-1").unwrap();
+            .expect("should succeed")
+            .expect("should succeed");
+        let expected_id = logos_core::TransactionId::new("txn-1").expect("should succeed");
 
         let result =
             super::reconstruct_transaction_at_as_of(&db, node_id, &expected_id, &node, as_of);
@@ -944,7 +944,7 @@ mod tests {
         let store = crate::AletheiaStore::new();
         assert_eq!(store.transaction_count(), 0);
         assert_eq!(store.correction_count(), 0);
-        assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").unwrap()));
+        assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").expect("should succeed")));
         assert!(store.latest_correction().is_none());
         assert_eq!(store.transactions().count(), 0);
         assert_eq!(store.transactions().collect::<Vec<_>>().len(), 0);
@@ -982,7 +982,7 @@ mod tests {
         assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 0);
 
         // transactions_as_of_us
-        let as_of_us = store.transactions_as_of_us(1000, 2000).unwrap();
+        let as_of_us = store.transactions_as_of_us(1000, 2000).expect("should succeed");
         assert!(as_of_us.is_empty());
 
         let proj = store.current_projection_without_superseded();
@@ -1001,47 +1001,47 @@ mod tests {
             .write_transaction(
                 TransactionBuilder::new("test1")
                     .posting(
-                        Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap(),
+                        Posting::debit(AccountId::new("assets:checking").expect("should succeed"), 100).expect("should succeed"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap(),
+                        Posting::credit(AccountId::new("income:salary").expect("should succeed"), 100).expect("should succeed"),
                     ),
             )
-            .unwrap();
+            .expect("should succeed");
 
         let txn_id2 = store
             .write_transaction(
                 TransactionBuilder::new("test2")
                     .posting(
-                        Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap(),
+                        Posting::debit(AccountId::new("assets:checking").expect("should succeed"), 200).expect("should succeed"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap(),
+                        Posting::credit(AccountId::new("income:salary").expect("should succeed"), 200).expect("should succeed"),
                     ),
             )
-            .unwrap();
+            .expect("should succeed");
 
         assert_eq!(store.transaction_count(), 2);
         assert!(store.has_transaction(&txn_id1));
         assert!(store.has_transaction(&txn_id2));
-        assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").unwrap()));
+        assert!(!store.has_transaction(&logos_core::TransactionId::new("missing").expect("should succeed")));
         assert_eq!(store.transactions().count(), 2);
         assert_eq!(store.transactions().collect::<Vec<_>>().len(), 2);
 
         // Write TWO corrections
-        let corr1 = Correction::new(txn_id1.clone(), "fix1").unwrap();
-        store.write_correction(corr1).unwrap();
-        let corr2 = Correction::new(txn_id2.clone(), "fix2").unwrap();
-        store.write_correction(corr2).unwrap();
+        let corr1 = Correction::new(txn_id1.clone(), "fix1").expect("should succeed");
+        store.write_correction(corr1).expect("should succeed");
+        let corr2 = Correction::new(txn_id2.clone(), "fix2").expect("should succeed");
+        store.write_correction(corr2).expect("should succeed");
         assert_eq!(store.correction_count(), 2);
 
         // Write TWO budget targets
         store
             .write_budget_target("2026-03", "expenses:food", 500)
-            .unwrap();
+            .expect("should succeed");
         store
             .write_budget_target("2026-03", "expenses:rent", 1500)
-            .unwrap();
+            .expect("should succeed");
         assert_eq!(store.budget_targets().count(), 2);
         assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 2);
 
@@ -1057,7 +1057,7 @@ mod tests {
                 aletheiadb::time::now(),
                 None,
             )
-            .unwrap();
+            .expect("should succeed");
         store
             .write_analytics_artifact_manifest(
                 "k2",
@@ -1069,7 +1069,7 @@ mod tests {
                 aletheiadb::time::now(),
                 None,
             )
-            .unwrap();
+            .expect("should succeed");
         assert_eq!(store.analytics_artifacts().count(), 2);
         assert_eq!(store.analytics_artifacts().collect::<Vec<_>>().len(), 2);
 
@@ -1077,11 +1077,11 @@ mod tests {
         let rec1 = crate::model::NewImportRecord::new("hash1", Some(&txn_id1));
         store
             .write_import_batch("kind", "uri", "batch1", 0, false, false, &[rec1])
-            .unwrap();
+            .expect("should succeed");
         let rec2 = crate::model::NewImportRecord::new("hash2", Some(&txn_id2));
         store
             .write_import_batch("kind", "uri", "batch2", 0, false, false, &[rec2])
-            .unwrap();
+            .expect("should succeed");
         assert_eq!(store.import_record_count(), 2);
         assert!(store.has_import_record_content_hash("hash1"));
         assert!(!store.has_import_record_content_hash("missing_hash"));
@@ -1101,7 +1101,7 @@ mod tests {
         );
         store
             .write_import_batch("stmt", "uri", "batch3", 0, false, false, &[sl1])
-            .unwrap();
+            .expect("should succeed");
         let sl2 = crate::model::NewImportRecord::with_statement_line(
             "line2",
             Some(&txn_id2),
@@ -1112,7 +1112,7 @@ mod tests {
         );
         store
             .write_import_batch("stmt", "uri", "batch4", 0, false, false, &[sl2])
-            .unwrap();
+            .expect("should succeed");
         assert_eq!(store.statement_line_count(), 2);
         assert_eq!(store.statement_lines().count(), 2);
 
@@ -1132,7 +1132,7 @@ mod tests {
                 0,
                 std::slice::from_ref(&txn_id1),
             )
-            .unwrap();
+            .expect("should succeed");
         let run2 = store
             .write_reconciliation_run(
                 "2026-03",
@@ -1148,7 +1148,7 @@ mod tests {
                 0,
                 std::slice::from_ref(&txn_id2),
             )
-            .unwrap();
+            .expect("should succeed");
         assert_eq!(store.reconciliation_run_count(), 2);
         assert_eq!(store.reconciliation_runs().count(), 2);
         assert_eq!(store.reconciliation_runs().collect::<Vec<_>>().len(), 2);
@@ -1156,10 +1156,10 @@ mod tests {
         // Write TWO month closes
         store
             .write_month_close("2026-03", "assets:checking", run1.run_id(), None)
-            .unwrap();
+            .expect("should succeed");
         store
             .write_month_close("2026-03", "assets:savings", run2.run_id(), None)
-            .unwrap();
+            .expect("should succeed");
         assert_eq!(store.month_close_count(), 2);
         assert!(store.month_close("close-1").is_some());
         assert!(store.month_close("close-2").is_some());
@@ -1178,26 +1178,26 @@ mod tests {
             .write_transaction(
                 TransactionBuilder::new("test1")
                     .posting(
-                        Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap(),
+                        Posting::debit(AccountId::new("assets:checking").expect("should succeed"), 100).expect("should succeed"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap(),
+                        Posting::credit(AccountId::new("income:salary").expect("should succeed"), 100).expect("should succeed"),
                     ),
             )
-            .unwrap();
+            .expect("should succeed");
 
         // Write transaction 2
         let txn_id2 = store
             .write_transaction(
                 TransactionBuilder::new("test2")
                     .posting(
-                        Posting::debit(AccountId::new("assets:checking").unwrap(), 200).unwrap(),
+                        Posting::debit(AccountId::new("assets:checking").expect("should succeed"), 200).expect("should succeed"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 200).unwrap(),
+                        Posting::credit(AccountId::new("income:salary").expect("should succeed"), 200).expect("should succeed"),
                     ),
             )
-            .unwrap();
+            .expect("should succeed");
 
         let mut proj = store.current_projection_without_superseded();
         assert!(!proj.iter().any(|t| t.id().as_str() == "missing"));
@@ -1206,8 +1206,8 @@ mod tests {
         assert!(proj.iter().any(|t| t.id() == &txn_id2));
 
         // Supersede transaction 1
-        let corr = Correction::new(txn_id1.clone(), "fix").unwrap();
-        store.write_correction(corr).unwrap();
+        let corr = Correction::new(txn_id1.clone(), "fix").expect("should succeed");
+        store.write_correction(corr).expect("should succeed");
 
         proj = store.current_projection_without_superseded();
         assert_eq!(proj.len(), 1);
@@ -1240,13 +1240,13 @@ mod tests {
             .write_transaction(
                 TransactionBuilder::new("test")
                     .posting(
-                        Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap(),
+                        Posting::debit(AccountId::new("assets:checking").expect("should succeed"), 100).expect("should succeed"),
                     )
                     .posting(
-                        Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap(),
+                        Posting::credit(AccountId::new("income:salary").expect("should succeed"), 100).expect("should succeed"),
                     ),
             )
-            .unwrap();
+            .expect("should succeed");
 
         let proj = store.current_projection_without_superseded();
         assert_eq!(proj.len(), 1);
@@ -1255,7 +1255,7 @@ mod tests {
         // This will kill:
         // replace AletheiaStore::transactions_as_of_us -> Result<Vec<StoredTransaction>, StoreError> with Ok(vec![])
         // replace AletheiaStore::current_projection_without_superseded -> Vec<StoredTransaction> with vec![]
-        let as_of_us = store.transactions_as_of_us(i64::MAX, i64::MAX).unwrap();
+        let as_of_us = store.transactions_as_of_us(i64::MAX, i64::MAX).expect("should succeed");
         assert_eq!(as_of_us.len(), 1);
         assert_eq!(as_of_us[0].id().as_str(), txn_id.as_str());
     }
@@ -1264,7 +1264,7 @@ mod tests {
     fn test_reconstruct_transaction_at_as_of_edge_not_posting() {
         use aletheiadb::WriteOps;
         let path = temp_db_path("reconstruct-edge-not-posting");
-        let db = crate::open_embedded_db(&path).unwrap();
+        let db = crate::open_embedded_db(&path).expect("should succeed");
 
         let node_id = db
             .write(|tx: &mut aletheiadb::WriteTransaction| {
@@ -1279,13 +1279,13 @@ mod tests {
                 tx.create_edge(n1, n2, "NOT_A_POSTING", aletheiadb::PropertyMap::default())?;
                 Ok::<NodeId, DbError>(n1)
             })
-            .unwrap();
+            .expect("should succeed");
 
         let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
         let node = super::get_node_at_as_of(&db, node_id, as_of)
-            .unwrap()
-            .unwrap();
-        let expected_id = logos_core::TransactionId::new("txn-1").unwrap();
+            .expect("should succeed")
+            .expect("should succeed");
+        let expected_id = logos_core::TransactionId::new("txn-1").expect("should succeed");
 
         let result =
             super::reconstruct_transaction_at_as_of(&db, node_id, &expected_id, &node, as_of);
