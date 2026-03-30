@@ -103,6 +103,7 @@ impl AppRuntime {
     /// Returns an error when opening the embedded store fails.
     pub fn open(path: impl AsRef<Path>) -> Result<Self, RuntimeError> {
         let store_path = path.as_ref().to_path_buf();
+        let _silencer = shh::stderr();
         Ok(Self {
             store: AletheiaStore::open(&store_path)?,
             imported_records: 0,
