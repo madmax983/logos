@@ -1,0 +1,30 @@
+--- crates/logos-runtime/src/runtime/mod.rs
++++ crates/logos-runtime/src/runtime/mod.rs
+@@ -1398,8 +1398,18 @@
+     dry_run: bool,
+     ocr_enabled: bool,
+     imported_keys: &[String],
+ ) -> String {
+-    let mut sorted_keys = imported_keys.to_vec();
+-    sorted_keys.sort();
++    let mut sorted_keys: Vec<&str> = imported_keys.iter().map(String::as_str).collect();
++    sorted_keys.sort_unstable();
+
+     let mut hasher = DefaultHasher::new();
+-    hasher.write(
+-        format!("{import_kind}|{source_uri}|{dry_run}|{ocr_enabled}\n")
+-            .as_bytes(),
+-    );
++    hasher.write(import_kind.as_bytes());
++    hasher.write(b"|");
++    hasher.write(source_uri.as_bytes());
++    hasher.write(b"|");
++    hasher.write(if dry_run { b"true" } else { b"false" });
++    hasher.write(b"|");
++    hasher.write(if ocr_enabled { b"true" } else { b"false" });
++    for key in sorted_keys {
++        hasher.write(b"|");
++        hasher.write(key.as_bytes());
++    }
+     format!("{:016x}", hasher.finish())
+ }
