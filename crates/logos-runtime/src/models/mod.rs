@@ -1,5 +1,5 @@
-use logos_store_aletheia::model::StoredFetchRun;
-use logos_store_aletheia::model::{StoredMonthClose, StoredReconciliationRun};
+use logos_store_aletheia::StoredFetchRun;
+use logos_store_aletheia::{StoredMonthClose, StoredReconciliationRun};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

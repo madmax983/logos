@@ -16,7 +16,7 @@ use crate::model::{
     LABEL_ANALYTICS_ARTIFACT_MANIFEST, LABEL_LEDGER_BUDGET_TARGET, LABEL_LEDGER_CORRECTION,
     LABEL_LEDGER_FETCH_RUN, LABEL_LEDGER_IMPORT_BATCH, LABEL_LEDGER_IMPORT_RECORD,
     LABEL_LEDGER_MONTH_CLOSE, LABEL_LEDGER_POSTING, LABEL_LEDGER_RECONCILIATION_RUN,
-    LABEL_LEDGER_STATEMENT_LINE, LABEL_LEDGER_TRANSACTION, NewImportRecord, PROP_ACCOUNT,
+    LABEL_LEDGER_STATEMENT_LINE, LABEL_LEDGER_TRANSACTION, PROP_ACCOUNT,
     PROP_AMOUNT_CENTS, PROP_ARTIFACT_ID, PROP_ARTIFACT_KIND, PROP_ARTIFACT_URI, PROP_BUDGET_CENTS,
     PROP_CONTENT_HASH, PROP_CREATED_AT_US, PROP_DESCRIPTION, PROP_EFFECTIVE_AT_US,
     PROP_EXPENSE_ACCOUNT_PREFIX, PROP_FETCH_ARTIFACT_PATH, PROP_FETCH_CLOSING_BALANCE_CENTS,
@@ -38,15 +38,18 @@ use crate::model::{
     PROP_SNAPSHOT_VALID_AT_US, PROP_STATEMENT_AMOUNT_CENTS, PROP_STATEMENT_LINE_ID,
     PROP_STATEMENT_MEMO, PROP_STATEMENT_SOURCE_URI, PROP_STATEMENT_TIMESTAMP,
     PROP_SUPERSEDES_ARTIFACT_ID, PROP_SUPERSEDES_TXN_ID, PROP_TXN_ID,
-    StoredAnalyticsArtifactManifest, StoredBudgetTarget, StoredCorrection,
-    StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredImportBatch,
-    StoredImportRecord, StoredMonthClose, StoredReconciliationRun, StoredStatementLine,
-    StoredTransaction,
 };
 
-pub mod model;
-pub mod read;
-pub mod write;
+pub(crate) mod model;
+pub(crate) mod read;
+pub(crate) mod write;
+
+pub use model::{
+    AsOf, NewImportRecord, NewStatementLine, StoredAnalyticsArtifactManifest, StoredBudgetTarget,
+    StoredCorrection, StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus,
+    StoredImportBatch, StoredImportRecord, StoredMonthClose, StoredReconciliationRun,
+    StoredStatementLine, StoredTransaction,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StoreError {

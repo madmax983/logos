@@ -5,8 +5,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use aletheiadb::{AletheiaDB, AletheiaDBConfig, DurabilityMode, WalConfigBuilder, time};
 use logos_core::{Correction, Posting, TransactionBuilder, TransactionId};
 use logos_store_aletheia::{
-    AletheiaStore, StoreError,
-    model::{NewImportRecord, StoredFetchRunStatus},
+    AletheiaStore, NewImportRecord, StoreError, StoredFetchRunStatus,
 };
 
 fn temp_store_path(prefix: &str) -> PathBuf {
@@ -606,7 +605,7 @@ fn write_fetch_run_lists_reloaded_runs_and_continues_sequential_ids() {
         assert_eq!(
             reopened
                 .fetch_run("fetch-2")
-                .map(logos_store_aletheia::model::StoredFetchRun::source_id),
+                .map(logos_store_aletheia::StoredFetchRun::source_id),
             Some("pcu:checking")
         );
     }

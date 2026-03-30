@@ -1,4 +1,4 @@
-use logos_store_aletheia::{AletheiaStore, model::NewImportRecord};
+use logos_store_aletheia::{AletheiaStore, NewImportRecord};
 
 #[test]
 fn write_import_batch_fails_when_import_kind_is_empty() {

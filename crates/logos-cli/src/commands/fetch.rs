@@ -1,7 +1,7 @@
 #![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
 use logos_runtime::AppRuntime;
-use logos_store_aletheia::model::StoredFetchRun;
+use logos_store_aletheia::StoredFetchRun;
 
 /// Handles `ledger fetch list-runs`.
 ///
@@ -120,7 +120,7 @@ fn render_show_output(run: &StoredFetchRun) -> String {
 #[cfg(test)]
 mod tests {
     use super::{render_list_output, render_show_output};
-    use logos_store_aletheia::model::{
+    use logos_store_aletheia::{
         StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus,
     };
 

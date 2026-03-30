@@ -29,12 +29,9 @@ use logos_reporting::{
     project_cashflow, project_register_balance, project_rsu_budget_plan,
 };
 use logos_store_aletheia::{
-    AletheiaStore, StoreError,
-    model::{
-        NewImportRecord, StoredAnalyticsArtifactManifest, StoredFetchArtifactFormat,
-        StoredFetchRun, StoredFetchRunStatus, StoredMonthClose, StoredReconciliationRun,
-        StoredStatementLine, StoredTransaction,
-    },
+    AletheiaStore, NewImportRecord, StoreError, StoredAnalyticsArtifactManifest,
+    StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredMonthClose,
+    StoredReconciliationRun, StoredStatementLine, StoredTransaction,
 };
 use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
 use std::collections::HashSet;
@@ -226,7 +223,7 @@ impl AppRuntime {
     ) -> Option<i64> {
         self.store
             .budget_target(month_key, expense_account_prefix)
-            .map(logos_store_aletheia::model::StoredBudgetTarget::budget_cents)
+            .map(logos_store_aletheia::StoredBudgetTarget::budget_cents)
     }
 
     #[must_use]

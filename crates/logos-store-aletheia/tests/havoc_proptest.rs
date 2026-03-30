@@ -72,7 +72,7 @@ proptest! {
             &institution_id,
             &ledger_account,
             &month_key,
-            logos_store_aletheia::model::StoredFetchRunStatus::Downloaded,
+            logos_store_aletheia::StoredFetchRunStatus::Downloaded,
             None,
             None,
             None,
