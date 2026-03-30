@@ -1,16 +1,16 @@
-Title: "👺 Havoc: `project_register_balance_iter` Panics on Arithmetic Overflow"
+Title: "👺 Havoc: `project_rsu_forecast_summary` Panics on Arithmetic Overflow"
 
 🧨 **The Trigger:**
-Passing `i64::MAX` to `project_register_balance_iter` along with a positive `delta_cents` causes an arithmetic buffer overflow when summing the register entries.
+Passing `i64::MAX` alongside a positive integer to `project_rsu_forecast_summary` causes an arithmetic buffer overflow when summing the projected events due to an unguarded `.sum::<i64>()` call.
 
 📉 **The Stack Trace:**
 ```
-thread 'project_register_balance_iter_panics_on_overflow' panicked at crates/logos-reporting/src/register.rs:77:13:
+thread 'project_rsu_forecast_summary_panics_on_overflow' panicked at library/core/src/iter/traits/accum.rs:204:1:
 attempt to add with overflow
 ```
 
 🧪 **Reproduction:**
-Run `cargo test -p logos-reporting --test havoc_proptest`
+Run `cargo test -p logos-reporting --test rsu_forecast_havoc`
 
 😈 **Comment:**
-"You assumed register entries would never sum to more than the 64-bit integer limit. You were wrong. A billionaire entering their portfolio balance just crashed the reporting engine."
+"You assumed the projected events would never sum to more than the 64-bit integer limit. You were wrong. A massive RSU vest just crashed the reporting engine."
