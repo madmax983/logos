@@ -1,0 +1,73 @@
+--- crates/logos-runtime/src/runtime/mod.rs
++++ crates/logos-runtime/src/runtime/mod.rs
+@@ -603,13 +603,12 @@
+             return Ok(Vec::new());
+         };
+
+-        let matched_sources: Vec<_> = config
++        let has_matched = config
+             .sources()
+             .iter()
+-            .filter(|source| source.ledger_account() == request.checking_account())
+-            .cloned()
+-            .collect();
+-        if matched_sources.is_empty() {
++            .any(|source| source.ledger_account() == request.checking_account());
++
++        if !has_matched {
+             return Ok(Vec::new());
+         }
+
+@@ -623,7 +622,10 @@
+         let mut first_required_error = None;
+         let mut staged_artifact = false;
+         let mut persisted_runs = Vec::new();
+-        for source in matched_sources {
++        for source in config.sources() {
++            if source.ledger_account() != request.checking_account() {
++                continue;
++            }
+             let fetch_request = match FetchRequest::new(&source, request.month_key()) {
+                 Ok(fetch_request) => fetch_request,
+                 Err(err) => {
+@@ -1367,11 +1369,11 @@
+                     .iter()
+                     .any(|posting| posting.account().as_str() == checking_account)
+             })
+-            .map(|stored| stored.id().clone())
++            .map(logos_store_aletheia::model::StoredTransaction::id)
+             .collect();
+-        ids.sort_by(|left, right| left.as_str().cmp(right.as_str()));
++        ids.sort_unstable_by(|left, right| left.as_str().cmp(right.as_str()));
+         ids.dedup_by(|left, right| left.as_str() == right.as_str());
+-        ids
++        ids.into_iter().cloned().collect()
+     }
+ }
+
+@@ -1388,14 +1390,20 @@
+     dry_run: bool,
+     ocr_enabled: bool,
+     imported_keys: &[String],
+ ) -> String {
+-    let mut sorted_keys = imported_keys.to_vec();
+-    sorted_keys.sort();
+-    let keys_concat = sorted_keys.join("|");
+-    let base = format!("{import_kind}|{source_uri}|{dry_run}|{ocr_enabled}|{keys_concat}");
++    let mut sorted_keys: Vec<&str> = imported_keys.iter().map(String::as_str).collect();
++    sorted_keys.sort_unstable();
+     let mut hasher = DefaultHasher::new();
+-    hasher.write(base.as_bytes());
++    hasher.write(import_kind.as_bytes());
++    hasher.write(b"|");
++    hasher.write(source_uri.as_bytes());
++    hasher.write(b"|");
++    hasher.write(if dry_run { b"true" } else { b"false" });
++    hasher.write(b"|");
++    hasher.write(if ocr_enabled { b"true" } else { b"false" });
++    for key in sorted_keys {
++        hasher.write(b"|");
++        hasher.write(key.as_bytes());
++    }
+     format!("{:016x}", hasher.finish())
+ }
