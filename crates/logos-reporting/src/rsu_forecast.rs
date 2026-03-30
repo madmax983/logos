@@ -18,7 +18,10 @@ impl RsuForecastSummary {
 
 #[must_use]
 pub fn project_rsu_forecast_summary(projected_events_cents: &[i64]) -> RsuForecastSummary {
-    let total = projected_events_cents.iter().copied().sum::<i64>();
+    let total = projected_events_cents
+        .iter()
+        .copied()
+        .fold(0_i64, i64::saturating_add);
 
     RsuForecastSummary {
         event_count: projected_events_cents.len(),

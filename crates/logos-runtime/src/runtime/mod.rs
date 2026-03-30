@@ -1479,7 +1479,7 @@ fn snapshot_rows(transactions: Vec<StoredTransaction>) -> Vec<SnapshotPostingRow
     let capacity: usize = transactions
         .iter()
         .map(|stored| stored.transaction().postings().len())
-        .sum();
+        .fold(0_usize, usize::saturating_add);
     let mut rows = Vec::with_capacity(capacity);
     for stored in transactions {
         for (index, posting) in stored.transaction().postings().iter().enumerate() {
