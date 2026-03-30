@@ -1244,6 +1244,7 @@ dependencies = [
  "logos-import",
  "logos-reporting",
  "logos-runtime",
+ "logos-store",
  "logos-store-aletheia",
 ]
 
@@ -1292,6 +1293,7 @@ dependencies = [
  "logos-fetch",
  "logos-import",
  "logos-reporting",
+ "logos-store",
  "logos-store-aletheia",
  "polars",
  "proptest",
@@ -1313,6 +1315,7 @@ dependencies = [
  "aletheiadb",
  "gag",
  "logos-core",
+ "logos-store",
  "loom",
  "proptest",
  "tempfile",

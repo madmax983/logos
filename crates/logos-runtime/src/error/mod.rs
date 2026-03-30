@@ -1,5 +1,5 @@
 use logos_import::ImportError;
-use logos_store_aletheia::StoreError;
+use logos_store::error::StoreError;
 use std::fmt;
 
 #[derive(Debug)]

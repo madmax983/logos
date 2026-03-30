@@ -1,7 +1,7 @@
 #![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
 use logos_runtime::AppRuntime;
-use logos_store_aletheia::model::StoredFetchRun;
+use logos_store::model::StoredFetchRun;
 
 /// Handles `ledger fetch list-runs`.
 ///
@@ -69,7 +69,7 @@ fn render_list_output(
             run.ledger_account().to_owned(),
             run.source_id().to_owned(),
             run.status().as_str().to_owned(),
-            run.created_at().wallclock().to_string(),
+            run.created_at().to_string(),
         ]);
     }
 
@@ -112,7 +112,7 @@ fn render_show_output(run: &StoredFetchRun) -> String {
             |value| format!("${:.2}", (value as f64) / 100.0),
         ),
         run.error_summary().unwrap_or("-").to_owned(),
-        run.created_at().wallclock().to_string(),
+        run.created_at().to_string(),
     ]);
     table.to_string()
 }
@@ -120,9 +120,7 @@ fn render_show_output(run: &StoredFetchRun) -> String {
 #[cfg(test)]
 mod tests {
     use super::{render_list_output, render_show_output};
-    use logos_store_aletheia::model::{
-        StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus,
-    };
+    use logos_store::model::{StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus};
 
     #[test]
     fn render_list_output_is_deterministic() {

@@ -39,11 +39,11 @@ pub trait LedgerStore {
         missing_read("has_transaction")
     }
 
-    fn latest_correction(&self) -> Option<&Correction> {
+    fn latest_correction(&self) -> Option<Correction> {
         missing_read("latest_correction")
     }
 
-    fn transactions(&self) -> Box<dyn Iterator<Item = &StoredTransaction> + '_> {
+    fn transactions(&self) -> Vec<StoredTransaction> {
         missing_read("transactions")
     }
 
@@ -51,21 +51,19 @@ pub trait LedgerStore {
         &self,
         _month_key: &str,
         _expense_account_prefix: &str,
-    ) -> Option<&StoredBudgetTarget> {
+    ) -> Option<StoredBudgetTarget> {
         missing_read("budget_target")
     }
 
-    fn budget_targets(&self) -> Box<dyn Iterator<Item = &StoredBudgetTarget> + '_> {
+    fn budget_targets(&self) -> Vec<StoredBudgetTarget> {
         missing_read("budget_targets")
     }
 
-    fn analytics_artifact(&self, _artifact_id: &str) -> Option<&StoredAnalyticsArtifactManifest> {
+    fn analytics_artifact(&self, _artifact_id: &str) -> Option<StoredAnalyticsArtifactManifest> {
         missing_read("analytics_artifact")
     }
 
-    fn analytics_artifacts(
-        &self,
-    ) -> Box<dyn Iterator<Item = &StoredAnalyticsArtifactManifest> + '_> {
+    fn analytics_artifacts(&self) -> Vec<StoredAnalyticsArtifactManifest> {
         missing_read("analytics_artifacts")
     }
 
@@ -77,11 +75,11 @@ pub trait LedgerStore {
         missing_read("has_import_record_content_hash")
     }
 
-    fn import_records(&self) -> Box<dyn Iterator<Item = &StoredImportRecord> + '_> {
+    fn import_records(&self) -> Vec<StoredImportRecord> {
         missing_read("import_records")
     }
 
-    fn import_batches(&self) -> Box<dyn Iterator<Item = &StoredImportBatch> + '_> {
+    fn import_batches(&self) -> Vec<StoredImportBatch> {
         missing_read("import_batches")
     }
 
@@ -89,7 +87,7 @@ pub trait LedgerStore {
         missing_read("statement_line_count")
     }
 
-    fn statement_lines(&self) -> Box<dyn Iterator<Item = &StoredStatementLine> + '_> {
+    fn statement_lines(&self) -> Vec<StoredStatementLine> {
         missing_read("statement_lines")
     }
 
@@ -97,11 +95,11 @@ pub trait LedgerStore {
         missing_read("fetch_run_count")
     }
 
-    fn fetch_run(&self, _run_id: &str) -> Option<&StoredFetchRun> {
+    fn fetch_run(&self, _run_id: &str) -> Option<StoredFetchRun> {
         missing_read("fetch_run")
     }
 
-    fn fetch_runs(&self) -> Box<dyn Iterator<Item = &StoredFetchRun> + '_> {
+    fn fetch_runs(&self) -> Vec<StoredFetchRun> {
         missing_read("fetch_runs")
     }
 
@@ -113,11 +111,11 @@ pub trait LedgerStore {
         missing_read("reconciliation_run_count")
     }
 
-    fn reconciliation_run(&self, _run_id: &str) -> Option<&StoredReconciliationRun> {
+    fn reconciliation_run(&self, _run_id: &str) -> Option<StoredReconciliationRun> {
         missing_read("reconciliation_run")
     }
 
-    fn reconciliation_runs(&self) -> Box<dyn Iterator<Item = &StoredReconciliationRun> + '_> {
+    fn reconciliation_runs(&self) -> Vec<StoredReconciliationRun> {
         missing_read("reconciliation_runs")
     }
 
@@ -125,7 +123,7 @@ pub trait LedgerStore {
         missing_read("month_close_count")
     }
 
-    fn month_close(&self, _close_id: &str) -> Option<&StoredMonthClose> {
+    fn month_close(&self, _close_id: &str) -> Option<StoredMonthClose> {
         missing_read("month_close")
     }
 
@@ -133,11 +131,11 @@ pub trait LedgerStore {
         &self,
         _month_key: &str,
         _checking_account: &str,
-    ) -> Option<&StoredMonthClose> {
+    ) -> Option<StoredMonthClose> {
         missing_read("month_close_for_scope")
     }
 
-    fn month_closes(&self) -> Box<dyn Iterator<Item = &StoredMonthClose> + '_> {
+    fn month_closes(&self) -> Vec<StoredMonthClose> {
         missing_read("month_closes")
     }
 
@@ -179,7 +177,14 @@ pub trait LedgerStore {
 
     fn write_analytics_artifact_manifest(
         &mut self,
-        _manifest: StoredAnalyticsArtifactManifest,
+        _artifact_kind: &str,
+        _artifact_uri: &str,
+        _content_hash: &str,
+        _schema_version: i64,
+        _row_count: i64,
+        _snapshot_valid_at_us: i64,
+        _snapshot_tx_at_us: i64,
+        _supersedes_artifact_id: Option<&str>,
     ) -> Result<StoredAnalyticsArtifactManifest, StoreError> {
         Err(missing_write("write_analytics_artifact_manifest"))
     }
@@ -195,7 +200,6 @@ pub trait LedgerStore {
         _snapshot_valid_at_us: i64,
         _snapshot_tx_at_us: i64,
         _supersedes_artifact_id: Option<&str>,
-        _snapshot_key: &str,
     ) -> Result<StoredAnalyticsArtifactManifest, StoreError> {
         Err(missing_write("write_analytics_artifact_manifest_us"))
     }
