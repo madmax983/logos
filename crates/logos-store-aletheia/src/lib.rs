@@ -1174,6 +1174,11 @@ fn open_embedded_db(root_path: &Path) -> Result<AletheiaDB, StoreError> {
     let mut config = AletheiaDBConfig::builder().wal(wal_config).build();
     config.persistence.data_dir = root_path.join("index-data");
 
+    // AletheiaDB prints noisy diagnostic logs ("Temporal index restored", etc.)
+    // directly to stderr via `eprintln!`. Since we embed the DB, we want to hide
+    // these messages from our CLI users unless they are debugging.
+    let _gag = gag::Gag::stderr().ok();
+
     AletheiaDB::with_unified_config(config).map_err(|err| StoreError::LoadFailed {
         message: format!(
             "unable to initialize embedded AletheiaDB at '{}': {err}",
