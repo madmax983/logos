@@ -2332,7 +2332,11 @@ fn collect_statement_line_ids_for_transactions(
     statement_line_ids_by_txn: &HashMap<TransactionId, Vec<String>>,
     txn_ids: &[TransactionId],
 ) -> Vec<String> {
-    let mut line_ids = Vec::new();
+    let capacity = txn_ids
+        .iter()
+        .filter_map(|id| statement_line_ids_by_txn.get(id).map(std::vec::Vec::len))
+        .sum();
+    let mut line_ids = Vec::with_capacity(capacity);
     for txn_id in txn_ids {
         if let Some(ids) = statement_line_ids_by_txn.get(txn_id) {
             line_ids.extend(ids.iter().cloned());
