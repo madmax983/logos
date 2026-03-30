@@ -8,3 +8,7 @@
 **Extract Runtime to Break UI Coupling**
 **Tangle:** The `logos-tui` executable crate depended directly on the `logos-cli` executable crate just to use `CliRuntime`, creating a frontend-to-frontend dependency ("The Sprawl").
 **Blueprint:** Extracted `CliRuntime` (renamed to `AppRuntime`) into a new workspace crate `logos-runtime`. Updated both `logos-cli` and `logos-tui` to depend on `logos-runtime` instead, enforcing unidirectional architectural bounds.
+
+**[The Stringly-Typed MonthKey]**
+**Tangle:** The `MonthKey` domain concept was represented across the codebase as a raw `String` or `&str`, making it susceptible to stringly-typed programming errors and bypassing domain validations at the persistence and runtime layers.
+**Blueprint:** Extracted the `MonthKey` concept into a strict "New Type" wrapper struct (`MonthKey(String)`) in `logos-core::domain::month`. Updated all models, storage queries, writes, and runtime CLI interactions to depend on this strict domain object. Replaced error-swallowing fallbacks at the `logos-runtime` boundaries with proper validation propagation (using `.map_err()` or `.ok()?`).

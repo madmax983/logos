@@ -421,7 +421,7 @@ impl ReconcileDataSource for AppRuntime {
             .map(|run| {
                 ReconcileRunRecord::new(
                     run.run_id(),
-                    run.month_key(),
+                    run.month_key().as_str(),
                     run.checking_account(),
                     run.variance_cents(),
                     run.reconciled(),

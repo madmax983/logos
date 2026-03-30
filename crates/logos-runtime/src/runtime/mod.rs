@@ -214,7 +214,7 @@ impl AppRuntime {
         budget_cents: i64,
     ) -> Result<(), RuntimeError> {
         self.store
-            .write_budget_target(month_key, expense_account_prefix, budget_cents)?;
+            .write_budget_target(&logos_core::domain::month::MonthKey::new(month_key).map_err(crate::error::RuntimeError::Domain)?, expense_account_prefix, budget_cents)?;
         Ok(())
     }
 
@@ -225,7 +225,7 @@ impl AppRuntime {
         expense_account_prefix: &str,
     ) -> Option<i64> {
         self.store
-            .budget_target(month_key, expense_account_prefix)
+            .budget_target(&logos_core::domain::month::MonthKey::new(month_key).ok()?, expense_account_prefix)
             .map(logos_store_aletheia::model::StoredBudgetTarget::budget_cents)
     }
 
@@ -350,7 +350,7 @@ impl AppRuntime {
         let matched_postings = i64::try_from(report.matched_postings()).unwrap_or(i64::MAX);
         self.store
             .write_reconciliation_run(
-                month_key,
+                &logos_core::domain::month::MonthKey::new(month_key).map_err(crate::error::RuntimeError::Domain)?,
                 checking_account,
                 opening_balance_cents,
                 report.ledger_delta_cents(),
@@ -385,7 +385,7 @@ impl AppRuntime {
         let mut runs: Vec<_> = self
             .store
             .reconciliation_runs()
-            .filter(|run| month_key.is_none_or(|month| run.month_key() == month))
+            .filter(|run| month_key.is_none_or(|month| run.month_key().as_str() == month))
             .filter(|run| checking_account.is_none_or(|account| run.checking_account() == account))
             .cloned()
             .collect();
@@ -413,7 +413,7 @@ impl AppRuntime {
         let mut runs: Vec<_> = self
             .store
             .fetch_runs()
-            .filter(|run| month_key.is_none_or(|month| run.month_key() == month))
+            .filter(|run| month_key.is_none_or(|month| run.month_key().as_str() == month))
             .filter(|run| checking_account.is_none_or(|account| run.ledger_account() == account))
             .cloned()
             .collect();
@@ -441,7 +441,7 @@ impl AppRuntime {
     ) -> Result<StoredMonthClose, RuntimeError> {
         self.store
             .write_month_close(
-                month_key,
+                &logos_core::domain::month::MonthKey::new(month_key).map_err(crate::error::RuntimeError::Domain)?,
                 checking_account,
                 reconciliation_run_id,
                 analytics_artifact_id,
@@ -456,7 +456,7 @@ impl AppRuntime {
         checking_account: &str,
     ) -> Option<StoredMonthClose> {
         self.store
-            .month_close_for_scope(month_key, checking_account)
+            .month_close_for_scope(&logos_core::domain::month::MonthKey::new(month_key).ok()?, checking_account)
             .cloned()
     }
 
@@ -559,7 +559,7 @@ impl AppRuntime {
             .reconciliation_transaction_ids_for(request.checking_account(), request.month_key());
         let matched_postings = i64::try_from(preview.matched_postings()).unwrap_or(i64::MAX);
         let (run, close) = self.store.write_reconciliation_run_and_month_close(
-            request.month_key(),
+            &logos_core::domain::month::MonthKey::new(request.month_key()).map_err(crate::error::RuntimeError::Domain)?,
             request.checking_account(),
             balances.opening_balance_cents,
             preview.ledger_delta_cents(),
@@ -905,7 +905,7 @@ impl AppRuntime {
                 source.source_id(),
                 source.institution_id(),
                 source.ledger_account(),
-                month_key,
+                &logos_core::domain::month::MonthKey::new(month_key).map_err(crate::error::RuntimeError::Domain)?,
                 store_fetch_run_status(result.status()),
                 artifact.map(logos_fetch::FetchedStatementArtifact::artifact_path),
                 artifact.map(|value| output_format_label(value.output_format())),
@@ -927,7 +927,7 @@ impl AppRuntime {
                 source.source_id(),
                 source.institution_id(),
                 source.ledger_account(),
-                month_key,
+                &logos_core::domain::month::MonthKey::new(month_key).map_err(crate::error::RuntimeError::Domain)?,
                 StoredFetchRunStatus::Failed,
                 None,
                 None,

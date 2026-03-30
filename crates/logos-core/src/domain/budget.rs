@@ -11,7 +11,7 @@
 /// envelope during the month, and the total amount spent.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BudgetMonth {
-    month_key: String,
+    month_key: crate::domain::month::MonthKey,
     start_balance: i64,
     assigned: i64,
     spent: i64,
@@ -27,13 +27,14 @@ impl BudgetMonth {
     ///
     /// // Create a budget for March 2026 starting with $100 rolled over from February,
     /// // assigning $500 this month, and having spent $200 so far.
-    /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
+    /// let month_key = logos_core::domain::month::MonthKey::new("2026-03").unwrap();
+    /// let budget = BudgetMonth::new(month_key, 100_00, 500_00, 200_00);
     /// assert_eq!(budget.end_balance(), 400_00);
     /// ```
     #[must_use]
-    pub fn new(month_key: &str, start_balance: i64, assigned: i64, spent: i64) -> Self {
+    pub fn new(month_key: crate::domain::month::MonthKey, start_balance: i64, assigned: i64, spent: i64) -> Self {
         Self {
-            month_key: month_key.to_owned(),
+            month_key,
             start_balance,
             assigned,
             spent,
@@ -41,7 +42,7 @@ impl BudgetMonth {
     }
 
     #[must_use]
-    pub fn month_key(&self) -> &str {
+    pub fn month_key(&self) -> &crate::domain::month::MonthKey {
         &self.month_key
     }
 

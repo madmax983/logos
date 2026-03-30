@@ -66,11 +66,11 @@ impl AletheiaStore {
     #[must_use]
     pub fn budget_target(
         &self,
-        month_key: &str,
+        month_key: &logos_core::domain::month::MonthKey,
         expense_account_prefix: &str,
     ) -> Option<&StoredBudgetTarget> {
         self.budget_targets
-            .get(&(month_key.to_owned(), expense_account_prefix.to_owned()))
+            .get(&(month_key.clone(), expense_account_prefix.to_owned()))
     }
 
     /// Iterates over all envelope budget allocations.
@@ -85,7 +85,7 @@ impl AletheiaStore {
     ///
     /// let store = AletheiaStore::new();
     /// for target in store.budget_targets() {
-    ///     println!("Budget: {}", target.month_key());
+    ///     println!("Budget: {}", target.month_key().as_str());
     /// }
     /// ```
     pub fn budget_targets(&self) -> impl Iterator<Item = &StoredBudgetTarget> + '_ {
@@ -265,12 +265,12 @@ impl AletheiaStore {
     #[must_use]
     pub fn month_close_for_scope(
         &self,
-        month_key: &str,
+        month_key: &logos_core::domain::month::MonthKey,
         checking_account: &str,
     ) -> Option<&StoredMonthClose> {
         let close_id = self
             .month_close_by_scope
-            .get(&(month_key.to_owned(), checking_account.to_owned()))?;
+            .get(&(month_key.clone(), checking_account.to_owned()))?;
         self.month_closes.get(close_id)
     }
 
@@ -283,7 +283,7 @@ impl AletheiaStore {
     ///
     /// let store = AletheiaStore::new();
     /// for close in store.month_closes() {
-    ///     println!("Closed: {}", close.month_key());
+    ///     println!("Closed: {}", close.month_key().as_str());
     /// }
     /// ```
     pub fn month_closes(&self) -> impl Iterator<Item = &StoredMonthClose> + '_ {
@@ -737,7 +737,7 @@ mod tests {
         assert!(store.latest_correction().is_none());
         assert_eq!(store.transactions().count(), 0);
         assert_eq!(store.transactions().collect::<Vec<_>>().len(), 0);
-        assert!(store.budget_target("2026-03", "expenses:food").is_none());
+        assert!(store.budget_target(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "expenses:food").is_none());
         assert_eq!(store.budget_targets().count(), 0);
         assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 0);
         assert!(store.analytics_artifact("missing").is_none());
@@ -764,7 +764,7 @@ mod tests {
         assert!(store.month_close("missing").is_none());
         assert!(
             store
-                .month_close_for_scope("2026-03", "assets:checking")
+                .month_close_for_scope(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:checking")
                 .is_none()
         );
         assert_eq!(store.month_closes().count(), 0);
@@ -815,14 +815,14 @@ mod tests {
 
         // Write budget target
         store
-            .write_budget_target("2026-03", "expenses:food", 500)
+            .write_budget_target(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "expenses:food", 500)
             .unwrap();
         assert_eq!(store.budget_targets().count(), 1);
         assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 1);
 
         // Write a second budget target
         store
-            .write_budget_target("2026-03", "expenses:rent", 1500)
+            .write_budget_target(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "expenses:rent", 1500)
             .unwrap();
         assert_eq!(store.budget_targets().count(), 2);
         assert_eq!(store.budget_targets().collect::<Vec<_>>().len(), 2);
@@ -913,7 +913,7 @@ mod tests {
         // Write reconciliation run
         let run = store
             .write_reconciliation_run(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:checking",
                 0,
                 100,
@@ -933,7 +933,7 @@ mod tests {
 
         let run2 = store
             .write_reconciliation_run(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:savings",
                 0,
                 100,
@@ -953,7 +953,7 @@ mod tests {
 
         // Write month close
         store
-            .write_month_close("2026-03", "assets:checking", run.run_id(), None)
+            .write_month_close(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:checking", run.run_id(), None)
             .unwrap();
         assert_eq!(store.month_close_count(), 1);
         assert!(store.month_close("close-1").is_some());
@@ -961,7 +961,7 @@ mod tests {
         assert_eq!(store.month_closes().collect::<Vec<_>>().len(), 1);
 
         store
-            .write_month_close("2026-03", "assets:savings", run2.run_id(), None)
+            .write_month_close(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:savings", run2.run_id(), None)
             .unwrap();
         assert_eq!(store.month_close_count(), 2);
         assert!(store.month_close("close-2").is_some());

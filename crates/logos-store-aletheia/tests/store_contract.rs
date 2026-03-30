@@ -126,11 +126,11 @@ fn test_budget_targets_iterator_yields_all_items() {
     assert_eq!(store.budget_targets().count(), 0);
 
     store
-        .write_budget_target("2026-03", "expenses:food", 250_000)
+        .write_budget_target(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "expenses:food", 250_000)
         .expect("write budget target 1");
 
     store
-        .write_budget_target("2026-04", "expenses:food", 300_000)
+        .write_budget_target(&logos_core::domain::month::MonthKey::new("2026-04").unwrap(), "expenses:food", 300_000)
         .expect("write budget target 2");
 
     assert_eq!(store.budget_targets().count(), 2);
@@ -281,13 +281,13 @@ fn open_persists_budget_target_across_reopen() {
     {
         let mut store = AletheiaStore::open(&path).expect("open");
         store
-            .write_budget_target("2026-03", "expenses:food", 250_000)
+            .write_budget_target(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "expenses:food", 250_000)
             .expect("write budget target");
     }
 
     let reopened = AletheiaStore::open(&path).expect("reopen");
     let target = reopened
-        .budget_target("2026-03", "expenses:food")
+        .budget_target(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "expenses:food")
         .expect("budget target exists");
     assert_eq!(target.budget_cents(), 250_000);
 
@@ -432,7 +432,7 @@ fn open_persists_reconciliation_run_across_reopen() {
 
         let run = store
             .write_reconciliation_run(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:checking",
                 100_000,
                 10_000,
@@ -454,7 +454,7 @@ fn open_persists_reconciliation_run_across_reopen() {
     let run = reopened
         .reconciliation_run("recon-1")
         .expect("reconciliation run exists");
-    assert_eq!(run.month_key(), "2026-03");
+    assert_eq!(run.month_key().as_str(), "2026-03");
     assert_eq!(run.checking_account(), "assets:checking");
     assert_eq!(run.variance_cents(), -500);
     assert_eq!(run.matched_transaction_count(), 1);
@@ -482,7 +482,7 @@ fn open_persists_month_close_across_reopen() {
             .expect("txn");
         run_id = store
             .write_reconciliation_run(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:checking",
                 100_000,
                 10_000,
@@ -500,7 +500,7 @@ fn open_persists_month_close_across_reopen() {
             .to_owned();
 
         let close = store
-            .write_month_close("2026-03", "assets:checking", &run_id, None)
+            .write_month_close(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:checking", &run_id, None)
             .expect("close month");
         assert_eq!(close.close_id(), "close-1");
     }
@@ -508,10 +508,10 @@ fn open_persists_month_close_across_reopen() {
     let reopened = AletheiaStore::open(&path).expect("reopen");
     assert_eq!(reopened.month_close_count(), 1);
     let close = reopened
-        .month_close_for_scope("2026-03", "assets:checking")
+        .month_close_for_scope(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:checking")
         .expect("close exists");
     assert_eq!(close.reconciliation_run_id(), run_id);
-    assert_eq!(close.month_key(), "2026-03");
+    assert_eq!(close.month_key().as_str(), "2026-03");
     assert_eq!(close.checking_account(), "assets:checking");
 
     cleanup_store_path(&path);
@@ -527,7 +527,7 @@ fn write_fetch_run_persists_needs_attention_status_and_error_summary() {
                 "pcu:checking",
                 "provident-credit-union",
                 "assets:checking",
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 StoredFetchRunStatus::NeedsAttention,
                 None,
                 None,
@@ -547,7 +547,7 @@ fn write_fetch_run_persists_needs_attention_status_and_error_summary() {
     assert_eq!(run.source_id(), "pcu:checking");
     assert_eq!(run.institution_id(), "provident-credit-union");
     assert_eq!(run.ledger_account(), "assets:checking");
-    assert_eq!(run.month_key(), "2026-03");
+    assert_eq!(run.month_key().as_str(), "2026-03");
     assert_eq!(run.status(), StoredFetchRunStatus::NeedsAttention);
     assert_eq!(run.error_summary(), Some("mfa challenge required"));
 
@@ -564,7 +564,7 @@ fn write_fetch_run_lists_reloaded_runs_and_continues_sequential_ids() {
                 "amex:checking",
                 "american-express",
                 "assets:checking",
-                "2026-01",
+                &logos_core::domain::month::MonthKey::new("2026-01").unwrap(),
                 StoredFetchRunStatus::NeedsAttention,
                 None,
                 None,
@@ -578,7 +578,7 @@ fn write_fetch_run_lists_reloaded_runs_and_continues_sequential_ids() {
                 "pcu:checking",
                 "provident-credit-union",
                 "assets:checking",
-                "2026-02",
+                &logos_core::domain::month::MonthKey::new("2026-02").unwrap(),
                 StoredFetchRunStatus::NoNewStatement,
                 None,
                 None,
@@ -618,7 +618,7 @@ fn write_fetch_run_lists_reloaded_runs_and_continues_sequential_ids() {
                 "rh:brokerage",
                 "robinhood",
                 "assets:brokerage",
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 StoredFetchRunStatus::Failed,
                 None,
                 None,
@@ -640,7 +640,7 @@ fn atomic_reconcile_and_close_rejects_unknown_transaction_without_partial_persis
         let mut store = AletheiaStore::open(&path).expect("open");
         let err = store
             .write_reconciliation_run_and_month_close(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:checking",
                 100_000,
                 10_000,
@@ -881,7 +881,7 @@ fn embedded_mapping_writes_reconciliation_run_and_edges() {
             .expect("txn b");
         store
             .write_reconciliation_run(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:checking",
                 100_000,
                 7_500,
@@ -955,7 +955,7 @@ fn embedded_mapping_links_reconciliation_run_to_statement_lines() {
 
         let run = store
             .write_reconciliation_run(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:checking",
                 100_000,
                 -500,
@@ -1015,7 +1015,7 @@ fn embedded_mapping_writes_month_close_edges() {
             .expect("txn");
         let run = store
             .write_reconciliation_run(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:checking",
                 100_000,
                 10_000,
@@ -1044,7 +1044,7 @@ fn embedded_mapping_writes_month_close_edges() {
 
         store
             .write_month_close(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:checking",
                 run.run_id(),
                 Some(artifact.artifact_id()),
@@ -1171,7 +1171,7 @@ fn write_reconciliation_run_fails_with_negative_values() {
 
     // Negative matched_postings
     let res = store.write_reconciliation_run(
-        "2026-03",
+        &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
         "assets:checking",
         100_000,
         10_000,
@@ -1193,7 +1193,7 @@ fn write_reconciliation_run_fails_with_negative_values() {
 
     // Negative inflow_cents
     let res = store.write_reconciliation_run(
-        "2026-03",
+        &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
         "assets:checking",
         100_000,
         10_000,
@@ -1215,7 +1215,7 @@ fn write_reconciliation_run_fails_with_negative_values() {
 
     // Negative outflow_cents
     let res = store.write_reconciliation_run(
-        "2026-03",
+        &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
         "assets:checking",
         100_000,
         10_000,
@@ -1257,7 +1257,7 @@ fn write_reconciliation_run_and_month_close_fails_with_negative_values() {
 
     // Negative matched_postings
     let res = store.write_reconciliation_run_and_month_close(
-        "2026-03",
+        &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
         "assets:checking",
         100_000,
         10_000,
@@ -1280,7 +1280,7 @@ fn write_reconciliation_run_and_month_close_fails_with_negative_values() {
 
     // Negative inflow_cents
     let res = store.write_reconciliation_run_and_month_close(
-        "2026-03",
+        &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
         "assets:checking",
         100_000,
         10_000,
@@ -1303,7 +1303,7 @@ fn write_reconciliation_run_and_month_close_fails_with_negative_values() {
 
     // Negative outflow_cents
     let res = store.write_reconciliation_run_and_month_close(
-        "2026-03",
+        &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
         "assets:checking",
         100_000,
         10_000,
@@ -1345,7 +1345,7 @@ fn write_reconciliation_run_succeeds_with_zero_values() {
         .expect("write txn");
 
     let res = store.write_reconciliation_run(
-        "2026-03",
+        &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
         "assets:checking",
         100_000,
         10_000,
@@ -1381,7 +1381,7 @@ fn write_reconciliation_run_and_month_close_succeeds_with_zero_values() {
         .expect("write txn");
 
     let res = store.write_reconciliation_run_and_month_close(
-        "2026-03",
+        &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
         "assets:checking",
         100_000,
         10_000,
@@ -1418,7 +1418,7 @@ fn write_reconciliation_run_and_month_close_fails_with_unknown_artifact() {
         .expect("write txn");
 
     let res = store.write_reconciliation_run_and_month_close(
-        "2026-03",
+        &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
         "assets:checking",
         100_000,
         10_000,
@@ -1448,7 +1448,7 @@ fn write_month_close_fails_with_mismatched_month_key() {
         let mut store = AletheiaStore::open(&path).expect("open");
         let run_id = store
             .write_reconciliation_run(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:checking",
                 100_000,
                 10_000,
@@ -1466,7 +1466,7 @@ fn write_month_close_fails_with_mismatched_month_key() {
             .to_owned();
 
         let err = store
-            .write_month_close("2026-04", "assets:checking", &run_id, None)
+            .write_month_close(&logos_core::domain::month::MonthKey::new("2026-04").unwrap(), "assets:checking", &run_id, None)
             .expect_err("mismatched month_key must fail");
         assert!(err.to_string().contains(
             "month close month '2026-04' does not match reconciliation run month '2026-03'"
@@ -1482,7 +1482,7 @@ fn write_month_close_fails_with_mismatched_checking_account() {
         let mut store = AletheiaStore::open(&path).expect("open");
         let run_id = store
             .write_reconciliation_run(
-                "2026-03",
+                &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
                 "assets:checking",
                 100_000,
                 10_000,
@@ -1500,7 +1500,7 @@ fn write_month_close_fails_with_mismatched_checking_account() {
             .to_owned();
 
         let err = store
-            .write_month_close("2026-03", "assets:savings", &run_id, None)
+            .write_month_close(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:savings", &run_id, None)
             .expect_err("mismatched checking_account must fail");
         assert!(err.to_string().contains("month close checking_account 'assets:savings' does not match reconciliation run account 'assets:checking'"));
     }

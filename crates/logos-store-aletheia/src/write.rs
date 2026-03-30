@@ -67,7 +67,7 @@ impl AletheiaStore {
     /// Returns an error when persistence fails.
     pub fn write_budget_target(
         &mut self,
-        month_key: &str,
+        month_key: &logos_core::domain::month::MonthKey,
         expense_account_prefix: &str,
         budget_cents: i64,
     ) -> Result<(), StoreError> {
@@ -297,7 +297,7 @@ impl AletheiaStore {
         source_id: &str,
         institution_id: &str,
         ledger_account: &str,
-        month_key: &str,
+        month_key: &logos_core::domain::month::MonthKey,
         status: StoredFetchRunStatus,
         artifact_path: Option<&str>,
         output_format: Option<StoredFetchArtifactFormat>,
@@ -318,11 +318,6 @@ impl AletheiaStore {
         if ledger_account.is_empty() {
             return Err(StoreError::PersistFailed {
                 message: "ledger_account must not be empty".to_owned(),
-            });
-        }
-        if month_key.is_empty() {
-            return Err(StoreError::PersistFailed {
-                message: "month_key must not be empty".to_owned(),
             });
         }
         if matches!(
@@ -370,7 +365,7 @@ impl AletheiaStore {
     #[allow(clippy::too_many_arguments)]
     pub fn write_reconciliation_run(
         &mut self,
-        month_key: &str,
+        month_key: &logos_core::domain::month::MonthKey,
         checking_account: &str,
         opening_balance_cents: i64,
         ledger_delta_cents: i64,
@@ -383,11 +378,6 @@ impl AletheiaStore {
         outflow_cents: i64,
         reconciled_txn_ids: &[TransactionId],
     ) -> Result<StoredReconciliationRun, StoreError> {
-        if month_key.is_empty() {
-            return Err(StoreError::PersistFailed {
-                message: "month_key must not be empty".to_owned(),
-            });
-        }
         if checking_account.is_empty() {
             return Err(StoreError::PersistFailed {
                 message: "checking_account must not be empty".to_owned(),
@@ -443,7 +433,7 @@ impl AletheiaStore {
     #[allow(clippy::too_many_arguments)]
     pub fn write_reconciliation_run_and_month_close(
         &mut self,
-        month_key: &str,
+        month_key: &logos_core::domain::month::MonthKey,
         checking_account: &str,
         opening_balance_cents: i64,
         ledger_delta_cents: i64,
@@ -457,11 +447,6 @@ impl AletheiaStore {
         reconciled_txn_ids: &[TransactionId],
         analytics_artifact_id: Option<&str>,
     ) -> Result<(StoredReconciliationRun, StoredMonthClose), StoreError> {
-        if month_key.is_empty() {
-            return Err(StoreError::PersistFailed {
-                message: "month_key must not be empty".to_owned(),
-            });
-        }
         if checking_account.is_empty() {
             return Err(StoreError::PersistFailed {
                 message: "checking_account must not be empty".to_owned(),
@@ -489,11 +474,11 @@ impl AletheiaStore {
                 });
             }
         }
-        let scope_key = (month_key.to_owned(), checking_account.to_owned());
+        let scope_key = (month_key.clone(), checking_account.to_owned());
         if let Some(existing_close_id) = self.month_close_by_scope.get(&scope_key) {
             return Err(StoreError::PersistFailed {
                 message: format!(
-                    "month '{month_key}' for account '{checking_account}' is already closed by '{existing_close_id}'"
+                    "month '{}' for account '{checking_account}' is already closed by '{existing_close_id}'", month_key.as_str()
                 ),
             });
         }
@@ -547,16 +532,11 @@ impl AletheiaStore {
     /// Returns an error when metadata is invalid, references are unknown, or the scope is already closed.
     pub fn write_month_close(
         &mut self,
-        month_key: &str,
+        month_key: &logos_core::domain::month::MonthKey,
         checking_account: &str,
         reconciliation_run_id: &str,
         analytics_artifact_id: Option<&str>,
     ) -> Result<StoredMonthClose, StoreError> {
-        if month_key.is_empty() {
-            return Err(StoreError::PersistFailed {
-                message: "month_key must not be empty".to_owned(),
-            });
-        }
         if checking_account.is_empty() {
             return Err(StoreError::PersistFailed {
                 message: "checking_account must not be empty".to_owned(),
@@ -577,8 +557,8 @@ impl AletheiaStore {
         if run.month_key() != month_key {
             return Err(StoreError::PersistFailed {
                 message: format!(
-                    "month close month '{month_key}' does not match reconciliation run month '{}'",
-                    run.month_key()
+                    "month close month '{}' does not match reconciliation run month '{}'",
+                    month_key.as_str(), run.month_key().as_str()
                 ),
             });
         }
@@ -599,11 +579,11 @@ impl AletheiaStore {
             }
         }
 
-        let scope_key = (month_key.to_owned(), checking_account.to_owned());
+        let scope_key = (month_key.clone(), checking_account.to_owned());
         if let Some(existing_close_id) = self.month_close_by_scope.get(&scope_key) {
             return Err(StoreError::PersistFailed {
                 message: format!(
-                    "month '{month_key}' for account '{checking_account}' is already closed by '{existing_close_id}'"
+                    "month '{}' for account '{checking_account}' is already closed by '{existing_close_id}'", month_key.as_str()
                 ),
             });
         }

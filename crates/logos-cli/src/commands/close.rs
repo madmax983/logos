@@ -27,7 +27,7 @@ pub fn month(
                     command: "close.month".to_owned(),
                     message: format!("reconciliation run '{run_id}' not found"),
                 })?;
-        run.month_key().to_owned()
+        run.month_key().as_str().to_owned()
     };
 
     let close = runtime
@@ -69,7 +69,7 @@ fn render_close_month_output(
 
     table.add_row(vec![
         close.close_id().to_owned(),
-        close.month_key().to_owned(),
+        close.month_key().as_str().to_owned(),
         close.checking_account().to_owned(),
         close.reconciliation_run_id().to_owned(),
         analytics_artifact_id.unwrap_or("").to_owned(),
@@ -88,7 +88,7 @@ mod tests {
     fn render_close_month_output_is_deterministic() {
         let close = StoredMonthClose::new(
             "close-3",
-            "2026-03",
+            &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
             "assets:checking",
             "recon-11",
             Some("artifact-7"),

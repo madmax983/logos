@@ -146,7 +146,7 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
     ]);
     table.add_row(vec![
         run.run_id().to_owned(),
-        run.month_key().to_owned(),
+        run.month_key().as_str().to_owned(),
         run.checking_account().to_owned(),
         format!("${:.2}", (run.opening_balance_cents() as f64) / 100.0),
         format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0),
@@ -197,7 +197,7 @@ fn render_list_output(
     for run in runs {
         table.add_row(vec![
             run.run_id().to_owned(),
-            run.month_key().to_owned(),
+            run.month_key().as_str().to_owned(),
             run.checking_account().to_owned(),
             format!("${:.2}", (run.variance_cents() as f64) / 100.0),
             run.reconciled().to_string(),
@@ -221,7 +221,7 @@ mod tests {
     fn render_month_output_is_deterministic() {
         let run = StoredReconciliationRun::new(
             "recon-7",
-            "2026-03",
+            &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
             "assets:checking",
             100_000,
             7_500,
@@ -251,7 +251,7 @@ mod tests {
     fn render_show_output_is_deterministic() {
         let run = StoredReconciliationRun::new(
             "recon-8",
-            "2026-04",
+            &logos_core::domain::month::MonthKey::new("2026-04").unwrap(),
             "assets:checking",
             200_000,
             12_000,
@@ -282,7 +282,7 @@ mod tests {
         let runs = vec![
             StoredReconciliationRun::new(
                 "recon-9",
-                "2026-05",
+                &logos_core::domain::month::MonthKey::new("2026-05").unwrap(),
                 "assets:checking",
                 100_000,
                 9_000,
@@ -298,7 +298,7 @@ mod tests {
             ),
             StoredReconciliationRun::new(
                 "recon-10",
-                "2026-05",
+                &logos_core::domain::month::MonthKey::new("2026-05").unwrap(),
                 "assets:checking",
                 109_000,
                 4_000,

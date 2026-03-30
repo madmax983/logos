@@ -182,7 +182,7 @@ impl StoredCorrection {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredBudgetTarget {
-    month_key: String,
+    month_key: logos_core::domain::month::MonthKey,
     expense_account_prefix: String,
     budget_cents: i64,
 }
@@ -253,7 +253,7 @@ pub struct NewImportRecord {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredReconciliationRun {
     run_id: String,
-    month_key: String,
+    month_key: logos_core::domain::month::MonthKey,
     checking_account: String,
     opening_balance_cents: i64,
     ledger_delta_cents: i64,
@@ -271,7 +271,7 @@ pub struct StoredReconciliationRun {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredMonthClose {
     close_id: String,
-    month_key: String,
+    month_key: logos_core::domain::month::MonthKey,
     checking_account: String,
     reconciliation_run_id: String,
     analytics_artifact_id: Option<String>,
@@ -299,7 +299,7 @@ pub struct StoredFetchRun {
     source_id: String,
     institution_id: String,
     ledger_account: String,
-    month_key: String,
+    month_key: logos_core::domain::month::MonthKey,
     status: StoredFetchRunStatus,
     artifact_path: Option<String>,
     output_format: Option<StoredFetchArtifactFormat>,
@@ -657,7 +657,7 @@ impl StoredReconciliationRun {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         run_id: &str,
-        month_key: &str,
+        month_key: &logos_core::domain::month::MonthKey,
         checking_account: &str,
         opening_balance_cents: i64,
         ledger_delta_cents: i64,
@@ -673,7 +673,7 @@ impl StoredReconciliationRun {
     ) -> Self {
         Self {
             run_id: run_id.to_owned(),
-            month_key: month_key.to_owned(),
+            month_key: month_key.clone(),
             checking_account: checking_account.to_owned(),
             opening_balance_cents,
             ledger_delta_cents,
@@ -695,7 +695,7 @@ impl StoredReconciliationRun {
     }
 
     #[must_use]
-    pub fn month_key(&self) -> &str {
+    pub fn month_key(&self) -> &logos_core::domain::month::MonthKey {
         &self.month_key
     }
 
@@ -764,7 +764,7 @@ impl StoredMonthClose {
     #[must_use]
     pub fn new(
         close_id: &str,
-        month_key: &str,
+        month_key: &logos_core::domain::month::MonthKey,
         checking_account: &str,
         reconciliation_run_id: &str,
         analytics_artifact_id: Option<&str>,
@@ -772,7 +772,7 @@ impl StoredMonthClose {
     ) -> Self {
         Self {
             close_id: close_id.to_owned(),
-            month_key: month_key.to_owned(),
+            month_key: month_key.clone(),
             checking_account: checking_account.to_owned(),
             reconciliation_run_id: reconciliation_run_id.to_owned(),
             analytics_artifact_id: analytics_artifact_id.map(str::to_owned),
@@ -786,7 +786,7 @@ impl StoredMonthClose {
     }
 
     #[must_use]
-    pub fn month_key(&self) -> &str {
+    pub fn month_key(&self) -> &logos_core::domain::month::MonthKey {
         &self.month_key
     }
 
@@ -871,7 +871,7 @@ impl StoredFetchRun {
         source_id: &str,
         institution_id: &str,
         ledger_account: &str,
-        month_key: &str,
+        month_key: &logos_core::domain::month::MonthKey,
         status: StoredFetchRunStatus,
         artifact_path: Option<&str>,
         output_format: Option<StoredFetchArtifactFormat>,
@@ -885,7 +885,7 @@ impl StoredFetchRun {
             source_id: source_id.to_owned(),
             institution_id: institution_id.to_owned(),
             ledger_account: ledger_account.to_owned(),
-            month_key: month_key.to_owned(),
+            month_key: month_key.clone(),
             status,
             artifact_path: artifact_path.map(str::to_owned),
             output_format,
@@ -917,7 +917,7 @@ impl StoredFetchRun {
     }
 
     #[must_use]
-    pub fn month_key(&self) -> &str {
+    pub fn month_key(&self) -> &logos_core::domain::month::MonthKey {
         &self.month_key
     }
 
@@ -959,16 +959,16 @@ impl StoredFetchRun {
 
 impl StoredBudgetTarget {
     #[must_use]
-    pub fn new(month_key: &str, expense_account_prefix: &str, budget_cents: i64) -> Self {
+    pub fn new(month_key: &logos_core::domain::month::MonthKey, expense_account_prefix: &str, budget_cents: i64) -> Self {
         Self {
-            month_key: month_key.to_owned(),
+            month_key: month_key.clone(),
             expense_account_prefix: expense_account_prefix.to_owned(),
             budget_cents,
         }
     }
 
     #[must_use]
-    pub fn month_key(&self) -> &str {
+    pub fn month_key(&self) -> &logos_core::domain::month::MonthKey {
         &self.month_key
     }
 

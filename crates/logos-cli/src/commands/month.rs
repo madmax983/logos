@@ -117,7 +117,7 @@ mod tests {
     fn render_autopilot_output_is_deterministic() {
         let run = StoredReconciliationRun::new(
             "recon-5",
-            "2026-04",
+            &logos_core::domain::month::MonthKey::new("2026-04").unwrap(),
             "assets:checking",
             100_000,
             7_500,
@@ -133,7 +133,7 @@ mod tests {
         );
         let close = StoredMonthClose::new(
             "close-2",
-            "2026-04",
+            &logos_core::domain::month::MonthKey::new("2026-04").unwrap(),
             "assets:checking",
             "recon-5",
             Some("artifact-2"),
@@ -144,7 +144,7 @@ mod tests {
             "pcu:checking",
             "provident-credit-union",
             "assets:checking",
-            "2026-04",
+            &logos_core::domain::month::MonthKey::new("2026-04").unwrap(),
             StoredFetchRunStatus::Downloaded,
             Some("C:\\statements\\pcu-2026-04.pdf"),
             Some(StoredFetchArtifactFormat::Pdf),

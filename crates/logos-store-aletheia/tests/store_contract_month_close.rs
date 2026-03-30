@@ -28,7 +28,7 @@ fn write_month_close_fails_when_month_does_not_match() {
 
     let run = store
         .write_reconciliation_run(
-            "2026-03",
+            &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
             "assets:checking",
             100_000,
             10_000,
@@ -44,7 +44,7 @@ fn write_month_close_fails_when_month_does_not_match() {
         .unwrap();
 
     let err = store
-        .write_month_close("2026-04", "assets:checking", run.run_id(), None)
+        .write_month_close(&logos_core::domain::month::MonthKey::new("2026-04").unwrap(), "assets:checking", run.run_id(), None)
         .unwrap_err();
 
     assert!(
@@ -70,7 +70,7 @@ fn write_month_close_fails_when_checking_account_does_not_match() {
 
     let run = store
         .write_reconciliation_run(
-            "2026-03",
+            &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
             "assets:checking",
             100_000,
             10_000,
@@ -86,7 +86,7 @@ fn write_month_close_fails_when_checking_account_does_not_match() {
         .unwrap();
 
     let err = store
-        .write_month_close("2026-03", "assets:savings", run.run_id(), None)
+        .write_month_close(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:savings", run.run_id(), None)
         .unwrap_err();
 
     assert!(
@@ -112,7 +112,7 @@ fn write_month_close_fails_when_artifact_is_unknown() {
 
     let run = store
         .write_reconciliation_run(
-            "2026-03",
+            &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
             "assets:checking",
             100_000,
             10_000,
@@ -129,7 +129,7 @@ fn write_month_close_fails_when_artifact_is_unknown() {
 
     let err = store
         .write_month_close(
-            "2026-03",
+            &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
             "assets:checking",
             run.run_id(),
             Some("unknown-artifact"),
@@ -143,7 +143,7 @@ fn write_month_close_fails_when_artifact_is_unknown() {
 fn write_month_close_fails_when_reconciliation_run_is_unknown() {
     let mut store = AletheiaStore::new();
     let err = store
-        .write_month_close("2026-03", "assets:checking", "unknown-run", None)
+        .write_month_close(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:checking", "unknown-run", None)
         .unwrap_err();
 
     assert!(matches!(err, StoreError::PersistFailed { .. }));
@@ -154,7 +154,7 @@ fn write_month_close_fails_when_reconciliation_run_is_unknown() {
 fn write_month_close_fails_when_reconciliation_run_id_is_empty() {
     let mut store = AletheiaStore::new();
     let err = store
-        .write_month_close("2026-03", "assets:checking", "", None)
+        .write_month_close(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:checking", "", None)
         .unwrap_err();
 
     assert!(
@@ -180,7 +180,7 @@ fn write_month_close_fails_when_already_closed() {
 
     let run = store
         .write_reconciliation_run(
-            "2026-03",
+            &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
             "assets:checking",
             100_000,
             10_000,
@@ -196,11 +196,11 @@ fn write_month_close_fails_when_already_closed() {
         .unwrap();
 
     store
-        .write_month_close("2026-03", "assets:checking", run.run_id(), None)
+        .write_month_close(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:checking", run.run_id(), None)
         .unwrap();
 
     let err = store
-        .write_month_close("2026-03", "assets:checking", run.run_id(), None)
+        .write_month_close(&logos_core::domain::month::MonthKey::new("2026-03").unwrap(), "assets:checking", run.run_id(), None)
         .unwrap_err();
 
     assert!(err.to_string().contains("is already closed by"));
@@ -223,7 +223,7 @@ fn write_reconciliation_run_and_month_close_fails_when_already_closed() {
 
     store
         .write_reconciliation_run_and_month_close(
-            "2026-03",
+            &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
             "assets:checking",
             100_000,
             10_000,
@@ -241,7 +241,7 @@ fn write_reconciliation_run_and_month_close_fails_when_already_closed() {
 
     let err = store
         .write_reconciliation_run_and_month_close(
-            "2026-03",
+            &logos_core::domain::month::MonthKey::new("2026-03").unwrap(),
             "assets:checking",
             100_000,
             10_000,

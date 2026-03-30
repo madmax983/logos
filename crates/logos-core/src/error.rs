@@ -19,6 +19,7 @@ use core::fmt;
 pub enum DomainError {
     /// Returned when you try to create an `AccountId` from an empty string or just whitespace.
     EmptyAccountId,
+    EmptyMonthKey,
     /// Returned when you try to create a `TransactionId` from an empty string or just whitespace.
     EmptyTransactionId,
     /// Returned when a `CategoryGroup` is given a name that trims down to nothing.
@@ -63,6 +64,9 @@ impl fmt::Display for DomainError {
         match self {
             Self::EmptyAccountId => {
                 write!(f, "account id cannot be empty")
+            }
+            Self::EmptyMonthKey => {
+                write!(f, "month key cannot be empty")
             }
             Self::EmptyTransactionId => {
                 write!(f, "transaction id cannot be empty")
@@ -150,6 +154,14 @@ mod tests {
         assert_eq!(
             DomainError::EmptyAccountId.to_string(),
             "account id cannot be empty"
+        );
+    }
+
+    #[test]
+    fn should_display_empty_month_key() {
+        assert_eq!(
+            DomainError::EmptyMonthKey.to_string(),
+            "month key cannot be empty"
         );
     }
 

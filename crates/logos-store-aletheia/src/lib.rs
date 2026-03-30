@@ -135,7 +135,7 @@ struct LoadedProjection {
     month_close_nodes: HashMap<String, NodeId>,
 }
 
-type BudgetTargetKey = (String, String);
+type BudgetTargetKey = (logos_core::domain::month::MonthKey, String);
 
 pub(crate) struct EmbeddedStore {
     pub(crate) db: AletheiaDB,
@@ -335,7 +335,7 @@ impl AletheiaStore {
 
     pub(crate) fn persist_budget_target(&mut self, target: StoredBudgetTarget) {
         let key = (
-            target.month_key().to_owned(),
+            target.month_key().clone(),
             target.expense_account_prefix().to_owned(),
         );
         self.budget_targets.insert(key, target);
@@ -391,7 +391,7 @@ impl AletheiaStore {
                     .insert(PROP_FETCH_SOURCE_ID, run.source_id())
                     .insert(PROP_FETCH_INSTITUTION_ID, run.institution_id())
                     .insert(PROP_FETCH_LEDGER_ACCOUNT, run.ledger_account())
-                    .insert(PROP_MONTH_KEY, run.month_key())
+                    .insert(PROP_MONTH_KEY, run.month_key().as_str())
                     .insert(PROP_FETCH_STATUS, run.status().as_str())
                     .insert(PROP_FETCH_ARTIFACT_PATH, run.artifact_path().unwrap_or(""))
                     .insert(
@@ -438,7 +438,7 @@ impl AletheiaStore {
     pub(crate) fn persist_month_close(&mut self, close: StoredMonthClose) {
         self.month_close_by_scope.insert(
             (
-                close.month_key().to_owned(),
+                close.month_key().clone(),
                 close.checking_account().to_owned(),
             ),
             close.close_id().to_owned(),
@@ -573,7 +573,7 @@ impl AletheiaStore {
         tx.create_node(
             LABEL_LEDGER_BUDGET_TARGET,
             PropertyMapBuilder::new()
-                .insert(PROP_MONTH_KEY, target.month_key())
+                .insert(PROP_MONTH_KEY, target.month_key().as_str())
                 .insert(PROP_EXPENSE_ACCOUNT_PREFIX, target.expense_account_prefix())
                 .insert(PROP_BUDGET_CENTS, target.budget_cents())
                 .build(),
@@ -815,7 +815,7 @@ impl AletheiaStore {
                 LABEL_LEDGER_RECONCILIATION_RUN,
                 PropertyMapBuilder::new()
                     .insert(PROP_RECONCILIATION_RUN_ID, run.run_id())
-                    .insert(PROP_MONTH_KEY, run.month_key())
+                    .insert(PROP_MONTH_KEY, run.month_key().as_str())
                     .insert(PROP_RECONCILIATION_CHECKING_ACCOUNT, run.checking_account())
                     .insert(
                         PROP_RECONCILIATION_OPENING_BALANCE_CENTS,
@@ -938,7 +938,7 @@ impl AletheiaStore {
                 LABEL_LEDGER_RECONCILIATION_RUN,
                 PropertyMapBuilder::new()
                     .insert(PROP_RECONCILIATION_RUN_ID, run.run_id())
-                    .insert(PROP_MONTH_KEY, run.month_key())
+                    .insert(PROP_MONTH_KEY, run.month_key().as_str())
                     .insert(PROP_RECONCILIATION_CHECKING_ACCOUNT, run.checking_account())
                     .insert(
                         PROP_RECONCILIATION_OPENING_BALANCE_CENTS,
@@ -1018,7 +1018,7 @@ impl AletheiaStore {
                 LABEL_LEDGER_MONTH_CLOSE,
                 PropertyMapBuilder::new()
                     .insert(PROP_MONTH_CLOSE_ID, close.close_id())
-                    .insert(PROP_MONTH_KEY, close.month_key())
+                    .insert(PROP_MONTH_KEY, close.month_key().as_str())
                     .insert(
                         PROP_RECONCILIATION_CHECKING_ACCOUNT,
                         close.checking_account(),
@@ -1105,7 +1105,7 @@ impl AletheiaStore {
                 LABEL_LEDGER_MONTH_CLOSE,
                 PropertyMapBuilder::new()
                     .insert(PROP_MONTH_CLOSE_ID, close.close_id())
-                    .insert(PROP_MONTH_KEY, close.month_key())
+                    .insert(PROP_MONTH_KEY, close.month_key().as_str())
                     .insert(
                         PROP_RECONCILIATION_CHECKING_ACCOUNT,
                         close.checking_account(),
@@ -1380,7 +1380,8 @@ fn load_budget_targets(
             .get_node(node_id)
             .map_err(|err| map_load_error("unable to read LedgerBudgetTarget node", err))?;
 
-        let month_key = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let month_key_str = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let month_key = logos_core::domain::month::MonthKey::new(&month_key_str).map_err(StoreError::Domain)?;
         let expense_account_prefix =
             required_node_string_property(&node, PROP_EXPENSE_ACCOUNT_PREFIX)?;
         let budget_cents = required_node_i64_property(&node, PROP_BUDGET_CENTS)?;
@@ -1851,7 +1852,8 @@ fn load_fetch_runs(db: &AletheiaDB) -> Result<FetchRunLoad, StoreError> {
         let source_id = required_node_string_property(&node, PROP_FETCH_SOURCE_ID)?;
         let institution_id = required_node_string_property(&node, PROP_FETCH_INSTITUTION_ID)?;
         let ledger_account = required_node_string_property(&node, PROP_FETCH_LEDGER_ACCOUNT)?;
-        let month_key = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let month_key_str = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let month_key = logos_core::domain::month::MonthKey::new(&month_key_str).map_err(StoreError::Domain)?;
         let status_value = required_node_string_property(&node, PROP_FETCH_STATUS)?;
         let status =
             StoredFetchRunStatus::parse(&status_value).ok_or_else(|| StoreError::LoadFailed {
@@ -1961,7 +1963,8 @@ fn load_reconciliation_runs(
             });
         }
 
-        let month_key = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let month_key_str = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let month_key = logos_core::domain::month::MonthKey::new(&month_key_str).map_err(StoreError::Domain)?;
         let checking_account =
             required_node_string_property(&node, PROP_RECONCILIATION_CHECKING_ACCOUNT)?;
         let opening_balance_cents =
@@ -2110,7 +2113,8 @@ fn load_month_closes(
             });
         }
 
-        let month_key = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let month_key_str = required_node_string_property(&node, PROP_MONTH_KEY)?;
+        let month_key = logos_core::domain::month::MonthKey::new(&month_key_str).map_err(StoreError::Domain)?;
         let checking_account =
             required_node_string_property(&node, PROP_RECONCILIATION_CHECKING_ACCOUNT)?;
         let reconciliation_run_id =
@@ -2350,7 +2354,7 @@ fn index_month_close_by_scope(
     for close in month_closes.values() {
         by_scope.insert(
             (
-                close.month_key().to_owned(),
+                close.month_key().clone(),
                 close.checking_account().to_owned(),
             ),
             close.close_id().to_owned(),

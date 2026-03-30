@@ -297,7 +297,7 @@ fn e2e_runtime_month_close_persists_and_blocks_duplicate_scope_close() {
             .month_close_for_scope(&month_key, "assets:checking")
             .expect("reloaded close");
         assert_eq!(close.reconciliation_run_id(), run_id);
-        assert_eq!(close.month_key(), month_key);
+        assert_eq!(close.month_key().as_str(), month_key);
     }
 
     cleanup_runtime_path(&path);
