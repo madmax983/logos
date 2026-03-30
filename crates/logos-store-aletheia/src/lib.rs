@@ -2343,7 +2343,7 @@ fn collect_statement_line_ids_for_transactions(
         .iter()
         .filter_map(|id| statement_line_ids_by_txn.get(id))
         .map(std::vec::Vec::len)
-        .sum();
+        .fold(0_usize, usize::saturating_add);
     let mut line_ids = Vec::with_capacity(capacity);
     for txn_id in txn_ids {
         if let Some(ids) = statement_line_ids_by_txn.get(txn_id) {

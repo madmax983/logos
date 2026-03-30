@@ -697,7 +697,7 @@ fn embedded_mapping_writes_transaction_and_posting_graph_entities() {
                 .get_outgoing_edges_with_label(*node_id, "HAS_POSTING")
                 .len()
         })
-        .sum();
+        .fold(0_usize, usize::saturating_add);
 
     assert_eq!(transaction_nodes.len(), 1);
     assert_eq!(posting_count, 2);
@@ -738,7 +738,7 @@ fn embedded_mapping_writes_correction_supersedes_edge() {
                 .get_outgoing_edges_with_label(*node_id, "SUPERSEDES")
                 .len()
         })
-        .sum();
+        .fold(0_usize, usize::saturating_add);
 
     assert_eq!(correction_nodes.len(), 1);
     assert_eq!(supersedes_edges, 1);
@@ -789,7 +789,7 @@ fn embedded_mapping_writes_analytics_artifact_lineage_edge() {
                 .get_outgoing_edges_with_label(*node_id, "DERIVED_FROM")
                 .len()
         })
-        .sum();
+        .fold(0_usize, usize::saturating_add);
 
     assert_eq!(manifest_nodes.len(), 2);
     assert_eq!(derived_edges, 1);
@@ -841,7 +841,7 @@ fn embedded_mapping_writes_import_batch_and_record_graph_entities() {
                 .get_outgoing_edges_with_label(*node_id, "HAS_IMPORT_RECORD")
                 .len()
         })
-        .sum();
+        .fold(0_usize, usize::saturating_add);
 
     assert_eq!(batch_nodes.len(), 1);
     assert_eq!(record_count, 2);
@@ -908,7 +908,7 @@ fn embedded_mapping_writes_reconciliation_run_and_edges() {
                 .get_outgoing_edges_with_label(*node_id, "RECONCILES_TXN")
                 .len()
         })
-        .sum();
+        .fold(0_usize, usize::saturating_add);
 
     assert_eq!(run_nodes.len(), 1);
     assert_eq!(reconciles_edges, 2);
@@ -986,7 +986,7 @@ fn embedded_mapping_links_reconciliation_run_to_statement_lines() {
                 .get_outgoing_edges_with_label(*node_id, "RECONCILES_STMT_LINE")
                 .len()
         })
-        .sum();
+        .fold(0_usize, usize::saturating_add);
     let statement_line_count = graph.scan_nodes_by_label("LedgerStatementLine").count();
 
     assert_eq!(run_nodes.len(), 1);
@@ -1061,7 +1061,7 @@ fn embedded_mapping_writes_month_close_edges() {
                 .get_outgoing_edges_with_label(*node_id, "CLOSES_RECONCILIATION_RUN")
                 .len()
         })
-        .sum();
+        .fold(0_usize, usize::saturating_add);
     let closes_artifact_edges: usize = close_nodes
         .iter()
         .map(|node_id| {
@@ -1069,7 +1069,7 @@ fn embedded_mapping_writes_month_close_edges() {
                 .get_outgoing_edges_with_label(*node_id, "CLOSES_ANALYTICS_ARTIFACT")
                 .len()
         })
-        .sum();
+        .fold(0_usize, usize::saturating_add);
 
     assert_eq!(close_nodes.len(), 1);
     assert_eq!(closes_run_edges, 1);
