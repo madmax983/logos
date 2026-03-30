@@ -1160,6 +1160,7 @@ impl AletheiaStore {
 }
 
 fn open_embedded_db(root_path: &Path) -> Result<AletheiaDB, StoreError> {
+    let _shh = shh::stderr();
     fs::create_dir_all(root_path).map_err(|err| StoreError::LoadFailed {
         message: format!(
             "unable to create store directory '{}': {err}",
