@@ -104,8 +104,10 @@ impl FireAscentSimulator {
 
         for (target_cents, target_name) in milestone_names {
             let month_reached = sorted_milestones.iter().find(|&&(c, _)| c == target_cents).map(|&(_, m)| m);
-            if month_reached.is_some() && target_cents == summit {
-                success = true;
+            if month_reached.is_some() {
+                if target_cents == summit {
+                    success = true;
+                }
             }
             milestones.push(AscentMilestone {
                 name: target_name,

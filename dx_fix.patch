@@ -1,0 +1,69 @@
+--- crates/logos-cli/src/commands/aletheia.rs
++++ crates/logos-cli/src/commands/aletheia.rs
+@@ -5,7 +5,7 @@
+
+ use crate::args::CliError;
+
+-const DEFAULT_ALETHEIA_MANIFEST_PATH: &str = "../gallifreydb/Cargo.toml";
++const DEFAULT_ALETHEIA_MANIFEST_PATH: &str = "../AletheiaDB/Cargo.toml";
+ const DEFAULT_STATUS_HOST: &str = "127.0.0.1";
+ const DEFAULT_STATUS_PORT: u16 = 8080;
+ const STATUS_PATH: &str = "/status";
+@@ -158,12 +158,12 @@
+     #[test]
+     fn manifest_path_uses_default_when_env_missing() {
+         let path = manifest_path_from_env(None);
+-        assert!(path.ends_with("gallifreydb/Cargo.toml"));
++        assert!(path.ends_with("AletheiaDB/Cargo.toml"));
+     }
+
+     #[test]
+     fn manifest_path_uses_env_override() {
+--- crates/logos-store-aletheia/src/lib.rs
++++ crates/logos-store-aletheia/src/lib.rs
+@@ -1174,12 +1174,36 @@
+     let mut config = AletheiaDBConfig::builder().wal(wal_config).build();
+     config.persistence.data_dir = root_path.join("index-data");
+
+-    AletheiaDB::with_unified_config(config).map_err(|err| StoreError::LoadFailed {
++    let is_debug = std::env::var("RUST_LOG").is_ok();
++
++    #[cfg(unix)]
++    let mut stderr_fd_backup = None;
++
++    #[cfg(unix)]
++    if !is_debug {
++        use std::os::unix::io::AsRawFd;
++        if let Ok(dev_null) = std::fs::File::create("/dev/null") {
++            #[allow(unsafe_code)]
++            unsafe {
++                let old_stderr = libc::dup(libc::STDERR_FILENO);
++                if old_stderr != -1 {
++                    stderr_fd_backup = Some(old_stderr);
++                    libc::dup2(dev_null.as_raw_fd(), libc::STDERR_FILENO);
++                }
++            }
++        }
++    }
++
++    let db_result = AletheiaDB::with_unified_config(config).map_err(|err| StoreError::LoadFailed {
+         message: format!(
+             "unable to initialize embedded AletheiaDB at '{}': {err}",
+             root_path.display()
+         ),
+-    })
++    });
++
++    #[cfg(unix)]
++    if let Some(old_stderr) = stderr_fd_backup {
++        #[allow(unsafe_code)]
++        unsafe {
++            libc::dup2(old_stderr, libc::STDERR_FILENO);
++            libc::close(old_stderr);
++        }
++    }
++
++    db_result
+ }
+
+ fn load_projection(db: &AletheiaDB) -> Result<LoadedProjection, StoreError> {

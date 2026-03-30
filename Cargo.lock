@@ -1282,6 +1282,7 @@ name = "logos-store-aletheia"
 version = "0.1.0"
 dependencies = [
  "aletheiadb",
+ "libc",
  "logos-core",
  "loom",
  "proptest",

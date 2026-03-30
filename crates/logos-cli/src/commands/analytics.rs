@@ -351,7 +351,7 @@ pub fn fire_sim(
         }
     }
 
-    println!("analytics.fire-sim\n{}\n\n{}", table, journey_table);
+    println!("analytics.fire-sim\n{table}\n\n{journey_table}");
 
     Ok(())
 }

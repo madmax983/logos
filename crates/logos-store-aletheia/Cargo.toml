@@ -10,6 +10,7 @@ workspace = true
 [dependencies]
 logos-core = { path = "../logos-core" }
 aletheiadb = { git = "https://github.com/madmax983/AletheiaDB.git", branch = "trunk" }
+libc = "=0.2.182"
 
 [dev-dependencies]
 loom = "0.7.2"
