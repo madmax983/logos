@@ -24,7 +24,7 @@ pub fn start() -> Result<(), CliError> {
     if !Path::new(&manifest_path).is_file() {
         return Err(CliError::AletheiaStartFailed {
             message: format!(
-                "manifest not found at '{manifest_path}' (override with ALETHEIADB_MANIFEST_PATH)"
+                "Manifest not found at '{manifest_path}' (override with ALETHEIADB_MANIFEST_PATH)"
             ),
         });
     }
@@ -39,7 +39,7 @@ pub fn start() -> Result<(), CliError> {
         .arg("http-server")
         .status()
         .map_err(|err| CliError::AletheiaStartFailed {
-            message: format!("unable to launch cargo: {err}"),
+            message: format!("Unable to launch cargo: {err}"),
         })?;
 
     if status.success() {
@@ -47,7 +47,7 @@ pub fn start() -> Result<(), CliError> {
     }
 
     Err(CliError::AletheiaStartFailed {
-        message: format!("server process exited with status {status}"),
+        message: format!("Server process exited with status {status}"),
     })
 }
 
@@ -65,20 +65,20 @@ pub fn status() -> Result<(), CliError> {
     let mut stream =
         TcpStream::connect(&address).map_err(|err| CliError::AletheiaStatusFailed {
             endpoint: endpoint.clone(),
-            message: format!("connection failed: {err}"),
+            message: format!("Connection failed: {err}"),
         })?;
 
     stream
         .set_read_timeout(Some(Duration::from_secs(IO_TIMEOUT_SECONDS)))
         .map_err(|err| CliError::AletheiaStatusFailed {
             endpoint: endpoint.clone(),
-            message: format!("failed setting read timeout: {err}"),
+            message: format!("Failed setting read timeout: {err}"),
         })?;
     stream
         .set_write_timeout(Some(Duration::from_secs(IO_TIMEOUT_SECONDS)))
         .map_err(|err| CliError::AletheiaStatusFailed {
             endpoint: endpoint.clone(),
-            message: format!("failed setting write timeout: {err}"),
+            message: format!("Failed setting write timeout: {err}"),
         })?;
 
     let request =
@@ -87,13 +87,13 @@ pub fn status() -> Result<(), CliError> {
         .write_all(request.as_bytes())
         .map_err(|err| CliError::AletheiaStatusFailed {
             endpoint: endpoint.clone(),
-            message: format!("request write failed: {err}"),
+            message: format!("Request write failed: {err}"),
         })?;
     stream
         .flush()
         .map_err(|err| CliError::AletheiaStatusFailed {
             endpoint: endpoint.clone(),
-            message: format!("request flush failed: {err}"),
+            message: format!("Request flush failed: {err}"),
         })?;
 
     let mut response = String::new();
@@ -101,7 +101,7 @@ pub fn status() -> Result<(), CliError> {
         .read_to_string(&mut response)
         .map_err(|err| CliError::AletheiaStatusFailed {
             endpoint: endpoint.clone(),
-            message: format!("response read failed: {err}"),
+            message: format!("Response read failed: {err}"),
         })?;
 
     if response.contains("\"status\":\"healthy\"") || response.contains("\"status\": \"healthy\"") {
@@ -111,7 +111,7 @@ pub fn status() -> Result<(), CliError> {
 
     Err(CliError::AletheiaStatusFailed {
         endpoint,
-        message: "unexpected status payload (expected JSON status=healthy)".to_owned(),
+        message: "Unexpected status payload (expected JSON status=healthy)".to_owned(),
     })
 }
 

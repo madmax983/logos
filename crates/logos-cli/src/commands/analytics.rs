@@ -89,10 +89,7 @@ fn render_snapshot_manifest_list(
         ]);
     }
 
-    format!(
-        "analytics.snapshot.list empty=false count={}\n{table}",
-        manifests.len()
-    )
+    format!("{table}")
 }
 
 /// Handles `ledger analytics snapshot show`.
@@ -151,11 +148,11 @@ pub fn sankey() -> Result<(), CliError> {
 }
 
 fn render_sankey_output(raw_mermaid: &str) -> String {
-    format!("analytics.sankey\n{raw_mermaid}")
+    raw_mermaid.to_owned()
 }
 
 fn render_snapshot_manifest(
-    prefix: &str,
+    _prefix: &str,
     manifest: &logos_store_aletheia::model::StoredAnalyticsArtifactManifest,
 ) -> String {
     let mut table = comfy_table::Table::new();
@@ -187,7 +184,7 @@ fn render_snapshot_manifest(
         supersedes.to_owned(),
     ]);
 
-    format!("{prefix}\n{table}")
+    format!("{table}")
 }
 
 #[cfg(test)]
@@ -199,7 +196,7 @@ mod tests {
     fn render_sankey_output_is_deterministic() {
         let raw = "```mermaid\nsankey-beta\nincome:salary,assets:checking,500.00\n```\n";
         let output = render_sankey_output(raw);
-        let expected = "analytics.sankey\n```mermaid\nsankey-beta\nincome:salary,assets:checking,500.00\n```\n";
+        let expected = "```mermaid\nsankey-beta\nincome:salary,assets:checking,500.00\n```\n";
         assert_eq!(output, expected);
     }
 
@@ -219,7 +216,7 @@ mod tests {
             "valid:1800000000000000|tx:1800000001000000",
         )];
         let output = render_snapshot_manifest_list(&manifests);
-        let expected = "analytics.snapshot.list empty=false count=1\n┌─────────────┬─────────┬────────┬──────┬──────────┬──────────────────────────┬────────────┬────────────┬────────────┬────────────┐
+        let expected = "┌─────────────┬─────────┬────────┬──────┬──────────┬──────────────────────────┬────────────┬────────────┬────────────┬────────────┐
 │ Artifact ID ┆ Kind    ┆ Schema ┆ Rows ┆ Hash     ┆ URI                      ┆ Valid US   ┆ Tx US      ┆ Created US ┆ Supersedes │
 ╞═════════════╪═════════╪════════╪══════╪══════════╪══════════════════════════╪════════════╪════════════╪════════════╪════════════╡
 │ artifact-8  ┆ parquet ┆ 3      ┆ 21   ┆ cafebabe ┆ C:\\artifacts\\def.parquet ┆ 1800000000 ┆ 1800000001 ┆ 1800000002 ┆ artifact-7 │
@@ -243,7 +240,7 @@ mod tests {
             "valid:1700000000000000|tx:1700000001000000",
         );
         let output = render_snapshot_manifest("analytics.snapshot.show", &manifest);
-        let expected = "analytics.snapshot.show\n┌─────────────┬─────────┬────────┬──────┬──────────┬──────────────────────────┬────────────┬────────────┬────────────┬────────────┐
+        let expected = "┌─────────────┬─────────┬────────┬──────┬──────────┬──────────────────────────┬────────────┬────────────┬────────────┬────────────┐
 │ Artifact ID ┆ Kind    ┆ Schema ┆ Rows ┆ Hash     ┆ URI                      ┆ Valid US   ┆ Tx US      ┆ Created US ┆ Supersedes │
 ╞═════════════╪═════════╪════════╪══════╪══════════╪══════════════════════════╪════════════╪════════════╪════════════╪════════════╡
 │ artifact-7  ┆ parquet ┆ 2      ┆ 19   ┆ deadbeef ┆ C:\\artifacts\\abc.parquet ┆ 1700000000 ┆ 1700000001 ┆ 1700000002 ┆ artifact-6 │
@@ -363,7 +360,7 @@ pub fn fire_sim(
         }
     }
 
-    println!("analytics.fire-sim\n{table}\n\n{journey_table}");
+    println!("{table}\n\n{journey_table}");
 
     Ok(())
 }
