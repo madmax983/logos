@@ -1089,4 +1089,71 @@ mod tests {
                 && proj.iter().any(|p| p.id() == stored.id())
         }));
     }
+
+    #[test]
+    fn test_reconstruct_transaction_at_as_of_error_when_mismatched_txn_id() {
+        use aletheiadb::WriteOps;
+        let path = temp_db_path("reconstruct-mismatched-txn-id");
+        let db = crate::open_embedded_db(&path).unwrap();
+
+        let (txn_node_id, _) = db
+            .write(|tx: &mut aletheiadb::WriteTransaction| {
+                let txn_node = tx
+                    .create_node(
+                        crate::model::LABEL_LEDGER_TRANSACTION,
+                        aletheiadb::PropertyMapBuilder::new()
+                            .insert(crate::model::PROP_TXN_ID, "txn-1")
+                            .insert(crate::model::PROP_DESCRIPTION, "desc")
+                            .build(),
+                    )
+                    .unwrap();
+
+                let posting_node = tx
+                    .create_node(
+                        crate::model::LABEL_LEDGER_POSTING,
+                        aletheiadb::PropertyMapBuilder::new()
+                            .insert(crate::model::PROP_TXN_ID, "txn-wrong") // Corrupt txn_id
+                            .insert(crate::model::PROP_ACCOUNT, "assets:checking")
+                            .insert(crate::model::PROP_AMOUNT_CENTS, 100i64)
+                            .build(),
+                    )
+                    .unwrap();
+
+                tx.create_edge(
+                    txn_node,
+                    posting_node,
+                    crate::model::EDGE_HAS_POSTING,
+                    aletheiadb::PropertyMapBuilder::new()
+                        .insert(crate::model::PROP_ORDINAL, 0i64)
+                        .build(),
+                )
+                .unwrap();
+
+                Ok::<_, DbError>((txn_node, posting_node))
+            })
+            .unwrap();
+
+        let as_of = crate::model::AsOf::new(aletheiadb::time::now(), aletheiadb::time::now());
+        let node = super::get_node_at_as_of(&db, txn_node_id, as_of)
+            .unwrap()
+            .unwrap();
+        let expected_id = logos_core::TransactionId::new("txn-1").unwrap();
+
+        let result =
+            super::reconstruct_transaction_at_as_of(&db, txn_node_id, &expected_id, &node, as_of);
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        if let crate::StoreError::LoadFailed { message } = err {
+            assert!(
+                message.contains("references txn_id 'txn-wrong' but parent transaction is 'txn-1'")
+            );
+        } else {
+            panic!("Expected LoadFailed error");
+        }
+
+        if path.exists() {
+            let _ = std::fs::remove_dir_all(&path);
+        }
+    }
 }
