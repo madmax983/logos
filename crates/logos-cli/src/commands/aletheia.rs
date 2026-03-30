@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use crate::args::CliError;
 
-const DEFAULT_ALETHEIA_MANIFEST_PATH: &str = "../AletheiaDB/Cargo.toml";
+const DEFAULT_ALETHEIA_MANIFEST_PATH: &str = "../gallifreydb/Cargo.toml";
 const DEFAULT_STATUS_HOST: &str = "127.0.0.1";
 const DEFAULT_STATUS_PORT: u16 = 8080;
 const STATUS_PATH: &str = "/status";
@@ -157,7 +157,7 @@ mod tests {
     #[test]
     fn manifest_path_uses_default_when_env_missing() {
         let path = manifest_path_from_env(None);
-        assert!(path.ends_with("AletheiaDB/Cargo.toml"));
+        assert!(path.ends_with("gallifreydb/Cargo.toml"));
     }
 
     #[test]

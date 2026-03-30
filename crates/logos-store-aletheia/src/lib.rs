@@ -223,6 +223,11 @@ impl AletheiaStore {
     ///
     /// Returns an error when opening `AletheiaDB` or rebuilding the projection fails.
     pub fn open(path: impl AsRef<Path>) -> Result<Self, StoreError> {
+        // Temporarily capture and discard stdout and stderr to suppress verbose jargon from aletheiadb's
+        // index restoration process during standard CLI execution.
+        let _gag_stderr = gag::Gag::stderr().ok();
+        let _gag_stdout = gag::Gag::stdout().ok();
+
         let root_path = path.as_ref().to_path_buf();
         if root_path.is_file() {
             return Err(StoreError::LoadFailed {
@@ -1173,11 +1178,6 @@ fn open_embedded_db(root_path: &Path) -> Result<AletheiaDB, StoreError> {
         .build();
     let mut config = AletheiaDBConfig::builder().wal(wal_config).build();
     config.persistence.data_dir = root_path.join("index-data");
-
-    // Temporarily capture and discard stdout and stderr to suppress verbose jargon from aletheiadb's
-    // index restoration process during standard CLI execution.
-    let _gag_stderr = gag::Gag::stderr().ok();
-    let _gag_stdout = gag::Gag::stdout().ok();
 
     AletheiaDB::with_unified_config(config).map_err(|err| StoreError::LoadFailed {
         message: format!(
