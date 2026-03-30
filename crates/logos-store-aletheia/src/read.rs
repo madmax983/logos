@@ -600,8 +600,10 @@ fn load_superseded_ids_at(
     as_of: AsOf,
 ) -> Result<HashSet<TransactionId>, StoreError> {
     let correction_node_ids = db.scan_nodes_by_label(LABEL_LEDGER_CORRECTION);
+    let (lower, upper) = correction_node_ids.size_hint();
+    let capacity = upper.unwrap_or(lower);
     // Pre-allocate hash set based on known correction node count to eliminate runtime hashing reallocations.
-    let mut superseded_ids = HashSet::new();
+    let mut superseded_ids = HashSet::with_capacity(capacity);
     for correction_node_id in correction_node_ids {
         let Some(correction_node) = get_node_at_as_of(db, correction_node_id, as_of)? else {
             continue;
