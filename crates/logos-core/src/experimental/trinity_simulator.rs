@@ -199,6 +199,22 @@ mod tests {
     }
 
     #[test]
+    fn test_trinity_math_mutants() {
+        // High volatility, 0 withdrawal, 0 inflation, zero mean return.
+        // Seed 42 produces a known sequence of LCG normals resulting in a 70% success rate.
+        // This strictly asserts the exact math operations (*, /, <=) were used correctly.
+        let sim = TrinitySimulator::new(10_000, 0, 0.0, 1.0, 0.0, 42);
+        let result = sim.run(2, 10);
+        assert_eq!(result.success_rate_pct, 70);
+
+        // To kill `>=` or `>` mutants and `-=` mutants on success tracking:
+        // Set an extremely negative mean return to guarantee failure in year 1.
+        let sim_loss = TrinitySimulator::new(100_000, 0, -2.0, 0.0, 0.0, 42);
+        let result_loss = sim_loss.run(1, 10);
+        assert_eq!(result_loss.success_rate_pct, 0);
+    }
+
+    #[test]
     fn test_trinity_classic_4_percent() {
         // Classic 4% rule. $1M portfolio, $40k withdrawal.
         // 7% nominal return, 15% volatility, 3% inflation.
