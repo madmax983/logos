@@ -74,7 +74,7 @@ fn render_snapshot_manifest_list(
     ]);
 
     for manifest in manifests {
-        let supersedes = manifest.supersedes_artifact_id().unwrap_or("");
+        let supersedes = manifest.supersedes_artifact_id().unwrap_or_default();
         table.add_row(vec![
             manifest.artifact_id().to_owned(),
             manifest.artifact_kind().to_owned(),
@@ -173,7 +173,7 @@ fn render_snapshot_manifest(
         "Supersedes",
     ]);
 
-    let supersedes = manifest.supersedes_artifact_id().unwrap_or("");
+    let supersedes = manifest.supersedes_artifact_id().unwrap_or_default();
     table.add_row(vec![
         manifest.artifact_id().to_owned(),
         manifest.artifact_kind().to_owned(),

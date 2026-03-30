@@ -128,8 +128,10 @@ fn resolve_status_port() -> u16 {
 }
 
 fn manifest_path_from_env(raw: Option<String>) -> String {
-    raw.filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| DEFAULT_ALETHEIA_MANIFEST_PATH.to_owned())
+    let Some(path) = raw.filter(|value| !value.trim().is_empty()) else {
+        return DEFAULT_ALETHEIA_MANIFEST_PATH.to_owned();
+    };
+    path
 }
 
 fn status_host_from_env(raw: Option<String>) -> String {
