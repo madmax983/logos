@@ -1370,11 +1370,11 @@ impl AppRuntime {
                     .iter()
                     .any(|posting| posting.account().as_str() == checking_account)
             })
-            .map(|stored| stored.id().clone())
+            .map(logos_store_aletheia::model::StoredTransaction::id)
             .collect();
         ids.sort_by(|left, right| left.as_str().cmp(right.as_str()));
         ids.dedup_by(|left, right| left.as_str() == right.as_str());
-        ids
+        ids.into_iter().cloned().collect()
     }
 }
 
