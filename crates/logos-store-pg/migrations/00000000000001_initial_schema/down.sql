@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS month_closes;
+DROP TABLE IF EXISTS reconciliation_run_statement_lines;
+DROP TABLE IF EXISTS reconciliation_run_transactions;
+DROP TABLE IF EXISTS reconciliation_runs;
+DROP TABLE IF EXISTS fetch_runs;
+DROP TABLE IF EXISTS statement_lines;
+DROP TABLE IF EXISTS import_records;
+DROP TABLE IF EXISTS import_batches;
+DROP TABLE IF EXISTS analytics_artifact_manifests;
+DROP TABLE IF EXISTS budget_targets;
+DROP TABLE IF EXISTS corrections;
+DROP TABLE IF EXISTS postings;
+DROP TABLE IF EXISTS transactions;
