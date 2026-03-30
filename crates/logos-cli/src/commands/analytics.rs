@@ -1,5 +1,5 @@
 use crate::args::CliError;
-use comfy_table::{Attribute, Cell, Color};
+
 
 use logos_runtime::AppRuntime;
 

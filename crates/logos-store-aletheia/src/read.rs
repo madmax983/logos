@@ -536,6 +536,36 @@ fn optional_node_timestamp_property(node: &Node, key: &str) -> Option<Timestamp>
 #[cfg(test)]
 mod tests {
     #[test]
+    fn test_optional_node_timestamp_property() {
+        use aletheiadb::{NodeId, PropertyMapBuilder, WriteOps};
+
+        let path = temp_db_path("opt-ts");
+        let db = crate::open_embedded_db(&path).unwrap();
+        let node_id = db.write(|tx| {
+            let props = PropertyMapBuilder::new()
+                .insert("time", 123_456i64)
+                .build();
+            let node_id = tx.create_node("Test", props).unwrap();
+            Ok::<NodeId, aletheiadb::Error>(node_id)
+        }).unwrap();
+
+        let node = db.get_node(node_id).unwrap();
+
+        assert_eq!(
+            super::optional_node_timestamp_property(&node, "time"),
+            Some(123_456i64.into())
+        );
+        assert_eq!(
+            super::optional_node_timestamp_property(&node, "missing"),
+            None
+        );
+
+        if path.exists() {
+            let _ = std::fs::remove_dir_all(&path);
+        }
+    }
+
+    #[test]
     fn test_transactions_as_of_error_when_mismatched_txn_id() {
         use aletheiadb::{EdgeId, Error as DbError, NodeId, StorageError};
         let node_err = DbError::Storage(StorageError::NodeNotFound(NodeId::new(1).unwrap()));
