@@ -23,31 +23,31 @@ pub enum CliError {
 impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MissingCommand => write!(f, "missing command"),
+            Self::MissingCommand => write!(f, "Missing command."),
             Self::MissingSubcommand { command } => {
-                write!(f, "missing subcommand for command '{command}'")
+                write!(f, "Missing subcommand for command '{command}'.")
             }
-            Self::UnknownCommand { command } => write!(f, "unknown command '{command}'"),
+            Self::UnknownCommand { command } => write!(f, "Unknown command '{command}'."),
             Self::UnknownSubcommand {
                 command,
                 subcommand,
             } => write!(
                 f,
-                "unknown subcommand '{subcommand}' for command '{command}'"
+                "Unknown subcommand '{subcommand}' for command '{command}'."
             ),
-            Self::MissingArgValue { flag } => write!(f, "missing value for argument '{flag}'"),
+            Self::MissingArgValue { flag } => write!(f, "Missing value for argument '{flag}'."),
             Self::InvalidArgValue { flag, value } => {
-                write!(f, "invalid value '{value}' for argument '{flag}'")
+                write!(f, "Invalid value '{value}' for argument '{flag}'.")
             }
-            Self::MissingTxnDescription => write!(f, "missing transaction description"),
+            Self::MissingTxnDescription => write!(f, "Missing transaction description."),
             Self::CommandRuntimeFailed { command, message } => {
-                write!(f, "command '{command}' failed at runtime: {message}")
+                write!(f, "Command '{command}' failed at runtime: {message}.")
             }
             Self::AletheiaStartFailed { message } => {
-                write!(f, "failed to start aletheia server: {message}")
+                write!(f, "Failed to start aletheia server: {message}.")
             }
             Self::AletheiaStatusFailed { endpoint, message } => {
-                write!(f, "failed status check at '{endpoint}': {message}")
+                write!(f, "Failed status check at '{endpoint}': {message}.")
             }
         }
     }
