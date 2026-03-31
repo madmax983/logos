@@ -43,6 +43,7 @@ use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
 use std::collections::HashSet;
 use std::env;
 use std::fs::{self, File};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -1536,6 +1537,12 @@ fn snapshot_rows(transactions: Vec<StoredTransaction>) -> Vec<SnapshotPostingRow
     rows
 }
 
+/// Hashes the snapshot rows for parquet metadata generation.
+///
+/// ⚡ Bolt Optimization: Replaces `hasher.update(format!(...).as_bytes())` with `writeln!`.
+/// This prevents allocating a new `String` on the heap for every single row in the snapshot,
+/// streaming the formatted bytes directly into the `blake3::Hasher`. For a ledger with 100k
+/// postings, this removes 100k+ unnecessary heap allocations during snapshot generation.
 fn hash_rows(
     rows: &[SnapshotPostingRow],
     as_of_valid: i64,
@@ -1543,21 +1550,23 @@ fn hash_rows(
     schema_version: i64,
 ) -> String {
     let mut hasher = Hasher::new();
-    hasher
-        .update(format!("schema:{schema_version}|valid:{as_of_valid}|tx:{as_of_tx}\n").as_bytes());
+    writeln!(
+        &mut hasher,
+        "schema:{schema_version}|valid:{as_of_valid}|tx:{as_of_tx}"
+    )
+    .unwrap();
     for row in rows {
-        hasher.update(
-            format!(
-                "{}|{}|{}|{}|{}|{}\n",
-                row.txn_id,
-                row.description,
-                row.effective_at_us,
-                row.posting_ordinal,
-                row.account,
-                row.amount_cents
-            )
-            .as_bytes(),
-        );
+        writeln!(
+            &mut hasher,
+            "{}|{}|{}|{}|{}|{}",
+            row.txn_id,
+            row.description,
+            row.effective_at_us,
+            row.posting_ordinal,
+            row.account,
+            row.amount_cents
+        )
+        .unwrap();
     }
     hasher.finalize().to_hex().to_string()
 }
