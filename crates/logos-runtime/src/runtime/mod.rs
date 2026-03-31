@@ -1398,11 +1398,11 @@ impl<S: LedgerStore> AppRuntime<S> {
                     .iter()
                     .any(|posting| posting.account().as_str() == checking_account)
             })
-            .map(logos_store_aletheia::model::StoredTransaction::id)
+            .map(|t| t.id().clone())
             .collect();
         ids.sort_by(|left, right| left.as_str().cmp(right.as_str()));
         ids.dedup_by(|left, right| left.as_str() == right.as_str());
-        ids.into_iter().cloned().collect()
+        ids
     }
 }
 

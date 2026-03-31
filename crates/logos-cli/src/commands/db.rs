@@ -76,7 +76,8 @@ mod tests {
             std::env::remove_var("DATABASE_URL");
         }
 
-        let err = connect_store("db.status").expect_err("missing database url must fail");
+        let err = connect_store("db.status");
+        assert!(result.is_err());
         assert_eq!(
             err.to_string(),
             "command 'db.status' failed at runtime: DATABASE_URL is not set"
