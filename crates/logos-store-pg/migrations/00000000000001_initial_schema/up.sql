@@ -1,4 +1,12 @@
-CREATE TABLE transactions (
+CREATE SEQUENCE IF NOT EXISTS transaction_id_seq START WITH 1;
+CREATE SEQUENCE IF NOT EXISTS artifact_id_seq START WITH 1;
+CREATE SEQUENCE IF NOT EXISTS import_batch_id_seq START WITH 1;
+CREATE SEQUENCE IF NOT EXISTS statement_line_id_seq START WITH 1;
+CREATE SEQUENCE IF NOT EXISTS fetch_run_id_seq START WITH 1;
+CREATE SEQUENCE IF NOT EXISTS reconciliation_run_id_seq START WITH 1;
+CREATE SEQUENCE IF NOT EXISTS month_close_id_seq START WITH 1;
+
+CREATE TABLE IF NOT EXISTS transactions (
     id TEXT PRIMARY KEY,
     description TEXT NOT NULL,
     effective_at_us BIGINT NOT NULL,
@@ -7,7 +15,7 @@ CREATE TABLE transactions (
     external_ref TEXT
 );
 
-CREATE TABLE postings (
+CREATE TABLE IF NOT EXISTS postings (
     transaction_id TEXT NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT,
     ordinal INTEGER NOT NULL,
     account TEXT NOT NULL,
@@ -15,21 +23,21 @@ CREATE TABLE postings (
     PRIMARY KEY (transaction_id, ordinal)
 );
 
-CREATE TABLE corrections (
+CREATE TABLE IF NOT EXISTS corrections (
     correction_id BIGSERIAL PRIMARY KEY,
     supersedes_txn_id TEXT NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT,
     reason TEXT NOT NULL,
     recorded_at_us BIGINT NOT NULL
 );
 
-CREATE TABLE budget_targets (
+CREATE TABLE IF NOT EXISTS budget_targets (
     month_key TEXT NOT NULL,
     expense_account_prefix TEXT NOT NULL,
     budget_cents BIGINT NOT NULL,
     PRIMARY KEY (month_key, expense_account_prefix)
 );
 
-CREATE TABLE analytics_artifact_manifests (
+CREATE TABLE IF NOT EXISTS analytics_artifact_manifests (
     artifact_id TEXT PRIMARY KEY,
     artifact_kind TEXT NOT NULL,
     artifact_uri TEXT NOT NULL,
@@ -43,7 +51,7 @@ CREATE TABLE analytics_artifact_manifests (
     snapshot_key TEXT NOT NULL UNIQUE
 );
 
-CREATE TABLE import_batches (
+CREATE TABLE IF NOT EXISTS import_batches (
     batch_id TEXT PRIMARY KEY,
     import_kind TEXT NOT NULL,
     source_uri TEXT NOT NULL,
@@ -55,14 +63,14 @@ CREATE TABLE import_batches (
     imported_at_us BIGINT NOT NULL
 );
 
-CREATE TABLE import_records (
+CREATE TABLE IF NOT EXISTS import_records (
     content_hash_key TEXT PRIMARY KEY,
     batch_id TEXT NOT NULL REFERENCES import_batches(batch_id) ON DELETE RESTRICT,
     imported_txn_id TEXT REFERENCES transactions(id) ON DELETE RESTRICT,
     imported_at_us BIGINT NOT NULL
 );
 
-CREATE TABLE statement_lines (
+CREATE TABLE IF NOT EXISTS statement_lines (
     line_id TEXT PRIMARY KEY,
     batch_id TEXT NOT NULL REFERENCES import_batches(batch_id) ON DELETE RESTRICT,
     source_uri TEXT NOT NULL,
@@ -73,7 +81,7 @@ CREATE TABLE statement_lines (
     imported_at_us BIGINT NOT NULL
 );
 
-CREATE TABLE fetch_runs (
+CREATE TABLE IF NOT EXISTS fetch_runs (
     run_id TEXT PRIMARY KEY,
     source_id TEXT NOT NULL,
     institution_id TEXT NOT NULL,
@@ -88,7 +96,7 @@ CREATE TABLE fetch_runs (
     created_at_us BIGINT NOT NULL
 );
 
-CREATE TABLE reconciliation_runs (
+CREATE TABLE IF NOT EXISTS reconciliation_runs (
     run_id TEXT PRIMARY KEY,
     month_key TEXT NOT NULL,
     checking_account TEXT NOT NULL,
@@ -105,19 +113,19 @@ CREATE TABLE reconciliation_runs (
     created_at_us BIGINT NOT NULL
 );
 
-CREATE TABLE reconciliation_run_transactions (
+CREATE TABLE IF NOT EXISTS reconciliation_run_transactions (
     run_id TEXT NOT NULL REFERENCES reconciliation_runs(run_id) ON DELETE CASCADE,
     transaction_id TEXT NOT NULL REFERENCES transactions(id) ON DELETE RESTRICT,
     PRIMARY KEY (run_id, transaction_id)
 );
 
-CREATE TABLE reconciliation_run_statement_lines (
+CREATE TABLE IF NOT EXISTS reconciliation_run_statement_lines (
     run_id TEXT NOT NULL REFERENCES reconciliation_runs(run_id) ON DELETE CASCADE,
     statement_line_id TEXT NOT NULL REFERENCES statement_lines(line_id) ON DELETE RESTRICT,
     PRIMARY KEY (run_id, statement_line_id)
 );
 
-CREATE TABLE month_closes (
+CREATE TABLE IF NOT EXISTS month_closes (
     close_id TEXT PRIMARY KEY,
     month_key TEXT NOT NULL,
     checking_account TEXT NOT NULL,
@@ -127,26 +135,26 @@ CREATE TABLE month_closes (
     UNIQUE (month_key, checking_account)
 );
 
-CREATE INDEX idx_transactions_effective_recorded
+CREATE INDEX IF NOT EXISTS idx_transactions_effective_recorded
     ON transactions (effective_at_us, recorded_at_us);
 
-CREATE INDEX idx_postings_account_transaction
+CREATE INDEX IF NOT EXISTS idx_postings_account_transaction
     ON postings (account, transaction_id);
 
-CREATE INDEX idx_corrections_supersedes
+CREATE INDEX IF NOT EXISTS idx_corrections_supersedes
     ON corrections (supersedes_txn_id);
 
-CREATE INDEX idx_import_records_batch
+CREATE INDEX IF NOT EXISTS idx_import_records_batch
     ON import_records (batch_id);
 
-CREATE INDEX idx_statement_lines_batch
+CREATE INDEX IF NOT EXISTS idx_statement_lines_batch
     ON statement_lines (batch_id);
 
-CREATE INDEX idx_fetch_runs_scope
+CREATE INDEX IF NOT EXISTS idx_fetch_runs_scope
     ON fetch_runs (month_key, ledger_account, created_at_us);
 
-CREATE INDEX idx_reconciliation_runs_scope
+CREATE INDEX IF NOT EXISTS idx_reconciliation_runs_scope
     ON reconciliation_runs (month_key, checking_account, created_at_us);
 
-CREATE INDEX idx_month_closes_scope
+CREATE INDEX IF NOT EXISTS idx_month_closes_scope
     ON month_closes (month_key, checking_account);

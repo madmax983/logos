@@ -6,11 +6,12 @@ Forward-looking personal finance CLI/TUI with strict double-entry, budget envelo
 
 Implemented foundations:
 
-- workspace crate boundaries (`logos-core`, `logos-cli`, `logos-import`, `logos-store-aletheia`, `logos-reporting`, `logos-tui`)
+- workspace crate boundaries (`logos-core`, `logos-cli`, `logos-import`, `logos-store`, `logos-store-pg`, `logos-reporting`, `logos-tui`)
 - strict transaction balancing and correction semantics in `logos-core`
 - budget rollover and RSU policy invariants in `logos-core`
 - deterministic CSV fingerprint dedupe in `logos-import`
-- embedded durable Aletheia adapter contract in `logos-store-aletheia`
+- storage-neutral store contract in `logos-store`
+- Postgres + Diesel persistence adapter in `logos-store-pg`
 - core projections in `logos-reporting`
 - read-only TUI app/view skeleton in `logos-tui`
 - Verus spine proofs in `logos-proof` (transactions, corrections, budgets, RSU policy, import dedupe/idempotence)
@@ -26,8 +27,8 @@ Run from repository root:
 
 ```sh
 cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --offline -- -D warnings
-cargo test --workspace --offline
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
 ```
 
 Verus proofs:
@@ -43,8 +44,14 @@ Verus proofs:
 ## Example Commands
 
 ```sh
-# Optional: override local embedded DB path (default is ~/.logos/ledger or %USERPROFILE%\.logos\ledger)
-export LOGOS_DB_PATH="/path/to/logos/.data/ledger"
+# Required: point logos at Postgres
+export DATABASE_URL="postgres://logos:logos@127.0.0.1:5432/logos"
+
+# Optional local convenience database
+docker compose up -d db
+
+# Apply explicit migrations
+cargo run -p logos-cli -- db migrate
 
 cargo run -p logos-cli -- txn add --description "paycheck" --debit-account "assets:checking" --credit-account "income:salary" --amount-cents 100000
 cargo run -p logos-cli -- budget set --month 2026-03 --budget-cents 300000 --expense-account-prefix "expenses:"
@@ -52,37 +59,16 @@ cargo run -p logos-cli -- report month --month 2026-03 --checking-account "asset
 cargo run -p logos-tui
 ```
 
-`budget set` persists month-scoped targets in the embedded store. `report month` is month-windowed using transaction effective time.
+`budget set` persists month-scoped targets in Postgres. `report month` is month-windowed using transaction effective time.
 
-## Embedded Persistence + History
+## Postgres Persistence + History
 
-- Storage is local and in-process by default; no HTTP server is required for normal CLI usage.
-- Writes are append-only journal entities with correction links in `logos-store-aletheia`.
-- Historical reads are available via history APIs (`valid_time`, `tx_time`) such as:
-  - `AletheiaStore::transactions_as_of(valid_time, tx_time)`
+- Postgres is the primary and only production storage backend.
+- Journal writes are append-only with correction links.
+- Historical reads use ledger `effective_at` plus `recorded_at` timestamps rather than full-database temporal storage.
+- Runtime startup fails fast when pending migrations exist; run `ledger db migrate` explicitly.
 
 ### Backup / Restore Basics
 
-- Stop writer processes before taking a filesystem backup of your ledger directory.
-- Backup the directory configured by `LOGOS_DB_PATH` (or the default profile path).
-- Restore by replacing that directory and starting the CLI again.
-
-## Run Local AletheiaDB
-
-Use the CLI helper to launch and check a real local `aletheia-server` instance when you want HTTP integration/testing. This is optional for local CLI persistence.
-
-```sh
-# Optional if your checkout is not at /path/to/gallifreydb
-export ALETHEIADB_MANIFEST_PATH="/path/to/gallifreydb/Cargo.toml"
-
-# Start server (foreground)
-cargo run -p logos-cli -- aletheia start
-
-# In a second terminal, check health
-cargo run -p logos-cli -- aletheia status
-```
-
-Health checks use:
-
-- `GALLIFREYDB_HOST` (default: `127.0.0.1`, with `0.0.0.0` normalized to localhost)
-- `GALLIFREYDB_PORT` (default: `8080`)
+- Use normal Postgres backup/restore practice (`pg_dump`, physical backups, managed snapshots, or equivalent).
+- Back up artifact files separately when using local parquet analytics output.

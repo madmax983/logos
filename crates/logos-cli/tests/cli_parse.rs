@@ -1088,33 +1088,41 @@ fn rejects_close_month_without_run_id() {
 }
 
 #[test]
-fn parses_aletheia_start_command() {
-    let args = vec!["ledger", "aletheia", "start"];
+fn parses_db_migrate_command() {
+    let args = vec!["ledger", "db", "migrate"];
     let parsed = logos_cli::parse_args(args).expect("parse");
 
-    assert_eq!(parsed.command_path(), "aletheia.start");
+    assert_eq!(parsed.command_path(), "db.migrate");
 }
 
 #[test]
-fn parses_aletheia_status_command() {
+fn parses_db_status_command() {
+    let args = vec!["ledger", "db", "status"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "db.status");
+}
+
+#[test]
+fn parses_db_help_flag() {
+    let args = vec!["ledger", "db", "--help"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "help.db");
+}
+
+#[test]
+fn parses_help_for_db_subcommand() {
+    let args = vec!["ledger", "help", "db"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+
+    assert_eq!(parsed.command_path(), "help.db");
+}
+
+#[test]
+fn rejects_aletheia_command_after_cutover() {
     let args = vec!["ledger", "aletheia", "status"];
-    let parsed = logos_cli::parse_args(args).expect("parse");
+    let err = logos_cli::parse_args(args).expect_err("aletheia must be gone");
 
-    assert_eq!(parsed.command_path(), "aletheia.status");
-}
-
-#[test]
-fn parses_aletheia_help_flag() {
-    let args = vec!["ledger", "aletheia", "--help"];
-    let parsed = logos_cli::parse_args(args).expect("parse");
-
-    assert_eq!(parsed.command_path(), "help.aletheia");
-}
-
-#[test]
-fn parses_help_for_aletheia_subcommand() {
-    let args = vec!["ledger", "help", "aletheia"];
-    let parsed = logos_cli::parse_args(args).expect("parse");
-
-    assert_eq!(parsed.command_path(), "help.aletheia");
+    assert_eq!(err.to_string(), "unknown command 'aletheia'");
 }

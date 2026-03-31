@@ -4,6 +4,11 @@ use logos_store_pg::{MIGRATIONS, schema};
 fn migration_sql_mentions_core_tables() {
     let up_sql = include_str!("../migrations/00000000000001_initial_schema/up.sql");
 
+    assert!(
+        up_sql.contains("CREATE SEQUENCE IF NOT EXISTS transaction_id_seq"),
+        "expected migration to create transaction id sequence"
+    );
+
     for table in [
         "transactions",
         "postings",
@@ -20,7 +25,7 @@ fn migration_sql_mentions_core_tables() {
         "month_closes",
     ] {
         assert!(
-            up_sql.contains(&format!("CREATE TABLE {table}")),
+            up_sql.contains(&format!("CREATE TABLE IF NOT EXISTS {table}")),
             "expected migration to create table '{table}'"
         );
     }

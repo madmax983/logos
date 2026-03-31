@@ -29,6 +29,7 @@ use logos_reporting::{
     project_cashflow, project_register_balance, project_rsu_budget_plan,
 };
 use logos_store::{
+    MemoryStore,
     error::StoreError,
     model::{
         NewImportRecord, StoredAnalyticsArtifactManifest, StoredFetchArtifactFormat,
@@ -37,7 +38,7 @@ use logos_store::{
     },
     traits::LedgerStore,
 };
-use logos_store_aletheia::AletheiaStore;
+use logos_store_pg::PostgresStore;
 use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
 use std::collections::HashSet;
 use std::env;
@@ -51,18 +52,17 @@ use crate::models::{
     MonthReport, PdfImportSummary,
 };
 
-const LOGOS_DB_PATH_ENV: &str = "LOGOS_DB_PATH";
+const DATABASE_URL_ENV: &str = "DATABASE_URL";
 const LOGOS_ARTIFACTS_PATH_ENV: &str = "LOGOS_ARTIFACTS_PATH";
 const LOGOS_FETCH_CONFIG_PATH_ENV: &str = "LOGOS_FETCH_CONFIG_PATH";
-const DEFAULT_DB_DIRECTORY: &str = ".logos";
-const DEFAULT_DB_NAME: &str = "ledger";
+const DEFAULT_STATE_DIRECTORY: &str = ".logos";
 const DEFAULT_FETCH_CONFIG_NAME: &str = "statement-sources.toml";
 const ARTIFACTS_DIRECTORY: &str = "artifacts";
 const PARQUET_DIRECTORY: &str = "parquet";
 const DEFAULT_ANALYTICS_SCHEMA_VERSION: i64 = 1;
 
 #[derive(Debug)]
-pub struct AppRuntime<S = AletheiaStore> {
+pub struct AppRuntime<S = PostgresStore> {
     store: S,
     imported_records: usize,
     artifacts_root: PathBuf,
@@ -87,67 +87,51 @@ impl<S> AppRuntime<S> {
     }
 }
 
-impl Default for AppRuntime<AletheiaStore> {
-    fn default() -> Self {
-        let default_store_path = Self::default_store_path();
-        Self::with_store(
-            AletheiaStore::new_in_memory(),
-            default_artifacts_root(&default_store_path),
-            None,
-        )
-    }
-}
-
-impl AppRuntime<AletheiaStore> {
-    /// Creates a runtime backed by the default durable store path.
+impl AppRuntime<PostgresStore> {
+    /// Creates a runtime backed by the configured Postgres database.
     ///
-    /// `LOGOS_DB_PATH` overrides the location. Otherwise, the path defaults to:
-    /// - `${HOME}/.logos/ledger` on Unix-like systems
-    /// - `%USERPROFILE%\\.logos\\ledger` on Windows
-    /// - `./.logos/ledger` when no home directory is available
+    /// `DATABASE_URL` is required. Runtime initialization fails fast when pending
+    /// Diesel migrations exist so schema changes remain explicit via `ledger db migrate`.
     ///
     /// # Errors
     ///
-    /// Returns an error when opening the embedded store fails.
+    /// Returns an error when the database URL is missing, the database connection fails,
+    /// or pending migrations exist.
     pub fn new() -> Result<Self, RuntimeError> {
-        Self::open(Self::default_store_path())
+        let database_url =
+            env::var(DATABASE_URL_ENV).map_err(|_| RuntimeError::Initialization {
+                message: format!("{DATABASE_URL_ENV} is not set"),
+            })?;
+        Self::open(&database_url)
     }
 
-    /// Creates a runtime pinned to a specific durable store path.
+    /// Creates a runtime pinned to an explicit Postgres connection string.
     ///
     /// # Errors
     ///
-    /// Returns an error when opening the embedded store fails.
-    pub fn open(path: impl AsRef<Path>) -> Result<Self, RuntimeError> {
-        let store_path = path.as_ref().to_path_buf();
+    /// Returns an error when connecting to Postgres fails or pending migrations exist.
+    pub fn open(database_url: &str) -> Result<Self, RuntimeError> {
+        let mut store = PostgresStore::connect(database_url)?;
+        let pending = store.pending_migrations()?;
+        if !pending.is_empty() {
+            let joined = pending.join(", ");
+            return Err(RuntimeError::Initialization {
+                message: format!(
+                    "pending database migrations detected ({joined}); run `ledger db migrate`"
+                ),
+            });
+        }
+        let state_root = default_state_root();
         Ok(Self::with_store(
-            AletheiaStore::open(&store_path).map_err(StoreError::from)?,
-            default_artifacts_root(&store_path),
-            Some(default_fetch_config_path(&store_path)),
+            store,
+            default_artifacts_root(&state_root),
+            Some(default_fetch_config_path(&state_root)),
         ))
     }
 
     #[must_use]
-    pub fn new_in_memory() -> Self {
-        Self::default()
-    }
-
-    #[must_use]
-    pub fn default_store_path() -> PathBuf {
-        if let Some(path) = env::var_os(LOGOS_DB_PATH_ENV) {
-            return PathBuf::from(path);
-        }
-
-        if let Some(home) = env::var_os("HOME").or_else(|| env::var_os("USERPROFILE")) {
-            return PathBuf::from(home)
-                .join(DEFAULT_DB_DIRECTORY)
-                .join(DEFAULT_DB_NAME);
-        }
-
-        env::current_dir()
-            .unwrap_or_else(|_| PathBuf::from("."))
-            .join(DEFAULT_DB_DIRECTORY)
-            .join(DEFAULT_DB_NAME)
+    pub fn default_state_root() -> PathBuf {
+        default_state_root()
     }
 
     #[must_use]
@@ -196,6 +180,18 @@ impl AppRuntime<AletheiaStore> {
                 .resolve(source)
                 .map_err(|err| fetch_error_to_runtime(&err)),
         }
+    }
+}
+
+impl AppRuntime<MemoryStore> {
+    #[must_use]
+    pub fn new_in_memory() -> Self {
+        let state_root = default_state_root();
+        Self::with_store(
+            MemoryStore::new_in_memory(),
+            default_artifacts_root(&state_root),
+            Some(default_fetch_config_path(&state_root)),
+        )
     }
 }
 
@@ -714,7 +710,7 @@ impl<S: LedgerStore> AppRuntime<S> {
                     continue;
                 }
             };
-            let secrets = match AppRuntime::<AletheiaStore>::secret_bundle_for_fetch_source(&source)
+            let secrets = match AppRuntime::<PostgresStore>::secret_bundle_for_fetch_source(&source)
             {
                 Ok(secrets) => secrets,
                 Err(err) => {
@@ -1241,7 +1237,7 @@ impl<S: LedgerStore> AppRuntime<S> {
         self.store.statement_lines_for_reconciliation_run(run_id)
     }
 
-    /// Creates an immutable Parquet analytics snapshot and records its manifest in Aletheia.
+    /// Creates an immutable Parquet analytics snapshot and records its manifest in the store.
     ///
     /// # Errors
     ///
@@ -1447,26 +1443,30 @@ fn import_batch_key(
     hasher.finalize().to_hex().to_string()
 }
 
-fn default_artifacts_root(store_path: &Path) -> PathBuf {
+fn default_artifacts_root(state_root: &Path) -> PathBuf {
     if let Some(path) = env::var_os(LOGOS_ARTIFACTS_PATH_ENV) {
         return PathBuf::from(path);
     }
 
-    store_path.parent().map_or_else(
-        || store_path.join(ARTIFACTS_DIRECTORY),
-        |parent| parent.join(ARTIFACTS_DIRECTORY),
-    )
+    state_root.join(ARTIFACTS_DIRECTORY)
 }
 
-fn default_fetch_config_path(store_path: &Path) -> PathBuf {
+fn default_fetch_config_path(state_root: &Path) -> PathBuf {
     if let Some(path) = env::var_os(LOGOS_FETCH_CONFIG_PATH_ENV) {
         return PathBuf::from(path);
     }
 
-    store_path.parent().map_or_else(
-        || store_path.join(DEFAULT_FETCH_CONFIG_NAME),
-        |parent| parent.join(DEFAULT_FETCH_CONFIG_NAME),
-    )
+    state_root.join(DEFAULT_FETCH_CONFIG_NAME)
+}
+
+fn default_state_root() -> PathBuf {
+    if let Some(home) = env::var_os("HOME").or_else(|| env::var_os("USERPROFILE")) {
+        return PathBuf::from(home).join(DEFAULT_STATE_DIRECTORY);
+    }
+
+    env::current_dir()
+        .unwrap_or_else(|_| PathBuf::from("."))
+        .join(DEFAULT_STATE_DIRECTORY)
 }
 
 fn fetch_error_to_runtime(err: &logos_fetch::FetchError) -> RuntimeError {
@@ -1697,7 +1697,6 @@ mod tests {
 
     #[test]
     fn fake_fetch_sources_bypass_external_secret_resolution() {
-        let _runtime = AppRuntime::new_in_memory();
         let source = StatementSource::new(
             "fixture:checking",
             "fake-fixture",
@@ -1720,7 +1719,6 @@ mod tests {
 
     #[test]
     fn real_fetch_sources_use_external_secret_resolution() {
-        let _runtime = AppRuntime::new_in_memory();
         let source = StatementSource::new(
             "pcu:checking",
             "provident-credit-union",

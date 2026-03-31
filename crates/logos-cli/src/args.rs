@@ -16,8 +16,6 @@ pub enum CliError {
     InvalidArgValue { flag: String, value: String },
     MissingTxnDescription,
     CommandRuntimeFailed { command: String, message: String },
-    AletheiaStartFailed { message: String },
-    AletheiaStatusFailed { endpoint: String, message: String },
 }
 
 impl fmt::Display for CliError {
@@ -42,12 +40,6 @@ impl fmt::Display for CliError {
             Self::MissingTxnDescription => write!(f, "missing transaction description"),
             Self::CommandRuntimeFailed { command, message } => {
                 write!(f, "command '{command}' failed at runtime: {message}")
-            }
-            Self::AletheiaStartFailed { message } => {
-                write!(f, "failed to start aletheia server: {message}")
-            }
-            Self::AletheiaStatusFailed { endpoint, message } => {
-                write!(f, "failed status check at '{endpoint}': {message}")
             }
         }
     }
@@ -84,7 +76,7 @@ impl ParsedArgs {
 fn execute_command(command: &Command) -> Result<(), CliError> {
     match command {
         Command::Help(topic) => commands::help::show(*topic),
-        Command::Aletheia(command) => execute_aletheia_command(*command),
+        Command::Db(command) => execute_db_command(*command),
         Command::Txn(command) => execute_txn_command(command),
         Command::Analytics(command) => execute_analytics_command(command),
         Command::Import(command) => execute_import_command(command),
@@ -97,10 +89,10 @@ fn execute_command(command: &Command) -> Result<(), CliError> {
     }
 }
 
-fn execute_aletheia_command(command: AletheiaCommand) -> Result<(), CliError> {
+fn execute_db_command(command: DbCommand) -> Result<(), CliError> {
     match command {
-        AletheiaCommand::Start => commands::aletheia::start(),
-        AletheiaCommand::Status => commands::aletheia::status(),
+        DbCommand::Migrate => commands::db::migrate(),
+        DbCommand::Status => commands::db::status(),
     }
 }
 
@@ -354,7 +346,7 @@ fn parse_optional_month_flag(args: &[String], flag: &str) -> Result<Option<Strin
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     Help(HelpTopic),
-    Aletheia(AletheiaCommand),
+    Db(DbCommand),
     Txn(TxnCommand),
     Analytics(AnalyticsCommand),
     Import(ImportCommand),
@@ -374,15 +366,15 @@ impl Command {
             Self::Help(HelpTopic::Txn) => "help.txn",
             Self::Help(HelpTopic::Budget) => "help.budget",
             Self::Help(HelpTopic::Report) => "help.report",
-            Self::Help(HelpTopic::Aletheia) => "help.aletheia",
+            Self::Help(HelpTopic::Db) => "help.db",
             Self::Help(HelpTopic::Analytics) => "help.analytics",
             Self::Help(HelpTopic::Import) => "help.import",
             Self::Help(HelpTopic::Fetch) => "help.fetch",
             Self::Help(HelpTopic::Reconcile) => "help.reconcile",
             Self::Help(HelpTopic::Month) => "help.month",
             Self::Help(HelpTopic::Close) => "help.close",
-            Self::Aletheia(AletheiaCommand::Start) => "aletheia.start",
-            Self::Aletheia(AletheiaCommand::Status) => "aletheia.status",
+            Self::Db(DbCommand::Migrate) => "db.migrate",
+            Self::Db(DbCommand::Status) => "db.status",
             Self::Txn(TxnCommand::Add { .. }) => "txn.add",
             Self::Txn(TxnCommand::Correct { .. }) => "txn.correct",
             Self::Analytics(AnalyticsCommand::SnapshotCreate { .. }) => "analytics.snapshot.create",
@@ -414,7 +406,7 @@ pub enum HelpTopic {
     Analytics,
     Budget,
     Report,
-    Aletheia,
+    Db,
     Import,
     Fetch,
     Reconcile,
@@ -423,8 +415,8 @@ pub enum HelpTopic {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AletheiaCommand {
-    Start,
+pub enum DbCommand {
+    Migrate,
     Status,
 }
 
@@ -593,7 +585,7 @@ where
         "--help" | "-h" | "help" => Ok(ParsedArgs {
             command: Command::Help(parse_help_topic(&values)?),
         }),
-        "aletheia" => parse_aletheia(&values),
+        "db" => parse_db(&values),
         "txn" => parse_txn(&values),
         "analytics" => parse_analytics(&values),
         "import" => parse_import(&values),
@@ -1124,29 +1116,29 @@ fn parse_close(args: &[String]) -> Result<ParsedArgs, CliError> {
     }
 }
 
-fn parse_aletheia(args: &[String]) -> Result<ParsedArgs, CliError> {
+fn parse_db(args: &[String]) -> Result<ParsedArgs, CliError> {
     if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
         return Ok(ParsedArgs {
-            command: Command::Help(HelpTopic::Aletheia),
+            command: Command::Help(HelpTopic::Db),
         });
     }
 
     let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
-        command: "aletheia".to_owned(),
+        command: "db".to_owned(),
     })?;
 
     match subcommand.as_str() {
         "--help" | "-h" => Ok(ParsedArgs {
-            command: Command::Help(HelpTopic::Aletheia),
+            command: Command::Help(HelpTopic::Db),
         }),
-        "start" => Ok(ParsedArgs {
-            command: Command::Aletheia(AletheiaCommand::Start),
+        "migrate" => Ok(ParsedArgs {
+            command: Command::Db(DbCommand::Migrate),
         }),
         "status" => Ok(ParsedArgs {
-            command: Command::Aletheia(AletheiaCommand::Status),
+            command: Command::Db(DbCommand::Status),
         }),
         _ => Err(CliError::UnknownSubcommand {
-            command: "aletheia".to_owned(),
+            command: "db".to_owned(),
             subcommand: subcommand.clone(),
         }),
     }
@@ -1159,7 +1151,7 @@ fn parse_help_topic(args: &[String]) -> Result<HelpTopic, CliError> {
         Some("analytics") => Ok(HelpTopic::Analytics),
         Some("budget") => Ok(HelpTopic::Budget),
         Some("report") => Ok(HelpTopic::Report),
-        Some("aletheia") => Ok(HelpTopic::Aletheia),
+        Some("db") => Ok(HelpTopic::Db),
         Some("import") => Ok(HelpTopic::Import),
         Some("fetch") => Ok(HelpTopic::Fetch),
         Some("reconcile") => Ok(HelpTopic::Reconcile),

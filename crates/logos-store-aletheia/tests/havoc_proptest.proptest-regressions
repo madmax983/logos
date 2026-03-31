@@ -1,7 +1,0 @@
-# Seeds for failure cases proptest has generated in the past. It is
-# automatically read and these particular cases re-run before any
-# novel cases are generated.
-#
-# It is recommended to check this file in to source control so that
-# everyone who runs the test benefits from these saved cases.
-cc 8170baf2c4096b83567fc848718b9e46dd469252ba7a2981ae2d550d406ff01a # shrinks to month_key = "0", checking_account = "0", matched_postings = 0, outflow_cents = -2
