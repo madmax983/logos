@@ -7,6 +7,8 @@ use logos_fetch::{FetchedStatementArtifact, OutputFormat};
 use logos_import::CsvMapping;
 use logos_runtime::{AppRuntime, MonthAutopilotRequest};
 use logos_store::model::StoredFetchRunStatus;
+use logos_store_pg::PostgresStore;
+use testcontainers_modules::{postgres, testcontainers::runners::SyncRunner};
 
 fn temp_runtime_path(prefix: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -14,6 +16,14 @@ fn temp_runtime_path(prefix: &str) -> PathBuf {
         .expect("clock")
         .as_nanos();
     std::env::temp_dir().join(format!("logos-cli-runtime-{prefix}-{nanos}.db"))
+}
+
+fn temp_state_root(prefix: &str) -> PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    std::env::temp_dir().join(format!("logos-cli-state-{prefix}-{nanos}"))
 }
 
 fn cleanup_runtime_path(path: &Path) {
@@ -26,6 +36,42 @@ fn cleanup_file(path: &Path) {
     if path.exists() {
         let _ = std::fs::remove_file(path);
     }
+}
+
+struct PostgresTestContext {
+    _container: testcontainers_modules::testcontainers::Container<postgres::Postgres>,
+    database_url: String,
+    state_root: PathBuf,
+}
+
+fn postgres_test_context(prefix: &str) -> PostgresTestContext {
+    let container = postgres::Postgres::default()
+        .start()
+        .expect("start postgres container");
+    let host = container.get_host().expect("container host");
+    let port = container.get_host_port_ipv4(5432).expect("postgres port");
+    let database_url = format!("postgres://postgres:postgres@{host}:{port}/postgres");
+    let state_root = temp_state_root(prefix);
+    std::fs::create_dir_all(state_root.join("artifacts")).expect("create state root");
+
+    let mut store = PostgresStore::connect(&database_url).expect("connect postgres store");
+    store.run_migrations().expect("run migrations");
+
+    PostgresTestContext {
+        _container: container,
+        database_url,
+        state_root,
+    }
+}
+
+fn open_postgres_runtime(context: &PostgresTestContext) -> AppRuntime<PostgresStore> {
+    let mut store = PostgresStore::connect(&context.database_url).expect("connect postgres store");
+    store.run_migrations().expect("run migrations");
+    AppRuntime::with_store(
+        store,
+        context.state_root.join("artifacts"),
+        Some(context.state_root.join("statement-sources.toml")),
+    )
 }
 
 fn timestamp_micros(iso8601: &str) -> i64 {
@@ -65,13 +111,14 @@ fn e2e_import_is_idempotent_by_fingerprint() {
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_import_csv_idempotency_persists_across_reopen() {
-    let path = temp_runtime_path("csv-reopen-idempotency");
+    let context = postgres_test_context("csv-reopen-idempotency");
     let mapping = CsvMapping::default();
     let line = "2026-02-01T09:30:00,12345,RSU sale,assets:checking,income:rsu";
 
     {
-        let mut runtime = AppRuntime::open(&path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         let inserted = runtime
             .import_csv_row(line, &mapping)
             .expect("first import");
@@ -79,32 +126,33 @@ fn e2e_import_csv_idempotency_persists_across_reopen() {
     }
 
     {
-        let mut reopened = AppRuntime::open(&path).expect("reopen");
+        let mut reopened = open_postgres_runtime(&context);
         let inserted = reopened
             .import_csv_row(line, &mapping)
             .expect("second import");
         assert!(!inserted);
     }
 
-    cleanup_runtime_path(&path);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_reopen_restores_persisted_transactions() {
-    let path = temp_runtime_path("reopen");
+    let context = postgres_test_context("reopen");
     {
-        let mut runtime = AppRuntime::open(&path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         let txn_id = runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
             .expect("post");
         assert!(runtime.transaction_exists(&txn_id));
     }
 
-    let reopened = AppRuntime::open(&path).expect("reopen");
+    let reopened = open_postgres_runtime(&context);
     assert!(reopened.transaction_exists(&TransactionId::new("txn-1").expect("id")));
     assert_eq!(reopened.register_balance_for("assets:checking"), 10_000);
 
-    cleanup_runtime_path(&path);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
@@ -179,12 +227,13 @@ fn e2e_runtime_reconcile_month_computes_match_and_variance() {
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_reconciliation_run_persists_and_run_ids_continue_after_reopen() {
-    let path = temp_runtime_path("reconcile-reopen");
+    let context = postgres_test_context("reconcile-reopen");
     let month_key = AppRuntime::current_month_key_utc();
 
     {
-        let mut runtime = AppRuntime::open(&path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
             .expect("post income");
@@ -211,7 +260,7 @@ fn e2e_runtime_reconciliation_run_persists_and_run_ids_continue_after_reopen() {
     }
 
     {
-        let mut reopened = AppRuntime::open(&path).expect("reopen");
+        let mut reopened = open_postgres_runtime(&context);
         assert_eq!(reopened.reconciliation_run_count(), 1);
         assert_eq!(
             reopened
@@ -229,14 +278,15 @@ fn e2e_runtime_reconciliation_run_persists_and_run_ids_continue_after_reopen() {
         assert_eq!(reopened.reconciliation_run_count(), 2);
     }
 
-    cleanup_runtime_path(&path);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_reconcile_list_filters_and_sorts_latest_first() {
-    let path = temp_runtime_path("reconcile-list");
+    let context = postgres_test_context("reconcile-list");
     {
-        let mut runtime = AppRuntime::open(&path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         let month_key = AppRuntime::current_month_key_utc();
         runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
@@ -260,17 +310,18 @@ fn e2e_runtime_reconcile_list_filters_and_sorts_latest_first() {
         assert!(no_match.is_empty());
     }
 
-    cleanup_runtime_path(&path);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_month_close_persists_and_blocks_duplicate_scope_close() {
-    let path = temp_runtime_path("month-close");
+    let context = postgres_test_context("month-close");
     let month_key = AppRuntime::current_month_key_utc();
     let run_id;
 
     {
-        let mut runtime = AppRuntime::open(&path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
             .expect("post");
@@ -292,7 +343,7 @@ fn e2e_runtime_month_close_persists_and_blocks_duplicate_scope_close() {
     }
 
     {
-        let reopened = AppRuntime::open(&path).expect("reopen");
+        let reopened = open_postgres_runtime(&context);
         let close = reopened
             .month_close_for_scope(&month_key, "assets:checking")
             .expect("reloaded close");
@@ -300,12 +351,13 @@ fn e2e_runtime_month_close_persists_and_blocks_duplicate_scope_close() {
         assert_eq!(close.month_key(), month_key);
     }
 
-    cleanup_runtime_path(&path);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
-    let path = temp_runtime_path("month-autopilot");
+    let context = postgres_test_context("month-autopilot");
     let statement_path = temp_runtime_path("month-autopilot-statement")
         .with_extension("pdf")
         .to_string_lossy()
@@ -317,7 +369,7 @@ fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
     .expect("write statement");
 
     {
-        let mut runtime = AppRuntime::open(&path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         let request = MonthAutopilotRequest::new("2026-02", "assets:checking")
             .with_balances(100_000, 198_766)
             .with_statement_pdf(&statement_path)
@@ -339,7 +391,7 @@ fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
     }
 
     {
-        let reopened = AppRuntime::open(&path).expect("reopen");
+        let reopened = open_postgres_runtime(&context);
         assert_eq!(reopened.reconciliation_run_count(), 1);
         assert!(
             reopened
@@ -349,12 +401,13 @@ fn e2e_runtime_month_autopilot_runs_import_reconcile_report_and_close() {
     }
 
     cleanup_file(Path::new(&statement_path));
-    cleanup_runtime_path(&path);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_month_autopilot_uses_fetched_statement_metadata_when_balances_are_absent() {
-    let path = temp_runtime_path("month-autopilot-fetched-balances");
+    let context = postgres_test_context("month-autopilot-fetched-balances");
     let statement_path = temp_runtime_path("month-autopilot-fetched-balances-statement")
         .with_extension("pdf")
         .to_string_lossy()
@@ -366,7 +419,7 @@ fn e2e_runtime_month_autopilot_uses_fetched_statement_metadata_when_balances_are
     .expect("write statement");
 
     {
-        let mut runtime = AppRuntime::open(&path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         runtime.stage_fetched_statement_artifact(
             FetchedStatementArtifact::new(
                 "pcu:checking",
@@ -392,15 +445,14 @@ fn e2e_runtime_month_autopilot_uses_fetched_statement_metadata_when_balances_are
     }
 
     cleanup_file(Path::new(&statement_path));
-    cleanup_runtime_path(&path);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_month_autopilot_loads_fetch_source_config_and_fetches_before_reconcile() {
-    let root = temp_runtime_path("month-autopilot-fetch-config");
-    let ledger_path = root.join("ledger");
-    let config_path = root.join("statement-sources.toml");
-    std::fs::create_dir_all(&root).expect("create runtime root");
+    let context = postgres_test_context("month-autopilot-fetch-config");
+    let config_path = context.state_root.join("statement-sources.toml");
     std::fs::write(
         &config_path,
         r#"
@@ -417,7 +469,7 @@ fn e2e_runtime_month_autopilot_loads_fetch_source_config_and_fetches_before_reco
     .expect("write fetch config");
 
     {
-        let mut runtime = AppRuntime::open(&ledger_path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         let request =
             MonthAutopilotRequest::new("2026-02", "assets:checking").with_confirm_close(true);
         let summary = runtime
@@ -439,7 +491,7 @@ fn e2e_runtime_month_autopilot_loads_fetch_source_config_and_fetches_before_reco
     }
 
     {
-        let reopened = AppRuntime::open(&ledger_path).expect("reopen");
+        let reopened = open_postgres_runtime(&context);
         let fetch_runs = reopened.list_fetch_runs(Some("2026-02"), Some("assets:checking"));
         assert_eq!(fetch_runs.len(), 1);
         assert_eq!(fetch_runs[0].run_id(), "fetch-1");
@@ -452,15 +504,14 @@ fn e2e_runtime_month_autopilot_loads_fetch_source_config_and_fetches_before_reco
         );
     }
 
-    cleanup_runtime_path(&root);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_month_autopilot_with_explicit_balances_ignores_broken_fetch_config() {
-    let root = temp_runtime_path("month-autopilot-manual-balances");
-    let ledger_path = root.join("ledger");
-    let config_path = root.join("statement-sources.toml");
-    std::fs::create_dir_all(&root).expect("create runtime root");
+    let context = postgres_test_context("month-autopilot-manual-balances");
+    let config_path = context.state_root.join("statement-sources.toml");
     std::fs::write(
         &config_path,
         r#"
@@ -476,7 +527,7 @@ password_secret_ref = "op://logos/m1/password"
     .expect("write fetch config");
 
     {
-        let mut runtime = AppRuntime::open(&ledger_path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         let request = MonthAutopilotRequest::new("2026-02", "assets:checking")
             .with_balances(100_000, 100_000)
             .with_confirm_close(true);
@@ -492,7 +543,7 @@ password_secret_ref = "op://logos/m1/password"
     }
 
     {
-        let reopened = AppRuntime::open(&ledger_path).expect("reopen");
+        let reopened = open_postgres_runtime(&context);
         assert!(
             reopened
                 .list_fetch_runs(Some("2026-02"), Some("assets:checking"))
@@ -500,15 +551,14 @@ password_secret_ref = "op://logos/m1/password"
         );
     }
 
-    cleanup_runtime_path(&root);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_month_autopilot_marks_partial_fetch_failure_as_needs_attention() {
-    let root = temp_runtime_path("month-autopilot-partial-fetch");
-    let ledger_path = root.join("ledger");
-    let config_path = root.join("statement-sources.toml");
-    std::fs::create_dir_all(&root).expect("create runtime root");
+    let context = postgres_test_context("month-autopilot-partial-fetch");
+    let config_path = context.state_root.join("statement-sources.toml");
     std::fs::write(
         &config_path,
         r#"
@@ -534,7 +584,7 @@ totp_secret_ref = "op://logos/m1/totp"
     .expect("write fetch config");
 
     {
-        let mut runtime = AppRuntime::open(&ledger_path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         let request =
             MonthAutopilotRequest::new("2026-02", "assets:checking").with_confirm_close(true);
         let summary = runtime
@@ -567,7 +617,7 @@ totp_secret_ref = "op://logos/m1/totp"
     }
 
     {
-        let reopened = AppRuntime::open(&ledger_path).expect("reopen");
+        let reopened = open_postgres_runtime(&context);
         let fetch_runs = reopened.list_fetch_runs(Some("2026-02"), Some("assets:checking"));
         assert_eq!(fetch_runs.len(), 2);
         assert!(
@@ -582,7 +632,7 @@ totp_secret_ref = "op://logos/m1/totp"
         );
     }
 
-    cleanup_runtime_path(&root);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
@@ -623,22 +673,23 @@ fn e2e_runtime_month_autopilot_rejects_missing_balances_when_no_fetched_metadata
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_reopen_restores_persisted_budget_targets() {
-    let path = temp_runtime_path("reopen-budget-target");
+    let context = postgres_test_context("reopen-budget-target");
     {
-        let mut runtime = AppRuntime::open(&path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         runtime
             .set_budget_target_for_month("2026-03", "expenses:food", 250_000)
             .expect("set budget");
     }
 
-    let reopened = AppRuntime::open(&path).expect("reopen");
+    let reopened = open_postgres_runtime(&context);
     assert_eq!(
         reopened.budget_target_for_month("2026-03", "expenses:food"),
         Some(250_000)
     );
 
-    cleanup_runtime_path(&path);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
@@ -672,8 +723,9 @@ fn e2e_pdf_import_posts_transactions_and_deduplicates() {
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_pdf_import_reconciliation_exposes_statement_line_evidence() {
-    let path = temp_runtime_path("pdf-reconcile-evidence");
+    let context = postgres_test_context("pdf-reconcile-evidence");
     let statement_path = temp_runtime_path("pdf-reconcile-evidence-statement")
         .with_extension("pdf")
         .to_string_lossy()
@@ -682,7 +734,7 @@ fn e2e_pdf_import_reconciliation_exposes_statement_line_evidence() {
 
     let run_id;
     {
-        let mut runtime = AppRuntime::open(&path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         let summary = runtime
             .import_pdf_statement(&statement_path, "assets:checking", false, false)
             .expect("import");
@@ -700,7 +752,7 @@ fn e2e_pdf_import_reconciliation_exposes_statement_line_evidence() {
     }
 
     {
-        let reopened = AppRuntime::open(&path).expect("reopen");
+        let reopened = open_postgres_runtime(&context);
         let lines = reopened.statement_lines_for_reconciliation_run(&run_id);
         assert_eq!(lines.len(), 1);
         assert_eq!(lines[0].memo(), "COFFEE SHOP");
@@ -708,15 +760,14 @@ fn e2e_pdf_import_reconciliation_exposes_statement_line_evidence() {
     }
 
     cleanup_file(Path::new(&statement_path));
-    cleanup_runtime_path(&path);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_pdf_import_dedupe_persists_across_reopen() {
-    let root = temp_runtime_path("pdf-reopen-idempotency");
-    let ledger_path = root.join("ledger");
-    let statement_path = root.join("statement.pdf");
-    std::fs::create_dir_all(&root).expect("create root");
+    let context = postgres_test_context("pdf-reopen-idempotency");
+    let statement_path = context.state_root.join("statement.pdf");
     std::fs::write(
         &statement_path,
         "2026-02-01 COFFEE SHOP -12.34\n2026-02-02 PAYROLL 1000.00\n",
@@ -724,7 +775,7 @@ fn e2e_pdf_import_dedupe_persists_across_reopen() {
     .expect("write statement");
 
     {
-        let mut runtime = AppRuntime::open(&ledger_path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         let summary = runtime
             .import_pdf_statement(&statement_path, "assets:checking", false, false)
             .expect("first import");
@@ -733,7 +784,7 @@ fn e2e_pdf_import_dedupe_persists_across_reopen() {
     }
 
     {
-        let mut reopened = AppRuntime::open(&ledger_path).expect("reopen");
+        let mut reopened = open_postgres_runtime(&context);
         let summary = reopened
             .import_pdf_statement(&statement_path, "assets:checking", false, false)
             .expect("second import");
@@ -741,7 +792,7 @@ fn e2e_pdf_import_dedupe_persists_across_reopen() {
         assert_eq!(summary.duplicate_count(), 2);
     }
 
-    cleanup_runtime_path(&root);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
@@ -798,9 +849,10 @@ fn e2e_csv_import_posts_transactions_and_deduplicates() {
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_import_backdates_valid_time_from_statement_timestamp() {
-    let ledger_path = temp_runtime_path("csv-valid-time-ledger");
-    let mut runtime = AppRuntime::open(&ledger_path).expect("open runtime");
+    let context = postgres_test_context("csv-valid-time-ledger");
+    let mut runtime = open_postgres_runtime(&context);
     let csv_path = temp_runtime_path("csv-valid-time")
         .with_extension("csv")
         .to_string_lossy()
@@ -835,7 +887,7 @@ fn e2e_import_backdates_valid_time_from_statement_timestamp() {
     assert_eq!(at.len(), 1);
 
     cleanup_file(Path::new(&csv_path));
-    cleanup_runtime_path(&ledger_path);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]
@@ -863,11 +915,11 @@ fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
 }
 
 #[test]
+#[ignore = "requires Docker (testcontainers)"]
 fn e2e_analytics_snapshot_manifest_and_parquet_persist_across_reopen() {
-    let root = temp_runtime_path("analytics-snapshot-root");
-    let ledger_path = root.join("ledger");
+    let context = postgres_test_context("analytics-snapshot-root");
     {
-        let mut runtime = AppRuntime::open(&ledger_path).expect("open");
+        let mut runtime = open_postgres_runtime(&context);
         runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
             .expect("post");
@@ -893,7 +945,7 @@ fn e2e_analytics_snapshot_manifest_and_parquet_persist_across_reopen() {
         assert_eq!(second.supersedes_artifact_id(), Some(first.artifact_id()));
     }
 
-    let reopened = AppRuntime::open(&ledger_path).expect("reopen");
+    let reopened = open_postgres_runtime(&context);
     let manifests = reopened.list_analytics_snapshots();
     assert_eq!(manifests.len(), 2);
     assert!(
@@ -902,7 +954,7 @@ fn e2e_analytics_snapshot_manifest_and_parquet_persist_across_reopen() {
             .any(|manifest| manifest.supersedes_artifact_id().is_some())
     );
 
-    cleanup_runtime_path(&root);
+    cleanup_runtime_path(&context.state_root);
 }
 
 #[test]

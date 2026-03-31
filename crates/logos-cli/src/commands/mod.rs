@@ -1,7 +1,7 @@
-pub mod aletheia;
 pub mod analytics;
 pub mod budget;
 pub mod close;
+pub mod db;
 pub mod fetch;
 pub mod help;
 pub mod import;

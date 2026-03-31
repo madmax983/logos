@@ -11,10 +11,13 @@ workspace = true
 chrono = { version = "0.4.42", default-features = true, features = ["clock"] }
 logos-core = { path = "../logos-core" }
 logos-runtime = { path = "../logos-runtime" }
-logos-store-aletheia = { path = "../logos-store-aletheia" }
 logos-store = { path = "../logos-store" }
+logos-store-pg = { path = "../logos-store-pg" }
 logos-fetch = { path = "../logos-fetch" }
 logos-import = { path = "../logos-import" }
 logos-reporting = { path = "../logos-reporting" }
 comfy-table = "7.1"
 crossterm = "0.29.0"
+
+[dev-dependencies]
+testcontainers-modules = { version = "0.11", features = ["blocking", "postgres"] }

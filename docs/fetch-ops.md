@@ -2,22 +2,22 @@
 
 ## Current State
 
-`logos-fetch` now owns statement-source config parsing, adapter execution, fetched artifact metadata, and persisted fetch-run status. The current branch has one fixture-backed institution adapter for `provident-credit-union` plus internal fixture adapters used by tests.
+`logos-fetch` owns statement-source config parsing, adapter execution, fetched artifact metadata, and persisted fetch-run status. The current branch ships one fixture-backed institution adapter for `provident-credit-union` plus internal fixture adapters used by tests.
 
-Live browser automation for M1, American Express, Robinhood, and a real Provident runner still sits in the next implementation slices. This doc describes the operator surface that already exists so the config shape, secret model, and recovery flow stay stable while the browser runners catch up.
+Live browser automation for M1, American Express, Robinhood, and a real Provident runner still sits in later implementation slices. This document describes the operator surface that already exists so the config shape, secret model, and recovery flow stay stable while the browser runners catch up.
 
 ## Config Location
 
 `month autopilot` resolves fetch config in this order:
 
 1. `LOGOS_FETCH_CONFIG_PATH`, when set
-2. a sibling `statement-sources.toml` next to the ledger store path
+2. the default state-root config at `~/.logos/statement-sources.toml` or `%USERPROFILE%\.logos\statement-sources.toml`
 
 Examples:
 
-- Windows default ledger store: `%USERPROFILE%\\.logos\\ledger`
-- Windows default fetch config: `%USERPROFILE%\\.logos\\statement-sources.toml`
-- Explicit override: `LOGOS_FETCH_CONFIG_PATH=C:\\Users\\markm\\logos\\statement-sources.toml`
+- Linux/macOS default fetch config: `~/.logos/statement-sources.toml`
+- Windows default fetch config: `%USERPROFILE%\.logos\statement-sources.toml`
+- Explicit override: `LOGOS_FETCH_CONFIG_PATH=C:\Users\markm\logos\statement-sources.toml`
 
 If `LOGOS_FETCH_CONFIG_PATH` is set and the file does not exist, autopilot fails immediately instead of silently pretending fetch is disabled.
 
@@ -100,10 +100,10 @@ If one source succeeds and another source for the same account lands in `needs_a
 
 For scheduled execution:
 
-- run the task as the same Windows user that owns the ledger store path
-- set `LOGOS_DB_PATH` and, when needed, `LOGOS_FETCH_CONFIG_PATH`
+- run the task as the same Windows user that owns the Postgres credentials and local `.logos` state root
+- set `DATABASE_URL` and, when needed, `LOGOS_FETCH_CONFIG_PATH`
 - set `LOGOS_FETCH_OP_BIN` when 1Password CLI is installed outside `PATH`
-- capture stdout/stderr to a log file so failed fetch runs are not a séance
+- capture stdout/stderr to a log file so failed fetch runs are not a seance
 - keep any future browser profile, 1Password session strategy, and automation runtime under that same user context
 
 Until live browser adapters land, scheduled runs mainly exercise config loading, persisted fetch-run tracking, and fixture-backed adapter behavior.

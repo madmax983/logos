@@ -1,25 +1,26 @@
-# 🔭 Vantage: Spec for Consumer-Grade CLI Polish
+# Vantage: Spec for Consumer-Grade CLI Polish
 
-## 👤 **User Story:**
-As a new user, I want to start the application out-of-the-box without configuring environment variables and understand the console output, so that I can quickly begin tracking my finances without feeling overwhelmed by database jargon.
+User story:
 
-## 🤔 **So What?**
-What business problem does this solve?
-Currently, our onboarding experience is actively hostile to new users. The default Aletheia DB path points to a hardcoded developer directory (`C:\Users\markm\...`), instantly breaking the "Getting Started" flow. Furthermore, standard CLI usage bombards users with complex internals like "Temporal adjacency index restored". By fixing these, we decrease time-to-value for new users, reduce support tickets, and improve product adoption. Complexity is a cost; utility is revenue.
+As a new user, I want the supported startup path to be obvious and the default console output to be readable, so that I can begin tracking finances without reverse-engineering storage internals.
 
-## 🎯 **Metric Definition:**
-- **Success:** 100% of fresh installs can run `cargo run -p logos-cli -- aletheia start` successfully without setting `ALETHEIADB_MANIFEST_PATH`.
-- **Success:** 0 occurrences of the words "temporal", "adjacency", or "index" in default non-debug CLI stdout during standard commands (`budget set`, `report month`).
+So what?
 
-## 🔍 **Gap Analysis:**
-Looking at the market, successful CLI tools pride themselves on zero-config local onboarding and human-readable output. Currently, we operate more like an academic database prototype. Standard CLI frameworks provide easy ways to filter debug jargon from standard output, which we are not utilizing effectively.
+Onboarding dies when the setup story is ambiguous. The CLI should tell the truth: Logos is Postgres-backed, migrations are explicit, and the happy path is `docker compose up -d db`, set `DATABASE_URL`, then `ledger db migrate`. The user should not be hit with internals cosplay while doing ordinary commands.
 
-## ✅ **Acceptance Criteria:**
-- Must provide a universally valid fallback for the local database server path.
-- Must hide technical database initialization jargon from the user's standard output.
-- Must only display jargon if a verbose debug mode is explicitly enabled.
+Metric definition:
 
-## 🚫 **Out of Scope:**
-- Complete overhaul of the database architecture.
-- Replacing Aletheia DB with another storage engine.
-- Graphical User Interface (GUI) onboarding flows.
+- Success: a fresh install can follow the documented local Postgres path and run `cargo run -p logos-cli -- db migrate`
+- Success: default non-debug stdout for standard workflows avoids internal storage implementation jargon
+
+Acceptance criteria:
+
+- Must document one supported local startup path for storage-backed commands
+- Must fail fast with a clear message when `DATABASE_URL` is missing or migrations are pending
+- Must hide storage implementation details unless verbose diagnostics are explicitly requested
+
+Out of scope:
+
+- Replacing the chosen Postgres architecture
+- GUI onboarding flows
+- Magical auto-migrations at runtime startup

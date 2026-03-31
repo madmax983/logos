@@ -1,5 +1,6 @@
 use logos_import::ImportError;
 use logos_store::error::StoreError;
+use logos_store_pg::PgStoreError;
 use std::fmt;
 
 #[derive(Debug)]
@@ -8,6 +9,7 @@ pub enum RuntimeError {
     Import(ImportError),
     Domain(logos_core::DomainError),
     Analytics { message: String },
+    Initialization { message: String },
 }
 
 impl fmt::Display for RuntimeError {
@@ -17,6 +19,7 @@ impl fmt::Display for RuntimeError {
             Self::Import(err) => write!(f, "{err}"),
             Self::Domain(err) => write!(f, "domain error: {err}"),
             Self::Analytics { message } => write!(f, "{message}"),
+            Self::Initialization { message } => write!(f, "{message}"),
         }
     }
 }
@@ -38,5 +41,13 @@ impl From<ImportError> for RuntimeError {
 impl From<logos_core::DomainError> for RuntimeError {
     fn from(value: logos_core::DomainError) -> Self {
         Self::Domain(value)
+    }
+}
+
+impl From<PgStoreError> for RuntimeError {
+    fn from(value: PgStoreError) -> Self {
+        Self::Initialization {
+            message: value.to_string(),
+        }
     }
 }

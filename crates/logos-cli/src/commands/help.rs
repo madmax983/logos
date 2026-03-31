@@ -5,7 +5,7 @@ Usage: ledger <command> [options]
 
 Commands:
   help [command]                    Show general or command help
-  aletheia <subcommand>             Manage local AletheiaDB instance
+  db <subcommand>                   Manage Postgres schema and migrations
   txn add ...                       Add a transaction
   txn correct ...                   Append correction metadata for an existing transaction
   analytics snapshot ...            Manage immutable analytics artifacts
@@ -27,7 +27,7 @@ Subcommands:
   correct --supersedes-id <txn-id> --reason <text>
 
 Environment:
-  LOGOS_DB_PATH                    Override embedded ledger store path
+  DATABASE_URL                     Required Postgres connection string
 ";
 
 const BUDGET_HELP_TEXT: &str = "\
@@ -99,7 +99,7 @@ Subcommands:
                                        Import(optional) + reconcile + report + close; balances may be omitted when fetched statement metadata is configured
 
 Default fetch config:
-  <ledger-store-parent>/statement-sources.toml
+  ~/.logos/statement-sources.toml
 
 Environment:
   LOGOS_FETCH_CONFIG_PATH            Override statement source config path for config-driven month autopilot fetch
@@ -118,7 +118,7 @@ Usage: ledger analytics <subcommand> [options]
 
 Subcommands:
   snapshot create [--as-of-valid-us <i64>] [--as-of-tx-us <i64>] [--schema-version <i64>] [--supersedes <artifact-id>]
-                                     Create immutable parquet analytics snapshot + Aletheia manifest
+                                     Create immutable parquet analytics snapshot + manifest
   snapshot list                      List known analytics manifests
   snapshot show --artifact-id <id>   Show one manifest
   sankey                             Generate Mermaid Sankey diagram from current transactions
@@ -129,17 +129,15 @@ Environment:
   LOGOS_ARTIFACTS_PATH               Override artifact root directory
 ";
 
-const ALETHEIA_HELP_TEXT: &str = "\
-Usage: ledger aletheia <subcommand>
+const DB_HELP_TEXT: &str = "\
+Usage: ledger db <subcommand>
 
 Subcommands:
-  start                             Run local aletheia-server via cargo
-  status                            Check /status health endpoint
+  migrate                           Apply all pending Diesel migrations
+  status                            Show pending migration status
 
 Environment:
-  ALETHEIADB_MANIFEST_PATH          Override AletheiaDB Cargo.toml location
-  GALLIFREYDB_HOST                  Host used for status checks
-  GALLIFREYDB_PORT                  Port used for status checks/server
+  DATABASE_URL                      Required Postgres connection string
 ";
 
 /// Handles help output for general and command-specific help.
@@ -160,7 +158,7 @@ const fn help_text(topic: HelpTopic) -> &'static str {
         HelpTopic::Analytics => ANALYTICS_HELP_TEXT,
         HelpTopic::Budget => BUDGET_HELP_TEXT,
         HelpTopic::Report => REPORT_HELP_TEXT,
-        HelpTopic::Aletheia => ALETHEIA_HELP_TEXT,
+        HelpTopic::Db => DB_HELP_TEXT,
         HelpTopic::Import => IMPORT_HELP_TEXT,
         HelpTopic::Fetch => FETCH_HELP_TEXT,
         HelpTopic::Reconcile => RECONCILE_HELP_TEXT,

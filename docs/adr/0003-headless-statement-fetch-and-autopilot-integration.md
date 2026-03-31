@@ -23,7 +23,7 @@ flowchart LR
     FETCH --> ADAPTER[Institution Adapter]
     ADAPTER --> ARTIFACT[CSV/PDF Artifact + Metadata]
     ARTIFACT --> IMPORT[logos-import]
-    IMPORT --> STORE[logos-store-aletheia]
+    IMPORT --> STORE[logos-store-pg]
     STORE --> REPORT[reconcile/report/close]
 ```
 

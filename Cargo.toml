@@ -5,7 +5,6 @@ members = [
     "crates/logos-fetch",
     "crates/logos-store",
     "crates/logos-store-pg",
-    "crates/logos-store-aletheia",
     "crates/logos-import",
     "crates/logos-reporting",
     "crates/logos-tui",
