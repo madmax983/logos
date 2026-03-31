@@ -5,11 +5,11 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    #[should_panic]
-    fn project_rsu_forecast_summary_panics_on_overflow(
+    fn project_rsu_forecast_summary_saturates_on_overflow(
         val1 in 1i64..=100i64,
     ) {
         let events = [i64::MAX, val1];
-        let _ = project_rsu_forecast_summary(&events);
+        let summary = project_rsu_forecast_summary(&events);
+        assert_eq!(summary.projected_total_cents(), i64::MAX);
     }
 }
