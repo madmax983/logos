@@ -18,4 +18,6 @@ pub mod monte_carlo;
 pub mod predictive_ledger;
 pub mod recurrence_detector;
 #[cfg(feature = "nova")]
+pub mod tax_loss_harvester;
+#[cfg(feature = "nova")]
 pub mod trinity_simulator;
