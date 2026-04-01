@@ -308,6 +308,12 @@ mod tests {
     }
 
     #[test]
+    fn should_return_zero_for_zero_price_input() {
+        let tiers = HaircutTierTable::default();
+        assert_eq!(forecast_value_cents(0, 100, 15, &tiers), 0);
+    }
+
+    #[test]
     fn should_return_zero_when_forecast_overflows() {
         let tiers = HaircutTierTable::default();
         assert_eq!(forecast_value_cents(i64::MAX, 2, 15, &tiers), 0);
@@ -318,6 +324,14 @@ mod tests {
         assert_eq!(
             AllocationPolicy::new(40, 20, 30, 20),
             Err(DomainError::InvalidAllocationTotal { total: 110 })
+        );
+    }
+
+    #[test]
+    fn should_match_conservative_defaults_to_default_trait() {
+        assert_eq!(
+            HaircutTierTable::conservative_defaults(),
+            HaircutTierTable::default()
         );
     }
 }
