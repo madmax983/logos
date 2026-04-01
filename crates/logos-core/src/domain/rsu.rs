@@ -320,4 +320,15 @@ mod tests {
             Err(DomainError::InvalidAllocationTotal { total: 110 })
         );
     }
+
+    #[test]
+    fn should_return_zero_when_forecast_cents_is_exactly_zero() {
+        let tiers = HaircutTierTable::default();
+        assert_eq!(forecast_value_cents(0, 100, 15, &tiers), 0);
+    }
+
+    #[test]
+    fn should_return_default_conservative_tiers() {
+        assert_eq!(HaircutTierTable::conservative_defaults(), HaircutTierTable::default());
+    }
 }

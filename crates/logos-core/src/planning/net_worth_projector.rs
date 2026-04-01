@@ -322,4 +322,28 @@ mod tests {
             let _ = projector.project_timeline(months);
         }
     }
+
+    #[test]
+    fn test_set_haircut_tiers() {
+        let mut projector = NetWorthProjector::new(100_000, 10_000);
+        // Original default is 25, 40, 55. For 15 days, it's 25%.
+        projector.set_haircut_tiers(HaircutTierTable::new(50, 60, 70).unwrap());
+        projector.add_upcoming_vest(UpcomingVest {
+            avg_close_price_cents: 10_000,
+            units: 100, // 1,000,000 cents gross
+            days_to_vest: 15,
+        });
+        let (timeline, _) = projector.project_timeline(1);
+        // 50% haircut means 500,000 cents retained.
+        assert_eq!(timeline[0].vested_value_cents, 500_000);
+    }
+
+    #[test]
+    fn test_project_timeline_vest_on_month_boundary() {
+        let mut projector = NetWorthProjector::new(0, 0);
+        projector.add_upcoming_vest(UpcomingVest { avg_close_price_cents: 10_000, units: 100, days_to_vest: 30 });
+        let (timeline, _) = projector.project_timeline(2);
+        assert_eq!(timeline[0].vested_value_cents, 600_000); // 30 days is medium tier, retains 60%
+        assert_eq!(timeline[1].vested_value_cents, 0); // Vested in month 1, should not vest in month 2!
+    }
 }

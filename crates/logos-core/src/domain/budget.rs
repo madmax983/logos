@@ -155,4 +155,14 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_rollover_end_balance_exact_upper_bound() {
+        assert_eq!(rollover_end_balance(i64::MAX, 0, 0), i64::MAX);
+    }
+
+    #[test]
+    fn test_rollover_end_balance_exact_lower_bound() {
+        assert_eq!(rollover_end_balance(i64::MIN, 0, 0), i64::MIN);
+    }
 }

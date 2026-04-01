@@ -233,4 +233,26 @@ mod tests {
         );
         assert_eq!(postings.len(), 4);
     }
+
+    #[test]
+    fn test_zero_amount_postings_are_omitted() {
+        let policy = AllocationPolicy::new(0, 0, 0, 100).unwrap();
+        let config = RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").expect("valid account id"),
+            tax_reserve: AccountId::new("assets:tax").expect("valid account id"),
+            smoothing_buffer: AccountId::new("assets:buffer").expect("valid account id"),
+            goals: AccountId::new("assets:goals").expect("valid account id"),
+            discretionary: AccountId::new("assets:checking").expect("valid account id"),
+        };
+        let distributor = RsuAutoDistributor::new(config);
+
+        let tx = distributor
+            .distribute_rsu_vest("Vest with zeros", 100, &policy)
+            .expect("should build perfectly, skipping zero postings");
+
+        let postings = tx.postings();
+        assert_eq!(postings.len(), 2);
+        assert!(postings.contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 100).unwrap()));
+        assert!(postings.contains(&Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap()));
+    }
 }
