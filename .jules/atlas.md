@@ -8,3 +8,6 @@
 **Extract Runtime to Break UI Coupling**
 **Tangle:** The `logos-tui` executable crate depended directly on the `logos-cli` executable crate just to use `CliRuntime`, creating a frontend-to-frontend dependency ("The Sprawl").
 **Blueprint:** Extracted `CliRuntime` (renamed to `AppRuntime`) into a new workspace crate `logos-runtime`. Updated both `logos-cli` and `logos-tui` to depend on `logos-runtime` instead, enforcing unidirectional architectural bounds.
+**[The Blob Runtime]**
+**Tangle:** `AppRuntime` in `crates/logos-runtime/src/runtime/mod.rs` was an over 1700 lines long "Blob" anti-pattern, handling unrelated concerns like transactions, budgets, reconciling, fetching, importing, and analytics.
+**Blueprint:** Extracted the massive `impl AppRuntime` block into cohesive, domain-specific modules (`transactions`, `budgets`, `reconcile`, `fetch`, `import`, `analytics`), leaving only core setup and orchestration logic in `mod.rs`.
