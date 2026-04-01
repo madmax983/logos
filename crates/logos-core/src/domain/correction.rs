@@ -103,6 +103,21 @@ impl Correction {
         })
     }
 
+    /// Identifies the historical transaction that is being rewritten.
+    ///
+    /// The ledger is strictly append-only. To fix a mistake, a new transaction must
+    /// be appended that explicitly points to the flawed entry it is replacing, ensuring
+    /// a complete audit trail.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::correction::{Correction, TransactionId};
+    ///
+    /// let bad_tx = TransactionId::new("tx-err-1").unwrap();
+    /// let correction = Correction::new(bad_tx.clone(), "Incorrect amount entered").unwrap();
+    /// assert_eq!(correction.supersedes_id(), &bad_tx);
+    /// ```
     #[must_use]
     pub const fn supersedes_id(&self) -> &TransactionId {
         &self.supersedes_id
