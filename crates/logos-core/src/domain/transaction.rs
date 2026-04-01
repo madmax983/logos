@@ -93,11 +93,46 @@ impl Posting {
         Ok(Self { account, amount })
     }
 
+    /// Identifies the target account affected by this posting.
+    ///
+    /// The account determines how the posting's amount impacts the ledger's overall balance
+    /// sheet, based on its specific `AccountType` (Asset, Liability, etc.).
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::AccountId;
+    ///
+    /// let account = AccountId::new("assets:checking").unwrap();
+    /// let posting = Posting::debit(account, 1000).unwrap();
+    /// assert_eq!(posting.account().as_str(), "assets:checking");
+    /// ```
     #[must_use]
     pub const fn account(&self) -> &AccountId {
         &self.account
     }
 
+    /// The monetary value of this posting in cents, enforcing double-entry sign conventions.
+    ///
+    /// Debits are inherently positive and Credits are internally stored as negative values,
+    /// guaranteeing that a perfectly balanced transaction will sum to exactly zero.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::AccountId;
+    ///
+    /// let account_debit = AccountId::new("assets:checking").unwrap();
+    /// let debit = Posting::debit(account_debit, 5000).unwrap();
+    ///
+    /// let account_credit = AccountId::new("assets:checking").unwrap();
+    /// let credit = Posting::credit(account_credit, 5000).unwrap();
+    ///
+    /// assert_eq!(debit.amount(), 5000);
+    /// assert_eq!(credit.amount(), -5000); // Credits are negative!
+    /// ```
     #[must_use]
     pub const fn amount(&self) -> i64 {
         self.amount

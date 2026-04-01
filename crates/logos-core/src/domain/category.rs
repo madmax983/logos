@@ -103,6 +103,19 @@ impl CategoryGroup {
         })
     }
 
+    /// Exposes the normalized grouping identifier.
+    ///
+    /// This identifier links related [`Category`] instances together so that
+    /// analytical roll-ups and budget reporting can correctly group expenses.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::category::CategoryGroup;
+    ///
+    /// let group = CategoryGroup::new("Housing").unwrap();
+    /// assert_eq!(group.id().as_str(), "housing");
+    /// ```
     #[must_use]
     pub const fn id(&self) -> &CategoryGroupId {
         &self.id
@@ -168,6 +181,20 @@ impl Category {
         })
     }
 
+    /// Identifies the high-level grouping this envelope belongs to.
+    ///
+    /// Used during transaction aggregation to roll up specific line-item expenses
+    /// into their broader parent budgets (e.g. mapping a "Rent" category back to the "Housing" group).
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::category::{Category, CategoryGroup};
+    ///
+    /// let group = CategoryGroup::new("Housing").unwrap();
+    /// let category = Category::new(group.id().clone(), "Rent").unwrap();
+    /// assert_eq!(category.group_id().as_str(), "housing");
+    /// ```
     #[must_use]
     pub const fn group_id(&self) -> &CategoryGroupId {
         &self.group_id
