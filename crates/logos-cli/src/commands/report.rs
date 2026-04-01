@@ -29,6 +29,8 @@ pub fn month(checking_account: &str, month_key: Option<&str>) -> Result<(), CliE
     Ok(())
 }
 
+use comfy_table::{Attribute, Cell, Color};
+
 fn render_month_output(
     runtime: &impl ReportRuntime,
     checking_account: &str,
@@ -46,16 +48,30 @@ fn render_month_output(
         "Expense",
         "Cashflow",
     ]);
+
+    let cashflow_cents = report.cashflow_cents();
+    let cashflow_color = if cashflow_cents >= 0 {
+        Color::Green
+    } else {
+        Color::Red
+    };
+    let cashflow_cell = Cell::new(format!("${:.2}", (cashflow_cents as f64) / 100.0))
+        .fg(cashflow_color)
+        .add_attribute(Attribute::Bold);
+
     table.add_row(vec![
-        month_key.to_owned(),
-        checking_account.to_owned(),
-        format!("${:.2}", (report.checking_balance_cents() as f64) / 100.0),
-        format!("${:.2}", (report.income_cents() as f64) / 100.0),
-        format!("${:.2}", (report.expense_cents() as f64) / 100.0),
-        format!("${:.2}", (report.cashflow_cents() as f64) / 100.0),
+        Cell::new(month_key.to_string()),
+        Cell::new(checking_account.to_string()),
+        Cell::new(format!(
+            "${:.2}",
+            (report.checking_balance_cents() as f64) / 100.0
+        )),
+        Cell::new(format!("${:.2}", (report.income_cents() as f64) / 100.0)),
+        Cell::new(format!("${:.2}", (report.expense_cents() as f64) / 100.0)),
+        cashflow_cell,
     ]);
 
-    format!("report.month\n{table}")
+    format!("{table}")
 }
 
 #[cfg(test)]
@@ -81,7 +97,6 @@ mod tests {
 
         let output = render_month_output(&runtime, "assets:checking", "2026-03");
 
-        assert!(output.contains("report.month"));
         assert!(output.contains("2026-03"));
         assert!(output.contains("assets:checking"));
         assert!(output.contains("$75.00"));

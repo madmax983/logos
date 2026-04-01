@@ -176,7 +176,7 @@ mod tests {
     fn month_help_mentions_default_statement_source_discovery() {
         let text = help_text(HelpTopic::Month);
 
-        assert!(text.contains("<ledger-store-parent>/statement-sources.toml"));
+        assert!(text.contains("~/.logos/statement-sources.toml"));
         assert!(text.contains("LOGOS_FETCH_CONFIG_PATH"));
     }
 
