@@ -99,7 +99,7 @@ Subcommands:
                                        Import(optional) + reconcile + report + close; balances may be omitted when fetched statement metadata is configured
 
 Default fetch config:
-  ~/.logos/statement-sources.toml
+  <ledger-store-parent>/statement-sources.toml
 
 Environment:
   LOGOS_FETCH_CONFIG_PATH            Override statement source config path for config-driven month autopilot fetch
