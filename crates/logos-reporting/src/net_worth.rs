@@ -21,5 +21,16 @@
 /// ```
 #[must_use]
 pub const fn project_net_worth(assets_cents: i64, liabilities_cents: i64) -> i64 {
-    assets_cents - liabilities_cents
+    assets_cents.saturating_sub(liabilities_cents)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_saturate_on_overflow() {
+        let variance = project_net_worth(i64::MIN, 1);
+        assert_eq!(variance, i64::MIN);
+    }
 }

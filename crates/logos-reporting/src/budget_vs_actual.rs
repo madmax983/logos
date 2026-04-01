@@ -24,5 +24,16 @@
 /// ```
 #[must_use]
 pub const fn project_budget_variance(budget_cents: i64, actual_cents: i64) -> i64 {
-    budget_cents - actual_cents
+    budget_cents.saturating_sub(actual_cents)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_saturate_on_overflow() {
+        let variance = project_budget_variance(i64::MIN, 1);
+        assert_eq!(variance, i64::MIN);
+    }
 }
