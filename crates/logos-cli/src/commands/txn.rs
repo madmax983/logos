@@ -58,7 +58,7 @@ pub fn add(
 ) -> Result<(), CliError> {
     let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "txn.add".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+        message: err.to_string(),
     })?;
     let transaction_id = post_double_entry(
         description,
@@ -79,7 +79,7 @@ pub fn add(
 pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
     let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "txn.correct".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+        message: err.to_string(),
     })?;
     apply_correction(supersedes_id, reason, &mut runtime)?;
     println!("txn.correct supersedes_id={supersedes_id}");
@@ -287,7 +287,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "command 'txn.add' failed at runtime: missing columns: expected 5, found 2"
+            "Command 'txn.add' failed:\n  missing columns: expected 5, found 2"
         );
     }
 
@@ -338,7 +338,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "command 'txn.correct' failed at runtime: missing columns: expected 5, found 2"
+            "Command 'txn.correct' failed:\n  missing columns: expected 5, found 2"
         );
     }
 }

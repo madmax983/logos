@@ -39,7 +39,7 @@ impl fmt::Display for CliError {
             }
             Self::MissingTxnDescription => write!(f, "missing transaction description"),
             Self::CommandRuntimeFailed { command, message } => {
-                write!(f, "command '{command}' failed at runtime: {message}")
+                write!(f, "Command '{}' failed:\n  {}", command, message)
             }
         }
     }

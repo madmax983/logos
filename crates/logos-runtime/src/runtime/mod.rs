@@ -101,7 +101,7 @@ impl AppRuntime<PostgresStore> {
     pub fn new() -> Result<Self, RuntimeError> {
         let database_url =
             env::var(DATABASE_URL_ENV).map_err(|_| RuntimeError::Initialization {
-                message: format!("{DATABASE_URL_ENV} is not set"),
+                message: format!("The {} environment variable is not set.\nPlease provide a valid Postgres connection string (e.g. export {}=\"postgres://user:pass@localhost:5432/logos\").", DATABASE_URL_ENV, DATABASE_URL_ENV),
             })?;
         Self::open(&database_url)
     }
@@ -112,13 +112,21 @@ impl AppRuntime<PostgresStore> {
     ///
     /// Returns an error when connecting to Postgres fails or pending migrations exist.
     pub fn open(database_url: &str) -> Result<Self, RuntimeError> {
-        let mut store = PostgresStore::connect(database_url)?;
-        let pending = store.pending_migrations()?;
+        let mut store = PostgresStore::connect(database_url).map_err(|err| RuntimeError::Initialization {
+            message: format!(
+                "Failed to connect to the database.\nEnsure Postgres is running and the connection string is correct.\nUnderlying error: {err}"
+            ),
+        })?;
+        let pending = store
+            .pending_migrations()
+            .map_err(|err| RuntimeError::Initialization {
+                message: format!("Failed to check for database migrations: {err}"),
+            })?;
         if !pending.is_empty() {
-            let joined = pending.join(", ");
             return Err(RuntimeError::Initialization {
                 message: format!(
-                    "pending database migrations detected ({joined}); run `ledger db migrate`"
+                    "There are {} pending database migrations.\nPlease run `ledger db migrate` to apply them before continuing.",
+                    pending.len()
                 ),
             });
         }

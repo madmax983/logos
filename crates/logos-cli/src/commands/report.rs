@@ -20,7 +20,7 @@ impl ReportRuntime for AppRuntime {
 pub fn month(checking_account: &str, month_key: Option<&str>) -> Result<(), CliError> {
     let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "report.month".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+        message: err.to_string(),
     })?;
     let resolved_month_key =
         month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);

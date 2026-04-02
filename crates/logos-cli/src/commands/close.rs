@@ -15,7 +15,7 @@ pub fn month(
 ) -> Result<(), CliError> {
     let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "close.month".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+        message: err.to_string(),
     })?;
     let resolved_month_key = if let Some(explicit_month) = month_key {
         explicit_month.to_owned()

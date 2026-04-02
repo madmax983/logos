@@ -57,11 +57,11 @@ fn connect_store(command: &str) -> Result<PostgresStore, CliError> {
     let database_url =
         std::env::var(DATABASE_URL_ENV).map_err(|_| CliError::CommandRuntimeFailed {
             command: command.to_owned(),
-            message: "DATABASE_URL is not set".to_owned(),
+            message: format!("The {} environment variable is not set.\nPlease provide a valid Postgres connection string (e.g. export {}=\"postgres://user:pass@localhost:5432/logos\").", DATABASE_URL_ENV, DATABASE_URL_ENV),
         })?;
     PostgresStore::connect(&database_url).map_err(|err| CliError::CommandRuntimeFailed {
         command: command.to_owned(),
-        message: format!("database connection failed: {err}"),
+        message: format!("Failed to connect to the database.\nEnsure Postgres is running and the connection string is correct.\nUnderlying error: {err}"),
     })
 }
 
@@ -82,7 +82,7 @@ mod tests {
         };
         assert_eq!(
             err.to_string(),
-            "command 'db.status' failed at runtime: DATABASE_URL is not set"
+            "Command 'db.status' failed:\n  The DATABASE_URL environment variable is not set.\nPlease provide a valid Postgres connection string (e.g. export DATABASE_URL=\"postgres://user:pass@localhost:5432/logos\")."
         );
 
         if let Some(value) = previous {
