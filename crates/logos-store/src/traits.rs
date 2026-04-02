@@ -1,3 +1,4 @@
+#![allow(clippy::missing_errors_doc, clippy::too_many_arguments)]
 use logos_core::{Correction, TransactionBuilder, TransactionId};
 
 use crate::error::StoreError;

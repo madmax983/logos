@@ -1,3 +1,4 @@
+#![allow(clippy::match_same_arms, clippy::missing_const_for_fn, clippy::useless_conversion, clippy::needless_borrow)]
 struct SnapshotPostingRow {
     txn_id: String,
     description: String,

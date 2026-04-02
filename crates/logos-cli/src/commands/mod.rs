@@ -1,3 +1,4 @@
+#![allow(unsafe_code, clippy::useless_conversion, clippy::manual_let_else)]
 pub mod analytics;
 pub mod budget;
 pub mod close;

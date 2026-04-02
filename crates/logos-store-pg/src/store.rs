@@ -1,3 +1,5 @@
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::needless_pass_by_value, clippy::uninlined_format_args, clippy::explicit_auto_deref, clippy::too_many_lines, clippy::missing_const_for_fn)]
 use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -1012,18 +1014,22 @@ impl PostgresStore {
         connection: &mut PgConnection,
         transaction_ids: &[TransactionId],
     ) -> Result<(), StoreError> {
-        for transaction_id in transaction_ids {
-            let exists = select(exists(
-                transactions::table.filter(transactions::id.eq(transaction_id.as_str())),
-            ))
-            .get_result::<bool>(connection)
+        if transaction_ids.is_empty() {
+            return Ok(());
+        }
+        let ids: Vec<&str> = transaction_ids.iter().map(TransactionId::as_str).collect();
+        let existing_ids: HashSet<String> = transactions::table
+            .filter(transactions::id.eq_any(&ids))
+            .select(transactions::id)
+            .load::<String>(connection)
             .map_err(|err| {
-                persist_failure(format!(
-                    "checking transaction '{}' existence failed: {err}",
-                    transaction_id.as_str()
-                ))
-            })?;
-            if !exists {
+                persist_failure(format!("checking transaction existence failed: {err}"))
+            })?
+            .into_iter()
+            .collect();
+
+        for transaction_id in transaction_ids {
+            if !existing_ids.contains(transaction_id.as_str()) {
                 return Err(StoreError::UnknownTransaction {
                     transaction_id: transaction_id.clone(),
                 });

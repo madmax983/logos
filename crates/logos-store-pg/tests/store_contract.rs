@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_lines)]
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use logos_core::{AccountId, Posting, TransactionBuilder, TransactionId};

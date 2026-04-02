@@ -1,3 +1,4 @@
+#![allow(clippy::items_after_statements)]
 use logos_core::{AccountId, Posting, TransactionBuilder, TransactionId};
 use logos_store::error::StoreError;
 use logos_store::model::{
