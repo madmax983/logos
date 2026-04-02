@@ -426,7 +426,7 @@ impl PostgresStore {
             return Ok(Vec::new());
         }
 
-        let transaction_ids: Vec<String> = rows.iter().map(|row| row.id.clone()).collect();
+        let transaction_ids: Vec<&str> = rows.iter().map(|row| row.id.as_str()).collect();
         let posting_rows = postings::table
             .filter(postings::transaction_id.eq_any(&transaction_ids))
             .order((postings::transaction_id.asc(), postings::ordinal.asc()))
@@ -445,13 +445,9 @@ impl PostgresStore {
 
         rows.into_iter()
             .map(|row| {
-                let transaction_id = row.id.clone();
-                let posting_rows =
-                    postings_by_transaction
-                        .remove(&transaction_id)
-                        .ok_or_else(|| {
-                            load_failure(format!("transaction '{transaction_id}' has no postings"))
-                        })?;
+                let posting_rows = postings_by_transaction.remove(&row.id).ok_or_else(|| {
+                    load_failure(format!("transaction '{}' has no postings", row.id))
+                })?;
                 Self::stored_transaction_from_rows(row, posting_rows)
             })
             .collect()

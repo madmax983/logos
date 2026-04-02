@@ -1,0 +1,8 @@
+--- crates/logos-store/src/traits.rs
++++ crates/logos-store/src/traits.rs
+@@ -1,5 +1,5 @@
+ //! Defines the core abstractions and data contracts for data persistence in `logos`.
+-
++#![allow(clippy::missing_errors_doc)]
+ use std::borrow::Cow;
+ use std::fmt::{Debug, Display, Formatter};
