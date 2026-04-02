@@ -26,7 +26,7 @@ use logos_import::{
 };
 use logos_reporting::{
     RegisterEntry, RsuBudgetPlan, RsuBudgetPlanInput, ScenarioPriceInputs, project_budget_variance,
-    project_cashflow, project_register_balance, project_rsu_budget_plan,
+    project_cashflow, project_register_balance_iter, project_rsu_budget_plan,
 };
 use logos_store::{
     MemoryStore,
@@ -235,16 +235,14 @@ impl<S: LedgerStore> AppRuntime<S> {
 
     #[must_use]
     pub fn register_balance_for(&self, account: &str) -> i64 {
-        let mut entries = Vec::new();
-        for stored in self.store.transactions() {
-            for posting in stored.transaction().postings() {
-                if posting.account().as_str() == account {
-                    entries.push(RegisterEntry::new(posting.amount()));
-                }
-            }
-        }
+        let transactions = self.store.transactions();
+        let entries = transactions
+            .iter()
+            .flat_map(|stored| stored.transaction().postings())
+            .filter(|posting| posting.account().as_str() == account)
+            .map(|posting| RegisterEntry::new(posting.amount()));
 
-        project_register_balance(0, &entries)
+        project_register_balance_iter(0, entries)
     }
 
     #[must_use]
