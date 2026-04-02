@@ -38,7 +38,10 @@ impl AccountId {
         Ok(Self(trimmed.to_owned()))
     }
 
-    /// Retrieves the string representation of the account id.
+    /// Exposes the underlying string representation of the account identifier.
+    ///
+    /// This is primarily used for serialization, logging, or interoperability
+    /// with raw string-based APIs where the strong typing of `AccountId` is not supported.
     ///
     /// ## Examples
     ///
@@ -79,7 +82,7 @@ pub enum AccountType {
 }
 
 impl AccountType {
-    /// Returns the "normal balance" sign for the account type.
+    /// Determines the "normal balance" sign (+1 or -1) for the account type.
     ///
     /// In double-entry bookkeeping, the normal balance is the type of entry
     /// (debit or credit) that increases the account's balance. In `logos`:

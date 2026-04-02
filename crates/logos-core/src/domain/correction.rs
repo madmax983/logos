@@ -35,7 +35,7 @@ impl TransactionId {
         Ok(Self(trimmed.to_owned()))
     }
 
-    /// Retrieves the string representation of the transaction id.
+    /// Exposes the underlying string representation of the transaction identifier.
     ///
     /// ## Examples
     ///
@@ -123,7 +123,7 @@ impl Correction {
         &self.supersedes_id
     }
 
-    /// Retrieves the mandatory reason for why the correction was made.
+    /// Exposes the mandatory reason for why the correction was made.
     ///
     /// ## Examples
     ///

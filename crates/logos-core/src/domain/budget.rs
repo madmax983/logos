@@ -49,7 +49,7 @@ impl BudgetMonth {
         }
     }
 
-    /// Retrieves the month key for this budget envelope.
+    /// Identifies the specific calendar month (e.g., "YYYY-MM") this budget applies to.
     ///
     /// ## Examples
     ///
@@ -64,7 +64,7 @@ impl BudgetMonth {
         &self.month_key
     }
 
-    /// Retrieves the rolled-over balance from the previous month.
+    /// Exposes the rolled-over balance from the previous month.
     ///
     /// Useful for determining if there are surplus funds carrying forward,
     /// or if the envelope started in a deficit due to overspending.
@@ -73,7 +73,7 @@ impl BudgetMonth {
         self.start_balance
     }
 
-    /// Retrieves the amount of new money injected into this envelope for the current month.
+    /// Exposes the amount of new money injected into this envelope for the current month.
     ///
     /// This represents explicit budgeting decisions made this month, separate
     /// from rolled-over funds.
@@ -82,7 +82,7 @@ impl BudgetMonth {
         self.assigned
     }
 
-    /// Retrieves the total amount of money that has left the envelope this month.
+    /// Exposes the total amount of money that has left the envelope this month.
     ///
     /// This is used to track burn rate against the sum of starting and assigned funds.
     #[must_use]

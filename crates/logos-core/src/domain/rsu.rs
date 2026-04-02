@@ -87,7 +87,7 @@ impl HaircutTierTable {
         Self::default()
     }
 
-    /// Returns the haircut percentage for a given number of days to vest.
+    /// Determines the haircut (discount) percentage for a given time horizon.
     ///
     /// ## Examples
     ///
@@ -164,7 +164,7 @@ impl AllocationPolicy {
         })
     }
 
-    /// Returns the percentage of the vest allocated to the tax reserve.
+    /// Exposes the percentage of the vest allocated to the tax reserve.
     ///
     /// ## Examples
     ///
@@ -178,7 +178,7 @@ impl AllocationPolicy {
         self.tax_reserve
     }
 
-    /// Returns the percentage of the vest allocated to the income smoothing buffer.
+    /// Exposes the percentage of the vest allocated to the income smoothing buffer.
     ///
     /// ## Examples
     ///
@@ -192,7 +192,7 @@ impl AllocationPolicy {
         self.smoothing_buffer
     }
 
-    /// Returns the percentage of the vest allocated to specific financial goals.
+    /// Exposes the percentage of the vest allocated to specific financial goals.
     ///
     /// ## Examples
     ///
@@ -206,7 +206,7 @@ impl AllocationPolicy {
         self.goals
     }
 
-    /// Returns the percentage of the vest allocated to discretionary spending.
+    /// Exposes the percentage of the vest allocated to discretionary spending.
     ///
     /// ## Examples
     ///

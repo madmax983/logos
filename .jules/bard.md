@@ -40,3 +40,7 @@
 ## 2026-03-25 - [RSU Reporting Module Documentation]
 **Confusion:** The `logos-reporting` RSU forecasting and budgeting models (`rsu_forecast` and `rsu_budget_plan`) lacked descriptive module narratives and executable examples. Users had to reverse-engineer how scenarios (Bear/Base/Bull) mapped to strict inputs and outputs.
 **Clarification:** Added module-level narratives and comprehensive executable doctests to all structs and the main projection functions (`project_rsu_forecast_summary`, `project_rsu_budget_plan`) to demonstrate instantiation and scenario sweeping semantics.
+
+## 2026-04-02 - [Core Domain Getter Noise]
+**Confusion:** Various core domain objects like `AccountId`, `CategoryGroup`, `Correction`, `Transaction`, and `AllocationPolicy` used getter doc comments like `Retrieves the...` or `Returns the...` which added no value ("getter noise") and failed to explain the purpose of the data.
+**Clarification:** Modified all getter docs in `logos-core/src/domain` to describe the business logic and intended interoperability or purpose of the returned value (e.g., using "Exposes the underlying string representation... for interoperability" instead of "Retrieves the string").

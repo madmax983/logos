@@ -151,7 +151,7 @@ pub struct Transaction {
 }
 
 impl Transaction {
-    /// Retrieves the description of the transaction.
+    /// Exposes the human-readable description of the transaction.
     ///
     /// ## Examples
     ///
@@ -172,7 +172,7 @@ impl Transaction {
         &self.description
     }
 
-    /// Retrieves the list of postings associated with the transaction.
+    /// Exposes the list of strictly balanced postings that make up the transaction.
     ///
     /// ## Examples
     ///

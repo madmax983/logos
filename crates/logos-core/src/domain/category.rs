@@ -49,7 +49,7 @@ impl CategoryGroupId {
         Ok(Self(normalized))
     }
 
-    /// Retrieves the string representation of the category group id.
+    /// Exposes the underlying normalized string representation of the category group identifier.
     ///
     /// ## Examples
     ///
@@ -121,7 +121,7 @@ impl CategoryGroup {
         &self.id
     }
 
-    /// Retrieves the original name of the category.
+    /// Exposes the original, human-readable name of the category group.
     ///
     /// ## Examples
     ///
@@ -200,7 +200,7 @@ impl Category {
         &self.group_id
     }
 
-    /// Retrieves the original name of the category.
+    /// Exposes the original, human-readable name of the specific category envelope.
     ///
     /// ## Examples
     ///
