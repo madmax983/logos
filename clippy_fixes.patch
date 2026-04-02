@@ -1,0 +1,27 @@
+--- crates/logos-store/src/memory.rs
++++ crates/logos-store/src/memory.rs
+@@ -89,7 +89,7 @@
+         id
+     }
+
+-    fn next_timestamp_us(&mut self) -> Timestamp {
++    const fn next_timestamp_us(&mut self) -> Timestamp {
+         self.clock_us = self.clock_us.saturating_add(1);
+         self.clock_us
+     }
+@@ -595,7 +595,7 @@
+             }
+         }
+
+-        self.import_batches.insert(batch_id.clone(), batch.clone());
++        self.import_batches.insert(batch_id, batch.clone());
+         Ok(batch)
+     }
+
+@@ -839,7 +839,7 @@
+         self.reconciliation_runs.insert(run_id.clone(), run.clone());
+         self.reconciliation_statement_line_ids
+-            .insert(run_id.clone(), statement_line_ids);
++            .insert(run_id, statement_line_ids);
+         self.month_close_by_scope
+             .insert(scope_key, close_id.clone());

@@ -1,0 +1,10 @@
+--- crates/logos-store/src/traits.rs
++++ crates/logos-store/src/traits.rs
+@@ -176,6 +176,7 @@
+         Ok(())
+     }
+
++    #[allow(clippy::too_many_arguments)]
+     fn write_analytics_artifact_manifest(
+         &mut self,
+         _artifact_kind: &str,
