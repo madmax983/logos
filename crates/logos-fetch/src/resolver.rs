@@ -151,3 +151,27 @@ impl SecretRefReader for OpCliSecretRefReader {
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_op_cli_secret_ref_reader_success() {
+        let reader = OpCliSecretRefReader {
+            op_bin: PathBuf::from("echo"),
+        };
+        // `echo read secret_ref_abc` outputs `read secret_ref_abc\n`
+        let result = reader.read_secret_ref("secret_ref_abc").unwrap();
+        assert_eq!(result, "read secret_ref_abc\n");
+    }
+
+    #[test]
+    fn test_op_cli_secret_ref_reader_failure() {
+        let reader = OpCliSecretRefReader {
+            op_bin: PathBuf::from("false"),
+        };
+        let result = reader.read_secret_ref("secret_ref_abc");
+        assert!(result.is_err());
+    }
+}
