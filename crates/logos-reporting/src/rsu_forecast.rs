@@ -1,8 +1,9 @@
-//! # RSU Forecasting
+//! # The Horizon
 //!
-//! Provides aggregation metrics for projected RSU vesting events.
-//! This module summarizes a series of discrete future liquidity events
-//! into high-level totals for reporting.
+//! This module looks into the future of your equity compensation.
+//! Instead of dealing with the chaos of individual vesting schedules,
+//! it aggregates multiple discrete liquidity events into a single, cohesive
+//! forecast, telling you exactly how much theoretical value is approaching.
 
 /// A high-level summary of a series of projected RSU vesting events.
 ///

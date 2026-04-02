@@ -1,12 +1,13 @@
-//! # The `logos-reporting` Library
+//! # The `logos-reporting` Library: The Dashboard
 //!
-//! This crate contains the projection and aggregation engines for `logos`.
-//! While `logos-core` handles the strict double-entry mechanics and isolated planning
-//! primitives, `logos-reporting` is responsible for answering the high-level questions:
-//! "How am I doing compared to my budget?", "What is my net worth?", and "What is my cashflow?".
+//! This crate acts as the dashboard for the `logos` financial engine.
+//! While `logos-core` handles the meticulous, low-level mechanics of double-entry accounting,
+//! `logos-reporting` exists to answer the human questions:
+//! * "Did I stick to my budget?" (`budget_vs_actual`)
+//! * "Are we bleeding cash or accumulating it?" (`cashflow`)
+//! * "What is my actual net worth?" (`net_worth`)
 //!
-//! It provides pure functions that take raw primitive data (e.g., balances, amounts) and
-//! project them into meaningful financial indicators.
+//! It consumes raw primitive data and weaves it into actionable financial intelligence.
 
 pub mod budget_vs_actual;
 pub mod cashflow;

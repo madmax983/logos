@@ -40,3 +40,7 @@
 ## 2026-03-25 - [RSU Reporting Module Documentation]
 **Confusion:** The `logos-reporting` RSU forecasting and budgeting models (`rsu_forecast` and `rsu_budget_plan`) lacked descriptive module narratives and executable examples. Users had to reverse-engineer how scenarios (Bear/Base/Bull) mapped to strict inputs and outputs.
 **Clarification:** Added module-level narratives and comprehensive executable doctests to all structs and the main projection functions (`project_rsu_forecast_summary`, `project_rsu_budget_plan`) to demonstrate instantiation and scenario sweeping semantics.
+
+## 2026-04-02 - [Reporting Module Narratives]
+**Confusion:** The `logos-reporting` crate lacked high-level module narratives (`//!`). The modules (`cashflow`, `net_worth`, `budget_vs_actual`, `register`, `rsu_forecast`) were described with dry, technical "noise" comments rather than explaining their role in the overall financial "dashboard".
+**Clarification:** Rewrote the module-level documentation across `logos-reporting` to include storytelling analogies ("The Pulse", "The Scoreboard", "The Reality Check") explaining the "why" and "what" for tired developers. Added missing `## Examples` doc-tests for `RegisterEntry::delta_cents`.

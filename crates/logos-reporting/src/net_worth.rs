@@ -1,6 +1,8 @@
-//! Net worth calculation engine.
+//! # The Scoreboard
 //!
-//! Provides the math to calculate total net worth from assets and liabilities.
+//! This module tracks your ultimate financial score: Net Worth.
+//! It strips away the noise of daily transactions to reveal the core reality
+//! of what you own (assets) minus what you owe (liabilities).
 
 /// Projects total net worth by subtracting total liabilities from total assets.
 ///

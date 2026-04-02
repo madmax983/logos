@@ -1,6 +1,9 @@
-//! Cashflow projection engine.
+//! # The Pulse
 //!
-//! Provides the math to calculate net cash flow from income and expenses.
+//! This module acts as the heartbeat monitor of your financial system.
+//! While your net worth tells you where you are, cashflow tells you
+//! the direction and speed you are traveling. It calculates the net difference
+//! between what flows into your accounts (income) and what flows out (expenses).
 
 /// Projects net cash flow by subtracting total expenses from total income.
 ///

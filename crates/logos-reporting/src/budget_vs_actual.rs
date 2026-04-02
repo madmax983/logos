@@ -1,6 +1,7 @@
-//! Budget variance calculations.
+//! # The Reality Check
 //!
-//! Provides the logic to compare planned targets against actuals.
+//! This module answers the uncomfortable question: *Did I actually stick to the plan?*
+//! It calculates the variance between your aspirational budget and your actual spending.
 
 /// Projects the variance between a planned budget and actual activity.
 ///

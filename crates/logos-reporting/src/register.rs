@@ -1,7 +1,8 @@
-//! Register balance projection.
+//! # The Ledger
 //!
-//! Provides structures and functions to calculate the running balance of an account
-//! by applying a sequence of historical delta entries to an opening balance.
+//! This module tracks the chronological story of an account.
+//! It provides the mechanics to "replay" history—taking an opening balance and
+//! systematically applying a sequence of events to discover the final state.
 
 /// A single delta (change in value) to apply to a register balance.
 ///
@@ -29,6 +30,15 @@ impl RegisterEntry {
         Self { delta_cents }
     }
 
+    /// The net change this entry applies to the running balance.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_reporting::RegisterEntry;
+    /// let entry = RegisterEntry::new(-1500);
+    /// assert_eq!(entry.delta_cents(), -1500);
+    /// ```
     #[must_use]
     pub const fn delta_cents(&self) -> i64 {
         self.delta_cents
