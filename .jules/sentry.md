@@ -17,3 +17,7 @@
 ## 2026-03-23 - [Test All Error Paths]
 **Learning:** Found an untested error branch for `AllocationPolicy::new` when percentages did not sum to 100. Always ensure custom constructor error paths are covered to prevent panics during invalid business state configuration.
 **Action:** Use `cargo tarpaulin` to find untested `Err` branches in business logic files.
+
+## 2026-04-02 - [Equivalent Mutants in Boundary Checks]
+**Learning:** `cargo-mutants` might flag equivalent mutants when checking for boundaries, like replacing `>` with `>=` on a comparison `if tax_cents > 0` where `tax_cents` being exactly `0` will result in the same effect as skipping the block if the block itself relies on `> 0` to work properly or when we skip writing an entry. In this case, adding a test that results exactly in the boundary condition being 0 (e.g., discretionary cents being 0) will kill the mutant by asserting the boundary behavior explicitly.
+**Action:** Always write tests that evaluate explicitly to the boundary condition (e.g. exactly 0 cents) when mutants replace `>` with `>=`.
