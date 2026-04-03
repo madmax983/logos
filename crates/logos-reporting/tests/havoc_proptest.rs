@@ -8,30 +8,27 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    #[should_panic(expected = "attempt to subtract with overflow")]
-    fn project_cashflow_panics_on_overflow(
-        income in i64::MIN..=(i64::MIN + 100),
+    fn project_cashflow_saturates_on_overflow(
         expense in 1i64..=100i64,
     ) {
-        let _ = project_cashflow(income, expense);
+        let result = project_cashflow(i64::MIN, expense);
+        assert_eq!(result, i64::MIN);
     }
 
     #[test]
-    #[should_panic(expected = "attempt to subtract with overflow")]
-    fn project_net_worth_panics_on_overflow(
-        assets in i64::MIN..=(i64::MIN + 100),
+    fn project_net_worth_saturates_on_overflow(
         liabilities in 1i64..=100i64,
     ) {
-        let _ = project_net_worth(assets, liabilities);
+        let result = project_net_worth(i64::MIN, liabilities);
+        assert_eq!(result, i64::MIN);
     }
 
     #[test]
-    #[should_panic(expected = "attempt to subtract with overflow")]
-    fn project_budget_variance_panics_on_overflow(
-        budget in i64::MIN..=(i64::MIN + 100),
+    fn project_budget_variance_saturates_on_overflow(
         actual in 1i64..=100i64,
     ) {
-        let _ = project_budget_variance(budget, actual);
+        let result = project_budget_variance(i64::MIN, actual);
+        assert_eq!(result, i64::MIN);
     }
 
     #[test]
