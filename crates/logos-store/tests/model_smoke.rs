@@ -105,9 +105,12 @@ fn smoke_models_and_trait_object_compile() {
     };
     assert_eq!(err.to_string(), "failed to load store: boom");
 
+    #[allow(clippy::items_after_statements)]
     fn accepts_trait_object(_store: &dyn LedgerStore) {}
 
+    #[allow(clippy::items_after_statements)]
     struct DummyStore;
+    #[allow(clippy::items_after_statements)]
     impl LedgerStore for DummyStore {}
 
     let store = DummyStore;

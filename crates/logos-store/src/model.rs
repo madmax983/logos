@@ -621,6 +621,102 @@ impl StoredReconciliationRun {
         self.created_at
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stored_fetch_run_status_behavior() {
+        assert_eq!(StoredFetchRunStatus::Downloaded.as_str(), "downloaded");
+        assert_eq!(StoredFetchRunStatus::Imported.as_str(), "imported");
+        assert_eq!(
+            StoredFetchRunStatus::NoNewStatement.as_str(),
+            "no_new_statement"
+        );
+        assert_eq!(
+            StoredFetchRunStatus::NeedsAttention.as_str(),
+            "needs_attention"
+        );
+        assert_eq!(StoredFetchRunStatus::Failed.as_str(), "failed");
+
+        assert_eq!(
+            StoredFetchRunStatus::parse("downloaded"),
+            Some(StoredFetchRunStatus::Downloaded)
+        );
+        assert_eq!(
+            StoredFetchRunStatus::parse("imported"),
+            Some(StoredFetchRunStatus::Imported)
+        );
+        assert_eq!(
+            StoredFetchRunStatus::parse("no_new_statement"),
+            Some(StoredFetchRunStatus::NoNewStatement)
+        );
+        assert_eq!(
+            StoredFetchRunStatus::parse("needs_attention"),
+            Some(StoredFetchRunStatus::NeedsAttention)
+        );
+        assert_eq!(
+            StoredFetchRunStatus::parse("failed"),
+            Some(StoredFetchRunStatus::Failed)
+        );
+        assert_eq!(StoredFetchRunStatus::parse("unknown"), None);
+
+        assert!(StoredFetchRunStatus::Downloaded.is_success());
+        assert!(StoredFetchRunStatus::Imported.is_success());
+        assert!(StoredFetchRunStatus::NoNewStatement.is_success());
+        assert!(!StoredFetchRunStatus::NeedsAttention.is_success());
+        assert!(!StoredFetchRunStatus::Failed.is_success());
+    }
+
+    #[test]
+    fn test_stored_fetch_artifact_format_behavior() {
+        assert_eq!(StoredFetchArtifactFormat::Csv.as_str(), "csv");
+        assert_eq!(StoredFetchArtifactFormat::Pdf.as_str(), "pdf");
+
+        assert_eq!(
+            StoredFetchArtifactFormat::parse("csv"),
+            Some(StoredFetchArtifactFormat::Csv)
+        );
+        assert_eq!(
+            StoredFetchArtifactFormat::parse("pdf"),
+            Some(StoredFetchArtifactFormat::Pdf)
+        );
+        assert_eq!(StoredFetchArtifactFormat::parse("unknown"), None);
+    }
+
+    #[test]
+    fn test_stored_fetch_run_getters() {
+        let ts: Timestamp = 1_696_118_400;
+        let run = StoredFetchRun::new(
+            "run_123",
+            "src_456",
+            "inst_789",
+            "acct_abc",
+            "2023-10",
+            StoredFetchRunStatus::Downloaded,
+            Some("/path/to/artifact"),
+            Some(StoredFetchArtifactFormat::Csv),
+            Some(1000),
+            Some(2000),
+            Some("error msg"),
+            ts,
+        );
+
+        assert_eq!(run.run_id(), "run_123");
+        assert_eq!(run.source_id(), "src_456");
+        assert_eq!(run.institution_id(), "inst_789");
+        assert_eq!(run.ledger_account(), "acct_abc");
+        assert_eq!(run.month_key(), "2023-10");
+        assert_eq!(run.status(), StoredFetchRunStatus::Downloaded);
+        assert_eq!(run.artifact_path(), Some("/path/to/artifact"));
+        assert_eq!(run.output_format(), Some(StoredFetchArtifactFormat::Csv));
+        assert_eq!(run.opening_balance_cents(), Some(1000));
+        assert_eq!(run.closing_balance_cents(), Some(2000));
+        assert_eq!(run.error_summary(), Some("error msg"));
+        assert_eq!(run.created_at(), ts);
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredMonthClose {
     close_id: String,
