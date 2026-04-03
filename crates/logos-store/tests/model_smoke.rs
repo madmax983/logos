@@ -63,6 +63,7 @@ fn _touch_runtime_contract<T: LedgerStore>(store: &mut T) {
 }
 
 #[test]
+#[allow(clippy::items_after_statements)]
 fn smoke_models_and_trait_object_compile() {
     let txn_id = TransactionId::new("txn-1").expect("valid transaction id");
     let transaction = TransactionBuilder::new("paycheck")

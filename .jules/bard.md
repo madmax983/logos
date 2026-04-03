@@ -40,3 +40,7 @@
 ## 2026-03-25 - [RSU Reporting Module Documentation]
 **Confusion:** The `logos-reporting` RSU forecasting and budgeting models (`rsu_forecast` and `rsu_budget_plan`) lacked descriptive module narratives and executable examples. Users had to reverse-engineer how scenarios (Bear/Base/Bull) mapped to strict inputs and outputs.
 **Clarification:** Added module-level narratives and comprehensive executable doctests to all structs and the main projection functions (`project_rsu_forecast_summary`, `project_rsu_budget_plan`) to demonstrate instantiation and scenario sweeping semantics.
+
+## 2026-04-03 - [Storage Traits Documentation]
+**Confusion:** The `LedgerStore` trait in `crates/logos-store/src/traits.rs` and its models lacked high-level module narratives and basic executable doc-tests. Users had to guess what `StoredTransaction` was meant for versus the core `Transaction` object.
+**Clarification:** Added module-level `//!` narrative docs explaining the storage contract abstraction, along with `///` descriptions and `## Examples` doc-tests for `LedgerStore`, `MemoryStore`, and `StoredTransaction`.
