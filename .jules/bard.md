@@ -40,3 +40,7 @@
 ## 2026-03-25 - [RSU Reporting Module Documentation]
 **Confusion:** The `logos-reporting` RSU forecasting and budgeting models (`rsu_forecast` and `rsu_budget_plan`) lacked descriptive module narratives and executable examples. Users had to reverse-engineer how scenarios (Bear/Base/Bull) mapped to strict inputs and outputs.
 **Clarification:** Added module-level narratives and comprehensive executable doctests to all structs and the main projection functions (`project_rsu_forecast_summary`, `project_rsu_budget_plan`) to demonstrate instantiation and scenario sweeping semantics.
+
+## 2026-03-26 - [LedgerStore and RegisterEntry Documentation]
+**Confusion:** Users did not understand the purpose of the `LedgerStore` methods since the trait was undocumented, and `RegisterEntry::delta_cents` lacked an explanation of how signs work for inflows and outflows.
+**Clarification:** Added narrative docstrings and executable doctests (using `MemoryStore`) to `LedgerStore` and added context to `RegisterEntry::delta_cents`.

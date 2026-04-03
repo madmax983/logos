@@ -29,6 +29,22 @@ impl RegisterEntry {
         Self { delta_cents }
     }
 
+    /// Retrieves the specific change in value (in cents) for this entry.
+    ///
+    /// Positive values represent inflows (deposits), while negative values
+    /// represent outflows (withdrawals).
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_reporting::RegisterEntry;
+    ///
+    /// let deposit = RegisterEntry::new(5000);
+    /// assert_eq!(deposit.delta_cents(), 5000);
+    ///
+    /// let withdrawal = RegisterEntry::new(-2000);
+    /// assert_eq!(withdrawal.delta_cents(), -2000);
+    /// ```
     #[must_use]
     pub const fn delta_cents(&self) -> i64 {
         self.delta_cents
