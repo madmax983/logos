@@ -139,6 +139,16 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
 
+    #[test]
+    fn should_return_max_when_rollover_balance_is_exactly_i64_max() {
+        assert_eq!(rollover_end_balance(i64::MAX, 0, 0), i64::MAX);
+    }
+
+    #[test]
+    fn should_return_min_when_rollover_balance_is_exactly_i64_min() {
+        assert_eq!(rollover_end_balance(i64::MIN, 0, 0), i64::MIN);
+    }
+
     proptest! {
         #[test]
         #[allow(clippy::cast_possible_truncation)]

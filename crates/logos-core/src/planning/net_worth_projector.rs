@@ -275,6 +275,34 @@ mod tests {
     }
 
     #[test]
+    fn should_set_haircut_tiers() {
+        let mut projector = NetWorthProjector::new(100_000, 10_000);
+        let custom_tiers = HaircutTierTable::new(10, 20, 30).unwrap();
+        projector.set_haircut_tiers(custom_tiers);
+
+        // Use an upcoming vest to verify the tiers are actually applied
+        projector.add_upcoming_vest(UpcomingVest {
+            avg_close_price_cents: 10_000,
+            units: 10,
+            days_to_vest: 15, // short tier, normally 25%, now 10%
+        });
+
+        let (timeline, _) = projector.project_timeline(1);
+        // Gross: 100,000 cents. Safe value: 90%. Vested: 90,000 cents.
+        assert_eq!(timeline[0].vested_value_cents, 90_000);
+    }
+
+    #[test]
+    fn should_cross_milestone_when_exactly_equal() {
+        let mut projector = NetWorthProjector::new(90_000, 10_000);
+        projector.add_milestone_cents(100_000); // Reached exactly in month 1
+
+        let (_, crossed_milestones) = projector.project_timeline(1);
+        assert_eq!(crossed_milestones.len(), 1);
+        assert_eq!(crossed_milestones[0], (100_000, 1));
+    }
+
+    #[test]
     fn test_project_timeline_with_vests() {
         let mut projector = NetWorthProjector::new(50_000, 5_000); // 500 initial, +50 per month
 
