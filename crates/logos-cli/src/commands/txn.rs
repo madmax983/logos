@@ -248,7 +248,7 @@ mod tests {
         .expect_err("empty description");
 
         assert_eq!(poster.calls, 0);
-        assert_eq!(err.to_string(), "missing transaction description");
+        assert_eq!(err.to_string(), "Missing transaction description.");
     }
 
     #[test]
@@ -265,7 +265,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "invalid value '0' for argument '--amount-cents'"
+            "Invalid value '0' for argument '--amount-cents'."
         );
         assert_eq!(poster.calls, 0);
     }
@@ -287,7 +287,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "command 'txn.add' failed at runtime: missing columns: expected 5, found 2"
+            "Command 'txn.add' failed at runtime: missing columns: expected 5, found 2."
         );
     }
 
@@ -314,7 +314,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "missing value for argument '--supersedes-id'"
+            "Missing value for argument '--supersedes-id'."
         );
         assert_eq!(poster.correction_calls, 0);
     }
@@ -324,7 +324,7 @@ mod tests {
         let mut poster = FakePoster::default();
         let err = apply_correction("txn-7", "   ", &mut poster).expect_err("missing reason");
 
-        assert_eq!(err.to_string(), "missing value for argument '--reason'");
+        assert_eq!(err.to_string(), "Missing value for argument '--reason'.");
         assert_eq!(poster.correction_calls, 0);
     }
 
@@ -338,7 +338,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "command 'txn.correct' failed at runtime: missing columns: expected 5, found 2"
+            "Command 'txn.correct' failed at runtime: missing columns: expected 5, found 2."
         );
     }
 }
