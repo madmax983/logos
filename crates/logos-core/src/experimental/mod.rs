@@ -1,5 +1,7 @@
 #[cfg(feature = "nova")]
 pub mod asset_depreciation;
+#[cfg(feature = "nova")]
+pub mod benford_law_auditor;
 pub mod cashflow_projector;
 #[cfg(feature = "nova")]
 pub mod coast_fire;
