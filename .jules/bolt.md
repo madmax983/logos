@@ -48,3 +48,7 @@
 ## 2024-05-18 - Pre-allocate HashMaps when Loading Graph Nodes
 **Learning:** Found several `HashMap` instances initialized with `HashMap::new()` during database node loading (e.g. `load_transactions`, `load_statement_lines`), despite comments claiming they were pre-allocated. This causes unnecessary reallocation and rehashing while loading large datasets into memory.
 **Action:** Use the iterator's `.size_hint()` method on the node ID iterators (e.g. `let (lower, upper) = node_ids.size_hint(); let capacity = upper.unwrap_or(lower);`) and initialize the maps using `HashMap::with_capacity(capacity)` to eliminate runtime rehashing and reallocation.
+
+**[Pre-allocate Vectors]**
+**Learning:** Default vector allocations can lead to unnecessary reallocations when building lists of known sizes.
+**Action:** When iterating over a collection to build a new `Vec`, always use `Vec::with_capacity()` with the known length to avoid dynamic reallocations.
