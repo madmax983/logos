@@ -1,3 +1,8 @@
+//! The Ledger Store Contract
+//!
+//! This module defines the [`LedgerStore`] trait, which acts as the persistence backbone for all `logos` business logic.
+//! It abstracts away the underlying storage mechanism (e.g., `PostgreSQL`, in-memory) to allow domain logic to be easily tested.
+
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::too_many_arguments)]
 
@@ -29,6 +34,19 @@ fn missing_write(method: &'static str) -> StoreError {
     }
 }
 
+/// Defines the primary contract for persisting and retrieving ledger entities.
+///
+/// Implementations of this trait must guarantee strict double-entry semantics where applicable
+/// and adhere to the append-only nature of the ledger for transactions.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::{LedgerStore, MemoryStore};
+///
+/// let mut store = MemoryStore::new();
+/// assert_eq!(store.transaction_count(), 0);
+/// ```
 pub trait LedgerStore {
     fn transaction_count(&self) -> usize {
         missing_read("transaction_count")

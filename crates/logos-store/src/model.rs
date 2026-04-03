@@ -1,9 +1,31 @@
+//! Storage Models
+//!
+//! Defines the "plain old data" structs that represent how domain concepts are serialized and retrieved from the persistence layer.
+
 use logos_core::{Correction, Transaction, TransactionId};
 
 pub type Timestamp = i64;
 pub type BudgetTargetKey = (String, String);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// Represents a transaction as it exists in the persistence layer, including its internal [`TransactionId`] and `effective_at` timestamp.
+///
+/// Unlike the core [`Transaction`] domain object, this struct explicitly pairs the business data with its storage metadata.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::{TransactionBuilder, TransactionId, AccountId, Posting};
+/// use logos_store::model::StoredTransaction;
+///
+/// let txn = TransactionBuilder::new("groceries")
+///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 100).unwrap())
+///     .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
+///     .build().unwrap();
+/// let id = TransactionId::new("txn-1").unwrap();
+/// let stored = StoredTransaction::with_effective_at(id.clone(), txn, 1672531200000000);
+/// assert_eq!(stored.effective_at(), 1672531200000000);
+/// ```
 pub struct StoredTransaction {
     id: TransactionId,
     transaction: Transaction,

@@ -26,6 +26,7 @@ fn balanced_txn(
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn memory_store_allocates_deterministic_ids_and_tracks_related_records() {
     let mut store = MemoryStore::new_in_memory();
 

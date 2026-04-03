@@ -1,3 +1,8 @@
+//! The Memory Store
+//!
+//! An ephemeral, hashmap-backed implementation of the [`LedgerStore`] trait.
+//! Strictly meant for rapid testing, doctests, and isolated environment simulation where persistence is not required.
+
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -14,6 +19,18 @@ use crate::model::{
 use crate::traits::LedgerStore;
 
 #[derive(Debug)]
+/// An in-memory implementation of the [`LedgerStore`] trait for testing and simulations.
+///
+/// Stores all entities in memory. Data is lost as soon as the instance is dropped.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::{LedgerStore, MemoryStore};
+///
+/// let mut store = MemoryStore::new();
+/// assert_eq!(store.budget_targets().len(), 0);
+/// ```
 pub struct MemoryStore {
     clock_us: Timestamp,
     next_transaction_id: u64,
