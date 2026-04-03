@@ -1497,7 +1497,10 @@ impl LedgerStore for PostgresStore {
                 imported_at_us,
             })
             .collect();
-        let mut statement_line_payloads = Vec::new();
+
+        /// ⚡ Bolt: Pre-allocate statement line payloads to match the upper bound of the import
+        /// records to avoid dynamic vector reallocations during persistence.
+        let mut statement_line_payloads = Vec::with_capacity(records.len());
         for record in records {
             if let Some(line) = record.statement_line() {
                 let line_id = Self::next_statement_line_id(&mut *connection)?;
