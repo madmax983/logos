@@ -314,6 +314,18 @@ mod tests {
     }
 
     #[test]
+    fn should_match_conservative_defaults() {
+        assert_eq!(
+            HaircutTierTable::conservative_defaults(),
+            HaircutTierTable {
+                short: 25,
+                medium: 40,
+                long: 55,
+            }
+        );
+    }
+
+    #[test]
     fn should_return_zero_when_forecast_overflows() {
         let tiers = HaircutTierTable::default();
         assert_eq!(forecast_value_cents(i64::MAX, 2, 15, &tiers), 0);
