@@ -1498,8 +1498,8 @@ impl LedgerStore for PostgresStore {
             })
             .collect();
 
-        /// ⚡ Bolt: Pre-allocate statement line payloads to match the upper bound of the import
-        /// records to avoid dynamic vector reallocations during persistence.
+        // ⚡ Bolt: Pre-allocate statement line payloads to match the upper bound of the import
+        // records to avoid dynamic vector reallocations during persistence.
         let mut statement_line_payloads = Vec::with_capacity(records.len());
         for record in records {
             if let Some(line) = record.statement_line() {

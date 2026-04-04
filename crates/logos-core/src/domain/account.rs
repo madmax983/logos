@@ -9,10 +9,11 @@ use crate::error::DomainError;
 
 /// A strongly-typed identifier for an account in the ledger.
 ///
-/// Wraps a String to enforce domain boundaries and prevent stringly-typed
-/// parameter mix-ups.
+/// Wraps an `Arc<str>` to enforce domain boundaries, prevent stringly-typed
+/// parameter mix-ups, and provide cheap zero-cost cloning since accounts
+/// are frequently passed and duplicated.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct AccountId(String);
+pub struct AccountId(std::sync::Arc<str>);
 
 impl AccountId {
     /// Creates a new `AccountId`, trimming whitespace.
@@ -35,7 +36,7 @@ impl AccountId {
             return Err(DomainError::EmptyAccountId);
         }
 
-        Ok(Self(trimmed.to_owned()))
+        Ok(Self(trimmed.into()))
     }
 
     /// Retrieves the string representation of the account id.
