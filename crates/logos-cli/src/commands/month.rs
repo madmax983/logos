@@ -129,7 +129,7 @@ mod tests {
             2,
             10_000,
             2_500,
-            1_700_000_123_i64.into(),
+            1_700_000_123_i64,
         );
         let close = StoredMonthClose::new(
             "close-2",
@@ -137,7 +137,7 @@ mod tests {
             "assets:checking",
             "recon-5",
             Some("artifact-2"),
-            1_700_000_456_i64.into(),
+            1_700_000_456_i64,
         );
         let fetch_run = StoredFetchRun::new(
             "fetch-1",
@@ -151,7 +151,7 @@ mod tests {
             Some(100_000),
             Some(107_500),
             None,
-            1_700_000_100_i64.into(),
+            1_700_000_100_i64,
         );
         let summary = MonthAutopilotSummary::new(
             "2026-04",

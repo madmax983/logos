@@ -136,7 +136,7 @@ mod tests {
             Some(100_000),
             Some(198_766),
             None,
-            1_700_000_333_i64.into(),
+            1_700_000_333_i64,
         );
         let output = render_list_output(Some("2026-03"), Some("assets:checking"), &[run]);
 
@@ -160,7 +160,7 @@ mod tests {
             Some(100_000),
             Some(198_766),
             None,
-            1_700_000_333_i64.into(),
+            1_700_000_333_i64,
         );
         let output = render_show_output(&run);
 
@@ -185,7 +185,7 @@ mod tests {
             None,
             None,
             Some("mfa challenge required"),
-            1_700_000_444_i64.into(),
+            1_700_000_444_i64,
         );
         let output = render_show_output(&run);
 
