@@ -339,6 +339,31 @@ mod tests {
         assert_eq!(crossed_milestones[0], (100_000, 2)); // Crossed 100k in month 2
     }
 
+    #[test]
+    fn test_project_timeline_vest_exactly_on_month_start_boundary() {
+        let mut projector = NetWorthProjector::new(50_000, 5_000);
+
+        // Month 1 is days 0 < day <= 30.
+        // Month 2 is days 30 < day <= 60.
+        // If days_to_vest is exactly 30, it should be in Month 1, not Month 2.
+        projector.add_upcoming_vest(UpcomingVest {
+            avg_close_price_cents: 10_000,
+            units: 10,
+            days_to_vest: 30, // Exactly on the boundary
+        });
+
+        let (timeline, _) = projector.project_timeline(2);
+
+        // Safe value for 30 days is medium tier (40%), so 60_000 cents.
+        assert_eq!(timeline.len(), 2);
+
+        // Should vest in month 1
+        assert_eq!(timeline[0].vested_value_cents, 60_000);
+
+        // Should NOT vest in month 2 (this kills the > replaced by >= mutant for month_start_days)
+        assert_eq!(timeline[1].vested_value_cents, 0);
+    }
+
     use proptest::prelude::*;
     proptest! {
         #[test]
