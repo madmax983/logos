@@ -15,6 +15,8 @@ pub mod goal_seeker;
 #[cfg(feature = "nova")]
 pub mod inflation;
 pub mod mermaid_exporter;
+#[cfg(feature = "nova")]
+pub mod mermaid_xy_exporter;
 pub mod monte_carlo;
 #[cfg(feature = "nova")]
 pub mod predictive_ledger;
