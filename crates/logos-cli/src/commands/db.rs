@@ -82,7 +82,7 @@ mod tests {
         };
         assert_eq!(
             err.to_string(),
-            "command 'db.status' failed at runtime: DATABASE_URL is not set"
+            "Command 'db.status' failed at runtime: DATABASE_URL is not set."
         );
 
         if let Some(value) = previous {
