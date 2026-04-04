@@ -92,7 +92,7 @@ mod tests {
             "assets:checking",
             "recon-11",
             Some("artifact-7"),
-            1_700_000_555_i64.into(),
+            1_700_000_555_i64,
         );
 
         let output = render_close_month_output(&close, close.analytics_artifact_id());

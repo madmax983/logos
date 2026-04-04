@@ -279,7 +279,7 @@ mod tests {
             2,
             10_000,
             2_500,
-            1_700_000_111_i64.into(),
+            1_700_000_111_i64,
         );
         let output = render_month_output("assets:checking", "2026-03", 100_000, &run);
 
@@ -309,7 +309,7 @@ mod tests {
             2,
             15_000,
             3_000,
-            1_700_000_222_i64.into(),
+            1_700_000_222_i64,
         );
         let output = render_show_output(&run);
 
@@ -340,7 +340,7 @@ mod tests {
                 2,
                 11_000,
                 2_000,
-                1_700_000_333_i64.into(),
+                1_700_000_333_i64,
             ),
             StoredReconciliationRun::new(
                 "recon-10",
@@ -356,7 +356,7 @@ mod tests {
                 1,
                 4_000,
                 0,
-                1_700_000_444_i64.into(),
+                1_700_000_444_i64,
             ),
         ];
 

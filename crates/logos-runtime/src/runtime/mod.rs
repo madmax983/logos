@@ -73,7 +73,7 @@ pub struct AppRuntime<S = PostgresStore> {
 
 impl<S> AppRuntime<S> {
     #[must_use]
-    pub fn with_store(
+    pub const fn with_store(
         store: S,
         artifacts_root: PathBuf,
         fetch_config_path: Option<PathBuf>,
@@ -1332,7 +1332,7 @@ impl<S: LedgerStore> AppRuntime<S> {
 
     fn post_import_record(&mut self, record: &ImportRecord) -> Result<TransactionId, RuntimeError> {
         let amount = record.amount_cents();
-        let valid_from = parse_import_timestamp(record.timestamp()).map(Into::into);
+        let valid_from = parse_import_timestamp(record.timestamp());
         if amount > 0 {
             let builder =
                 build_double_entry(record.memo(), record.account(), record.category(), amount)?;
@@ -1388,7 +1388,7 @@ impl<S: LedgerStore> AppRuntime<S> {
             .store
             .transactions()
             .into_iter()
-            .filter(|stored| transaction_in_month(&stored, month_key))
+            .filter(|stored| transaction_in_month(stored, month_key))
             .filter(|stored| {
                 stored
                     .transaction()
