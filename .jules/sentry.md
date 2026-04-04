@@ -17,3 +17,6 @@
 ## 2026-03-23 - [Test All Error Paths]
 **Learning:** Found an untested error branch for `AllocationPolicy::new` when percentages did not sum to 100. Always ensure custom constructor error paths are covered to prevent panics during invalid business state configuration.
 **Action:** Use `cargo tarpaulin` to find untested `Err` branches in business logic files.
+## 2026-04-04 - [Off-By-One Logic Mutants]
+**Learning:** Checking for positive amounts using `> 0` instead of `>= 0` can be silently ignored by the test suite if there are no explicit tests mapping exactly to `0`. This leaves the system vulnerable to incorrectly evaluating an invalid value when attempting to create a ledger `Posting`.
+**Action:** When filtering or excluding boundary values, write explicit test cases using precisely the rejected boundary inputs (e.g. `0%` allocations) to prove the guard is fully robust and catches `cargo-mutants` equivalent replacement cases.

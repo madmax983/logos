@@ -194,6 +194,41 @@ mod tests {
     }
 
     #[test]
+    fn test_zero_bucket_distribution() {
+        // Create an allocation policy where specific buckets have exactly 0% allocation.
+        // We set discretionary to 100% to ensure that tax_reserve (which takes the remainder)
+        // is also 0%. This ensures that no postings with a zero amount are generated,
+        // as attempting to debit or credit exactly 0 cents would fail validation.
+        let policy = AllocationPolicy::new(0, 0, 0, 100).unwrap();
+        let config = RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").expect("valid account id"),
+            tax_reserve: AccountId::new("assets:tax").expect("valid account id"),
+            smoothing_buffer: AccountId::new("assets:buffer").expect("valid account id"),
+            goals: AccountId::new("assets:goals").expect("valid account id"),
+            discretionary: AccountId::new("assets:checking").expect("valid account id"),
+        };
+        let distributor = RsuAutoDistributor::new(config);
+
+        let tx = distributor
+            .distribute_rsu_vest("Vest 3", 1000, &policy)
+            .expect("should handle zero buckets gracefully");
+
+        let postings = tx.postings();
+
+        // rsu_asset (credit), discretionary (debit) should be affected.
+        // tax_reserve, smoothing, goals should be exactly 0 and skipped.
+        assert_eq!(postings.len(), 2);
+        assert!(
+            postings
+                .contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 1000).unwrap())
+        );
+        assert!(
+            postings
+                .contains(&Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).unwrap())
+        );
+    }
+
+    #[test]
     fn test_imperfect_distribution_sweeps_to_tax() {
         let policy = AllocationPolicy::new(33, 33, 33, 1).unwrap();
         let config = RsuDistributorConfig {
