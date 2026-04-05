@@ -24,3 +24,13 @@
 - Several mutators like `replace < with <=` or `replace + with *` in `date_index + 1` yield the identical operational outcome because either the `enumerate()` offset preserves the skipped index anyway or boundary cases naturally fail upstream checks (Equivalent Mutant).
 - Modifying return types or swallowed error handling paths (e.g., in OCR fallbacks) represent IO issues.
 **Kill Shot:** Documented and excluded via `.cargo/mutants.toml`. Added specific test coverage to boundary checks in `valid_calendar_date` and zero-amount edge cases.
+
+**HaircutTierTable Conservative Defaults Alias**
+**Mutant:** `replace HaircutTierTable::conservative_defaults -> Self with Default::default()`
+**Diagnosis:** EQUIVALENT_MUTANT. The `conservative_defaults` function is an exact alias for `Self::default()`. Replacing the return value with `Default::default()` produces semantically identical behavior that satisfies all tests.
+**Kill Shot:** Documented and excluded via `.cargo/mutants.toml`.
+
+**Forecast Value Zero Price Boundary**
+**Mutant:** `replace < with <= in forecast_value_cents`
+**Diagnosis:** EQUIVALENT_MUTANT. Replacing `avg_close_price_cents < 0` with `<= 0` causes `0` inputs to return `0` immediately rather than multiplying `0 * units` and returning `0`. Both branches yield identical `0` results natively, making the mutant equivalent.
+**Kill Shot:** Documented and excluded via `.cargo/mutants.toml`.
