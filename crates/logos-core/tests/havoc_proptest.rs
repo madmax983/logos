@@ -58,6 +58,15 @@ proptest! {
     #[test]
     #[should_panic(expected = "attempt to multiply with overflow")]
     fn test_forecast_value_cents_panics_on_large_gross_value(
+        price in i64::MAX / 100..=i64::MAX / 50,
+    ) {
+        let tiers = logos_core::domain::rsu::HaircutTierTable::default();
+        let _ = logos_core::domain::rsu::forecast_value_cents(price, 1000, 15, &tiers);
+    }
+
+    #[test]
+    #[should_panic(expected = "attempt to multiply with overflow")]
+    fn test_forecast_value_cents_panics_on_large_gross_value2(
         price in (i64::MAX / 50)..=(i64::MAX / 2),
     ) {
         let tiers = logos_core::domain::rsu::HaircutTierTable::default();
