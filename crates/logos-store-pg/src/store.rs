@@ -948,11 +948,7 @@ impl PostgresStore {
             .order(reconciliation_runs::run_id.asc())
             .select(ReconciliationRunRow::as_select())
             .load::<ReconciliationRunRow>(&mut *connection)
-            .map(|rows| {
-                rows.iter()
-                    .map(Self::reconciliation_run_from_row)
-                    .collect()
-            })
+            .map(|rows| rows.iter().map(Self::reconciliation_run_from_row).collect())
             .map_err(|err| load_failure(format!("loading reconciliation runs failed: {err}")))
     }
 

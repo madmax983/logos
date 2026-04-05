@@ -8,8 +8,11 @@
 use crate::error::DomainError;
 
 /// A unique identifier for a recorded transaction.
+///
+/// Uses `Arc<str>` instead of `String` to ensure zero-cost cloning, as transaction IDs are
+/// frequently copied across the storage boundaries and mapped in memory.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TransactionId(String);
+pub struct TransactionId(std::sync::Arc<str>);
 
 impl TransactionId {
     /// Creates a normalized transaction id.
@@ -32,7 +35,7 @@ impl TransactionId {
             return Err(DomainError::EmptyTransactionId);
         }
 
-        Ok(Self(trimmed.to_owned()))
+        Ok(Self(trimmed.into()))
     }
 
     /// Retrieves the string representation of the transaction id.
