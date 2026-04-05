@@ -72,13 +72,13 @@ mod tests {
     #[test]
     fn connect_store_requires_database_url() {
         let previous = std::env::var_os("DATABASE_URL");
+        #[allow(unsafe_code)]
         unsafe {
             std::env::remove_var("DATABASE_URL");
         }
 
-        let err = match connect_store("db.status") {
-            Ok(_) => panic!("missing database url must fail"),
-            Err(e) => e,
+        let Err(err) = connect_store("db.status") else {
+            panic!("missing database url must fail")
         };
         assert_eq!(
             err.to_string(),
@@ -86,6 +86,7 @@ mod tests {
         );
 
         if let Some(value) = previous {
+            #[allow(unsafe_code)]
             unsafe {
                 std::env::set_var("DATABASE_URL", value);
             }
