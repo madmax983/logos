@@ -20,3 +20,6 @@
 ## 2026-04-04 - [Off-By-One Logic Mutants]
 **Learning:** Checking for positive amounts using `> 0` instead of `>= 0` can be silently ignored by the test suite if there are no explicit tests mapping exactly to `0`. This leaves the system vulnerable to incorrectly evaluating an invalid value when attempting to create a ledger `Posting`.
 **Action:** When filtering or excluding boundary values, write explicit test cases using precisely the rejected boundary inputs (e.g. `0%` allocations) to prove the guard is fully robust and catches `cargo-mutants` equivalent replacement cases.
+## 2026-04-05 - [Equivalent mutants in RSU logic]
+**Learning:** `cargo mutants` identified two equivalent mutants in `rsu.rs`: changing `< 0` to `<= 0` (which inherently returns 0 via multiplication anyway), and changing `conservative_defaults` to `Default::default()` (when `conservative_defaults` is defined as calling `Self::default()`).
+**Action:** Document equivalent mutants in `rsu.rs` as acceptable and write comments/tests that capture the equivalent boundaries. Do not modify production code simply to appease equivalent mutants.

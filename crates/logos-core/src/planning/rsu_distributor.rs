@@ -223,8 +223,9 @@ mod tests {
                 .contains(&Posting::credit(AccountId::new("assets:rsu").unwrap(), 1000).unwrap())
         );
         assert!(
-            postings
-                .contains(&Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).unwrap())
+            postings.contains(
+                &Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).unwrap()
+            )
         );
     }
 
