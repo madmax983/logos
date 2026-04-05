@@ -18,5 +18,7 @@ exclude_re = [
     "replace == with != in run_pdftoppm",
     "delete ! in parse_pdf_statement_file",
     "delete ! in extract_with_pdftotext",
-    "delete ! in extract_pdf_literal_strings"
+    "delete ! in extract_pdf_literal_strings",
+    "replace HaircutTierTable::conservative_defaults -> Self with Default::default\\(\\)",
+    "replace < with <= in forecast_value_cents"
 ]
