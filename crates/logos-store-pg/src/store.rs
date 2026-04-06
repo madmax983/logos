@@ -939,7 +939,7 @@ impl PostgresStore {
             .first::<ReconciliationRunRow>(&mut *connection)
             .optional()
             .map_err(|err| load_failure(format!("loading reconciliation run failed: {err}")))?;
-        Ok(row.as_ref().map(|r| Self::reconciliation_run_from_row(r)))
+        Ok(row.as_ref().map(Self::reconciliation_run_from_row))
     }
 
     fn try_reconciliation_runs(&self) -> Result<Vec<StoredReconciliationRun>, StoreError> {
@@ -970,7 +970,7 @@ impl PostgresStore {
             .first::<MonthCloseRow>(&mut *connection)
             .optional()
             .map_err(|err| load_failure(format!("loading month close failed: {err}")))?;
-        Ok(row.as_ref().map(|r| Self::month_close_from_row(r)))
+        Ok(row.as_ref().map(Self::month_close_from_row))
     }
 
     fn try_month_close_for_scope(
@@ -986,7 +986,7 @@ impl PostgresStore {
             .first::<MonthCloseRow>(&mut *connection)
             .optional()
             .map_err(|err| load_failure(format!("loading month close for scope failed: {err}")))?;
-        Ok(row.as_ref().map(|r| Self::month_close_from_row(r)))
+        Ok(row.as_ref().map(Self::month_close_from_row))
     }
 
     fn try_month_closes(&self) -> Result<Vec<StoredMonthClose>, StoreError> {
@@ -995,7 +995,7 @@ impl PostgresStore {
             .order(month_closes::close_id.asc())
             .select(MonthCloseRow::as_select())
             .load::<MonthCloseRow>(&mut *connection)
-            .map(|rows| rows.iter().map(|r| Self::month_close_from_row(r)).collect())
+            .map(|rows| rows.iter().map(Self::month_close_from_row).collect())
             .map_err(|err| load_failure(format!("loading month closes failed: {err}")))
     }
 

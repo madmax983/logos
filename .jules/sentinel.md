@@ -34,3 +34,8 @@
 **Mutant:** `replace < with <= in forecast_value_cents`
 **Diagnosis:** EQUIVALENT_MUTANT. Replacing `avg_close_price_cents < 0` with `<= 0` causes `0` inputs to return `0` immediately rather than multiplying `0 * units` and returning `0`. Both branches yield identical `0` results natively, making the mutant equivalent.
 **Kill Shot:** Documented and excluded via `.cargo/mutants.toml`.
+
+**[budget::rollover_end_balance]**
+**Mutant:** Replaced `>` with `>=` and `<` with `<=` in `rollover_end_balance` for `i64::MAX` and `i64::MIN` clamps.
+**Diagnosis:** EQUIVALENT_MUTANT. The mutations change `if end > i64::MAX as i128` to `>=` and `if end < i64::MIN as i128` to `<=`. If the value is exactly the boundary, the mutated code returns the boundary constant, whereas the original code falls through to the `else` block and casts the exact boundary to `i64`, resulting in the identical value.
+**Kill Shot:** N/A (Equivalent Mutant).
