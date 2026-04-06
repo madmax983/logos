@@ -20,10 +20,10 @@ Files:
 
 Run proofs:
 
-```powershell
-C:\Users\markm\verus\verus.exe logos-proof\transaction_invariants.verus
-C:\Users\markm\verus\verus.exe logos-proof\correction_invariants.verus
-C:\Users\markm\verus\verus.exe logos-proof\budget_invariants.verus
-C:\Users\markm\verus\verus.exe logos-proof\rsu_policy_invariants.verus
-C:\Users\markm\verus\verus.exe logos-proof\import_invariants.verus
+```sh
+/path/to/verus/verus logos-proof/transaction_invariants.verus
+/path/to/verus/verus logos-proof/correction_invariants.verus
+/path/to/verus/verus logos-proof/budget_invariants.verus
+/path/to/verus/verus logos-proof/rsu_policy_invariants.verus
+/path/to/verus/verus logos-proof/import_invariants.verus
 ```
