@@ -1,9 +1,9 @@
 #![allow(clippy::should_panic_without_expect)]
 
-use logos_reporting::budget_vs_actual::project_budget_variance;
-use logos_reporting::cashflow::project_cashflow;
-use logos_reporting::net_worth::project_net_worth;
-use logos_reporting::register::{RegisterEntry, project_register_balance_iter};
+use logos_reporting::project_budget_variance;
+use logos_reporting::project_cashflow;
+use logos_reporting::project_net_worth;
+use logos_reporting::{RegisterEntry, project_register_balance_iter};
 use proptest::prelude::*;
 
 proptest! {

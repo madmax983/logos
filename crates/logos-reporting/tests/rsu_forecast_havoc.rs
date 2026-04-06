@@ -1,6 +1,6 @@
 #![allow(clippy::should_panic_without_expect)]
 
-use logos_reporting::rsu_forecast::project_rsu_forecast_summary;
+use logos_reporting::project_rsu_forecast_summary;
 use proptest::prelude::*;
 
 proptest! {
