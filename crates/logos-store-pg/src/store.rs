@@ -322,6 +322,79 @@ pub struct PostgresStore {
 }
 
 impl PostgresStore {
+    #[allow(clippy::too_many_arguments)]
+    fn map_statement_line<'a>(
+        line_id: &'a str,
+        source_uri: &'a str,
+        statement_timestamp: &'a str,
+        memo: &'a str,
+        amount_cents: i64,
+        imported_txn_id: Option<&'a TransactionId>,
+        batch_id: &'a str,
+        imported_at_us: i64,
+    ) -> NewStatementLineRow<'a> {
+        NewStatementLineRow {
+            line_id,
+            batch_id,
+            source_uri,
+            statement_timestamp,
+            memo,
+            amount_cents,
+            imported_txn_id: imported_txn_id.map(TransactionId::as_str),
+            imported_at_us,
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn map_stored_reconciliation_and_close(
+        run_id: &str,
+        close_id: &str,
+        month_key: &str,
+        checking_account: &str,
+        opening_balance_cents: i64,
+        ledger_delta_cents: i64,
+        expected_closing_balance_cents: i64,
+        statement_closing_balance_cents: i64,
+        variance_cents: i64,
+        reconciled: bool,
+        matched_postings: i64,
+        matched_transaction_count: i64,
+        inflow_cents: i64,
+        outflow_cents: i64,
+        created_at_us: i64,
+        closed_at_us: i64,
+        analytics_artifact_id: Option<&str>,
+    ) -> (StoredReconciliationRun, StoredMonthClose) {
+        (
+            StoredReconciliationRun::new(
+                run_id,
+                month_key,
+                checking_account,
+                opening_balance_cents,
+                ledger_delta_cents,
+                expected_closing_balance_cents,
+                statement_closing_balance_cents,
+                variance_cents,
+                reconciled,
+                matched_postings,
+                matched_transaction_count,
+                inflow_cents,
+                outflow_cents,
+                created_at_us,
+            ),
+            StoredMonthClose::new(
+                close_id,
+                month_key,
+                checking_account,
+                run_id,
+                analytics_artifact_id,
+                closed_at_us,
+            ),
+        )
+    }
+
+    /// # Errors
+    /// Returns `PgStoreError` if connection fails.
     pub fn connect(database_url: &str) -> Result<Self, PgStoreError> {
         if database_url.trim().is_empty() {
             return Err(PgStoreError::MissingDatabaseUrl);
@@ -338,15 +411,21 @@ impl PostgresStore {
     }
 
     #[must_use]
+    /// # Errors
+    /// Returns `PgStoreError` if connection fails.
     pub fn connection_mut(&self) -> RefMut<'_, PgConnection> {
         self.connection.borrow_mut()
     }
 
+    /// # Errors
+    /// Returns `PgStoreError` on fetch failure.
     pub fn pending_migrations(&mut self) -> Result<Vec<String>, PgStoreError> {
         let mut connection = self.connection.borrow_mut();
         pending_migration_names(&mut connection)
     }
 
+    /// # Errors
+    /// Returns `PgStoreError` on execution failure.
     pub fn run_migrations(&mut self) -> Result<Vec<String>, PgStoreError> {
         let mut connection = self.connection.borrow_mut();
         run_pending_migrations(&mut connection)
@@ -394,7 +473,7 @@ impl PostgresStore {
             .first::<CorrectionRow>(&mut *connection)
             .optional()
             .map_err(|err| load_failure(format!("loading latest correction failed: {err}")))?;
-        row.map(Self::correction_from_row).transpose()
+        row.map(|r| Self::correction_from_row(&r)).transpose()
     }
 
     fn try_transactions(&self) -> Result<Vec<StoredTransaction>, StoreError> {
@@ -448,13 +527,13 @@ impl PostgresStore {
                 let posting_rows = postings_by_transaction.remove(&row.id).ok_or_else(|| {
                     load_failure(format!("transaction '{}' has no postings", row.id))
                 })?;
-                Self::stored_transaction_from_rows(row, posting_rows)
+                Self::stored_transaction_from_rows(&row, posting_rows)
             })
             .collect()
     }
 
     fn stored_transaction_from_rows(
-        row: TransactionRow,
+        row: &TransactionRow,
         posting_rows: Vec<PostingRow>,
     ) -> Result<StoredTransaction, StoreError> {
         let txn_id = TransactionId::new(&row.id).map_err(|err| {
@@ -462,7 +541,7 @@ impl PostgresStore {
         })?;
         let mut builder = TransactionBuilder::new(&row.description);
         for posting_row in posting_rows {
-            builder = builder.posting(Self::posting_from_row(&txn_id, posting_row)?);
+            builder = builder.posting(Self::posting_from_row(&txn_id, &posting_row)?);
         }
         let transaction = builder.build().map_err(|err| {
             load_failure(format!(
@@ -484,7 +563,7 @@ impl PostgresStore {
 
     fn posting_from_row(
         transaction_id: &TransactionId,
-        row: PostingRow,
+        row: &PostingRow,
     ) -> Result<Posting, StoreError> {
         let account = AccountId::new(&row.account).map_err(|err| {
             load_failure(format!(
@@ -529,7 +608,7 @@ impl PostgresStore {
         }
     }
 
-    fn correction_from_row(row: CorrectionRow) -> Result<Correction, StoreError> {
+    fn correction_from_row(row: &CorrectionRow) -> Result<Correction, StoreError> {
         let supersedes_id = TransactionId::new(&row.supersedes_txn_id).map_err(|err| {
             load_failure(format!(
                 "invalid stored correction target '{}': {err}",
@@ -554,7 +633,7 @@ impl PostgresStore {
         })
     }
 
-    fn budget_target_from_row(row: BudgetTargetRow) -> StoredBudgetTarget {
+    fn budget_target_from_row(row: &BudgetTargetRow) -> StoredBudgetTarget {
         StoredBudgetTarget::new(
             &row.month_key,
             &row.expense_account_prefix,
@@ -562,7 +641,7 @@ impl PostgresStore {
         )
     }
 
-    fn analytics_artifact_from_row(row: AnalyticsArtifactRow) -> StoredAnalyticsArtifactManifest {
+    fn analytics_artifact_from_row(row: &AnalyticsArtifactRow) -> StoredAnalyticsArtifactManifest {
         StoredAnalyticsArtifactManifest::new(
             &row.artifact_id,
             &row.artifact_kind,
@@ -578,7 +657,7 @@ impl PostgresStore {
         )
     }
 
-    fn import_batch_from_row(row: ImportBatchRow) -> StoredImportBatch {
+    fn import_batch_from_row(row: &ImportBatchRow) -> StoredImportBatch {
         StoredImportBatch::new(
             &row.batch_id,
             &row.import_kind,
@@ -592,7 +671,7 @@ impl PostgresStore {
         )
     }
 
-    fn import_record_from_row(row: ImportRecordRow) -> Result<StoredImportRecord, StoreError> {
+    fn import_record_from_row(row: &ImportRecordRow) -> Result<StoredImportRecord, StoreError> {
         let imported_txn_id = row
             .imported_txn_id
             .as_deref()
@@ -606,7 +685,7 @@ impl PostgresStore {
         ))
     }
 
-    fn statement_line_from_row(row: StatementLineRow) -> Result<StoredStatementLine, StoreError> {
+    fn statement_line_from_row(row: &StatementLineRow) -> Result<StoredStatementLine, StoreError> {
         let imported_txn_id = row
             .imported_txn_id
             .as_deref()
@@ -624,7 +703,7 @@ impl PostgresStore {
         ))
     }
 
-    fn fetch_run_from_row(row: FetchRunRow) -> Result<StoredFetchRun, StoreError> {
+    fn fetch_run_from_row(row: &FetchRunRow) -> Result<StoredFetchRun, StoreError> {
         let status = StoredFetchRunStatus::parse(&row.status).ok_or_else(|| {
             load_failure(format!(
                 "invalid fetch run status '{}' for '{}'",
@@ -742,7 +821,7 @@ impl PostgresStore {
             .first::<BudgetTargetRow>(&mut *connection)
             .optional()
             .map_err(|err| load_failure(format!("loading budget target failed: {err}")))?;
-        Ok(row.map(Self::budget_target_from_row))
+        Ok(row.as_ref().map(Self::budget_target_from_row))
     }
 
     fn try_budget_targets(&self) -> Result<Vec<StoredBudgetTarget>, StoreError> {
@@ -754,7 +833,11 @@ impl PostgresStore {
             ))
             .select(BudgetTargetRow::as_select())
             .load::<BudgetTargetRow>(&mut *connection)
-            .map(|rows| rows.into_iter().map(Self::budget_target_from_row).collect())
+            .map(|rows| {
+                rows.into_iter()
+                    .map(|r| Self::budget_target_from_row(&r))
+                    .collect()
+            })
             .map_err(|err| load_failure(format!("loading budget targets failed: {err}")))
     }
 
@@ -769,7 +852,7 @@ impl PostgresStore {
             .first::<AnalyticsArtifactRow>(&mut *connection)
             .optional()
             .map_err(|err| load_failure(format!("loading analytics artifact failed: {err}")))?;
-        Ok(row.map(Self::analytics_artifact_from_row))
+        Ok(row.map(|r| Self::analytics_artifact_from_row(&r)))
     }
 
     fn try_analytics_artifacts(&self) -> Result<Vec<StoredAnalyticsArtifactManifest>, StoreError> {
@@ -780,7 +863,7 @@ impl PostgresStore {
             .load::<AnalyticsArtifactRow>(&mut *connection)
             .map(|rows| {
                 rows.into_iter()
-                    .map(Self::analytics_artifact_from_row)
+                    .map(|r| Self::analytics_artifact_from_row(&r))
                     .collect()
             })
             .map_err(|err| load_failure(format!("loading analytics artifacts failed: {err}")))
@@ -819,7 +902,9 @@ impl PostgresStore {
             .select(ImportRecordRow::as_select())
             .load::<ImportRecordRow>(&mut *connection)
             .map_err(|err| load_failure(format!("loading import records failed: {err}")))?;
-        rows.into_iter().map(Self::import_record_from_row).collect()
+        rows.into_iter()
+            .map(|r| Self::import_record_from_row(&r))
+            .collect()
     }
 
     fn try_import_batches(&self) -> Result<Vec<StoredImportBatch>, StoreError> {
@@ -828,7 +913,11 @@ impl PostgresStore {
             .order(import_batches::batch_id.asc())
             .select(ImportBatchRow::as_select())
             .load::<ImportBatchRow>(&mut *connection)
-            .map(|rows| rows.into_iter().map(Self::import_batch_from_row).collect())
+            .map(|rows| {
+                rows.into_iter()
+                    .map(|r| Self::import_batch_from_row(&r))
+                    .collect()
+            })
             .map_err(|err| load_failure(format!("loading import batches failed: {err}")))
     }
 
@@ -850,7 +939,7 @@ impl PostgresStore {
             .load::<StatementLineRow>(&mut *connection)
             .map_err(|err| load_failure(format!("loading statement lines failed: {err}")))?;
         rows.into_iter()
-            .map(Self::statement_line_from_row)
+            .map(|r| Self::statement_line_from_row(&r))
             .collect()
     }
 
@@ -872,7 +961,7 @@ impl PostgresStore {
             .first::<FetchRunRow>(&mut *connection)
             .optional()
             .map_err(|err| load_failure(format!("loading fetch run failed: {err}")))?;
-        row.map(Self::fetch_run_from_row).transpose()
+        row.map(|r| Self::fetch_run_from_row(&r)).transpose()
     }
 
     fn try_fetch_runs(&self) -> Result<Vec<StoredFetchRun>, StoreError> {
@@ -882,7 +971,9 @@ impl PostgresStore {
             .select(FetchRunRow::as_select())
             .load::<FetchRunRow>(&mut *connection)
             .map_err(|err| load_failure(format!("loading fetch runs failed: {err}")))?;
-        rows.into_iter().map(Self::fetch_run_from_row).collect()
+        rows.into_iter()
+            .map(|r| Self::fetch_run_from_row(&r))
+            .collect()
     }
 
     fn try_statement_lines_for_reconciliation_run(
@@ -914,7 +1005,7 @@ impl PostgresStore {
                 ))
             })?;
         rows.into_iter()
-            .map(Self::statement_line_from_row)
+            .map(|r| Self::statement_line_from_row(&r))
             .collect()
     }
 
@@ -1571,16 +1662,16 @@ impl LedgerStore for PostgresStore {
                     amount_cents,
                     imported_txn_id,
                 )| {
-                    NewStatementLineRow {
-                        line_id: line_id.as_str(),
-                        batch_id: &batch_id,
-                        source_uri: source_uri.as_str(),
-                        statement_timestamp: statement_timestamp.as_str(),
-                        memo: memo.as_str(),
-                        amount_cents: *amount_cents,
-                        imported_txn_id: imported_txn_id.as_ref().map(TransactionId::as_str),
+                    Self::map_statement_line(
+                        line_id.as_str(),
+                        source_uri.as_str(),
+                        statement_timestamp.as_str(),
+                        memo.as_str(),
+                        *amount_cents,
+                        imported_txn_id.as_ref(),
+                        &batch_id,
                         imported_at_us,
-                    }
+                    )
                 },
             )
             .collect();
@@ -1910,31 +2001,24 @@ impl LedgerStore for PostgresStore {
                 ))
             })?;
 
-        Ok((
-            StoredReconciliationRun::new(
-                &run_id,
-                month_key,
-                checking_account,
-                opening_balance_cents,
-                ledger_delta_cents,
-                expected_closing_balance_cents,
-                statement_closing_balance_cents,
-                variance_cents,
-                reconciled,
-                matched_postings,
-                matched_transaction_count,
-                inflow_cents,
-                outflow_cents,
-                created_at_us,
-            ),
-            StoredMonthClose::new(
-                &close_id,
-                month_key,
-                checking_account,
-                &run_id,
-                analytics_artifact_id,
-                closed_at_us,
-            ),
+        Ok(Self::map_stored_reconciliation_and_close(
+            &run_id,
+            &close_id,
+            month_key,
+            checking_account,
+            opening_balance_cents,
+            ledger_delta_cents,
+            expected_closing_balance_cents,
+            statement_closing_balance_cents,
+            variance_cents,
+            reconciled,
+            matched_postings,
+            matched_transaction_count,
+            inflow_cents,
+            outflow_cents,
+            created_at_us,
+            closed_at_us,
+            analytics_artifact_id,
         ))
     }
 
