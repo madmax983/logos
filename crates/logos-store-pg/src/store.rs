@@ -322,6 +322,66 @@ pub struct PostgresStore {
 }
 
 impl PostgresStore {
+    fn execute_reconciliation_and_close_transaction(
+        connection: &mut PgConnection,
+        run_row: &NewReconciliationRunRow<'_>,
+        transaction_rows: &[NewReconciliationRunTransactionRow<'_>],
+        statement_line_rows: &[NewReconciliationRunStatementLineRow<'_>],
+        close_row: &NewMonthCloseRow<'_>,
+    ) -> Result<(), StoreError> {
+        connection
+            .transaction::<(), diesel::result::Error, _>(|conn| {
+                diesel::insert_into(reconciliation_runs::table)
+                    .values(run_row)
+                    .execute(conn)?;
+                if !transaction_rows.is_empty() {
+                    diesel::insert_into(reconciliation_run_transactions::table)
+                        .values(transaction_rows)
+                        .execute(conn)?;
+                }
+                if !statement_line_rows.is_empty() {
+                    diesel::insert_into(reconciliation_run_statement_lines::table)
+                        .values(statement_line_rows)
+                        .execute(conn)?;
+                }
+                diesel::insert_into(month_closes::table)
+                    .values(close_row)
+                    .execute(conn)?;
+                Ok(())
+            })
+            .map_err(|err| {
+                persist_failure(format!(
+                    "persisting reconciliation run and month close failed: {err}"
+                ))
+            })
+    }
+
+    fn execute_import_batch_transaction(
+        connection: &mut PgConnection,
+        batch_row: &NewImportBatchRow<'_>,
+        import_record_rows: &[NewImportRecordRow<'_>],
+        statement_line_rows: &[NewStatementLineRow<'_>],
+    ) -> Result<(), StoreError> {
+        connection
+            .transaction::<(), diesel::result::Error, _>(|conn| {
+                diesel::insert_into(import_batches::table)
+                    .values(batch_row)
+                    .execute(conn)?;
+                if !import_record_rows.is_empty() {
+                    diesel::insert_into(import_records::table)
+                        .values(import_record_rows)
+                        .execute(conn)?;
+                }
+                if !statement_line_rows.is_empty() {
+                    diesel::insert_into(statement_lines::table)
+                        .values(statement_line_rows)
+                        .execute(conn)?;
+                }
+                Ok(())
+            })
+            .map_err(|err| persist_failure(format!("persisting import batch failed: {err}")))
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn map_statement_line<'a>(
         line_id: &'a str,
@@ -1677,24 +1737,12 @@ impl LedgerStore for PostgresStore {
             )
             .collect();
 
-        connection
-            .transaction::<(), diesel::result::Error, _>(|conn| {
-                diesel::insert_into(import_batches::table)
-                    .values(&batch_row)
-                    .execute(conn)?;
-                if !import_record_rows.is_empty() {
-                    diesel::insert_into(import_records::table)
-                        .values(&import_record_rows)
-                        .execute(conn)?;
-                }
-                if !statement_line_rows.is_empty() {
-                    diesel::insert_into(statement_lines::table)
-                        .values(&statement_line_rows)
-                        .execute(conn)?;
-                }
-                Ok(())
-            })
-            .map_err(|err| persist_failure(format!("persisting import batch failed: {err}")))?;
+        Self::execute_import_batch_transaction(
+            &mut connection,
+            &batch_row,
+            &import_record_rows,
+            &statement_line_rows,
+        )?;
 
         Ok(StoredImportBatch::new(
             &batch_id,
@@ -1977,31 +2025,13 @@ impl LedgerStore for PostgresStore {
             })
             .collect();
 
-        connection
-            .transaction::<(), diesel::result::Error, _>(|conn| {
-                diesel::insert_into(reconciliation_runs::table)
-                    .values(&run_row)
-                    .execute(conn)?;
-                if !transaction_rows.is_empty() {
-                    diesel::insert_into(reconciliation_run_transactions::table)
-                        .values(&transaction_rows)
-                        .execute(conn)?;
-                }
-                if !statement_line_rows.is_empty() {
-                    diesel::insert_into(reconciliation_run_statement_lines::table)
-                        .values(&statement_line_rows)
-                        .execute(conn)?;
-                }
-                diesel::insert_into(month_closes::table)
-                    .values(&close_row)
-                    .execute(conn)?;
-                Ok(())
-            })
-            .map_err(|err| {
-                persist_failure(format!(
-                    "persisting reconciliation run and month close failed: {err}"
-                ))
-            })?;
+        Self::execute_reconciliation_and_close_transaction(
+            &mut connection,
+            &run_row,
+            &transaction_rows,
+            &statement_line_rows,
+            &close_row,
+        )?;
 
         Ok(Self::map_stored_reconciliation_and_close(
             &run_id,
