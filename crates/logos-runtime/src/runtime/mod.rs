@@ -1552,7 +1552,7 @@ fn hash_rows(
         &mut hasher,
         "schema:{schema_version}|valid:{as_of_valid}|tx:{as_of_tx}"
     )
-    .unwrap();
+    .expect("writeln! to Hasher should never fail");
     for row in rows {
         writeln!(
             &mut hasher,
@@ -1564,7 +1564,7 @@ fn hash_rows(
             row.account,
             row.amount_cents
         )
-        .unwrap();
+        .expect("writeln! to Hasher should never fail");
     }
     hasher.finalize().to_hex().to_string()
 }
