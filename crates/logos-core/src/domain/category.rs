@@ -5,8 +5,8 @@
 //! This structure helps organize expenses logically and is the foundation
 //! for the envelope budgeting feature.
 
-use std::sync::Arc;
 use crate::error::DomainError;
+use std::sync::Arc;
 
 /// A normalized identifier for a [`CategoryGroup`].
 ///
