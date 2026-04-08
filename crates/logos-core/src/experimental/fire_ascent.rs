@@ -153,8 +153,19 @@ mod tests {
 
         assert_eq!(result.summit_cents, 120_000_000);
         assert_eq!(result.milestones.len(), 4);
+
+        assert_eq!(result.milestones[0].target_cents, 30_000_000);
         assert!(result.milestones[0].month_reached.is_some());
+
+        assert_eq!(result.milestones[1].target_cents, 60_000_000);
+        assert!(result.milestones[1].month_reached.is_some());
+
+        assert_eq!(result.milestones[2].target_cents, 90_000_000);
+        assert!(result.milestones[2].month_reached.is_some());
+
+        assert_eq!(result.milestones[3].target_cents, 120_000_000);
         assert!(result.milestones[3].month_reached.is_some());
+
         assert!(result.success);
     }
 
@@ -162,7 +173,7 @@ mod tests {
     fn test_failed_ascent() {
         let mut fire_sim = FireSimulator::new(500_000); // 5k/mo expenses = 60k/yr
         fire_sim.set_config(FireConfig {
-            safe_withdrawal_rate_pct: 4, // SWR 4% -> FIRE number 1.5M
+            safe_withdrawal_rate_pct: 4, // SWR 4% -> FIRE number 1.5M (150_000_000)
         });
 
         // Current NW is 100k, saving 1k/mo.
@@ -174,6 +185,53 @@ mod tests {
 
         assert!(!result.success);
         assert_eq!(result.final_net_worth_cents, 11_200_000);
+
+        assert_eq!(result.milestones.len(), 4);
+
+        assert_eq!(result.milestones[0].target_cents, 37_500_000);
+        assert!(result.milestones[0].month_reached.is_none());
+
+        assert_eq!(result.milestones[1].target_cents, 75_000_000);
+        assert!(result.milestones[1].month_reached.is_none());
+
+        assert_eq!(result.milestones[2].target_cents, 112_500_000);
+        assert!(result.milestones[2].month_reached.is_none());
+
+        assert_eq!(result.milestones[3].target_cents, 150_000_000);
+        assert!(result.milestones[3].month_reached.is_none());
+    }
+
+    #[test]
+    fn test_partial_success_where_summit_is_not_reached_but_milestones_are() {
+        let mut fire_sim = FireSimulator::new(500_000); // 5k/mo expenses = 60k/yr
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 4, // SWR 4% -> FIRE number 1.5M (150_000_000)
+        });
+
+        // Current NW is 100k, saving 10k/mo. 1.4M to go.
+        // At 10k/mo, it takes 140 months.
+        let projector = NetWorthProjector::new(10_000_000, 1_000_000);
+
+        // Simulate for 80 months, reaching some milestones but NOT the summit.
+        // 80 months * 1M = 80M + 10M base = 90M
+        let ascent_sim = FireAscentSimulator::new(fire_sim, projector, 80);
+        let result = ascent_sim.ascend();
+
+        // 37.5M, 75M reached. 112.5M, 150M NOT reached.
+        assert!(!result.success);
+
+        assert_eq!(result.milestones.len(), 4);
+
+        assert_eq!(result.milestones[0].target_cents, 37_500_000);
+        assert!(result.milestones[0].month_reached.is_some());
+
+        assert_eq!(result.milestones[1].target_cents, 75_000_000);
+        assert!(result.milestones[1].month_reached.is_some());
+
+        assert_eq!(result.milestones[2].target_cents, 112_500_000);
+        assert!(result.milestones[2].month_reached.is_none());
+
+        assert_eq!(result.milestones[3].target_cents, 150_000_000);
         assert!(result.milestones[3].month_reached.is_none());
     }
 

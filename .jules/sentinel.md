@@ -39,3 +39,8 @@
 **Mutant:** Replaced `>` with `>=` and `<` with `<=` in `rollover_end_balance` for `i64::MAX` and `i64::MIN` clamps.
 **Diagnosis:** EQUIVALENT_MUTANT. The mutations change `if end > i64::MAX as i128` to `>=` and `if end < i64::MIN as i128` to `<=`. If the value is exactly the boundary, the mutated code returns the boundary constant, whereas the original code falls through to the `else` block and casts the exact boundary to `i64`, resulting in the identical value.
 **Kill Shot:** N/A (Equivalent Mutant).
+
+**[experimental::fire_ascent]**
+**Mutant:** Replaced `/` with `%` and `*` with `+` in `FireAscentSimulator::ascend` fraction calculations (`fire_number / 4`, `(fire_number * 3) / 4`). Also replaced `==` with `!=` in `target_cents == summit`.
+**Diagnosis:** WEAK_ASSERTION. The `test_successful_ascent` and `test_failed_ascent` tests only checked that the summit cents returned correctly and that `month_reached` was populated for the first and last milestones. They neglected to check the intermediate fraction `target_cents` mapping values or verify the `success` boolean when reaching intermediate targets but not the summit.
+**Kill Shot:** explicitly asserted `target_cents` in `test_successful_ascent` and `test_failed_ascent`, and added a new test `test_partial_success_where_summit_is_not_reached_but_milestones_are` to cover the intermediate outcome behavior.
