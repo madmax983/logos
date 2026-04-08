@@ -1,5 +1,6 @@
 use crate::args::CliError;
 use logos_store_pg::PostgresStore;
+use crossterm::style::Stylize;
 
 const DATABASE_URL_ENV: &str = "DATABASE_URL";
 
@@ -19,12 +20,12 @@ pub fn migrate() -> Result<(), CliError> {
         })?;
 
     if applied.is_empty() {
-        println!("db.migrate applied=0 status=up_to_date");
+        println!("{} Database is up to date.", "✔".green());
         return Ok(());
     }
 
     let joined = applied.join(",");
-    println!("db.migrate applied={} names={joined}", applied.len());
+    println!("{} Applied {} migration(s): {}", "✔".green(), applied.len(), joined.bold());
     Ok(())
 }
 
@@ -44,12 +45,12 @@ pub fn status() -> Result<(), CliError> {
         })?;
 
     if pending.is_empty() {
-        println!("db.status pending=0 status=up_to_date");
+        println!("{} Database is up to date. No pending migrations.", "✔".green());
         return Ok(());
     }
 
     let joined = pending.join(",");
-    println!("db.status pending={} names={joined}", pending.len());
+    println!("{} {} pending migration(s): {}", "ℹ".blue(), pending.len(), joined.bold());
     Ok(())
 }
 
@@ -82,7 +83,7 @@ mod tests {
         };
         assert_eq!(
             err.to_string(),
-            "Command 'db.status' failed at runtime: DATABASE_URL is not set."
+            "Command 'db.status' failed: DATABASE_URL is not set."
         );
     }
 }
