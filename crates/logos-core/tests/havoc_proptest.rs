@@ -2,10 +2,10 @@
 
 use logos_core::domain::account::AccountId;
 use logos_core::domain::rsu::AllocationPolicy;
+use logos_core::experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
 use logos_core::planning::fire::{FireSimulator, UpcomingVest};
 use logos_core::planning::net_worth_projector::NetWorthProjector;
 use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
-use logos_core::experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
 use proptest::prelude::*;
 
 proptest! {

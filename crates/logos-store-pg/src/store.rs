@@ -356,6 +356,61 @@ impl PostgresStore {
             })
     }
 
+    fn build_statement_line_rows<'a>(
+        records: &'a [NewImportRecord],
+        statement_line_ids: &'a [String],
+        batch_id: &'a str,
+        imported_at_us: i64,
+    ) -> Vec<NewStatementLineRow<'a>> {
+        let mut statement_line_rows = Vec::with_capacity(statement_line_ids.len());
+        let mut id_iter = statement_line_ids.iter();
+
+        for record in records {
+            if let Some(line) = record.statement_line() {
+                // If there's a statement line, we know we allocated an ID for it.
+                if let Some(line_id) = id_iter.next() {
+                    statement_line_rows.push(Self::map_statement_line(
+                        line_id.as_str(),
+                        line.source_uri(),
+                        line.statement_timestamp(),
+                        line.memo(),
+                        line.amount_cents(),
+                        record.imported_txn_id(),
+                        batch_id,
+                        imported_at_us,
+                    ));
+                }
+            }
+        }
+        statement_line_rows
+    }
+
+    fn build_reconciliation_transaction_rows<'a>(
+        run_id: &'a str,
+        transaction_ids: &'a [TransactionId],
+    ) -> Vec<NewReconciliationRunTransactionRow<'a>> {
+        transaction_ids
+            .iter()
+            .map(|txn_id| NewReconciliationRunTransactionRow {
+                run_id,
+                transaction_id: txn_id.as_str(),
+            })
+            .collect()
+    }
+
+    fn build_reconciliation_statement_line_rows<'a>(
+        run_id: &'a str,
+        statement_line_ids: &'a [String],
+    ) -> Vec<NewReconciliationRunStatementLineRow<'a>> {
+        statement_line_ids
+            .iter()
+            .map(|line_id| NewReconciliationRunStatementLineRow {
+                run_id,
+                statement_line_id: line_id.as_str(),
+            })
+            .collect()
+    }
+
     fn execute_import_batch_transaction(
         connection: &mut PgConnection,
         batch_row: &NewImportBatchRow<'_>,
@@ -1696,46 +1751,19 @@ impl LedgerStore for PostgresStore {
             })
             .collect();
 
-        // ⚡ Bolt: Pre-allocate statement line payloads to match the upper bound of the import
-        // records to avoid dynamic vector reallocations during persistence.
         let mut statement_line_payloads = Vec::with_capacity(records.len());
         for record in records {
-            if let Some(line) = record.statement_line() {
+            if record.statement_line().is_some() {
                 let line_id = Self::next_statement_line_id(&mut connection)?;
-                statement_line_payloads.push((
-                    line_id,
-                    line.source_uri().to_owned(),
-                    line.statement_timestamp().to_owned(),
-                    line.memo().to_owned(),
-                    line.amount_cents(),
-                    record.imported_txn_id().cloned(),
-                ));
+                statement_line_payloads.push(line_id);
             }
         }
-        let statement_line_rows: Vec<NewStatementLineRow<'_>> = statement_line_payloads
-            .iter()
-            .map(
-                |(
-                    line_id,
-                    source_uri,
-                    statement_timestamp,
-                    memo,
-                    amount_cents,
-                    imported_txn_id,
-                )| {
-                    Self::map_statement_line(
-                        line_id.as_str(),
-                        source_uri.as_str(),
-                        statement_timestamp.as_str(),
-                        memo.as_str(),
-                        *amount_cents,
-                        imported_txn_id.as_ref(),
-                        &batch_id,
-                        imported_at_us,
-                    )
-                },
-            )
-            .collect();
+        let statement_line_rows = Self::build_statement_line_rows(
+            records,
+            &statement_line_payloads,
+            &batch_id,
+            imported_at_us,
+        );
 
         Self::execute_import_batch_transaction(
             &mut connection,
@@ -1884,20 +1912,10 @@ impl LedgerStore for PostgresStore {
             outflow_cents,
             created_at_us,
         };
-        let transaction_rows: Vec<NewReconciliationRunTransactionRow<'_>> = reconciled_txn_ids
-            .iter()
-            .map(|txn_id| NewReconciliationRunTransactionRow {
-                run_id: &run_id,
-                transaction_id: txn_id.as_str(),
-            })
-            .collect();
-        let statement_line_rows: Vec<NewReconciliationRunStatementLineRow<'_>> = statement_line_ids
-            .iter()
-            .map(|line_id| NewReconciliationRunStatementLineRow {
-                run_id: &run_id,
-                statement_line_id: line_id.as_str(),
-            })
-            .collect();
+        let transaction_rows =
+            Self::build_reconciliation_transaction_rows(&run_id, reconciled_txn_ids);
+        let statement_line_rows =
+            Self::build_reconciliation_statement_line_rows(&run_id, &statement_line_ids);
 
         connection
             .transaction::<(), diesel::result::Error, _>(|conn| {
@@ -2010,20 +2028,10 @@ impl LedgerStore for PostgresStore {
             analytics_artifact_id,
             closed_at_us,
         };
-        let transaction_rows: Vec<NewReconciliationRunTransactionRow<'_>> = reconciled_txn_ids
-            .iter()
-            .map(|txn_id| NewReconciliationRunTransactionRow {
-                run_id: &run_id,
-                transaction_id: txn_id.as_str(),
-            })
-            .collect();
-        let statement_line_rows: Vec<NewReconciliationRunStatementLineRow<'_>> = statement_line_ids
-            .iter()
-            .map(|line_id| NewReconciliationRunStatementLineRow {
-                run_id: &run_id,
-                statement_line_id: line_id.as_str(),
-            })
-            .collect();
+        let transaction_rows =
+            Self::build_reconciliation_transaction_rows(&run_id, reconciled_txn_ids);
+        let statement_line_rows =
+            Self::build_reconciliation_statement_line_rows(&run_id, &statement_line_ids);
 
         Self::execute_reconciliation_and_close_transaction(
             &mut connection,
