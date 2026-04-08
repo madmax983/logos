@@ -1,15 +1,26 @@
-//! Core double-entry accounting structures for `logos`.
+//! The Ledger's Truth: Transactions and Invariants.
 //!
-//! The `transaction` module contains the fundamental structures for recording
-//! financial events. In `logos`, all amounts are represented in **cents** to
-//! avoid floating-point precision issues.
+//! # The Unbreakable Rules
 //!
-//! **Critical Concept:**
-//! - **Debits** are always **positive** values.
-//! - **Credits** are always **negative** values.
+//! In the `logos` universe, the ledger is absolute. This module provides the core
+//! double-entry accounting structures that enforce the most fundamental law of
+//! accounting: **Debits must equal Credits**.
 //!
-//! A [`Transaction`] must always balance to zero before it can be created. This
-//! invariant is enforced via the [`TransactionBuilder`].
+//! The `logos` system operates on a zero-trust model for financial data. You cannot
+//! just "create" a transaction; you must use a [`TransactionBuilder`] to prove that
+//! your entries are perfectly balanced. If they are off by even a single cent, the
+//! system will refuse to construct the [`Transaction`].
+//!
+//! ## Sign Convention and Cents
+//!
+//! To avoid floating-point precision issues, all amounts are strictly represented
+//! in integer **cents**.
+//!
+//! To mathematically enforce the balancing invariant, `logos` uses strict sign rules:
+//! * **Debits** are inherently **positive** values (e.g., `+1000` = $10.00).
+//! * **Credits** are internally stored as **negative** values (e.g., `-1000` = -$10.00).
+//!
+//! A transaction balances when the sum of all its postings is exactly `0`.
 
 use crate::domain::account::AccountId;
 use crate::error::DomainError;
