@@ -1,4 +1,5 @@
 use logos_core::TransactionId;
+use crossterm::style::Stylize;
 
 use crate::args::CliError;
 use logos_runtime::{AppRuntime, RuntimeError};
@@ -67,7 +68,7 @@ pub fn add(
         amount_cents,
         &mut runtime,
     )?;
-    println!("txn.add wrote {}", transaction_id.as_str());
+    println!("{} Transaction added successfully: {}", "✔".green(), transaction_id.as_str().bold());
     Ok(())
 }
 
@@ -82,7 +83,7 @@ pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
         message: format!("runtime initialization failed: {err}"),
     })?;
     apply_correction(supersedes_id, reason, &mut runtime)?;
-    println!("txn.correct supersedes_id={supersedes_id}");
+    println!("{} Transaction corrected successfully. Superseded ID: {}", "✔".green(), supersedes_id.bold());
     Ok(())
 }
 
@@ -287,7 +288,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Command 'txn.add' failed at runtime: missing columns: expected 5, found 2."
+            "Command 'txn.add' failed: missing columns: expected 5, found 2."
         );
     }
 
@@ -338,7 +339,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Command 'txn.correct' failed at runtime: missing columns: expected 5, found 2."
+            "Command 'txn.correct' failed: missing columns: expected 5, found 2."
         );
     }
 }
