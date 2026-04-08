@@ -6,6 +6,8 @@ use logos_core::planning::fire::{FireSimulator, UpcomingVest};
 use logos_core::planning::net_worth_projector::NetWorthProjector;
 use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
 use logos_core::experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
+#[cfg(feature = "nova")]
+use logos_core::experimental::debt_optimizer::{Debt, DebtOptimizer, PayoffStrategy};
 use proptest::prelude::*;
 
 proptest! {
@@ -74,6 +76,26 @@ proptest! {
         let mut sim = FireSimulator::new(5000);
         sim.add_assets_liabilities(assets, 0);
         sim.add_assets_liabilities(assets, 0);
+    }
+
+    #[cfg(feature = "nova")]
+    #[test]
+    #[should_panic(expected = "attempt to multiply with overflow")]
+    fn debt_optimizer_simulate_panics_on_overflow(
+        balance in i64::MAX / 2..i64::MAX,
+        interest_rate in 1..=100_u32,
+    ) {
+        let mut optimizer = DebtOptimizer::new(1000);
+        optimizer.add_debt(Debt {
+            name: "Massive Debt".to_string(),
+            balance_cents: balance,
+            interest_rate_pct: interest_rate,
+            min_payment_cents: 100,
+        });
+
+        // The simulation calculates interest: `(balance_cents * interest_rate_pct) / 100 / 12`
+        // which will overflow if the balance is too large.
+        let _result = optimizer.simulate(PayoffStrategy::Avalanche);
     }
 
 }
