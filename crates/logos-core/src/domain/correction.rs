@@ -1,9 +1,18 @@
-//! Immutability and corrections.
+//! The Immutable Ledger: Audit Trails and Corrections.
 //!
-//! In a strict double-entry ledger, transactions are generally append-only and
-//! immutable. When a mistake is made, it is corrected by appending a new
-//! transaction that explicitly "supersedes" the previous one, rather than
-//! mutating the historical record in place.
+//! # Mistakes are Written in Ink
+//!
+//! In a strict, zero-trust accounting system, history cannot be silently erased.
+//! The ledger is strictly an **append-only log**.
+//!
+//! When human error occurs (and it always does) and a transaction is recorded
+//! incorrectly, it is never mutated or deleted in place. Instead, we use
+//! [`Correction`]s.
+//!
+//! A correction fixes a mistake by appending a brand new transaction that
+//! explicitly links to the flawed `TransactionId` it replaces. It forces the
+//! accountant to provide a mandatory textual `reason` for the change, preserving
+//! a complete and transparent audit trail of what went wrong and how it was fixed.
 
 use crate::error::DomainError;
 
