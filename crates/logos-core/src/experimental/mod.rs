@@ -27,3 +27,6 @@ pub mod predictive_ledger;
 pub mod recurrence_detector;
 #[cfg(feature = "nova")]
 pub mod trinity_simulator;
+
+#[cfg(feature = "nova")]
+pub mod category_trends;
