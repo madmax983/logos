@@ -1,7 +1,8 @@
 #![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
+use comfy_table::{Cell, Color};
 use logos_runtime::AppRuntime;
-use logos_store::model::StoredFetchRun;
+use logos_store::model::{StoredFetchRun, StoredFetchRunStatus};
 
 /// Handles `ledger fetch list-runs`.
 ///
@@ -38,6 +39,17 @@ pub fn show_run(run_id: &str) -> Result<(), CliError> {
     Ok(())
 }
 
+fn status_cell(status: StoredFetchRunStatus) -> Cell {
+    let text = status.as_str();
+    match status {
+        StoredFetchRunStatus::Downloaded
+        | StoredFetchRunStatus::Imported
+        | StoredFetchRunStatus::NoNewStatement => Cell::new(text).fg(Color::Green),
+        StoredFetchRunStatus::NeedsAttention => Cell::new(text).fg(Color::Yellow),
+        StoredFetchRunStatus::Failed => Cell::new(text).fg(Color::Red),
+    }
+}
+
 fn render_list_output(
     month_key: Option<&str>,
     checking_account: Option<&str>,
@@ -64,12 +76,12 @@ fn render_list_output(
 
     for run in runs {
         table.add_row(vec![
-            run.run_id().to_owned(),
-            run.month_key().to_owned(),
-            run.ledger_account().to_owned(),
-            run.source_id().to_owned(),
-            run.status().as_str().to_owned(),
-            run.created_at().to_string(),
+            Cell::new(run.run_id()),
+            Cell::new(run.month_key()),
+            Cell::new(run.ledger_account()),
+            Cell::new(run.source_id()),
+            status_cell(run.status()),
+            Cell::new(run.created_at().to_string()),
         ]);
     }
 
@@ -96,23 +108,24 @@ fn render_show_output(run: &StoredFetchRun) -> String {
         "Created At",
     ]);
     table.add_row(vec![
-        run.run_id().to_owned(),
-        run.source_id().to_owned(),
-        run.institution_id().to_owned(),
-        run.ledger_account().to_owned(),
-        run.month_key().to_owned(),
-        run.status().as_str().to_owned(),
-        run.artifact_path().unwrap_or("-").to_owned(),
+        Cell::new(run.run_id()),
+        Cell::new(run.source_id()),
+        Cell::new(run.institution_id()),
+        Cell::new(run.ledger_account()),
+        Cell::new(run.month_key()),
+        status_cell(run.status()),
+        Cell::new(run.artifact_path().unwrap_or("-")),
         run.opening_balance_cents().map_or_else(
-            || "-".to_owned(),
-            |value| format!("${:.2}", (value as f64) / 100.0),
+            || Cell::new("-"),
+            |value| Cell::new(format!("${:.2}", (value as f64) / 100.0)).fg(Color::Blue),
         ),
         run.closing_balance_cents().map_or_else(
-            || "-".to_owned(),
-            |value| format!("${:.2}", (value as f64) / 100.0),
+            || Cell::new("-"),
+            |value| Cell::new(format!("${:.2}", (value as f64) / 100.0)).fg(Color::Blue),
         ),
-        run.error_summary().unwrap_or("-").to_owned(),
-        run.created_at().to_string(),
+        run.error_summary()
+            .map_or_else(|| Cell::new("-"), |err| Cell::new(err).fg(Color::Red)),
+        Cell::new(run.created_at().to_string()),
     ]);
     table.to_string()
 }
