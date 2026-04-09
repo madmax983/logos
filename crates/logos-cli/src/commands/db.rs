@@ -1,6 +1,6 @@
 use crate::args::CliError;
-use logos_store_pg::PostgresStore;
 use crossterm::style::Stylize;
+use logos_store_pg::PostgresStore;
 
 const DATABASE_URL_ENV: &str = "DATABASE_URL";
 
@@ -25,7 +25,12 @@ pub fn migrate() -> Result<(), CliError> {
     }
 
     let joined = applied.join(",");
-    println!("{} Applied {} migration(s): {}", "✔".green(), applied.len(), joined.bold());
+    println!(
+        "{} Applied {} migration(s): {}",
+        "✔".green(),
+        applied.len(),
+        joined.bold()
+    );
     Ok(())
 }
 
@@ -45,12 +50,20 @@ pub fn status() -> Result<(), CliError> {
         })?;
 
     if pending.is_empty() {
-        println!("{} Database is up to date. No pending migrations.", "✔".green());
+        println!(
+            "{} Database is up to date. No pending migrations.",
+            "✔".green()
+        );
         return Ok(());
     }
 
     let joined = pending.join(",");
-    println!("{} {} pending migration(s): {}", "ℹ".blue(), pending.len(), joined.bold());
+    println!(
+        "{} {} pending migration(s): {}",
+        "ℹ".blue(),
+        pending.len(),
+        joined.bold()
+    );
     Ok(())
 }
 
