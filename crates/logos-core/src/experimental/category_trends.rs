@@ -110,4 +110,66 @@ mod tests {
         assert_eq!(trends.get(&housing_group).copied(), Some(200_000));
         assert_eq!(trends.get(&living_group).copied(), Some(23_000));
     }
+
+    #[test]
+    fn test_map_account_overrides_existing() {
+        let mut analyzer = CategoryTrendAnalyzer::new();
+        let acc = AccountId::new("expenses:misc").unwrap();
+        let group1 = CategoryGroupId::from_name("Group 1").unwrap();
+        let group2 = CategoryGroupId::from_name("Group 2").unwrap();
+
+        analyzer.map_account(acc.clone(), group1);
+        analyzer.map_account(acc.clone(), group2.clone());
+
+        let tx = TransactionBuilder::new("Misc")
+            .posting(Posting::debit(acc, 100).unwrap())
+            .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
+            .build()
+            .unwrap();
+
+        let trends = analyzer.compute_spending_by_category(&[tx]);
+        assert_eq!(trends.len(), 1);
+        assert_eq!(trends.get(&group2).copied(), Some(100));
+    }
+
+    #[test]
+    fn test_compute_spending_ignores_zero_and_negative() {
+        let mut analyzer = CategoryTrendAnalyzer::new();
+        let acc = AccountId::new("expenses:misc").unwrap();
+        let group = CategoryGroupId::from_name("Misc Group").unwrap();
+
+        analyzer.map_account(acc.clone(), group);
+
+        let tx1 = TransactionBuilder::new("Refund")
+            // A credit to an expense account is a negative amount, which should be ignored
+            .posting(Posting::credit(acc, 100).unwrap())
+            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
+            .build()
+            .unwrap();
+
+        let trends = analyzer.compute_spending_by_category(&[tx1]);
+        assert_eq!(trends.len(), 0);
+    }
+
+    #[test]
+    fn test_compute_spending_empty_transactions() {
+        let analyzer = CategoryTrendAnalyzer::new();
+        let trends = analyzer.compute_spending_by_category(&[]);
+        assert_eq!(trends.len(), 0);
+    }
+
+    #[test]
+    fn test_compute_spending_unmapped_account() {
+        let analyzer = CategoryTrendAnalyzer::new();
+        let acc = AccountId::new("expenses:misc").unwrap();
+
+        let tx = TransactionBuilder::new("Misc")
+            .posting(Posting::debit(acc, 100).unwrap())
+            .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
+            .build()
+            .unwrap();
+
+        let trends = analyzer.compute_spending_by_category(&[tx]);
+        assert_eq!(trends.len(), 0);
+    }
 }
