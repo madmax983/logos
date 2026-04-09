@@ -44,3 +44,7 @@
 **Mutant:** Replaced `/` with `%` and `*` with `+` in `FireAscentSimulator::ascend` fraction calculations (`fire_number / 4`, `(fire_number * 3) / 4`). Also replaced `==` with `!=` in `target_cents == summit`.
 **Diagnosis:** WEAK_ASSERTION. The `test_successful_ascent` and `test_failed_ascent` tests only checked that the summit cents returned correctly and that `month_reached` was populated for the first and last milestones. They neglected to check the intermediate fraction `target_cents` mapping values or verify the `success` boolean when reaching intermediate targets but not the summit.
 **Kill Shot:** explicitly asserted `target_cents` in `test_successful_ascent` and `test_failed_ascent`, and added a new test `test_partial_success_where_summit_is_not_reached_but_milestones_are` to cover the intermediate outcome behavior.
+
+**Mutant:** `replace <impl SecretRefReader for OpCliSecretRefReader>::read_secret_ref`
+**Diagnosis:** MISSING_COVERAGE. Missing validation for 1Password CLI command output matching and error conditions.
+**Kill Shot:** Created `crates/logos-fetch/tests/op_cli_reader.rs` integration test to verify stdout on success and error message extraction on failure.
