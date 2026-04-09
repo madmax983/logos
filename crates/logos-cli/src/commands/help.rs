@@ -1,3 +1,4 @@
+#![allow(clippy::unnecessary_wraps)]
 use crate::args::{CliError, HelpTopic};
 
 const GENERAL_HELP_TEXT: &str = "\

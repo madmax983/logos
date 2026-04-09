@@ -1,5 +1,5 @@
 use logos_import::ImportError;
-use logos_store::error::StoreError;
+use logos_store::StoreError;
 use logos_store_pg::PgStoreError;
 use std::fmt;
 

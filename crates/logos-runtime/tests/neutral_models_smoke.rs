@@ -1,5 +1,5 @@
 use logos_runtime::{MonthAutopilotSummary, MonthReport};
-use logos_store::model::{
+use logos_store::{
     StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredMonthClose,
     StoredReconciliationRun,
 };

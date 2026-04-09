@@ -33,7 +33,7 @@ const EVENT_POLL_INTERVAL: Duration = Duration::from_millis(250);
 /// ## Examples
 ///
 /// ```rust,no_run
-/// use logos_tui::terminal::TerminalSession;
+/// use logos_tui::TerminalSession;
 ///
 /// // Automatically enters alternate screen and raw mode.
 /// let mut session = TerminalSession::enter().unwrap();
@@ -115,7 +115,7 @@ impl Drop for TerminalSession {
 /// ```rust,no_run
 /// use ratatui::{backend::TestBackend, Terminal};
 /// use logos_tui::App;
-/// use logos_tui::terminal::render;
+/// use logos_tui::render;
 ///
 /// let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
 /// let app = App::new();
@@ -208,6 +208,7 @@ pub fn key_event_to_app_input(key_event: KeyEvent) -> Option<AppInput> {
 }
 
 #[must_use]
+#[allow(dead_code)]
 pub fn read_event_char(event: &Event) -> Option<char> {
     read_event_input(event).and_then(app_input_to_char)
 }

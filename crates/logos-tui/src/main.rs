@@ -1,7 +1,7 @@
 use std::io;
 
 use logos_runtime::AppRuntime;
-use logos_tui::{App, terminal::TerminalSession};
+use logos_tui::{App, TerminalSession};
 
 fn main() {
     if let Err(err) = run() {

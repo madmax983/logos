@@ -58,7 +58,7 @@ impl ProvidentAdapter {
     /// # Examples
     ///
     /// ```
-    /// use logos_fetch::adapters::ProvidentAdapter;
+    /// use logos_fetch::ProvidentAdapter;
     ///
     /// let adapter = ProvidentAdapter::from_runner_output_path("output.json").unwrap();
     /// ```

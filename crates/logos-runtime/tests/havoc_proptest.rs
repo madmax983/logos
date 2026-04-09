@@ -1,4 +1,4 @@
-use logos_runtime::runtime::AppRuntime;
+use logos_runtime::AppRuntime;
 use proptest::prelude::*;
 
 proptest! {
@@ -22,7 +22,7 @@ proptest! {
             amount
         ).unwrap();
 
-        let month_key = logos_runtime::runtime::AppRuntime::current_month_key_local();
+        let month_key = logos_runtime::AppRuntime::current_month_key_local();
 
         let _ = runtime.month_report_for("assets:checking", &month_key);
     }

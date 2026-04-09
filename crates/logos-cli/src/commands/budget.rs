@@ -1,3 +1,4 @@
+#![allow(clippy::unnecessary_wraps)]
 #![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
 use logos_core::experimental::monte_carlo::MonteCarloProjector;

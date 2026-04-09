@@ -16,7 +16,7 @@ pub type BudgetTargetKey = (String, String);
 ///
 /// ```
 /// use logos_core::{TransactionBuilder, TransactionId, AccountId, Posting};
-/// use logos_store::model::StoredTransaction;
+/// use logos_store::StoredTransaction;
 ///
 /// let txn = TransactionBuilder::new("groceries")
 ///     .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 100).unwrap())

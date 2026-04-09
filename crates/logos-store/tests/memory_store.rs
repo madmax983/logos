@@ -1,6 +1,6 @@
 use logos_core::{AccountId, Correction, Posting, TransactionBuilder, TransactionId};
-use logos_store::model::{NewImportRecord, StoredFetchArtifactFormat, StoredFetchRunStatus};
 use logos_store::{LedgerStore, MemoryStore};
+use logos_store::{NewImportRecord, StoredFetchArtifactFormat, StoredFetchRunStatus};
 
 fn balanced_txn(
     description: &str,

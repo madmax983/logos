@@ -1,5 +1,5 @@
 pub mod args;
-pub mod commands;
+pub(crate) mod commands;
 
 pub use args::{CliError, ParsedArgs, parse_args};
 

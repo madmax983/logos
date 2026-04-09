@@ -1,7 +1,7 @@
 #![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
 use logos_runtime::{AppRuntime, MonthAutopilotRequest, MonthAutopilotSummary};
-use logos_store::model::StoredFetchRunStatus;
+use logos_store::StoredFetchRunStatus;
 
 /// Handles `ledger month autopilot`.
 ///
@@ -108,7 +108,7 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
 mod tests {
     use super::render_autopilot_output;
     use logos_runtime::{MonthAutopilotSummary, MonthReport};
-    use logos_store::model::{
+    use logos_store::{
         StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredMonthClose,
         StoredReconciliationRun,
     };
