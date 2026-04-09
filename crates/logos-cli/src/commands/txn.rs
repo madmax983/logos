@@ -1,5 +1,5 @@
-use logos_core::TransactionId;
 use crossterm::style::Stylize;
+use logos_core::TransactionId;
 
 use crate::args::CliError;
 use logos_runtime::{AppRuntime, RuntimeError};
@@ -68,7 +68,11 @@ pub fn add(
         amount_cents,
         &mut runtime,
     )?;
-    println!("{} Transaction added successfully: {}", "✔".green(), transaction_id.as_str().bold());
+    println!(
+        "{} Transaction added successfully: {}",
+        "✔".green(),
+        transaction_id.as_str().bold()
+    );
     Ok(())
 }
 
@@ -83,7 +87,11 @@ pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
         message: format!("runtime initialization failed: {err}"),
     })?;
     apply_correction(supersedes_id, reason, &mut runtime)?;
-    println!("{} Transaction corrected successfully. Superseded ID: {}", "✔".green(), supersedes_id.bold());
+    println!(
+        "{} Transaction corrected successfully. Superseded ID: {}",
+        "✔".green(),
+        supersedes_id.bold()
+    );
     Ok(())
 }
 
