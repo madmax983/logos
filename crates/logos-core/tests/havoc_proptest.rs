@@ -76,4 +76,27 @@ proptest! {
         sim.add_assets_liabilities(assets, 0);
     }
 
+    #[cfg(feature = "nova")]
+    #[test]
+    #[should_panic(expected = "attempt to add with overflow")]
+    fn compute_spending_by_category_panics_on_overflow(
+        amount in i64::MAX / 2..i64::MAX,
+    ) {
+        use logos_core::experimental::category_trends::CategoryTrendAnalyzer;
+        use logos_core::domain::category::CategoryGroupId;
+        use logos_core::domain::transaction::{TransactionBuilder, Posting};
+
+        let mut analyzer = CategoryTrendAnalyzer::new();
+        let group_id = CategoryGroupId::from_name("food").unwrap();
+        let acc_id = AccountId::new("expenses:food").unwrap();
+        analyzer.map_account(acc_id.clone(), group_id);
+
+        let posting1 = Posting::debit(acc_id, amount).unwrap();
+        let posting2 = Posting::credit(AccountId::new("assets:checking").unwrap(), amount).unwrap();
+
+        let tx = TransactionBuilder::new("Test").posting(posting1).posting(posting2).build().unwrap();
+        let txs = vec![tx.clone(), tx];
+
+        let _ = analyzer.compute_spending_by_category(&txs);
+    }
 }
