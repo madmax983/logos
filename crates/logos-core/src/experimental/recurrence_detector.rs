@@ -23,8 +23,10 @@ impl RecurrenceDetector {
     /// Scans a list of transactions and identifies recurring templates.
     #[must_use]
     pub fn detect(&self, transactions: &[Transaction]) -> Vec<RecurringTemplate> {
+        // ⚡ Bolt: Group by references (&str) instead of owned Strings to avoid
+        // 3 heap allocations per transaction during the aggregation phase.
         // Group by (description, credit_account, debit_account, amount)
-        let mut groups: HashMap<(String, String, String, i64), usize> = HashMap::new();
+        let mut groups: HashMap<(&str, &str, &str, i64), usize> = HashMap::new();
 
         for tx in transactions {
             let postings = tx.postings();
@@ -47,9 +49,9 @@ impl RecurrenceDetector {
 
             if let (Some(c), Some(d)) = (credit, debit) {
                 let key = (
-                    tx.description().to_owned(),
-                    c.account().as_str().to_owned(),
-                    d.account().as_str().to_owned(),
+                    tx.description(),
+                    c.account().as_str(),
+                    d.account().as_str(),
                     d.amount(), // the positive amount
                 );
                 *groups.entry(key).or_insert(0) += 1;
@@ -60,10 +62,10 @@ impl RecurrenceDetector {
         for ((description, credit_account, debit_account, amount_cents), count) in groups {
             if count >= self.min_occurrences {
                 templates.push(RecurringTemplate {
-                    description,
+                    description: description.to_owned(),
                     amount_cents,
-                    credit_account,
-                    debit_account,
+                    credit_account: credit_account.to_owned(),
+                    debit_account: debit_account.to_owned(),
                 });
             }
         }
