@@ -161,7 +161,7 @@ fn render_budget_set_output(
     format!("{table}")
 }
 
-fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
+fn render_rsu_plan_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
     let mut plan_table = comfy_table::Table::new();
     plan_table.load_preset(comfy_table::presets::UTF8_FULL);
     plan_table.set_header(vec![
@@ -202,7 +202,10 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
         Cell::new(plan.reserve_sweep_pct()),
         Cell::new(plan.investing_sweep_pct()),
     ]);
+    plan_table
+}
 
+fn render_rsu_scenario_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
     let mut scenario_table = comfy_table::Table::new();
     scenario_table.load_preset(comfy_table::presets::UTF8_FULL);
     scenario_table.set_header(vec![
@@ -260,6 +263,12 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
             ]);
         }
     }
+    scenario_table
+}
+
+fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
+    let plan_table = render_rsu_plan_table(plan);
+    let scenario_table = render_rsu_scenario_table(plan);
 
     format!("{plan_table}\n{scenario_table}")
 }

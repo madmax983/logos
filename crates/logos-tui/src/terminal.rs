@@ -288,6 +288,87 @@ pub const fn runtime_unavailable_message(view: View) -> Option<&'static str> {
 }
 
 #[must_use]
+fn home_status_lines(app: &App) -> Vec<String> {
+    app.home_snapshot().map_or_else(
+        || vec![String::from("Dashboard data unavailable")],
+        |snapshot| {
+            vec![
+                format!("Cashflow: {}", snapshot.cashflow_cents()),
+                format!(
+                    "Budget Target: {}",
+                    snapshot
+                        .budget_target_cents()
+                        .map_or_else(|| String::from("unconfigured"), |value| value.to_string())
+                ),
+                format!(
+                    "Budget Variance: {}",
+                    snapshot
+                        .budget_variance_cents()
+                        .map_or_else(|| String::from("unconfigured"), |value| value.to_string())
+                ),
+            ]
+        },
+    )
+}
+
+fn budget_status_lines(app: &App) -> Vec<String> {
+    app.budget_snapshot().map_or_else(
+        || vec![String::from("Budget data unavailable")],
+        |snapshot| {
+            vec![
+                format!(
+                    "Target: {}",
+                    snapshot
+                        .budget_target_cents()
+                        .map_or_else(|| String::from("unconfigured"), |value| value.to_string())
+                ),
+                format!("Actual: {}", snapshot.actual_expense_cents()),
+                format!(
+                    "Variance: {}",
+                    snapshot
+                        .budget_variance_cents()
+                        .map_or_else(|| String::from("unconfigured"), |value| value.to_string())
+                ),
+            ]
+        },
+    )
+}
+
+fn register_status_lines(app: &App) -> Vec<String> {
+    app.register_snapshot().map_or_else(
+        || vec![String::from("Register data unavailable")],
+        |snapshot| {
+            vec![
+                format!("Balance: {}", snapshot.balance_cents()),
+                format!("Recent Rows: {}", snapshot.activity().len()),
+            ]
+        },
+    )
+}
+
+fn reconcile_status_lines(app: &App) -> Vec<String> {
+    let selected_run = app.selected_reconcile_run();
+    vec![
+        format!(
+            "Runs: {}",
+            if selected_run.is_some() {
+                String::from("loaded")
+            } else {
+                String::from("none")
+            }
+        ),
+        format!(
+            "Selected Run: {}",
+            selected_run.map_or_else(|| String::from("none"), |run| run.run_id().to_owned())
+        ),
+        format!(
+            "Evidence Rows: {}",
+            app.selected_reconcile_statement_lines().len()
+        ),
+    ]
+}
+
+#[must_use]
 pub fn view_status_lines(app: &App, runtime_available: bool) -> Vec<String> {
     let mode = if app.is_scope_editing() {
         "Edit Scope"
@@ -299,82 +380,11 @@ pub fn view_status_lines(app: &App, runtime_available: bool) -> Vec<String> {
         lines.push(format!("Scope Error: {message}"));
     }
     lines.extend(match app.view() {
-        View::Home => app.home_snapshot().map_or_else(
-            || vec![String::from("Dashboard data unavailable")],
-            |snapshot| {
-                vec![
-                    format!("Cashflow: {}", snapshot.cashflow_cents()),
-                    format!(
-                        "Budget Target: {}",
-                        snapshot.budget_target_cents().map_or_else(
-                            || String::from("unconfigured"),
-                            |value| value.to_string()
-                        )
-                    ),
-                    format!(
-                        "Budget Variance: {}",
-                        snapshot.budget_variance_cents().map_or_else(
-                            || String::from("unconfigured"),
-                            |value| value.to_string()
-                        )
-                    ),
-                ]
-            },
-        ),
-        View::Budget => app.budget_snapshot().map_or_else(
-            || vec![String::from("Budget data unavailable")],
-            |snapshot| {
-                vec![
-                    format!(
-                        "Target: {}",
-                        snapshot.budget_target_cents().map_or_else(
-                            || String::from("unconfigured"),
-                            |value| value.to_string()
-                        )
-                    ),
-                    format!("Actual: {}", snapshot.actual_expense_cents()),
-                    format!(
-                        "Variance: {}",
-                        snapshot.budget_variance_cents().map_or_else(
-                            || String::from("unconfigured"),
-                            |value| value.to_string()
-                        )
-                    ),
-                ]
-            },
-        ),
-        View::Register => app.register_snapshot().map_or_else(
-            || vec![String::from("Register data unavailable")],
-            |snapshot| {
-                vec![
-                    format!("Balance: {}", snapshot.balance_cents()),
-                    format!("Recent Rows: {}", snapshot.activity().len()),
-                ]
-            },
-        ),
+        View::Home => home_status_lines(app),
+        View::Budget => budget_status_lines(app),
+        View::Register => register_status_lines(app),
         View::Rsu => vec![String::from("RSU view still placeholder")],
-        View::Reconcile => {
-            let selected_run = app.selected_reconcile_run();
-            vec![
-                format!(
-                    "Runs: {}",
-                    if selected_run.is_some() {
-                        String::from("loaded")
-                    } else {
-                        String::from("none")
-                    }
-                ),
-                format!(
-                    "Selected Run: {}",
-                    selected_run
-                        .map_or_else(|| String::from("none"), |run| run.run_id().to_owned())
-                ),
-                format!(
-                    "Evidence Rows: {}",
-                    app.selected_reconcile_statement_lines().len()
-                ),
-            ]
-        }
+        View::Reconcile => reconcile_status_lines(app),
     });
 
     if !runtime_available {
