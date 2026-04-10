@@ -8,12 +8,12 @@
 //! It provides pure functions that take raw primitive data (e.g., balances, amounts) and
 //! project them into meaningful financial indicators.
 
-pub mod budget_vs_actual;
-pub mod cashflow;
-pub mod net_worth;
-pub mod register;
-pub mod rsu_budget_plan;
-pub mod rsu_forecast;
+pub(crate) mod budget_vs_actual;
+pub(crate) mod cashflow;
+pub(crate) mod net_worth;
+pub(crate) mod register;
+pub(crate) mod rsu_budget_plan;
+pub(crate) mod rsu_forecast;
 
 pub use budget_vs_actual::project_budget_variance;
 pub use cashflow::project_cashflow;

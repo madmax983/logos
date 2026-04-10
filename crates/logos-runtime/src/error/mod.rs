@@ -18,8 +18,9 @@ impl fmt::Display for RuntimeError {
             Self::Store(err) => write!(f, "{err}"),
             Self::Import(err) => write!(f, "{err}"),
             Self::Domain(err) => write!(f, "domain error: {err}"),
-            Self::Analytics { message } => write!(f, "{message}"),
-            Self::Initialization { message } => write!(f, "{message}"),
+            Self::Analytics { message } | Self::Initialization { message } => {
+                write!(f, "{message}")
+            }
         }
     }
 }

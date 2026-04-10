@@ -214,6 +214,7 @@ fn import_batches_fetch_runs_and_statement_lines_round_trip() {
 
 #[test]
 #[ignore = "requires Docker (testcontainers)"]
+#[allow(clippy::too_many_lines)]
 fn reconciliation_run_and_month_close_round_trip() {
     let container = postgres::Postgres::default()
         .start()

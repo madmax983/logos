@@ -1,15 +1,27 @@
-//! Immutability and corrections.
+//! The Immutable Ledger: Audit Trails and Corrections.
 //!
-//! In a strict double-entry ledger, transactions are generally append-only and
-//! immutable. When a mistake is made, it is corrected by appending a new
-//! transaction that explicitly "supersedes" the previous one, rather than
-//! mutating the historical record in place.
+//! # Mistakes are Written in Ink
+//!
+//! In a strict, zero-trust accounting system, history cannot be silently erased.
+//! The ledger is strictly an **append-only log**.
+//!
+//! When human error occurs (and it always does) and a transaction is recorded
+//! incorrectly, it is never mutated or deleted in place. Instead, we use
+//! [`Correction`]s.
+//!
+//! A correction fixes a mistake by appending a brand new transaction that
+//! explicitly links to the flawed `TransactionId` it replaces. It forces the
+//! accountant to provide a mandatory textual `reason` for the change, preserving
+//! a complete and transparent audit trail of what went wrong and how it was fixed.
 
 use crate::error::DomainError;
 
 /// A unique identifier for a recorded transaction.
+///
+/// Uses `Arc<str>` instead of `String` to ensure zero-cost cloning, as transaction IDs are
+/// frequently copied across the storage boundaries and mapped in memory.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct TransactionId(String);
+pub struct TransactionId(std::sync::Arc<str>);
 
 impl TransactionId {
     /// Creates a normalized transaction id.
@@ -32,7 +44,7 @@ impl TransactionId {
             return Err(DomainError::EmptyTransactionId);
         }
 
-        Ok(Self(trimmed.to_owned()))
+        Ok(Self(trimmed.into()))
     }
 
     /// Retrieves the string representation of the transaction id.

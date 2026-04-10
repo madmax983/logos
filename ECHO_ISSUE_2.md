@@ -1,10 +1,10 @@
-# 🗣️ Echo: Jargon in CLI output
+# 🗣️ Echo: Jargon in CLI output (Resolved)
 
 **🤦 The Confusion:**
 When I run simple commands like `budget set` or `report month`, the CLI spits out messages like "Index restoration completed successfully", "Temporal index restored", and "Loaded temporal adjacency index from disk". I'm trying to set a budget, not travel through time! What is a temporal adjacency index?!
 
 **🕵️ The Reality:**
-The application is just loading the local database history, but it's using intense, jargon-heavy terminology ("temporal adjacency index") instead of simple words that normal people understand.
+These jargon-heavy logs were emitted by the prototype AletheiaDB storage engine. This engine was recently removed entirely in a major architectural cutover to Postgres+Diesel. The current runtime does not emit these logs on startup.
 
 **💡 The Fix:**
-Replace these confusing logs with something simple like "Loaded history" or "Database loaded", or just hide these startup messages entirely unless in debug mode.
+None required. The underlying code emitting this database jargon was deleted when removing the `logos-store-aletheia` backend.

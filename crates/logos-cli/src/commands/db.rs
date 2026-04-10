@@ -1,4 +1,5 @@
 use crate::args::CliError;
+use crossterm::style::Stylize;
 use logos_store_pg::PostgresStore;
 
 const DATABASE_URL_ENV: &str = "DATABASE_URL";
@@ -19,12 +20,17 @@ pub fn migrate() -> Result<(), CliError> {
         })?;
 
     if applied.is_empty() {
-        println!("db.migrate applied=0 status=up_to_date");
+        println!("{} Database is up to date.", "✔".green());
         return Ok(());
     }
 
     let joined = applied.join(",");
-    println!("db.migrate applied={} names={joined}", applied.len());
+    println!(
+        "{} Applied {} migration(s): {}",
+        "✔".green(),
+        applied.len(),
+        joined.bold()
+    );
     Ok(())
 }
 
@@ -44,51 +50,53 @@ pub fn status() -> Result<(), CliError> {
         })?;
 
     if pending.is_empty() {
-        println!("db.status pending=0 status=up_to_date");
+        println!(
+            "{} Database is up to date. No pending migrations.",
+            "✔".green()
+        );
         return Ok(());
     }
 
     let joined = pending.join(",");
-    println!("db.status pending={} names={joined}", pending.len());
+    println!(
+        "{} {} pending migration(s): {}",
+        "ℹ".blue(),
+        pending.len(),
+        joined.bold()
+    );
     Ok(())
 }
 
-fn connect_store(command: &str) -> Result<PostgresStore, CliError> {
-    let database_url =
-        std::env::var(DATABASE_URL_ENV).map_err(|_| CliError::CommandRuntimeFailed {
-            command: command.to_owned(),
-            message: "DATABASE_URL is not set".to_owned(),
-        })?;
+fn connect_store_with_env(
+    command: &str,
+    env_var: Option<String>,
+) -> Result<PostgresStore, CliError> {
+    let database_url = env_var.ok_or_else(|| CliError::CommandRuntimeFailed {
+        command: command.to_owned(),
+        message: "DATABASE_URL is not set".to_owned(),
+    })?;
     PostgresStore::connect(&database_url).map_err(|err| CliError::CommandRuntimeFailed {
         command: command.to_owned(),
         message: format!("database connection failed: {err}"),
     })
 }
 
+fn connect_store(command: &str) -> Result<PostgresStore, CliError> {
+    connect_store_with_env(command, std::env::var(DATABASE_URL_ENV).ok())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::connect_store;
+    use super::connect_store_with_env;
 
     #[test]
     fn connect_store_requires_database_url() {
-        let previous = std::env::var_os("DATABASE_URL");
-        unsafe {
-            std::env::remove_var("DATABASE_URL");
-        }
-
-        let err = match connect_store("db.status") {
-            Ok(_) => panic!("missing database url must fail"),
-            Err(e) => e,
+        let Err(err) = connect_store_with_env("db.status", None) else {
+            panic!("missing database url must fail");
         };
         assert_eq!(
             err.to_string(),
-            "Command 'db.status' failed at runtime: DATABASE_URL is not set."
+            "Command 'db.status' failed: DATABASE_URL is not set."
         );
-
-        if let Some(value) = previous {
-            unsafe {
-                std::env::set_var("DATABASE_URL", value);
-            }
-        }
     }
 }

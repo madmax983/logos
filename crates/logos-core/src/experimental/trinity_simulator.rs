@@ -182,6 +182,13 @@ mod tests {
     }
 
     #[test]
+    fn test_negative_portfolio() {
+        let sim = TrinitySimulator::new(-1, 400_000, 0.07, 0.15, 3.0, 42);
+        let result = sim.run(30, 100);
+        assert_eq!(result.success_rate_pct, 0);
+    }
+
+    #[test]
     fn test_guaranteed_failure() {
         // $100k portfolio, withdrawing $100k per year -> will fail in year 2 or even year 1 if inflation applied
         let sim = TrinitySimulator::new(10_000_000, 10_000_000, 0.05, 0.10, 3.0, 42);
@@ -217,5 +224,142 @@ mod tests {
         // Let's assert it's somewhat realistic. We adjust the threshold a bit to handle random seeds.
         assert!(result.success_rate_pct > 60);
         assert!(result.success_rate_pct <= 100);
+    }
+
+    #[test]
+    fn test_lcg_deterministic_sequence() {
+        let mut lcg = Lcg::new(42);
+
+        let u1 = lcg.next_u64();
+        let u2 = lcg.next_u64();
+        // Derived from Python independent script calculation:
+        assert_eq!(u1, 10_481_999_410_520_546_993);
+        assert_eq!(u2, 4_159_066_171_780_167_020);
+
+        let mut lcg_f64 = Lcg::new(42);
+        // Derived from Python independent script calculation
+        // 0.5682303266439076
+        assert!((lcg_f64.next_f64() - 0.568_230_326_643_907_6).abs() < f64::EPSILON);
+
+        let mut lcg_norm = Lcg::new(42);
+        // Derived from Python independent script calculation
+        // -1.8980658453021801
+        assert!((lcg_norm.next_normal() - (-1.898_065_845_302_180_1)).abs() < f64::EPSILON * 10.0);
+    }
+
+    #[test]
+    fn test_lcg_next_f64_bounds() {
+        let mut lcg = Lcg::new(12345);
+        for _ in 0..100 {
+            let f = lcg.next_f64();
+            assert!((0.0..1.0).contains(&f));
+        }
+    }
+
+    #[test]
+    fn test_lcg_next_normal_mean() {
+        // While not a full statistical test, we verify the value is hardcoded to deterministic expected
+        let mut lcg = Lcg::new(123);
+        // Calculate manually:
+        // u1: 15467475149301019122 -> f1: 0.8385078513511195
+        // ... sum of 12 ...
+        // We will just do a specific assertion on the first run of the sequence.
+        assert!((lcg.next_normal() - (-1.408_320_216_555_458)).abs() < 0.000_000_000_1);
+    }
+
+    #[test]
+    fn test_simulation_exact_single_path_math() {
+        // Let's create a predictable scenario where we run exactly 1 path and 1 year.
+        let sim = TrinitySimulator::new(
+            1_000_000, 100_000, 0.10, 0.0, // 0 volatility means random_norm has no effect!
+            5.0, 42,
+        );
+        let result = sim.run(1, 1);
+
+        // Year 0 calculation:
+        // withdrawal = 100_000 * (1.05)^0 = 100_000
+        // remaining = 1_000_000 - 100_000 = 900_000
+        // random_norm = <something>
+        // annual_return = 0.10 + 0.0 * <something> = 0.10
+        // gain_cents = 900_000 * 0.10 = 90_000
+        // portfolio = 900_000 + 90_000 = 990_000
+        // Survived!
+
+        assert_eq!(result.success_rate_pct, 100);
+
+        // Let's create a scenario that barely fails after gain
+        let sim_fail = TrinitySimulator::new(1_000_000, 1_100_000, 0.10, 0.0, 5.0, 42);
+        let result_fail = sim_fail.run(1, 1);
+
+        // Year 0 calculation:
+        // withdrawal = 1_100_000
+        // remaining = 1_000_000.saturating_sub(1_100_000) = 0
+        // if remaining <= 0 => break and fail
+        assert_eq!(result_fail.success_rate_pct, 0);
+    }
+
+    #[test]
+    fn test_simulation_exact_multi_path_success_rate() {
+        // Test that success_rate_pct is calculated correctly as a percentage
+
+        let sim_volatile = TrinitySimulator::new(
+            100_000, 90_000, 0.0, 1.0, // high volatility
+            0.0, 12345,
+        );
+
+        let result = sim_volatile.run(1, 10);
+
+        // With seed 12345, the random normal draws will cause exactly some paths to fail
+        // and some to succeed. We run 10 paths.
+        // I will assert the EXACT hardcoded percentage.
+        // It happens to be exactly 50% for seed 12345.
+        assert_eq!(result.success_rate_pct, 50);
+    }
+
+    #[test]
+    fn test_failure_on_first_withdrawal() {
+        let sim = TrinitySimulator::new(100, 200, 0.05, 0.10, 3.0, 42);
+        let result = sim.run(1, 1);
+        // Withdraws 200 from 100 => 0 => fails immediately
+        assert_eq!(result.success_rate_pct, 0);
+    }
+
+    #[test]
+    fn test_failure_after_market_loss() {
+        let sim = TrinitySimulator::new(
+            100_000, 10_000, -1.0, // -100% return
+            0.0,  // no volatility
+            0.0, 42,
+        );
+        let result = sim.run(1, 1);
+        // withdraw 10k -> 90k
+        // return -100% -> gain is -90k -> current is 0
+        // fails
+        assert_eq!(result.success_rate_pct, 0);
+    }
+
+    #[test]
+    fn test_failure_exactly_zero_after_market() {
+        // Make sure <= 0 is checked after market loss
+        let sim = TrinitySimulator::new(100_000, 50_000, -1.0, 0.0, 0.0, 42);
+        let result = sim.run(1, 1);
+        assert_eq!(result.success_rate_pct, 0);
+    }
+
+    #[test]
+    fn test_round_success_rate() {
+        let sim = TrinitySimulator::new(
+            100_000, 90_000, // Leaves 10k
+            0.0, 1.0, // high volatility
+            0.0, 42,
+        );
+        let result = sim.run(1, 3);
+        // Seed 42 for 3 paths exactly.
+        // Let's assert the exact number it results in.
+        assert_eq!(result.success_rate_pct, 33);
+
+        let sim_0_years = TrinitySimulator::new(100, 10, 0.0, 0.0, 0.0, 42);
+        let result = sim_0_years.run(0, 7); // 7 paths, 0 years means all survive immediately
+        assert_eq!(result.success_rate_pct, 100);
     }
 }

@@ -165,31 +165,65 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
     let mut plan_table = comfy_table::Table::new();
     plan_table.load_preset(comfy_table::presets::UTF8_FULL);
     plan_table.set_header(vec![
-        "Month",
-        "Conservative Budget",
-        "Fixed Commitments",
-        "Baseline Remaining",
-        "Reserve Sweep %",
-        "Investing Sweep %",
+        Cell::new("Month")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Conservative Budget")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Fixed Commitments")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Baseline Remaining")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Reserve Sweep %")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Investing Sweep %")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
     ]);
     plan_table.add_row(vec![
-        plan.month_key().to_string(),
-        format!("${:.2}", (plan.conservative_budget_cents() as f64) / 100.0),
-        format!("${:.2}", (plan.fixed_commitments_cents() as f64) / 100.0),
-        format!("${:.2}", (plan.baseline_remaining_cents() as f64) / 100.0),
-        plan.reserve_sweep_pct().to_string(),
-        plan.investing_sweep_pct().to_string(),
+        Cell::new(plan.month_key()).add_attribute(Attribute::Bold),
+        Cell::new(format!(
+            "${:.2}",
+            (plan.conservative_budget_cents() as f64) / 100.0
+        )),
+        Cell::new(format!(
+            "${:.2}",
+            (plan.fixed_commitments_cents() as f64) / 100.0
+        )),
+        Cell::new(format!(
+            "${:.2}",
+            (plan.baseline_remaining_cents() as f64) / 100.0
+        ))
+        .add_attribute(Attribute::Bold),
+        Cell::new(plan.reserve_sweep_pct()),
+        Cell::new(plan.investing_sweep_pct()),
     ]);
 
     let mut scenario_table = comfy_table::Table::new();
     scenario_table.load_preset(comfy_table::presets::UTF8_FULL);
     scenario_table.set_header(vec![
-        "Scenario",
-        "Monthly Income",
-        "Surplus",
-        "Reserve Sweep",
-        "Investing Sweep",
-        "Available After Sweeps",
+        Cell::new("Scenario")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Monthly Income")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Surplus")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Reserve Sweep")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Investing Sweep")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Available After Sweeps")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
     ]);
 
     for key in [ScenarioKey::Bear, ScenarioKey::Base, ScenarioKey::Bull] {
@@ -220,7 +254,9 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
                 Cell::new(format!(
                     "${:.2}",
                     (scenario.available_after_sweeps_cents() as f64) / 100.0
-                )),
+                ))
+                .fg(color)
+                .add_attribute(Attribute::Bold),
             ]);
         }
     }

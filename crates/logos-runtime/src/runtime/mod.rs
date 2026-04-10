@@ -1163,9 +1163,12 @@ impl<S: LedgerStore> AppRuntime<S> {
         let records = parse_pdf_statement_file(&path, account, enable_ocr)?;
         let mut imported_count = 0_usize;
         let mut duplicate_count = 0_usize;
-        let mut seen_in_call: HashSet<String> = HashSet::new();
-        let mut imported_records = Vec::new();
-        let mut imported_keys = Vec::new();
+
+        // ⚡ Bolt: Pre-allocate collections to prevent repeated heap allocations
+        // and re-hashing as records are imported.
+        let mut seen_in_call: HashSet<String> = HashSet::with_capacity(records.len());
+        let mut imported_records = Vec::with_capacity(records.len());
+        let mut imported_keys = Vec::with_capacity(records.len());
 
         for record in records {
             let (content_hash_key, legacy_content_hash_key) = import_content_hash_keys(&record);
@@ -1552,7 +1555,7 @@ fn hash_rows(
         &mut hasher,
         "schema:{schema_version}|valid:{as_of_valid}|tx:{as_of_tx}"
     )
-    .unwrap();
+    .expect("writeln! to Hasher should never fail");
     for row in rows {
         writeln!(
             &mut hasher,
@@ -1564,7 +1567,7 @@ fn hash_rows(
             row.account,
             row.amount_cents
         )
-        .unwrap();
+        .expect("writeln! to Hasher should never fail");
     }
     hasher.finalize().to_hex().to_string()
 }

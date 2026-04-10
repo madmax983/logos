@@ -1,5 +1,7 @@
 #[cfg(feature = "nova")]
 pub mod asset_depreciation;
+#[cfg(feature = "nova")]
+pub mod benford_law;
 pub mod cashflow_projector;
 #[cfg(feature = "nova")]
 pub mod coast_fire;
@@ -15,9 +17,16 @@ pub mod goal_seeker;
 #[cfg(feature = "nova")]
 pub mod inflation;
 pub mod mermaid_exporter;
+#[cfg(feature = "nova")]
+pub mod mermaid_xy_exporter;
 pub mod monte_carlo;
+#[cfg(feature = "nova")]
+pub mod opportunity_cost;
 #[cfg(feature = "nova")]
 pub mod predictive_ledger;
 pub mod recurrence_detector;
 #[cfg(feature = "nova")]
 pub mod trinity_simulator;
+
+#[cfg(feature = "nova")]
+pub mod category_trends;

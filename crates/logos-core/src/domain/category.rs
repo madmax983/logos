@@ -6,13 +6,17 @@
 //! for the envelope budgeting feature.
 
 use crate::error::DomainError;
+use std::sync::Arc;
 
 /// A normalized identifier for a [`CategoryGroup`].
 ///
 /// It is derived from the group's name by converting to lowercase, trimming
 /// whitespace, and replacing internal whitespace runs with hyphens.
+///
+/// Uses `Arc<str>` internally to provide zero-cost cloning (reducing heap
+/// allocations) across budgeting logic where IDs are frequently duplicated.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct CategoryGroupId(String);
+pub struct CategoryGroupId(Arc<str>);
 
 impl CategoryGroupId {
     /// Creates a normalized `CategoryGroupId` from a string.
@@ -46,7 +50,7 @@ impl CategoryGroupId {
             return Err(DomainError::EmptyCategoryGroupName);
         }
 
-        Ok(Self(normalized))
+        Ok(Self(normalized.into()))
     }
 
     /// Retrieves the string representation of the category group id.
@@ -286,7 +290,7 @@ mod tests {
 
     #[test]
     fn should_return_error_when_category_group_id_is_empty() {
-        let group_id = CategoryGroupId(String::new());
+        let group_id = CategoryGroupId(String::new().into());
         assert_eq!(
             Category::new(group_id, "Rent"),
             Err(DomainError::EmptyCategoryGroupName)

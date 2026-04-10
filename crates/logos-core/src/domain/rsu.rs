@@ -1,8 +1,24 @@
-//! Restricted Stock Unit (RSU) forecasting and allocation planning.
+//! Risk and Equity: RSU Forecasting and Distribution.
 //!
-//! This module provides structures and functions to model unvested equity.
-//! Because equity prices are volatile, `logos` uses a "haircut" (discount) approach
-//! to forecast the safe spendable value of future vests.
+//! # Taming the Volatility
+//!
+//! Restricted Stock Units (RSUs) represent the promise of future money, but that
+//! promise is fundamentally unstable. Until the stock actually vests and hits your
+//! account, its value is entirely at the mercy of the market.
+//!
+//! This module provides the domain models to bridge the gap between "paper wealth"
+//! and "spendable cash". It employs a risk-adjusted framework:
+//!
+//! 1. **Haircuts (Discounts):** Because a vest happening in 6 months is far riskier
+//!    than one happening tomorrow, `logos` uses [`HaircutTierTable`]s to discount
+//!    future values. The further out the vest, the less of it you are allowed to
+//!    count on in your financial planning.
+//!
+//! 2. **Automated Distribution:** When that equity *does* vest, it must be put
+//!    to work immediately. [`AllocationPolicy`] defines strict percentage-based
+//!    rules to automatically route the incoming funds—ensuring the tax man is paid
+//!    first, income smoothing buffers are filled, and goals are funded before any
+//!    discretionary spending is permitted.
 
 use crate::error::DomainError;
 

@@ -6,6 +6,8 @@ use crate::error::PgStoreError;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
+/// # Errors
+/// Returns `PgStoreError` on execution failure.
 pub fn run_pending_migrations(conn: &mut PgConnection) -> Result<Vec<String>, PgStoreError> {
     let applied =
         conn.run_pending_migrations(MIGRATIONS)
@@ -19,6 +21,8 @@ pub fn run_pending_migrations(conn: &mut PgConnection) -> Result<Vec<String>, Pg
         .collect())
 }
 
+/// # Errors
+/// Returns `PgStoreError` on fetch failure.
 pub fn pending_migration_names(conn: &mut PgConnection) -> Result<Vec<String>, PgStoreError> {
     let pending = conn
         .pending_migrations(MIGRATIONS)
