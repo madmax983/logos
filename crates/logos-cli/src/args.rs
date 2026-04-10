@@ -1171,9 +1171,12 @@ fn parse_flag_value(args: &[String], flag: &str) -> Result<String, CliError> {
         .ok_or_else(|| CliError::MissingArgValue {
             flag: flag.to_owned(),
         })?;
-    let value = args.get(idx + 1).ok_or_else(|| CliError::MissingArgValue {
-        flag: flag.to_owned(),
-    })?;
+    let value = args
+        .get(idx + 1)
+        .filter(|v| !v.starts_with("--"))
+        .ok_or_else(|| CliError::MissingArgValue {
+            flag: flag.to_owned(),
+        })?;
     Ok(value.clone())
 }
 
@@ -1182,9 +1185,12 @@ fn parse_optional_flag_value(args: &[String], flag: &str) -> Result<Option<Strin
         return Ok(None);
     };
 
-    let value = args.get(idx + 1).ok_or_else(|| CliError::MissingArgValue {
-        flag: flag.to_owned(),
-    })?;
+    let value = args
+        .get(idx + 1)
+        .filter(|v| !v.starts_with("--"))
+        .ok_or_else(|| CliError::MissingArgValue {
+            flag: flag.to_owned(),
+        })?;
     Ok(Some(value.clone()))
 }
 

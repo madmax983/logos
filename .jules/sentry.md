@@ -20,3 +20,7 @@
 ## 2026-04-04 - [Off-By-One Logic Mutants]
 **Learning:** Checking for positive amounts using `> 0` instead of `>= 0` can be silently ignored by the test suite if there are no explicit tests mapping exactly to `0`. This leaves the system vulnerable to incorrectly evaluating an invalid value when attempting to create a ledger `Posting`.
 **Action:** When filtering or excluding boundary values, write explicit test cases using precisely the rejected boundary inputs (e.g. `0%` allocations) to prove the guard is fully robust and catches `cargo-mutants` equivalent replacement cases.
+
+## 2026-04-08 - Fix CLI Flag Value Parsing Regression with Negative Numbers
+**Learning:** Fixing CLI argument parsers by rejecting any token starting with `"-"` (to prevent consuming subsequent flags as values) creates a critical regression when parsing negative amounts (like `-5000` for account balances).
+**Action:** When preventing flags from being parsed as values in a CLI, specifically filter out tokens starting with `"--"` instead of `"-"` so that valid negative numeric strings can still be parsed.
