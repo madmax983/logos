@@ -44,3 +44,7 @@
 ## 2026-04-03 - [Storage Traits Documentation]
 **Confusion:** The `LedgerStore` trait in `crates/logos-store/src/traits.rs` and its models lacked high-level module narratives and basic executable doc-tests. Users had to guess what `StoredTransaction` was meant for versus the core `Transaction` object.
 **Clarification:** Added module-level `//!` narrative docs explaining the storage contract abstraction, along with `///` descriptions and `## Examples` doc-tests for `LedgerStore`, `MemoryStore`, and `StoredTransaction`.
+
+## 2026-04-04 - [Automated Cashflow Recurrence & Projection]
+**Confusion:** The `RecurrenceDetector` and `CashflowProjector` in `logos-core::experimental` lacked descriptive module narratives and executable doc-tests. Users had to read the implementation to understand how the detector filtered simple two-posting transactions and how the projector aggregated recurring templates into final balances.
+**Clarification:** Added module-level narratives ("The Pattern Whisperer" and "The Crystal Ball of Cashflow") and comprehensive executable `## Examples` doc-tests to all public methods for both structs to demonstrate instantiation and integration logic.

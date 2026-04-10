@@ -1,3 +1,12 @@
+//! The Pattern Whisperer
+//!
+//! Automated cashflow recurrence detection.
+//!
+//! Manual budget forecasting is tedious and error-prone. Users often forget recurring subscriptions,
+//! utility bills, or irregular income streams. The [`RecurrenceDetector`] analyzes historical
+//! transactions to deterministically identify these patterns, surfacing them to reduce the
+//! cognitive load of month-over-month planning.
+
 use crate::domain::transaction::Transaction;
 use crate::experimental::cashflow_projector::RecurringTemplate;
 use std::collections::HashMap;
@@ -14,13 +23,59 @@ pub struct RecurrenceDetector {
 }
 
 impl RecurrenceDetector {
-    /// Creates a new `RecurrenceDetector` with the specified threshold.
+    /// Initializes a recurrence detector with a sensitivity threshold.
+    ///
+    /// The threshold dictates how many identical occurrences of a transaction must be
+    /// found before it is considered a recurring pattern.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::experimental::recurrence_detector::RecurrenceDetector;
+    ///
+    /// // Require at least 3 identical transactions to establish a pattern
+    /// let detector = RecurrenceDetector::new(3);
+    /// ```
     #[must_use]
     pub const fn new(min_occurrences: usize) -> Self {
         Self { min_occurrences }
     }
 
-    /// Scans a list of transactions and identifies recurring templates.
+    /// Scans a ledger history to identify recurring cashflow patterns.
+    ///
+    /// Filters the provided `transactions` for simple, two-posting transfers (one debit, one credit).
+    /// If an identical transfer (matching description, source account, destination account, and amount)
+    /// occurs at least `min_occurrences` times, a [`RecurringTemplate`] is generated.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::experimental::recurrence_detector::RecurrenceDetector;
+    /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+    /// use logos_core::AccountId;
+    ///
+    /// let mut transactions = Vec::new();
+    /// let account_checking = AccountId::new("assets:checking").unwrap();
+    /// let account_netflix = AccountId::new("expenses:netflix").unwrap();
+    ///
+    /// // Add 3 identical transactions
+    /// for _ in 0..3 {
+    ///     transactions.push(
+    ///         TransactionBuilder::new("Netflix Subscription")
+    ///             .posting(Posting::credit(account_checking.clone(), 1599).unwrap())
+    ///             .posting(Posting::debit(account_netflix.clone(), 1599).unwrap())
+    ///             .build()
+    ///             .unwrap()
+    ///     );
+    /// }
+    ///
+    /// let detector = RecurrenceDetector::new(3);
+    /// let templates = detector.detect(&transactions);
+    ///
+    /// assert_eq!(templates.len(), 1);
+    /// assert_eq!(templates[0].description, "Netflix Subscription");
+    /// assert_eq!(templates[0].amount_cents, 1599);
+    /// ```
     #[must_use]
     pub fn detect(&self, transactions: &[Transaction]) -> Vec<RecurringTemplate> {
         // Group by (description, credit_account, debit_account, amount)
