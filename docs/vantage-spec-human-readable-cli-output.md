@@ -16,3 +16,6 @@ The application is confusing new and non-technical users by exposing internal da
 - Rewriting the underlying storage engine or altering how the indices actually function.
 - Changing the structure or format of actual financial data output (e.g., the content of the reports themselves).
 - Building a full graphical user interface (this scope is strictly limited to CLI text output).
+
+✅ **Resolution:**
+This issue was caused by the now-removed embedded database backend (`AletheiaDB`). Following the architectural migration to Postgres (`logos-store-pg`), these internal indices and their initialization jargon no longer exist in the codebase or the standard CLI output. The feature spec is considered fulfilled.

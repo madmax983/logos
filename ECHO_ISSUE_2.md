@@ -8,3 +8,6 @@ The application is just loading the local database history, but it's using inten
 
 **💡 The Fix:**
 Replace these confusing logs with something simple like "Loaded history" or "Database loaded", or just hide these startup messages entirely unless in debug mode.
+
+**✅ Resolution:**
+This issue was caused by the now-removed embedded database backend (`AletheiaDB`). Following the architectural migration to Postgres (`logos-store-pg`), these internal indices and their initialization jargon no longer exist in the codebase or the standard CLI output. The issue is resolved.
