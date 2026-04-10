@@ -269,4 +269,27 @@ mod tests {
         );
         assert_eq!(postings.len(), 4);
     }
+
+    #[test]
+    fn test_rejects_non_positive_gross_vest_cents() {
+        let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
+        let config = RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").unwrap(),
+            tax_reserve: AccountId::new("assets:tax").unwrap(),
+            smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+            goals: AccountId::new("assets:goals").unwrap(),
+            discretionary: AccountId::new("assets:checking").unwrap(),
+        };
+        let distributor = RsuAutoDistributor::new(config);
+
+        assert_eq!(
+            distributor.distribute_rsu_vest("Vest Zero", 0, &policy),
+            Err(DomainError::InvalidCreditAmount { amount: 0 })
+        );
+
+        assert_eq!(
+            distributor.distribute_rsu_vest("Vest Negative", -100, &policy),
+            Err(DomainError::InvalidCreditAmount { amount: -100 })
+        );
+    }
 }
