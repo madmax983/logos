@@ -1755,6 +1755,7 @@ impl LedgerStore for PostgresStore {
         ))
     }
 
+    #[allow(clippy::too_many_lines)]
     fn write_import_batch(
         &mut self,
         import_kind: &str,
@@ -2001,6 +2002,7 @@ impl LedgerStore for PostgresStore {
         ))
     }
 
+    #[allow(clippy::too_many_lines)]
     fn write_reconciliation_run_and_month_close(
         &mut self,
         month_key: &str,
