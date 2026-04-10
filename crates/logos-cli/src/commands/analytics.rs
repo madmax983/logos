@@ -151,7 +151,12 @@ pub fn sankey() -> Result<(), CliError> {
 }
 
 fn render_sankey_output(raw_mermaid: &str) -> String {
-    format!("analytics.sankey\n{raw_mermaid}")
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec!["Sankey Flow Diagram"]);
+    table.add_row(vec![raw_mermaid]);
+
+    format!("analytics.sankey\n{table}")
 }
 
 fn render_snapshot_manifest(
@@ -199,7 +204,13 @@ mod tests {
     fn render_sankey_output_is_deterministic() {
         let raw = "```mermaid\nsankey-beta\nincome:salary,assets:checking,500.00\n```\n";
         let output = render_sankey_output(raw);
-        let expected = "analytics.sankey\n```mermaid\nsankey-beta\nincome:salary,assets:checking,500.00\n```\n";
+
+        let mut expected_table = comfy_table::Table::new();
+        expected_table.load_preset(comfy_table::presets::UTF8_FULL);
+        expected_table.set_header(vec!["Sankey Flow Diagram"]);
+        expected_table.add_row(vec![raw]);
+
+        let expected = format!("analytics.sankey\n{expected_table}");
         assert_eq!(output, expected);
     }
 
