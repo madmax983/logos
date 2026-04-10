@@ -15,6 +15,32 @@ use core::fmt;
 /// This enumeration captures all the ways you might accidentally construct
 /// an invalid ledger state, such as an unbalanced transaction, an empty account name,
 /// or a nonsensical risk haircut.
+///
+/// ## Examples
+///
+/// When an operation fails in the `domain`, it returns one of these variants.
+/// You can match on the specific variant to provide helpful error messages
+/// or recovery strategies to the user.
+///
+/// ```
+/// use logos_core::{AccountId, DomainError, Posting, TransactionBuilder};
+///
+/// let account = AccountId::new("assets:cash").unwrap();
+///
+/// // Attempt to build an unbalanced transaction (missing the credit leg).
+/// let result = TransactionBuilder::new("Bought a coffee")
+///     .posting(Posting::debit(account, 5_00).unwrap())
+///     .build();
+///
+/// match result {
+///     Ok(_) => panic!("This should not happen!"),
+///     Err(DomainError::UnbalancedTransaction { total }) => {
+///         assert_eq!(total, 5_00);
+///         println!("Transaction is out of balance by {} cents!", total);
+///     }
+///     Err(e) => panic!("Unexpected error: {:?}", e),
+/// }
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DomainError {
     /// Returned when you try to create an `AccountId` from an empty string or just whitespace.

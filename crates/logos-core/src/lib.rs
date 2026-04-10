@@ -13,6 +13,36 @@
 //! - **[`error`]**: Defines [`DomainError`], the one-stop shop for everything that can go wrong when breaking the rules.
 //! - **[`planning`]**: High-level financial forecasting. From automated RSU distribution to FIRE simulations and Net Worth Projection.
 //! - **[`experimental`]**: Beta features or proofs of concept. Use at your own risk.
+//!
+//! ## Examples
+//!
+//! The core library ensures that you cannot construct an invalid financial state.
+//! Here is a quick example of defining accounts and moving money between them securely.
+//!
+//! ```
+//! use logos_core::{AccountId, DomainError, Posting, TransactionBuilder};
+//!
+//! // 1. Define your accounts. The type system prevents empty names.
+//! let checking = AccountId::new("assets:checking").unwrap();
+//! let salary = AccountId::new("income:salary").unwrap();
+//!
+//! // 2. Construct a transaction. The builder enforces double-entry rules.
+//! let txn = TransactionBuilder::new("March Salary")
+//!     .posting(Posting::debit(checking.clone(), 5000_00).unwrap())
+//!     .posting(Posting::credit(salary.clone(), 5000_00).unwrap())
+//!     .build()
+//!     .expect("This transaction balances perfectly!");
+//!
+//! assert_eq!(txn.postings().len(), 2);
+//!
+//! // 3. What happens if we mess up? The engine rejects it immediately.
+//! let bad_txn = TransactionBuilder::new("Oops")
+//!     .posting(Posting::debit(checking, 100_00).unwrap())
+//!     // Forgot the credit!
+//!     .build();
+//!
+//! assert!(matches!(bad_txn, Err(DomainError::UnbalancedTransaction { total: 100_00 })));
+//! ```
 
 pub mod domain;
 pub mod error;
