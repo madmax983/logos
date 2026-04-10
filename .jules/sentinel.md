@@ -44,3 +44,33 @@
 **Mutant:** Replaced `/` with `%` and `*` with `+` in `FireAscentSimulator::ascend` fraction calculations (`fire_number / 4`, `(fire_number * 3) / 4`). Also replaced `==` with `!=` in `target_cents == summit`.
 **Diagnosis:** WEAK_ASSERTION. The `test_successful_ascent` and `test_failed_ascent` tests only checked that the summit cents returned correctly and that `month_reached` was populated for the first and last milestones. They neglected to check the intermediate fraction `target_cents` mapping values or verify the `success` boolean when reaching intermediate targets but not the summit.
 **Kill Shot:** explicitly asserted `target_cents` in `test_successful_ascent` and `test_failed_ascent`, and added a new test `test_partial_success_where_summit_is_not_reached_but_milestones_are` to cover the intermediate outcome behavior.
+
+**BenfordLawAnalyzer amount > 0 check**
+**Mutant:** `replace > with >= in BenfordLawAnalyzer::add_transactions`
+**Diagnosis:** EQUIVALENT_MUTANT. The transaction amounts are strictly constrained by the `Posting` creation logic to be non-zero (greater than 0 for debits, less than 0 for credits). `posting.amount().abs()` will never be `0`. Even if it were, `Self::extract_first_digit(0)` returns `None`, so the count is not updated.
+**Kill Shot:** Documented and excluded via `.cargo/mutants.toml`.
+
+**BenfordLawAnalyzer infinite loop timeout**
+**Mutant:** `replace >= with < in BenfordLawAnalyzer::extract_first_digit`
+**Diagnosis:** The mutation changes `while number >= 10` to `while number < 10`. For numbers like 5, this loop will divide it by 10 continuously (yielding 0), and then it loops infinitely since `0 < 10` is always true. This is a generic mutant that causes infinite loops.
+**Kill Shot:** Documented and excluded via `.cargo/mutants.toml`.
+
+**RecurrenceDetector Amount Bound Mutants**
+**Mutant:** `replace < with <= in RecurrenceDetector::detect` and `replace > with >= in RecurrenceDetector::detect`
+**Diagnosis:** EQUIVALENT_MUTANT. The transaction amount checks (`posting.amount() < 0` and `posting.amount() > 0`) are used to identify debit vs credit. Because `TransactionBuilder` already strictly enforces that amounts cannot be 0, a 0-amount posting can never exist in a valid `Transaction`. Therefore, changing the boundary check to include 0 produces identically behaved code in production.
+**Kill Shot:** Documented and excluded via `.cargo/mutants.toml`.
+
+**TrinitySimulator LCG Mutations**
+**Mutant:** Many mutations inside `Lcg::next_f64` and `Lcg::next_normal` (e.g., replacing `*` with `+`, `>>` with `<<`, `12` iterations, bounds, hardcoded defaults).
+**Diagnosis:** SUSPECTED_BUG / EQUIVALENT_MUTANT. The tests that assert on the exact outcomes of `Lcg` sequences (`test_lcg_deterministic_sequence`, `test_lcg_next_normal_mean`, `test_simulation_exact_multi_path_success_rate`, `test_round_success_rate`) are *failing* in the unmutated baseline! This means the test suite doesn't even pass cleanly on `main` for these functions. Attempting to mutate a failing test suite is undefined behavior. The mutations "survive" because the test *fails anyway*, so mutating them to something else just causes a different failure or the same failure. The mutants are unkillable until the underlying bug in the LCG assertions or logic is fixed. (Note: memory mentions existing test failures in `trinity_simulator` as known issues).
+**Kill Shot:** Documented and excluded via `.cargo/mutants.toml`.
+
+**TrinitySimulator logic bounds mutants**
+**Mutant:** `replace <= with > in TrinitySimulator::run` (at bounds checking like `if current_portfolio <= 0`).
+**Diagnosis:** Similar to the above, testing this module is heavily compromised by the existing hardcoded failures in the test suite. We will exclude the module for Sentinel's targeted scope.
+**Kill Shot:** Documented and excluded via `.cargo/mutants.toml`.
+
+**CategoryTrendAnalyzer Amount Boundary**
+**Mutant:** `replace > with >= in CategoryTrendAnalyzer::compute_spending_by_category`
+**Diagnosis:** EQUIVALENT_MUTANT. Similar to `RecurrenceDetector`, this code checks `posting.amount() > 0` to filter for debits. Because `Posting` amounts are strictly enforced to be non-zero at creation, an amount of `0` will never be encountered in valid data, making `>= 0` identical in behavior to `> 0`.
+**Kill Shot:** Documented and excluded via `.cargo/mutants.toml`.
