@@ -4,4 +4,4 @@
 #
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
-cc 0207de2153b237aa25f95c213703a587d342035005240c314ef9d4fe87bc50c6 # shrinks to opening_balance = 0, delta1 = 891552921595874619, delta2 = 8331819115258901189
+cc e2cc823455305d8abb8eb06ff45eb2cb5572c190f107ee90d2a55792edd5926f # shrinks to income = 0, expense = 0

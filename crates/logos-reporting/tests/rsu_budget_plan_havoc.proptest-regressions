@@ -4,5 +4,4 @@
 #
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
-cc 3b1931232a2940c8438818e2a9ec927c64eb373ae2a421f1fdc633bc3303786f # shrinks to start = -2085783559562373711, assigned = 0, spent = 7137588477292402098
-cc 3187974cc56abdd1d47b436ee75d7aa98e0dbdc215b24773a8b384aa9be0b93a # shrinks to amounts = [-4164340748475101891, -5059031288379673918]
+cc 634654e272c1d96b2341901a4268b50c39c3d1089324649e6b92bee50fdd5a6d # shrinks to fixed_commitments_cents = -9223372036854775799
