@@ -24,13 +24,24 @@ pub fn migrate() -> Result<(), CliError> {
         return Ok(());
     }
 
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        comfy_table::Cell::new("Status")
+            .add_attribute(comfy_table::Attribute::Bold)
+            .fg(comfy_table::Color::Green),
+        comfy_table::Cell::new("Applied").add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Migrations").add_attribute(comfy_table::Attribute::Bold),
+    ]);
+
     let joined = applied.join(",");
-    println!(
-        "{} Applied {} migration(s): {}",
-        "✔".green(),
-        applied.len(),
-        joined.bold()
-    );
+    table.add_row(vec![
+        comfy_table::Cell::new("✔ Success").fg(comfy_table::Color::Green),
+        comfy_table::Cell::new(applied.len().to_string()),
+        comfy_table::Cell::new(joined),
+    ]);
+
+    println!("db.migrate\n{table}");
     Ok(())
 }
 
@@ -57,13 +68,24 @@ pub fn status() -> Result<(), CliError> {
         return Ok(());
     }
 
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        comfy_table::Cell::new("Status")
+            .add_attribute(comfy_table::Attribute::Bold)
+            .fg(comfy_table::Color::Blue),
+        comfy_table::Cell::new("Pending").add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Migrations").add_attribute(comfy_table::Attribute::Bold),
+    ]);
+
     let joined = pending.join(",");
-    println!(
-        "{} {} pending migration(s): {}",
-        "ℹ".blue(),
-        pending.len(),
-        joined.bold()
-    );
+    table.add_row(vec![
+        comfy_table::Cell::new("ℹ Info").fg(comfy_table::Color::Blue),
+        comfy_table::Cell::new(pending.len().to_string()),
+        comfy_table::Cell::new(joined),
+    ]);
+
+    println!("db.status\n{table}");
     Ok(())
 }
 
