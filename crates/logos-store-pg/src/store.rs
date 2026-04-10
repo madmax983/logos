@@ -631,10 +631,12 @@ impl PostgresStore {
         let mut postings_by_transaction: HashMap<String, Vec<PostingRow>> =
             HashMap::with_capacity(transaction_ids.len());
         for posting_row in posting_rows {
-            postings_by_transaction
-                .entry(posting_row.transaction_id.clone())
-                .or_default()
-                .push(posting_row);
+            if let Some(postings) = postings_by_transaction.get_mut(&posting_row.transaction_id) {
+                postings.push(posting_row);
+            } else {
+                postings_by_transaction
+                    .insert(posting_row.transaction_id.clone(), vec![posting_row]);
+            }
         }
 
         rows.into_iter()
