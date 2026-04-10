@@ -301,6 +301,38 @@ mod tests {
     }
 
     #[test]
+    fn render_budget_set_output_is_deterministic_zero_variance() {
+        let runtime = FakeBudgetRuntime { variance_cents: 0 };
+        let output = render_budget_set_output(&runtime, "2026-04", 5_000, "expenses:");
+        assert!(output.contains("$0.00"));
+    }
+
+    #[test]
+    fn render_budget_set_output_is_deterministic_positive_variance() {
+        let runtime = FakeBudgetRuntime {
+            variance_cents: 1_250,
+        };
+        let output = render_budget_set_output(&runtime, "2026-05", 5_000, "expenses:");
+        assert!(output.contains("$12.50"));
+    }
+
+    #[test]
+    fn render_monte_carlo_output_is_deterministic() {
+        let result = logos_core::experimental::monte_carlo::MonteCarloResult {
+            p5_cents: 100_000,
+            median_cents: 150_000,
+            p95_cents: 200_000,
+        };
+        let output = crate::commands::budget::render_monte_carlo_output(&result);
+        assert!(output.contains("P5 (Pessimistic)"));
+        assert!(output.contains("$1000.00"));
+        assert!(output.contains("Median (Expected)"));
+        assert!(output.contains("$1500.00"));
+        assert!(output.contains("P95 (Optimistic)"));
+        assert!(output.contains("$2000.00"));
+    }
+
+    #[test]
     fn render_rsu_plan_output_is_deterministic() {
         let input = RsuBudgetPlanInput::new(
             300,
