@@ -773,6 +773,89 @@ impl App {
     }
 
     #[must_use]
+    fn home_scope_fields(&self) -> Vec<ScopeFieldView> {
+        vec![
+            ScopeFieldView::new(
+                "Month",
+                self.home.snapshot.as_ref().map_or_else(
+                    || self.home.month_key.clone(),
+                    |snapshot| snapshot.month_key().to_owned(),
+                ),
+                false,
+            ),
+            ScopeFieldView::new(
+                "Checking",
+                self.home.snapshot.as_ref().map_or_else(
+                    || self.home.checking_account.clone(),
+                    |snapshot| snapshot.checking_account().to_owned(),
+                ),
+                false,
+            ),
+            ScopeFieldView::new(
+                "Expenses",
+                self.home.snapshot.as_ref().map_or_else(
+                    || self.home.expense_account_prefix.clone(),
+                    |snapshot| snapshot.expense_account_prefix().to_owned(),
+                ),
+                false,
+            ),
+        ]
+    }
+
+    fn budget_scope_fields(&self) -> Vec<ScopeFieldView> {
+        vec![
+            ScopeFieldView::new(
+                "Month",
+                self.budget.snapshot.as_ref().map_or_else(
+                    || self.budget.month_key.clone(),
+                    |snapshot| snapshot.month_key().to_owned(),
+                ),
+                false,
+            ),
+            ScopeFieldView::new(
+                "Expenses",
+                self.budget.snapshot.as_ref().map_or_else(
+                    || self.budget.expense_account_prefix.clone(),
+                    |snapshot| snapshot.expense_account_prefix().to_owned(),
+                ),
+                false,
+            ),
+        ]
+    }
+
+    fn register_scope_fields(&self) -> Vec<ScopeFieldView> {
+        vec![ScopeFieldView::new(
+            "Account",
+            self.register.snapshot.as_ref().map_or_else(
+                || self.register.account.clone(),
+                |snapshot| snapshot.account().to_owned(),
+            ),
+            false,
+        )]
+    }
+
+    fn reconcile_scope_fields(&self) -> Vec<ScopeFieldView> {
+        vec![
+            ScopeFieldView::new(
+                "Month Filter",
+                self.reconcile
+                    .filter_month_key
+                    .clone()
+                    .unwrap_or_else(|| String::from("*")),
+                false,
+            ),
+            ScopeFieldView::new(
+                "Account Filter",
+                self.reconcile
+                    .filter_checking_account
+                    .clone()
+                    .unwrap_or_else(|| String::from("*")),
+                false,
+            ),
+        ]
+    }
+
+    #[must_use]
     pub fn scope_field_views(&self) -> Vec<ScopeFieldView> {
         if let Some(editor) = &self.scope_editor {
             return editor
@@ -790,77 +873,11 @@ impl App {
         }
 
         match self.view {
-            View::Home => vec![
-                ScopeFieldView::new(
-                    "Month",
-                    self.home.snapshot.as_ref().map_or_else(
-                        || self.home.month_key.clone(),
-                        |snapshot| snapshot.month_key().to_owned(),
-                    ),
-                    false,
-                ),
-                ScopeFieldView::new(
-                    "Checking",
-                    self.home.snapshot.as_ref().map_or_else(
-                        || self.home.checking_account.clone(),
-                        |snapshot| snapshot.checking_account().to_owned(),
-                    ),
-                    false,
-                ),
-                ScopeFieldView::new(
-                    "Expenses",
-                    self.home.snapshot.as_ref().map_or_else(
-                        || self.home.expense_account_prefix.clone(),
-                        |snapshot| snapshot.expense_account_prefix().to_owned(),
-                    ),
-                    false,
-                ),
-            ],
-            View::Budget => vec![
-                ScopeFieldView::new(
-                    "Month",
-                    self.budget.snapshot.as_ref().map_or_else(
-                        || self.budget.month_key.clone(),
-                        |snapshot| snapshot.month_key().to_owned(),
-                    ),
-                    false,
-                ),
-                ScopeFieldView::new(
-                    "Expenses",
-                    self.budget.snapshot.as_ref().map_or_else(
-                        || self.budget.expense_account_prefix.clone(),
-                        |snapshot| snapshot.expense_account_prefix().to_owned(),
-                    ),
-                    false,
-                ),
-            ],
-            View::Register => vec![ScopeFieldView::new(
-                "Account",
-                self.register.snapshot.as_ref().map_or_else(
-                    || self.register.account.clone(),
-                    |snapshot| snapshot.account().to_owned(),
-                ),
-                false,
-            )],
+            View::Home => self.home_scope_fields(),
+            View::Budget => self.budget_scope_fields(),
+            View::Register => self.register_scope_fields(),
             View::Rsu => vec![ScopeFieldView::new("Forecast scope", "pending", false)],
-            View::Reconcile => vec![
-                ScopeFieldView::new(
-                    "Month Filter",
-                    self.reconcile
-                        .filter_month_key
-                        .clone()
-                        .unwrap_or_else(|| String::from("*")),
-                    false,
-                ),
-                ScopeFieldView::new(
-                    "Account Filter",
-                    self.reconcile
-                        .filter_checking_account
-                        .clone()
-                        .unwrap_or_else(|| String::from("*")),
-                    false,
-                ),
-            ],
+            View::Reconcile => self.reconcile_scope_fields(),
         }
     }
 
