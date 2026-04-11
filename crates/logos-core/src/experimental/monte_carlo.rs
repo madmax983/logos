@@ -185,4 +185,67 @@ mod tests {
         assert_eq!(result.median_cents, 10_000);
         assert_eq!(result.p95_cents, 10_000);
     }
+
+    #[test]
+    fn test_percentile_indices_and_math() {
+        let projector = MonteCarloProjector::new(10_000, 1_000, 0.0, 0.0, 42);
+        // Using 10 paths.
+        // 5th percentile index = 10 * 0.05 = 0.5 -> floor = 0
+        // Median index = 10 * 0.50 = 5.0 -> floor = 5
+        // 95th percentile index = 10 * 0.95 = 9.5 -> floor = 9
+        let result = projector.run(1, 10);
+        // All paths start at 10000, gain is 0, plus 1000 contribution = 11000
+        assert_eq!(result.p5_cents, 11_000);
+        assert_eq!(result.median_cents, 11_000);
+        assert_eq!(result.p95_cents, 11_000);
+    }
+
+    #[test]
+    fn test_math_operators_and_bounds() {
+        // By using a very distinct volatility and mean, we can ensure the resulting
+        // math doesn't accidentally pass if + is swapped for - or *.
+        let projector = MonteCarloProjector::new(100_000_000, 0, 0.12, 0.20, 42);
+        let result = projector.run(12, 100);
+
+        // If monthly_mean / 12.0 is mutated to % 12.0, it will be wildly different
+        // If monthly_return = mean + vol * norm is mutated to -, it will invert direction
+        // If it's mutated to *, it will be near 0
+        assert!(result.p5_cents > 0);
+        assert!(result.p95_cents > 0);
+        assert!(result.median_cents > 0);
+
+        // To kill the * 0.95 mutated to + 0.95, let's use enough paths that indices differ.
+        // 100 paths: 95th is index 95. If mutated to `100 + 0.95` -> 100.
+        // But clamp will pull it to 99, which has a different value.
+        assert_ne!(result.p5_cents, result.p95_cents);
+        assert_ne!(result.median_cents, result.p95_cents);
+
+        // Exact percentiles validation for a known seed
+        // The original outputs for seed 42 with 100 paths over 12 months:
+        // By locking down the exact output, we catch any changes to + / - / %
+        assert_eq!(result.p5_cents, 80_246_193);
+        assert_eq!(result.median_cents, 110_558_507);
+        assert_eq!(result.p95_cents, 154_640_458);
+    }
+
+    #[test]
+    fn test_next_normal_range() {
+        let mut lcg = Lcg::new(42);
+        let _n1 = lcg.next_normal();
+        // Sum of 12 uniform randoms in [0, 1) minus 6 should be near 0
+        // If mutated to `/ 6.0`, it would be `sum / 6.0` which is roughly `6 / 6 = 1.0`
+        // But specifically, the standard deviation is 1, so roughly [-3, 3]
+        // Let's just check it isn't wildly off. The actual first value for seed 42
+        // with this LCG is roughly -1.33. If mutated to division, it would be around +0.77.
+        // We'll just generate many and calculate the mean to be sure it's around 0, not 1.
+        let mut sum = 0.0;
+        for _ in 0..100 {
+            sum += lcg.next_normal();
+        }
+        let mean = sum / 100.0;
+        assert!(
+            mean < 0.5 && mean > -0.5,
+            "Mean should be near 0, got {mean}"
+        );
+    }
 }
