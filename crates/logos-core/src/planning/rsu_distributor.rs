@@ -31,10 +31,25 @@ use crate::error::DomainError;
 /// ```
 #[derive(Debug, Clone)]
 pub struct RsuDistributorConfig {
+    /// The source asset account representing the gross value of the RSU vest.
+    /// Typically credited when the vest is distributed.
     pub rsu_asset: AccountId,
+
+    /// The destination account used to hold funds specifically reserved to pay
+    /// taxes on the vest (e.g. "assets:tax-reserve").
+    /// Any fractional remainder cents from distribution calculations are swept here.
     pub tax_reserve: AccountId,
+
+    /// The destination account used to buffer income and protect against
+    /// future income volatility or job loss.
     pub smoothing_buffer: AccountId,
+
+    /// The destination account reserved for funding specific financial goals
+    /// (like buying a house or a car).
     pub goals: AccountId,
+
+    /// The destination account where funds are deposited for immediate,
+    /// unrestricted spending (e.g. checking account).
     pub discretionary: AccountId,
 }
 
