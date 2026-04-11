@@ -309,4 +309,18 @@ mod tests {
             Err(DomainError::EmptyCategoryName)
         );
     }
+
+    #[test]
+    fn should_return_category_name() {
+        let group_id = CategoryGroupId::from_name("Needs").expect("valid category group id");
+        let category = Category::new(group_id, "Rent").expect("valid category");
+        assert_eq!(category.name(), "Rent");
+    }
+
+    #[test]
+    fn should_return_category_group_id() {
+        let group_id = CategoryGroupId::from_name("Needs").expect("valid category group id");
+        let category = Category::new(group_id.clone(), "Rent").expect("valid category");
+        assert_eq!(category.group_id(), &group_id);
+    }
 }

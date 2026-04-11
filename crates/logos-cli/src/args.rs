@@ -647,6 +647,75 @@ fn parse_txn(args: &[String]) -> Result<ParsedArgs, CliError> {
     }
 }
 
+fn parse_budget_set(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let month_key = parse_optional_month_flag(&args[2..], "--month")?;
+    let budget_cents =
+        parse_optional_parsed_flag::<i64>(&args[2..], "--budget-cents", DEFAULT_BUDGET_CENTS)?;
+    let expense_account_prefix = parse_optional_flag_value_with_default(
+        &args[2..],
+        "--expense-account-prefix",
+        DEFAULT_EXPENSE_ACCOUNT_PREFIX,
+    )?;
+    Ok(ParsedArgs {
+        command: Command::Budget(BudgetCommand::Set {
+            month_key,
+            budget_cents,
+            expense_account_prefix,
+        }),
+    })
+}
+
+fn parse_budget_rsu_plan(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let month_key = parse_optional_month_flag(&args[2..], "--month")?;
+    let quarterly_units = parse_required_parsed_flag::<u32>(&args[2..], "--quarterly-units")?;
+    let days_to_vest = parse_optional_parsed_flag::<u16>(&args[2..], "--days-to-vest", 45)?;
+    let bear_price_cents = parse_required_parsed_flag::<i64>(&args[2..], "--bear-price-cents")?;
+    let base_price_cents = parse_required_parsed_flag::<i64>(&args[2..], "--base-price-cents")?;
+    let bull_price_cents = parse_required_parsed_flag::<i64>(&args[2..], "--bull-price-cents")?;
+    let fixed_commitments_cents =
+        parse_optional_parsed_flag::<i64>(&args[2..], "--fixed-commitments-cents", 0)?;
+    let reserve_sweep_pct =
+        parse_optional_parsed_flag::<u8>(&args[2..], "--reserve-sweep-pct", 60)?;
+    let investing_sweep_pct =
+        parse_optional_parsed_flag::<u8>(&args[2..], "--investing-sweep-pct", 30)?;
+    Ok(ParsedArgs {
+        command: Command::Budget(BudgetCommand::RsuPlan {
+            month_key,
+            quarterly_units,
+            days_to_vest,
+            bear_price_cents,
+            base_price_cents,
+            bull_price_cents,
+            fixed_commitments_cents,
+            reserve_sweep_pct,
+            investing_sweep_pct,
+        }),
+    })
+}
+
+fn parse_budget_monte_carlo(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let initial_cents = parse_required_parsed_flag::<i64>(&args[2..], "--initial-cents")?;
+    let monthly_contribution_cents =
+        parse_required_parsed_flag::<i64>(&args[2..], "--monthly-contribution-cents")?;
+    let annual_mean_return = parse_required_parsed_flag::<f64>(&args[2..], "--annual-mean-return")?;
+    let annual_volatility = parse_required_parsed_flag::<f64>(&args[2..], "--annual-volatility")?;
+    let seed = parse_optional_parsed_flag::<u64>(&args[2..], "--seed", 42)?;
+    let months = parse_required_parsed_flag::<u16>(&args[2..], "--months")?;
+    let paths = parse_required_parsed_flag::<u32>(&args[2..], "--paths")?;
+
+    Ok(ParsedArgs {
+        command: Command::Budget(BudgetCommand::MonteCarlo {
+            initial_cents,
+            monthly_contribution_cents,
+            annual_mean_return,
+            annual_volatility,
+            seed,
+            months,
+            paths,
+        }),
+    })
+}
+
 fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
     if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
         return Ok(ParsedArgs {
@@ -662,81 +731,9 @@ fn parse_budget(args: &[String]) -> Result<ParsedArgs, CliError> {
         "--help" | "-h" => Ok(ParsedArgs {
             command: Command::Help(HelpTopic::Budget),
         }),
-        "set" => {
-            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
-            let budget_cents = parse_optional_parsed_flag::<i64>(
-                &args[2..],
-                "--budget-cents",
-                DEFAULT_BUDGET_CENTS,
-            )?;
-            let expense_account_prefix = parse_optional_flag_value_with_default(
-                &args[2..],
-                "--expense-account-prefix",
-                DEFAULT_EXPENSE_ACCOUNT_PREFIX,
-            )?;
-            Ok(ParsedArgs {
-                command: Command::Budget(BudgetCommand::Set {
-                    month_key,
-                    budget_cents,
-                    expense_account_prefix,
-                }),
-            })
-        }
-        "rsu-plan" => {
-            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
-            let quarterly_units =
-                parse_required_parsed_flag::<u32>(&args[2..], "--quarterly-units")?;
-            let days_to_vest = parse_optional_parsed_flag::<u16>(&args[2..], "--days-to-vest", 45)?;
-            let bear_price_cents =
-                parse_required_parsed_flag::<i64>(&args[2..], "--bear-price-cents")?;
-            let base_price_cents =
-                parse_required_parsed_flag::<i64>(&args[2..], "--base-price-cents")?;
-            let bull_price_cents =
-                parse_required_parsed_flag::<i64>(&args[2..], "--bull-price-cents")?;
-            let fixed_commitments_cents =
-                parse_optional_parsed_flag::<i64>(&args[2..], "--fixed-commitments-cents", 0)?;
-            let reserve_sweep_pct =
-                parse_optional_parsed_flag::<u8>(&args[2..], "--reserve-sweep-pct", 60)?;
-            let investing_sweep_pct =
-                parse_optional_parsed_flag::<u8>(&args[2..], "--investing-sweep-pct", 30)?;
-            Ok(ParsedArgs {
-                command: Command::Budget(BudgetCommand::RsuPlan {
-                    month_key,
-                    quarterly_units,
-                    days_to_vest,
-                    bear_price_cents,
-                    base_price_cents,
-                    bull_price_cents,
-                    fixed_commitments_cents,
-                    reserve_sweep_pct,
-                    investing_sweep_pct,
-                }),
-            })
-        }
-        "monte-carlo" => {
-            let initial_cents = parse_required_parsed_flag::<i64>(&args[2..], "--initial-cents")?;
-            let monthly_contribution_cents =
-                parse_required_parsed_flag::<i64>(&args[2..], "--monthly-contribution-cents")?;
-            let annual_mean_return =
-                parse_required_parsed_flag::<f64>(&args[2..], "--annual-mean-return")?;
-            let annual_volatility =
-                parse_required_parsed_flag::<f64>(&args[2..], "--annual-volatility")?;
-            let seed = parse_optional_parsed_flag::<u64>(&args[2..], "--seed", 42)?;
-            let months = parse_required_parsed_flag::<u16>(&args[2..], "--months")?;
-            let paths = parse_required_parsed_flag::<u32>(&args[2..], "--paths")?;
-
-            Ok(ParsedArgs {
-                command: Command::Budget(BudgetCommand::MonteCarlo {
-                    initial_cents,
-                    monthly_contribution_cents,
-                    annual_mean_return,
-                    annual_volatility,
-                    seed,
-                    months,
-                    paths,
-                }),
-            })
-        }
+        "set" => parse_budget_set(args),
+        "rsu-plan" => parse_budget_rsu_plan(args),
+        "monte-carlo" => parse_budget_monte_carlo(args),
         _ => Err(CliError::UnknownSubcommand {
             command: "budget".to_owned(),
             subcommand: subcommand.clone(),
@@ -829,6 +826,47 @@ fn parse_analytics_snapshot(args: &[String]) -> Result<ParsedArgs, CliError> {
     }
 }
 
+fn parse_import_pdf(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let file_path = parse_flag_value(&args[2..], "--file")?;
+    let account =
+        parse_optional_flag_value_with_default(&args[2..], "--account", DEFAULT_CHECKING_ACCOUNT)?;
+    let dry_run = parse_flag_present(&args[2..], "--dry-run");
+    let ocr = parse_flag_present(&args[2..], "--ocr");
+    Ok(ParsedArgs {
+        command: Command::Import(ImportCommand::Pdf {
+            file_path,
+            account,
+            dry_run,
+            ocr,
+        }),
+    })
+}
+
+fn parse_import_csv(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let file_path = parse_flag_value(&args[2..], "--file")?;
+    let source_id = parse_optional_flag_value(&args[2..], "--source-id")?;
+    let timestamp_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--timestamp-idx", 0)?;
+    let amount_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--amount-idx", 1)?;
+    let memo_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--memo-idx", 2)?;
+    let account_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--account-idx", 3)?;
+    let category_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--category-idx", 4)?;
+    let skip_header = parse_flag_present(&args[2..], "--skip-header");
+    let dry_run = parse_flag_present(&args[2..], "--dry-run");
+    Ok(ParsedArgs {
+        command: Command::Import(ImportCommand::Csv {
+            file_path,
+            source_id,
+            timestamp_idx,
+            amount_idx,
+            memo_idx,
+            account_idx,
+            category_idx,
+            skip_header,
+            dry_run,
+        }),
+    })
+}
+
 fn parse_import(args: &[String]) -> Result<ParsedArgs, CliError> {
     if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
         return Ok(ParsedArgs {
@@ -844,50 +882,8 @@ fn parse_import(args: &[String]) -> Result<ParsedArgs, CliError> {
         "--help" | "-h" => Ok(ParsedArgs {
             command: Command::Help(HelpTopic::Import),
         }),
-        "pdf" => {
-            let file_path = parse_flag_value(&args[2..], "--file")?;
-            let account = parse_optional_flag_value_with_default(
-                &args[2..],
-                "--account",
-                DEFAULT_CHECKING_ACCOUNT,
-            )?;
-            let dry_run = parse_flag_present(&args[2..], "--dry-run");
-            let ocr = parse_flag_present(&args[2..], "--ocr");
-            Ok(ParsedArgs {
-                command: Command::Import(ImportCommand::Pdf {
-                    file_path,
-                    account,
-                    dry_run,
-                    ocr,
-                }),
-            })
-        }
-        "csv" => {
-            let file_path = parse_flag_value(&args[2..], "--file")?;
-            let source_id = parse_optional_flag_value(&args[2..], "--source-id")?;
-            let timestamp_idx =
-                parse_optional_parsed_flag::<usize>(&args[2..], "--timestamp-idx", 0)?;
-            let amount_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--amount-idx", 1)?;
-            let memo_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--memo-idx", 2)?;
-            let account_idx = parse_optional_parsed_flag::<usize>(&args[2..], "--account-idx", 3)?;
-            let category_idx =
-                parse_optional_parsed_flag::<usize>(&args[2..], "--category-idx", 4)?;
-            let skip_header = parse_flag_present(&args[2..], "--skip-header");
-            let dry_run = parse_flag_present(&args[2..], "--dry-run");
-            Ok(ParsedArgs {
-                command: Command::Import(ImportCommand::Csv {
-                    file_path,
-                    source_id,
-                    timestamp_idx,
-                    amount_idx,
-                    memo_idx,
-                    account_idx,
-                    category_idx,
-                    skip_header,
-                    dry_run,
-                }),
-            })
-        }
+        "pdf" => parse_import_pdf(args),
+        "csv" => parse_import_csv(args),
         _ => Err(CliError::UnknownSubcommand {
             command: "import".to_owned(),
             subcommand: subcommand.clone(),
@@ -963,6 +959,45 @@ fn parse_report(args: &[String]) -> Result<ParsedArgs, CliError> {
     }
 }
 
+fn parse_reconcile_month(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let checking_account = parse_optional_flag_value_with_default(
+        &args[2..],
+        "--checking-account",
+        DEFAULT_CHECKING_ACCOUNT,
+    )?;
+    let month_key = parse_optional_month_flag(&args[2..], "--month")?;
+    let opening_balance_cents =
+        parse_required_parsed_flag::<i64>(&args[2..], "--opening-balance-cents")?;
+    let closing_balance_cents =
+        parse_required_parsed_flag::<i64>(&args[2..], "--closing-balance-cents")?;
+    Ok(ParsedArgs {
+        command: Command::Reconcile(ReconcileCommand::Month {
+            checking_account,
+            month_key,
+            opening_balance_cents,
+            closing_balance_cents,
+        }),
+    })
+}
+
+fn parse_reconcile_list(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?;
+    let month_key = parse_optional_month_flag(&args[2..], "--month")?;
+    Ok(ParsedArgs {
+        command: Command::Reconcile(ReconcileCommand::List {
+            month_key,
+            checking_account,
+        }),
+    })
+}
+
+fn parse_reconcile_show(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let run_id = parse_flag_value(&args[2..], "--run-id")?;
+    Ok(ParsedArgs {
+        command: Command::Reconcile(ReconcileCommand::Show { run_id }),
+    })
+}
+
 fn parse_reconcile(args: &[String]) -> Result<ParsedArgs, CliError> {
     if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
         return Ok(ParsedArgs {
@@ -978,47 +1013,46 @@ fn parse_reconcile(args: &[String]) -> Result<ParsedArgs, CliError> {
         "--help" | "-h" => Ok(ParsedArgs {
             command: Command::Help(HelpTopic::Reconcile),
         }),
-        "month" => {
-            let checking_account = parse_optional_flag_value_with_default(
-                &args[2..],
-                "--checking-account",
-                DEFAULT_CHECKING_ACCOUNT,
-            )?;
-            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
-            let opening_balance_cents =
-                parse_required_parsed_flag::<i64>(&args[2..], "--opening-balance-cents")?;
-            let closing_balance_cents =
-                parse_required_parsed_flag::<i64>(&args[2..], "--closing-balance-cents")?;
-            Ok(ParsedArgs {
-                command: Command::Reconcile(ReconcileCommand::Month {
-                    checking_account,
-                    month_key,
-                    opening_balance_cents,
-                    closing_balance_cents,
-                }),
-            })
-        }
-        "list" => {
-            let checking_account = parse_optional_flag_value(&args[2..], "--checking-account")?;
-            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
-            Ok(ParsedArgs {
-                command: Command::Reconcile(ReconcileCommand::List {
-                    month_key,
-                    checking_account,
-                }),
-            })
-        }
-        "show" => {
-            let run_id = parse_flag_value(&args[2..], "--run-id")?;
-            Ok(ParsedArgs {
-                command: Command::Reconcile(ReconcileCommand::Show { run_id }),
-            })
-        }
+        "month" => parse_reconcile_month(args),
+        "list" => parse_reconcile_list(args),
+        "show" => parse_reconcile_show(args),
         _ => Err(CliError::UnknownSubcommand {
             command: "reconcile".to_owned(),
             subcommand: subcommand.clone(),
         }),
     }
+}
+
+fn parse_month_autopilot(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let month_key = parse_optional_month_flag(&args[2..], "--month")?;
+    let checking_account = parse_optional_flag_value_with_default(
+        &args[2..],
+        "--checking-account",
+        DEFAULT_CHECKING_ACCOUNT,
+    )?;
+    let (opening_balance_cents, closing_balance_cents) = parse_paired_i64_flags(
+        &args[2..],
+        "--opening-balance-cents",
+        "--closing-balance-cents",
+    )?;
+    let statement_pdf = parse_optional_flag_value(&args[2..], "--statement-pdf")?;
+    let ocr = parse_flag_present(&args[2..], "--ocr");
+    let allow_variance = parse_flag_present(&args[2..], "--allow-variance");
+    let analytics_artifact_id = parse_optional_flag_value(&args[2..], "--analytics-artifact-id")?;
+    let confirm_close = parse_flag_present(&args[2..], "--confirm-close");
+    Ok(ParsedArgs {
+        command: Command::Month(MonthCommand::Autopilot {
+            month_key,
+            checking_account,
+            opening_balance_cents,
+            closing_balance_cents,
+            statement_pdf,
+            ocr,
+            allow_variance,
+            analytics_artifact_id,
+            confirm_close,
+        }),
+    })
 }
 
 fn parse_month(args: &[String]) -> Result<ParsedArgs, CliError> {
@@ -1036,38 +1070,7 @@ fn parse_month(args: &[String]) -> Result<ParsedArgs, CliError> {
         "--help" | "-h" => Ok(ParsedArgs {
             command: Command::Help(HelpTopic::Month),
         }),
-        "autopilot" => {
-            let month_key = parse_optional_month_flag(&args[2..], "--month")?;
-            let checking_account = parse_optional_flag_value_with_default(
-                &args[2..],
-                "--checking-account",
-                DEFAULT_CHECKING_ACCOUNT,
-            )?;
-            let (opening_balance_cents, closing_balance_cents) = parse_paired_i64_flags(
-                &args[2..],
-                "--opening-balance-cents",
-                "--closing-balance-cents",
-            )?;
-            let statement_pdf = parse_optional_flag_value(&args[2..], "--statement-pdf")?;
-            let ocr = parse_flag_present(&args[2..], "--ocr");
-            let allow_variance = parse_flag_present(&args[2..], "--allow-variance");
-            let analytics_artifact_id =
-                parse_optional_flag_value(&args[2..], "--analytics-artifact-id")?;
-            let confirm_close = parse_flag_present(&args[2..], "--confirm-close");
-            Ok(ParsedArgs {
-                command: Command::Month(MonthCommand::Autopilot {
-                    month_key,
-                    checking_account,
-                    opening_balance_cents,
-                    closing_balance_cents,
-                    statement_pdf,
-                    ocr,
-                    allow_variance,
-                    analytics_artifact_id,
-                    confirm_close,
-                }),
-            })
-        }
+        "autopilot" => parse_month_autopilot(args),
         _ => Err(CliError::UnknownSubcommand {
             command: "month".to_owned(),
             subcommand: subcommand.clone(),
@@ -1171,9 +1174,12 @@ fn parse_flag_value(args: &[String], flag: &str) -> Result<String, CliError> {
         .ok_or_else(|| CliError::MissingArgValue {
             flag: flag.to_owned(),
         })?;
-    let value = args.get(idx + 1).ok_or_else(|| CliError::MissingArgValue {
-        flag: flag.to_owned(),
-    })?;
+    let value = args
+        .get(idx + 1)
+        .filter(|v| !v.starts_with("--"))
+        .ok_or_else(|| CliError::MissingArgValue {
+            flag: flag.to_owned(),
+        })?;
     Ok(value.clone())
 }
 
@@ -1182,9 +1188,12 @@ fn parse_optional_flag_value(args: &[String], flag: &str) -> Result<Option<Strin
         return Ok(None);
     };
 
-    let value = args.get(idx + 1).ok_or_else(|| CliError::MissingArgValue {
-        flag: flag.to_owned(),
-    })?;
+    let value = args
+        .get(idx + 1)
+        .filter(|v| !v.starts_with("--"))
+        .ok_or_else(|| CliError::MissingArgValue {
+            flag: flag.to_owned(),
+        })?;
     Ok(Some(value.clone()))
 }
 

@@ -233,4 +233,28 @@ mod tests {
             "credit amount must be greater than zero, got -1"
         );
     }
+
+    #[test]
+    fn should_display_empty_category_group_name() {
+        assert_eq!(
+            DomainError::EmptyCategoryGroupName.to_string(),
+            "category group name cannot be empty"
+        );
+    }
+
+    #[test]
+    fn should_display_empty_category_name() {
+        assert_eq!(
+            DomainError::EmptyCategoryName.to_string(),
+            "category name cannot be empty"
+        );
+    }
+
+    #[test]
+    fn should_display_amount_overflow() {
+        assert_eq!(
+            DomainError::AmountOverflow.to_string(),
+            "transaction amount calculation resulted in an overflow"
+        );
+    }
 }

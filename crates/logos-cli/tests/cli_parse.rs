@@ -501,6 +501,36 @@ fn parses_import_csv_with_explicit_mapping_flags() {
 }
 
 #[test]
+fn rejects_import_csv_when_missing_required_flag_value() {
+    let args = vec![
+        "ledger".to_string(),
+        "import".to_string(),
+        "csv".to_string(),
+        "--file".to_string(),
+        "--timestamp-idx".to_string(),
+    ];
+    let err = logos_cli::parse_args(args).expect_err("missing file flag value");
+    assert_eq!(err.to_string(), "Missing value for argument '--file'.");
+}
+
+#[test]
+fn rejects_budget_set_when_missing_optional_flag_value() {
+    let args = vec![
+        "ledger".to_string(),
+        "budget".to_string(),
+        "set".to_string(),
+        "--expense-account-prefix".to_string(),
+        "--budget-cents".to_string(),
+    ];
+    let err = logos_cli::parse_args(args).expect_err("missing account flag value");
+    // Since `--budget-cents` is parsed first in the source, it is the one missing its value!
+    assert_eq!(
+        err.to_string(),
+        "Missing value for argument '--budget-cents'."
+    );
+}
+
+#[test]
 fn rejects_import_csv_when_mapping_index_is_not_integer() {
     let args = vec![
         "ledger",

@@ -161,7 +161,7 @@ fn render_budget_set_output(
     format!("{table}")
 }
 
-fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
+fn render_rsu_plan_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
     let mut plan_table = comfy_table::Table::new();
     plan_table.load_preset(comfy_table::presets::UTF8_FULL);
     plan_table.set_header(vec![
@@ -202,7 +202,10 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
         Cell::new(plan.reserve_sweep_pct()),
         Cell::new(plan.investing_sweep_pct()),
     ]);
+    plan_table
+}
 
+fn render_rsu_scenario_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
     let mut scenario_table = comfy_table::Table::new();
     scenario_table.load_preset(comfy_table::presets::UTF8_FULL);
     scenario_table.set_header(vec![
@@ -260,6 +263,12 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
             ]);
         }
     }
+    scenario_table
+}
+
+fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
+    let plan_table = render_rsu_plan_table(plan);
+    let scenario_table = render_rsu_scenario_table(plan);
 
     format!("{plan_table}\n{scenario_table}")
 }
@@ -334,6 +343,38 @@ mod tests {
         assert!(output.contains("$50.00"));
         assert!(output.contains("expenses:"));
         assert!(output.contains("$-12.50"));
+    }
+
+    #[test]
+    fn render_budget_set_output_is_deterministic_zero_variance() {
+        let runtime = FakeBudgetRuntime { variance_cents: 0 };
+        let output = render_budget_set_output(&runtime, "2026-04", 5_000, "expenses:");
+        assert!(output.contains("$0.00"));
+    }
+
+    #[test]
+    fn render_budget_set_output_is_deterministic_positive_variance() {
+        let runtime = FakeBudgetRuntime {
+            variance_cents: 1_250,
+        };
+        let output = render_budget_set_output(&runtime, "2026-05", 5_000, "expenses:");
+        assert!(output.contains("$12.50"));
+    }
+
+    #[test]
+    fn render_monte_carlo_output_is_deterministic() {
+        let result = logos_core::experimental::monte_carlo::MonteCarloResult {
+            p5_cents: 100_000,
+            median_cents: 150_000,
+            p95_cents: 200_000,
+        };
+        let output = crate::commands::budget::render_monte_carlo_output(&result);
+        assert!(output.contains("P5 (Pessimistic)"));
+        assert!(output.contains("$1000.00"));
+        assert!(output.contains("Median (Expected)"));
+        assert!(output.contains("$1500.00"));
+        assert!(output.contains("P95 (Optimistic)"));
+        assert!(output.contains("$2000.00"));
     }
 
     #[test]

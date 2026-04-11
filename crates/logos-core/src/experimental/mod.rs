@@ -30,3 +30,5 @@ pub mod trinity_simulator;
 
 #[cfg(feature = "nova")]
 pub mod category_trends;
+#[cfg(feature = "nova")]
+pub mod runway_simulator;

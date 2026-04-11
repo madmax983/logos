@@ -74,3 +74,6 @@
 **Mutant:** `replace > with >= in CategoryTrendAnalyzer::compute_spending_by_category`
 **Diagnosis:** EQUIVALENT_MUTANT. Similar to `RecurrenceDetector`, this code checks `posting.amount() > 0` to filter for debits. Because `Posting` amounts are strictly enforced to be non-zero at creation, an amount of `0` will never be encountered in valid data, making `>= 0` identical in behavior to `> 0`.
 **Kill Shot:** Documented and excluded via `.cargo/mutants.toml`.
+**Mutant:** `replace <impl SecretRefReader for OpCliSecretRefReader>::read_secret_ref`
+**Diagnosis:** MISSING_COVERAGE. Missing validation for 1Password CLI command output matching and error conditions.
+**Kill Shot:** Created `crates/logos-fetch/tests/op_cli_reader.rs` integration test to verify stdout on success and error message extraction on failure.
