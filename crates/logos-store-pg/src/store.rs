@@ -1501,7 +1501,8 @@ impl LedgerStore for PostgresStore {
                 imported_at_us,
             })
             .collect();
-        let mut statement_line_payloads = Vec::new();
+        // PERF: Pre-allocate vector to avoid multiple heap reallocations during batch insertion.
+        let mut statement_line_payloads = Vec::with_capacity(records.len());
         for record in records {
             if let Some(line) = record.statement_line() {
                 let line_id = Self::next_statement_line_id(&mut *connection)?;
