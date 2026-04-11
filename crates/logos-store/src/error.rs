@@ -9,6 +9,8 @@ pub enum StoreError {
     UnknownArtifact { artifact_id: String },
     LoadFailed { message: String },
     PersistFailed { message: String },
+    ConnectionFailed { message: String },
+    MigrationFailed { message: String },
 }
 
 impl fmt::Display for StoreError {
@@ -30,6 +32,10 @@ impl fmt::Display for StoreError {
             }
             Self::LoadFailed { message } => write!(f, "failed to load store: {message}"),
             Self::PersistFailed { message } => write!(f, "failed to persist store: {message}"),
+            Self::ConnectionFailed { message } => {
+                write!(f, "failed to connect to store: {message}")
+            }
+            Self::MigrationFailed { message } => write!(f, "store migration failed: {message}"),
         }
     }
 }

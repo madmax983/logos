@@ -18,7 +18,6 @@ use logos_store::model::{
 };
 use logos_store::traits::LedgerStore;
 
-use crate::error::PgStoreError;
 use crate::migrate::{pending_migration_names, run_pending_migrations};
 use crate::schema::{
     analytics_artifact_manifests, budget_targets, corrections, fetch_runs, import_batches,
@@ -557,14 +556,16 @@ impl PostgresStore {
     }
 
     /// # Errors
-    /// Returns `PgStoreError` if connection fails.
-    pub fn connect(database_url: &str) -> Result<Self, PgStoreError> {
+    /// Returns `StoreError` if connection fails.
+    pub fn connect(database_url: &str) -> Result<Self, StoreError> {
         if database_url.trim().is_empty() {
-            return Err(PgStoreError::MissingDatabaseUrl);
+            return Err(StoreError::ConnectionFailed {
+                message: "DATABASE_URL must not be empty".to_string(),
+            });
         }
 
         let connection =
-            PgConnection::establish(database_url).map_err(|err| PgStoreError::Connection {
+            PgConnection::establish(database_url).map_err(|err| StoreError::ConnectionFailed {
                 message: err.to_string(),
             })?;
 
@@ -574,22 +575,20 @@ impl PostgresStore {
     }
 
     #[must_use]
-    /// # Errors
-    /// Returns `PgStoreError` if connection fails.
     pub fn connection_mut(&self) -> RefMut<'_, PgConnection> {
         self.connection.borrow_mut()
     }
 
     /// # Errors
-    /// Returns `PgStoreError` on fetch failure.
-    pub fn pending_migrations(&mut self) -> Result<Vec<String>, PgStoreError> {
+    /// Returns `StoreError` on fetch failure.
+    pub fn pending_migrations(&mut self) -> Result<Vec<String>, StoreError> {
         let mut connection = self.connection.borrow_mut();
         pending_migration_names(&mut connection)
     }
 
     /// # Errors
-    /// Returns `PgStoreError` on execution failure.
-    pub fn run_migrations(&mut self) -> Result<Vec<String>, PgStoreError> {
+    /// Returns `StoreError` on execution failure.
+    pub fn run_migrations(&mut self) -> Result<Vec<String>, StoreError> {
         let mut connection = self.connection.borrow_mut();
         run_pending_migrations(&mut connection)
     }
@@ -2204,6 +2203,6 @@ mod tests {
         let err = PostgresStore::connect("   ")
             .err()
             .expect("empty DATABASE_URL must fail");
-        assert!(matches!(err, PgStoreError::MissingDatabaseUrl));
+        assert!(matches!(err, StoreError::ConnectionFailed { .. }));
     }
 }
