@@ -139,6 +139,9 @@ pub trait LedgerStore {
         missing_read("month_closes")
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     fn transactions_as_of_us(
         &self,
         _valid_time_us: i64,
@@ -147,6 +150,9 @@ pub trait LedgerStore {
         Err(missing_load("transactions_as_of_us"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     fn write_transaction(
         &mut self,
         _builder: TransactionBuilder,
@@ -154,6 +160,9 @@ pub trait LedgerStore {
         Err(missing_write("write_transaction"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     fn write_transaction_with_valid_time(
         &mut self,
         _builder: TransactionBuilder,
@@ -162,10 +171,16 @@ pub trait LedgerStore {
         Err(missing_write("write_transaction_with_valid_time"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     fn write_correction(&mut self, _correction: Correction) -> Result<(), StoreError> {
         Err(missing_write("write_correction"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     fn write_budget_target(
         &mut self,
         _month_key: &str,
@@ -175,6 +190,10 @@ pub trait LedgerStore {
         Err(missing_write("write_budget_target"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
+    #[allow(clippy::too_many_arguments)]
     fn write_analytics_artifact_manifest(
         &mut self,
         _artifact_kind: &str,
@@ -189,6 +208,9 @@ pub trait LedgerStore {
         Err(missing_write("write_analytics_artifact_manifest"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     #[allow(clippy::too_many_arguments)]
     fn write_analytics_artifact_manifest_us(
         &mut self,
@@ -204,6 +226,9 @@ pub trait LedgerStore {
         Err(missing_write("write_analytics_artifact_manifest_us"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     #[allow(clippy::too_many_arguments)]
     fn write_import_batch(
         &mut self,
@@ -218,6 +243,9 @@ pub trait LedgerStore {
         Err(missing_write("write_import_batch"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     #[allow(clippy::too_many_arguments)]
     fn write_fetch_run(
         &mut self,
@@ -235,6 +263,9 @@ pub trait LedgerStore {
         Err(missing_write("write_fetch_run"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     #[allow(clippy::too_many_arguments)]
     fn write_reconciliation_run(
         &mut self,
@@ -254,6 +285,9 @@ pub trait LedgerStore {
         Err(missing_write("write_reconciliation_run"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     #[allow(clippy::too_many_arguments)]
     fn write_reconciliation_run_and_month_close(
         &mut self,
@@ -274,6 +308,9 @@ pub trait LedgerStore {
         Err(missing_write("write_reconciliation_run_and_month_close"))
     }
 
+    /// # Errors
+    ///
+    /// Returns an error when the ledger store is not implemented.
     fn write_month_close(
         &mut self,
         _month_key: &str,
