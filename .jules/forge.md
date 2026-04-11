@@ -3,3 +3,7 @@
 **Refactoring God Functions in PostgresStore**
 **Learning:** Extracting parts of "God Functions" (like `write_import_batch` and `write_reconciliation_run_and_month_close`) requires careful attention to where the extracted helper methods are placed. Placing helper methods inside trait implementations (`impl LedgerStore for PostgresStore`) causes compiler errors. Extracting purely data-mapping logic (like `fn map_statement_line`) avoids complicated lifetime/borrow-checker issues associated with attempting to extract both string allocations and the rows referencing them simultaneously.
 **Action:** When breaking down massive functions, prefer extracting pure data mappers into `const fn` (where applicable) on the struct's main inherent `impl` block.
+
+**Refactoring God Functions: Avoiding Positional Anti-Patterns**
+**Learning:** When attempting to resolve `clippy::too_many_lines` on large transaction functions, do not extract inline struct literal initializations into helper methods. This results in methods with an excessive number of positional arguments (e.g., 14 arguments all of type `i64` or `&str`), triggering `clippy::too_many_arguments`, reducing type safety, and replacing idiomatic struct construction with brittle positional calling.
+**Action:** Extract pre-flight validation blocks, generic collection mapping (e.g., `.iter().map().collect()`), or distinct domain mapping logic into helpers instead. Leave struct initialization at the call site if it acts as a safe, named-parameter block.

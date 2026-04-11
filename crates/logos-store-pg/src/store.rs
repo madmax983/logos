@@ -385,6 +385,22 @@ impl PostgresStore {
         statement_line_rows
     }
 
+    fn build_import_record_rows<'a>(
+        records: &'a [NewImportRecord],
+        batch_id: &'a str,
+        imported_at_us: i64,
+    ) -> Vec<NewImportRecordRow<'a>> {
+        records
+            .iter()
+            .map(|record| NewImportRecordRow {
+                content_hash_key: record.content_hash_key(),
+                batch_id,
+                imported_txn_id: record.imported_txn_id().map(TransactionId::as_str),
+                imported_at_us,
+            })
+            .collect()
+    }
+
     fn build_reconciliation_transaction_rows<'a>(
         run_id: &'a str,
         transaction_ids: &'a [TransactionId],
@@ -396,6 +412,38 @@ impl PostgresStore {
                 transaction_id: txn_id.as_str(),
             })
             .collect()
+    }
+
+    fn check_reconciliation_and_close_preconditions(
+        &self,
+        month_key: &str,
+        checking_account: &str,
+        matched_postings: i64,
+        inflow_cents: i64,
+        outflow_cents: i64,
+        analytics_artifact_id: Option<&str>,
+    ) -> Result<(), StoreError> {
+        Self::try_validate_reconciliation_run_params(
+            month_key,
+            checking_account,
+            matched_postings,
+            inflow_cents,
+            outflow_cents,
+        )?;
+        if let Some(artifact_id) = analytics_artifact_id {
+            if self.try_analytics_artifact(artifact_id)?.is_none() {
+                return Err(StoreError::UnknownArtifact {
+                    artifact_id: artifact_id.to_owned(),
+                });
+            }
+        }
+        if let Some(existing_close) = self.try_month_close_for_scope(month_key, checking_account)? {
+            return Err(persist_failure(format!(
+                "month '{month_key}' for account '{checking_account}' is already closed by '{}'",
+                existing_close.close_id()
+            )));
+        }
+        Ok(())
     }
 
     fn build_reconciliation_statement_line_rows<'a>(
@@ -1701,7 +1749,6 @@ impl LedgerStore for PostgresStore {
         ))
     }
 
-    #[allow(clippy::too_many_lines)]
     fn write_import_batch(
         &mut self,
         import_kind: &str,
@@ -1741,15 +1788,7 @@ impl LedgerStore for PostgresStore {
             ocr_enabled,
             imported_at_us,
         };
-        let import_record_rows: Vec<NewImportRecordRow<'_>> = records
-            .iter()
-            .map(|record| NewImportRecordRow {
-                content_hash_key: record.content_hash_key(),
-                batch_id: &batch_id,
-                imported_txn_id: record.imported_txn_id().map(TransactionId::as_str),
-                imported_at_us,
-            })
-            .collect();
+        let import_record_rows = Self::build_import_record_rows(records, &batch_id, imported_at_us);
 
         let mut statement_line_payloads = Vec::with_capacity(records.len());
         for record in records {
@@ -1956,7 +1995,6 @@ impl LedgerStore for PostgresStore {
         ))
     }
 
-    #[allow(clippy::too_many_lines)]
     fn write_reconciliation_run_and_month_close(
         &mut self,
         month_key: &str,
@@ -1973,26 +2011,14 @@ impl LedgerStore for PostgresStore {
         reconciled_txn_ids: &[TransactionId],
         analytics_artifact_id: Option<&str>,
     ) -> Result<(StoredReconciliationRun, StoredMonthClose), StoreError> {
-        Self::try_validate_reconciliation_run_params(
+        self.check_reconciliation_and_close_preconditions(
             month_key,
             checking_account,
             matched_postings,
             inflow_cents,
             outflow_cents,
+            analytics_artifact_id,
         )?;
-        if let Some(artifact_id) = analytics_artifact_id {
-            if self.try_analytics_artifact(artifact_id)?.is_none() {
-                return Err(StoreError::UnknownArtifact {
-                    artifact_id: artifact_id.to_owned(),
-                });
-            }
-        }
-        if let Some(existing_close) = self.try_month_close_for_scope(month_key, checking_account)? {
-            return Err(persist_failure(format!(
-                "month '{month_key}' for account '{checking_account}' is already closed by '{}'",
-                existing_close.close_id()
-            )));
-        }
 
         let created_at_us = now_timestamp_us()?;
         let closed_at_us = now_timestamp_us()?;
