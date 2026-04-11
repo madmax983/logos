@@ -309,4 +309,21 @@ mod tests {
             Err(DomainError::EmptyCategoryName)
         );
     }
+
+    #[test]
+    fn should_return_error_when_category_name_is_only_whitespace() {
+        let group_id = CategoryGroupId::from_name("Needs").unwrap();
+        assert_eq!(
+            Category::new(group_id, " \n\t  "),
+            Err(DomainError::EmptyCategoryName)
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_category_group_name_is_only_whitespace() {
+        assert_eq!(
+            CategoryGroup::new(" \n\t  "),
+            Err(DomainError::EmptyCategoryGroupName)
+        );
+    }
 }

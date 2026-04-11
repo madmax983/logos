@@ -362,4 +362,20 @@ mod tests {
             HaircutTierTable::default()
         );
     }
+
+    #[test]
+    fn should_reject_invalid_allocation_total_under_100() {
+        assert_eq!(
+            AllocationPolicy::new(10, 20, 30, 10),
+            Err(DomainError::InvalidAllocationTotal { total: 70 })
+        );
+    }
+
+    #[test]
+    fn should_return_zero_when_forecast_retained_pct_multiplication_overflows() {
+        let tiers = HaircutTierTable::default();
+        // gross is calculated correctly, but gross * retained_pct overflows i64
+        // gross = i64::MAX / 2, retained_pct = 75 (for short tier)
+        assert_eq!(forecast_value_cents(i64::MAX / 2, 1, 15, &tiers), 0);
+    }
 }

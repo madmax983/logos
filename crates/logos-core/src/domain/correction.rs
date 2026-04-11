@@ -260,4 +260,21 @@ mod tests {
             Err(DomainError::CorrectionCannotSupersedeSelf)
         );
     }
+
+    #[test]
+    fn should_return_error_when_transaction_id_is_only_whitespace_in_new() {
+        assert_eq!(
+            TransactionId::new(" \t\n  "),
+            Err(DomainError::EmptyTransactionId)
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_correction_reason_is_only_whitespace() {
+        let old_tx = TransactionId::new("tx-123").expect("valid id");
+        assert_eq!(
+            Correction::new(old_tx, " \t\n  "),
+            Err(DomainError::EmptyCorrectionReason)
+        );
+    }
 }

@@ -428,4 +428,13 @@ mod tests {
             Err(DomainError::UnbalancedTransaction { total: 50 })
         );
     }
+
+    #[test]
+    fn should_return_error_when_transaction_builder_description_is_only_whitespace() {
+        let result = TransactionBuilder::new("   \n\t")
+            .posting(Posting::debit(AccountId::new("assets:checking").unwrap(), 100).unwrap())
+            .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap())
+            .build();
+        assert_eq!(result, Err(DomainError::EmptyTransactionDescription));
+    }
 }

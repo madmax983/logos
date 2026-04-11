@@ -20,3 +20,6 @@
 ## 2026-04-04 - [Off-By-One Logic Mutants]
 **Learning:** Checking for positive amounts using `> 0` instead of `>= 0` can be silently ignored by the test suite if there are no explicit tests mapping exactly to `0`. This leaves the system vulnerable to incorrectly evaluating an invalid value when attempting to create a ledger `Posting`.
 **Action:** When filtering or excluding boundary values, write explicit test cases using precisely the rejected boundary inputs (e.g. `0%` allocations) to prove the guard is fully robust and catches `cargo-mutants` equivalent replacement cases.
+## 2026-04-11 - [Empty String Validation Completeness]
+**Learning:** Found missing test coverage for whitespace-only strings in several `new` constructors across the domain model (`TransactionBuilder`, `AccountId`, `TransactionId`, `Category`). The system trims before checking for empty strings, but the tests didn't explicitly assert whitespace-only inputs were rejected, leaving a coverage gap for boundary logic.
+**Action:** Always include tests for `\t\n  ` (pure whitespace) when asserting that `new(name)` constructors reject empty strings.

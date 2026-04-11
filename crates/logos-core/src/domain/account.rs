@@ -158,6 +158,7 @@ mod tests {
 
     #[test]
     fn should_reject_empty_account_id() {
+        assert_eq!(AccountId::new(" \t\n  "), Err(DomainError::EmptyAccountId));
         assert_eq!(AccountId::new(""), Err(DomainError::EmptyAccountId));
         assert_eq!(AccountId::new("   "), Err(DomainError::EmptyAccountId));
     }
