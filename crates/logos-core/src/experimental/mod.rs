@@ -29,4 +29,6 @@ pub mod recurrence_detector;
 pub mod trinity_simulator;
 
 #[cfg(feature = "nova")]
+pub mod anomaly_detector;
+#[cfg(feature = "nova")]
 pub mod category_trends;
