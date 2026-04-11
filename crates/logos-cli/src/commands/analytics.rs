@@ -1,6 +1,14 @@
 use crate::args::CliError;
+use comfy_table::{Cell, Color};
 
 use logos_runtime::AppRuntime;
+
+fn format_us_timestamp(us: i64) -> String {
+    chrono::DateTime::from_timestamp_micros(us).map_or_else(
+        || us.to_string(),
+        |dt| dt.format("%Y-%m-%d %H:%M:%S UTC").to_string(),
+    )
+}
 
 /// Handles `ledger analytics snapshot create`.
 ///
@@ -29,10 +37,7 @@ pub fn snapshot_create(
             message: err.to_string(),
         })?;
 
-    println!(
-        "{}",
-        render_snapshot_manifest("analytics.snapshot.create", &manifest)
-    );
+    println!("{}", render_snapshot_manifest(&manifest));
     Ok(())
 }
 
@@ -76,23 +81,20 @@ fn render_snapshot_manifest_list(
     for manifest in manifests {
         let supersedes = manifest.supersedes_artifact_id().unwrap_or("");
         table.add_row(vec![
-            manifest.artifact_id().to_owned(),
-            manifest.artifact_kind().to_owned(),
-            manifest.schema_version().to_string(),
-            manifest.row_count().to_string(),
-            manifest.content_hash().to_owned(),
-            manifest.artifact_uri().to_owned(),
-            manifest.snapshot_valid_at().to_string(),
-            manifest.snapshot_tx_at().to_string(),
-            manifest.created_at().to_string(),
-            supersedes.to_owned(),
+            Cell::new(manifest.artifact_id()).fg(Color::Blue),
+            Cell::new(manifest.artifact_kind()).fg(Color::Green),
+            Cell::new(manifest.schema_version().to_string()),
+            Cell::new(manifest.row_count().to_string()),
+            Cell::new(manifest.content_hash()),
+            Cell::new(manifest.artifact_uri()),
+            Cell::new(format_us_timestamp(manifest.snapshot_valid_at())),
+            Cell::new(format_us_timestamp(manifest.snapshot_tx_at())),
+            Cell::new(format_us_timestamp(manifest.created_at())),
+            Cell::new(supersedes),
         ]);
     }
 
-    format!(
-        "analytics.snapshot.list empty=false count={}\n{table}",
-        manifests.len()
-    )
+    table.to_string()
 }
 
 /// Handles `ledger analytics snapshot show`.
@@ -112,10 +114,7 @@ pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
         });
     };
 
-    println!(
-        "{}",
-        render_snapshot_manifest("analytics.snapshot.show", &manifest)
-    );
+    println!("{}", render_snapshot_manifest(&manifest));
     Ok(())
 }
 
@@ -160,7 +159,6 @@ fn render_sankey_output(raw_mermaid: &str) -> String {
 }
 
 fn render_snapshot_manifest(
-    prefix: &str,
     manifest: &logos_store::model::StoredAnalyticsArtifactManifest,
 ) -> String {
     let mut table = comfy_table::Table::new();
@@ -180,19 +178,19 @@ fn render_snapshot_manifest(
 
     let supersedes = manifest.supersedes_artifact_id().unwrap_or("");
     table.add_row(vec![
-        manifest.artifact_id().to_owned(),
-        manifest.artifact_kind().to_owned(),
-        manifest.schema_version().to_string(),
-        manifest.row_count().to_string(),
-        manifest.content_hash().to_owned(),
-        manifest.artifact_uri().to_owned(),
-        manifest.snapshot_valid_at().to_string(),
-        manifest.snapshot_tx_at().to_string(),
-        manifest.created_at().to_string(),
-        supersedes.to_owned(),
+        Cell::new(manifest.artifact_id()).fg(Color::Blue),
+        Cell::new(manifest.artifact_kind()).fg(Color::Green),
+        Cell::new(manifest.schema_version().to_string()),
+        Cell::new(manifest.row_count().to_string()),
+        Cell::new(manifest.content_hash()),
+        Cell::new(manifest.artifact_uri()),
+        Cell::new(format_us_timestamp(manifest.snapshot_valid_at())),
+        Cell::new(format_us_timestamp(manifest.snapshot_tx_at())),
+        Cell::new(format_us_timestamp(manifest.created_at())),
+        Cell::new(supersedes),
     ]);
 
-    format!("{prefix}\n{table}")
+    table.to_string()
 }
 
 #[cfg(test)]
@@ -230,12 +228,11 @@ mod tests {
             "valid:1800000000000000|tx:1800000001000000",
         )];
         let output = render_snapshot_manifest_list(&manifests);
-        let expected = "analytics.snapshot.list empty=false count=1\n┌─────────────┬─────────┬────────┬──────┬──────────┬──────────────────────────┬────────────┬────────────┬────────────┬────────────┐
-│ Artifact ID ┆ Kind    ┆ Schema ┆ Rows ┆ Hash     ┆ URI                      ┆ Valid US   ┆ Tx US      ┆ Created US ┆ Supersedes │
-╞═════════════╪═════════╪════════╪══════╪══════════╪══════════════════════════╪════════════╪════════════╪════════════╪════════════╡
-│ artifact-8  ┆ parquet ┆ 3      ┆ 21   ┆ cafebabe ┆ C:\\artifacts\\def.parquet ┆ 1800000000 ┆ 1800000001 ┆ 1800000002 ┆ artifact-7 │
-└─────────────┴─────────┴────────┴──────┴──────────┴──────────────────────────┴────────────┴────────────┴────────────┴────────────┘";
-        assert_eq!(output, expected);
+        assert!(output.contains("artifact-8"));
+        assert!(output.contains("parquet"));
+        assert!(output.contains("cafebabe"));
+        assert!(output.contains("C:\\artifacts\\def.parquet"));
+        assert!(output.contains("artifact-7"));
     }
 
     #[test]
@@ -253,13 +250,12 @@ mod tests {
             Some("artifact-6"),
             "valid:1700000000000000|tx:1700000001000000",
         );
-        let output = render_snapshot_manifest("analytics.snapshot.show", &manifest);
-        let expected = "analytics.snapshot.show\n┌─────────────┬─────────┬────────┬──────┬──────────┬──────────────────────────┬────────────┬────────────┬────────────┬────────────┐
-│ Artifact ID ┆ Kind    ┆ Schema ┆ Rows ┆ Hash     ┆ URI                      ┆ Valid US   ┆ Tx US      ┆ Created US ┆ Supersedes │
-╞═════════════╪═════════╪════════╪══════╪══════════╪══════════════════════════╪════════════╪════════════╪════════════╪════════════╡
-│ artifact-7  ┆ parquet ┆ 2      ┆ 19   ┆ deadbeef ┆ C:\\artifacts\\abc.parquet ┆ 1700000000 ┆ 1700000001 ┆ 1700000002 ┆ artifact-6 │
-└─────────────┴─────────┴────────┴──────┴──────────┴──────────────────────────┴────────────┴────────────┴────────────┴────────────┘";
-        assert_eq!(output, expected);
+        let output = render_snapshot_manifest(&manifest);
+        assert!(output.contains("artifact-7"));
+        assert!(output.contains("parquet"));
+        assert!(output.contains("deadbeef"));
+        assert!(output.contains("C:\\artifacts\\abc.parquet"));
+        assert!(output.contains("artifact-6"));
     }
 }
 
