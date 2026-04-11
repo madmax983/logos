@@ -1,8 +1,14 @@
 #![allow(clippy::should_panic_without_expect)]
 
 use logos_core::domain::account::AccountId;
+#[cfg(feature = "nova")]
+use logos_core::domain::category::CategoryGroupId;
 use logos_core::domain::rsu::AllocationPolicy;
+#[cfg(feature = "nova")]
+use logos_core::domain::transaction::{Posting, TransactionBuilder};
 use logos_core::experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
+#[cfg(feature = "nova")]
+use logos_core::experimental::category_trends::CategoryTrendAnalyzer;
 use logos_core::planning::fire::{FireSimulator, UpcomingVest};
 use logos_core::planning::net_worth_projector::NetWorthProjector;
 use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
@@ -76,4 +82,31 @@ proptest! {
         sim.add_assets_liabilities(assets, 0);
     }
 
+    #[test]
+    #[cfg(feature = "nova")]
+    #[should_panic(expected = "attempt to add with overflow")]
+    fn compute_spending_by_category_panics_on_overflow(
+        amount1 in i64::MAX / 2..i64::MAX,
+        amount2 in i64::MAX / 2..i64::MAX,
+    ) {
+        let mut analyzer = CategoryTrendAnalyzer::new();
+        let acc = AccountId::new("expenses:misc").unwrap();
+        let group = CategoryGroupId::from_name("Misc Group").unwrap();
+
+        analyzer.map_account(acc.clone(), group);
+
+        let tx1 = TransactionBuilder::new("Tx 1")
+            .posting(Posting::debit(acc.clone(), amount1).unwrap())
+            .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), amount1).unwrap())
+            .build()
+            .unwrap();
+
+        let tx2 = TransactionBuilder::new("Tx 2")
+            .posting(Posting::debit(acc, amount2).unwrap())
+            .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), amount2).unwrap())
+            .build()
+            .unwrap();
+
+        let _trends = analyzer.compute_spending_by_category(&[tx1, tx2]);
+    }
 }
