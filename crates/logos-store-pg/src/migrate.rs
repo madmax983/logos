@@ -2,16 +2,16 @@ use diesel::migration::Migration;
 use diesel::pg::PgConnection;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 
-use crate::error::PgStoreError;
+use logos_store::error::StoreError;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 /// # Errors
-/// Returns `PgStoreError` on execution failure.
-pub fn run_pending_migrations(conn: &mut PgConnection) -> Result<Vec<String>, PgStoreError> {
+/// Returns `StoreError` on execution failure.
+pub fn run_pending_migrations(conn: &mut PgConnection) -> Result<Vec<String>, StoreError> {
     let applied =
         conn.run_pending_migrations(MIGRATIONS)
-            .map_err(|err| PgStoreError::Migration {
+            .map_err(|err| StoreError::MigrationFailed {
                 message: err.to_string(),
             })?;
 
@@ -22,13 +22,13 @@ pub fn run_pending_migrations(conn: &mut PgConnection) -> Result<Vec<String>, Pg
 }
 
 /// # Errors
-/// Returns `PgStoreError` on fetch failure.
-pub fn pending_migration_names(conn: &mut PgConnection) -> Result<Vec<String>, PgStoreError> {
-    let pending = conn
-        .pending_migrations(MIGRATIONS)
-        .map_err(|err| PgStoreError::Migration {
-            message: err.to_string(),
-        })?;
+/// Returns `StoreError` on fetch failure.
+pub fn pending_migration_names(conn: &mut PgConnection) -> Result<Vec<String>, StoreError> {
+    let pending =
+        conn.pending_migrations(MIGRATIONS)
+            .map_err(|err| StoreError::MigrationFailed {
+                message: err.to_string(),
+            })?;
 
     Ok(pending
         .iter()

@@ -1,6 +1,5 @@
 use logos_import::ImportError;
 use logos_store::error::StoreError;
-use logos_store_pg::PgStoreError;
 use std::fmt;
 
 #[derive(Debug)]
@@ -42,13 +41,5 @@ impl From<ImportError> for RuntimeError {
 impl From<logos_core::DomainError> for RuntimeError {
     fn from(value: logos_core::DomainError) -> Self {
         Self::Domain(value)
-    }
-}
-
-impl From<PgStoreError> for RuntimeError {
-    fn from(value: PgStoreError) -> Self {
-        Self::Initialization {
-            message: value.to_string(),
-        }
     }
 }
