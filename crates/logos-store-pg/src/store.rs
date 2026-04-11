@@ -344,12 +344,12 @@ impl PostgresStore {
 
     pub fn pending_migrations(&mut self) -> Result<Vec<String>, PgStoreError> {
         let mut connection = self.connection.borrow_mut();
-        pending_migration_names(&mut *connection)
+        pending_migration_names(&mut connection)
     }
 
     pub fn run_migrations(&mut self) -> Result<Vec<String>, PgStoreError> {
         let mut connection = self.connection.borrow_mut();
-        run_pending_migrations(&mut *connection)
+        run_pending_migrations(&mut connection)
     }
 
     fn try_transaction_count(&self) -> Result<usize, StoreError> {
@@ -404,7 +404,7 @@ impl PostgresStore {
             .select(TransactionRow::as_select())
             .load::<TransactionRow>(&mut *connection)
             .map_err(|err| load_failure(format!("loading transactions failed: {err}")))?;
-        Self::hydrate_transactions(&mut *connection, rows)
+        Self::hydrate_transactions(&mut connection, rows)
     }
 
     fn next_transaction_id(connection: &mut PgConnection) -> Result<TransactionId, StoreError> {
@@ -811,8 +811,7 @@ impl PostgresStore {
         .get_result::<bool>(&mut *connection)
         .map_err(|err| {
             load_failure(format!(
-                "checking import record '{}' existence failed: {err}",
-                content_hash_key
+                "checking import record '{content_hash_key}' existence failed: {err}"
             ))
         })
     }
@@ -1211,7 +1210,7 @@ impl LedgerStore for PostgresStore {
             .into_iter()
             .filter(|row| !superseded_ids.contains(&row.id))
             .collect();
-        Self::hydrate_transactions(&mut *connection, visible_rows)
+        Self::hydrate_transactions(&mut connection, visible_rows)
     }
 
     fn write_transaction(
@@ -1230,7 +1229,7 @@ impl LedgerStore for PostgresStore {
         let recorded_at_us = now_timestamp_us()?;
         let effective_at_us = valid_from.unwrap_or(recorded_at_us);
         let mut connection = self.connection.borrow_mut();
-        let transaction_id = Self::next_transaction_id(&mut *connection)?;
+        let transaction_id = Self::next_transaction_id(&mut connection)?;
         let transaction_row = NewTransactionRow {
             id: transaction_id.as_str(),
             description: transaction.description(),
@@ -1373,7 +1372,7 @@ impl LedgerStore for PostgresStore {
 
         let created_at_us = now_timestamp_us()?;
         let mut connection = self.connection.borrow_mut();
-        let artifact_id = Self::next_artifact_id(&mut *connection)?;
+        let artifact_id = Self::next_artifact_id(&mut connection)?;
         let snapshot_key = format!("valid:{snapshot_valid_at_us}|tx:{snapshot_tx_at_us}");
         let row = NewAnalyticsArtifactRow {
             artifact_id: &artifact_id,
@@ -1478,9 +1477,9 @@ impl LedgerStore for PostgresStore {
         let imported_at_us = now_timestamp_us()?;
         let record_count = i64::try_from(records.len()).unwrap_or(i64::MAX);
         let mut connection = self.connection.borrow_mut();
-        Self::ensure_transactions_exist(&mut *connection, &imported_txn_ids)?;
+        Self::ensure_transactions_exist(&mut connection, &imported_txn_ids)?;
 
-        let batch_id = Self::next_import_batch_id(&mut *connection)?;
+        let batch_id = Self::next_import_batch_id(&mut connection)?;
         let batch_row = NewImportBatchRow {
             batch_id: &batch_id,
             import_kind,
@@ -1504,7 +1503,7 @@ impl LedgerStore for PostgresStore {
         let mut statement_line_payloads = Vec::new();
         for record in records {
             if let Some(line) = record.statement_line() {
-                let line_id = Self::next_statement_line_id(&mut *connection)?;
+                let line_id = Self::next_statement_line_id(&mut connection)?;
                 statement_line_payloads.push((
                     line_id,
                     line.source_uri().to_owned(),
@@ -1618,7 +1617,7 @@ impl LedgerStore for PostgresStore {
         let created_at_us = now_timestamp_us()?;
         let normalized_error_summary = error_summary.filter(|value| !value.is_empty());
         let mut connection = self.connection.borrow_mut();
-        let run_id = Self::next_fetch_run_id(&mut *connection)?;
+        let run_id = Self::next_fetch_run_id(&mut connection)?;
         let row = NewFetchRunRow {
             run_id: &run_id,
             source_id,
@@ -1695,10 +1694,10 @@ impl LedgerStore for PostgresStore {
         let created_at_us = now_timestamp_us()?;
         let matched_transaction_count = i64::try_from(reconciled_txn_ids.len()).unwrap_or(i64::MAX);
         let mut connection = self.connection.borrow_mut();
-        Self::ensure_transactions_exist(&mut *connection, reconciled_txn_ids)?;
+        Self::ensure_transactions_exist(&mut connection, reconciled_txn_ids)?;
         let statement_line_ids =
-            Self::statement_line_ids_for_transaction_ids(&mut *connection, reconciled_txn_ids)?;
-        let run_id = Self::next_reconciliation_run_id(&mut *connection)?;
+            Self::statement_line_ids_for_transaction_ids(&mut connection, reconciled_txn_ids)?;
+        let run_id = Self::next_reconciliation_run_id(&mut connection)?;
         let run_row = NewReconciliationRunRow {
             run_id: &run_id,
             month_key,
@@ -1826,11 +1825,11 @@ impl LedgerStore for PostgresStore {
         let closed_at_us = now_timestamp_us()?;
         let matched_transaction_count = i64::try_from(reconciled_txn_ids.len()).unwrap_or(i64::MAX);
         let mut connection = self.connection.borrow_mut();
-        Self::ensure_transactions_exist(&mut *connection, reconciled_txn_ids)?;
+        Self::ensure_transactions_exist(&mut connection, reconciled_txn_ids)?;
         let statement_line_ids =
-            Self::statement_line_ids_for_transaction_ids(&mut *connection, reconciled_txn_ids)?;
-        let run_id = Self::next_reconciliation_run_id(&mut *connection)?;
-        let close_id = Self::next_month_close_id(&mut *connection)?;
+            Self::statement_line_ids_for_transaction_ids(&mut connection, reconciled_txn_ids)?;
+        let run_id = Self::next_reconciliation_run_id(&mut connection)?;
+        let close_id = Self::next_month_close_id(&mut connection)?;
 
         let run_row = NewReconciliationRunRow {
             run_id: &run_id,
@@ -1980,7 +1979,7 @@ impl LedgerStore for PostgresStore {
 
         let closed_at_us = now_timestamp_us()?;
         let mut connection = self.connection.borrow_mut();
-        let close_id = Self::next_month_close_id(&mut *connection)?;
+        let close_id = Self::next_month_close_id(&mut connection)?;
         let row = NewMonthCloseRow {
             close_id: &close_id,
             month_key,
@@ -2008,11 +2007,11 @@ fn expect_read<T>(method: &'static str, result: Result<T, StoreError>) -> T {
     result.unwrap_or_else(|err| panic!("PostgresStore::{method} failed: {err}"))
 }
 
-fn load_failure(message: String) -> StoreError {
+const fn load_failure(message: String) -> StoreError {
     StoreError::LoadFailed { message }
 }
 
-fn persist_failure(message: String) -> StoreError {
+const fn persist_failure(message: String) -> StoreError {
     StoreError::PersistFailed { message }
 }
 

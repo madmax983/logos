@@ -73,7 +73,7 @@ pub struct AppRuntime<S = PostgresStore> {
 
 impl<S> AppRuntime<S> {
     #[must_use]
-    pub fn with_store(
+    pub const fn with_store(
         store: S,
         artifacts_root: PathBuf,
         fetch_config_path: Option<PathBuf>,
@@ -1334,7 +1334,7 @@ impl<S: LedgerStore> AppRuntime<S> {
 
     fn post_import_record(&mut self, record: &ImportRecord) -> Result<TransactionId, RuntimeError> {
         let amount = record.amount_cents();
-        let valid_from = parse_import_timestamp(record.timestamp()).map(Into::into);
+        let valid_from = parse_import_timestamp(record.timestamp());
         if amount > 0 {
             let builder =
                 build_double_entry(record.memo(), record.account(), record.category(), amount)?;
@@ -1398,11 +1398,19 @@ impl<S: LedgerStore> AppRuntime<S> {
                     .iter()
                     .any(|posting| posting.account().as_str() == checking_account)
             })
-            .map(logos_store_aletheia::model::StoredTransaction::id)
+            .map(|t| t.id().clone())
             .collect();
-        ids.sort_by(|left, right| left.as_str().cmp(right.as_str()));
-        ids.dedup_by(|left, right| left.as_str() == right.as_str());
-        ids.into_iter().cloned().collect()
+        ids.sort_by(
+            |left: &logos_core::TransactionId, right: &logos_core::TransactionId| {
+                left.as_str().cmp(right.as_str())
+            },
+        );
+        ids.dedup_by(
+            |left: &mut logos_core::TransactionId, right: &mut logos_core::TransactionId| {
+                left.as_str() == right.as_str()
+            },
+        );
+        ids
     }
 }
 
