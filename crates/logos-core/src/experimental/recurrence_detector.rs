@@ -21,6 +21,10 @@ impl RecurrenceDetector {
     }
 
     /// Scans a list of transactions and identifies recurring templates.
+    ///
+    /// ⚡ Bolt Optimization: Uses borrowed strings `(&str)` for the temporary grouping hash map
+    /// to avoid 3 heap allocations (description, credit, debit strings) per transaction
+    /// analyzed in the hot path.
     #[must_use]
     pub fn detect(&self, transactions: &[Transaction]) -> Vec<RecurringTemplate> {
         // ⚡ Bolt: Group by references (&str) instead of owned Strings to avoid
