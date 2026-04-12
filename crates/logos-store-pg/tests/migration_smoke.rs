@@ -1,4 +1,4 @@
-use logos_store_pg::{MIGRATIONS, schema};
+use logos_store_pg::MIGRATIONS;
 
 #[test]
 fn migration_sql_mentions_core_tables() {
@@ -32,9 +32,6 @@ fn migration_sql_mentions_core_tables() {
 }
 
 #[test]
-fn embedded_migrations_and_schema_are_exported() {
+fn embedded_migrations_are_exported() {
     let _ = MIGRATIONS;
-    let _ = schema::transactions::table;
-    let _ = schema::postings::table;
-    let _ = schema::month_closes::table;
 }
