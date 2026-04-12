@@ -99,4 +99,23 @@ proptest! {
 
         let _ = analyzer.compute_spending_by_category(&txs);
     }
+
+    #[cfg(feature = "nova")]
+    #[test]
+    #[should_panic(expected = "attempt to multiply with overflow")]
+    fn simulate_debt_optimizer_panics_on_overflow(
+        balance in i64::MAX / 2..i64::MAX,
+    ) {
+        use logos_core::experimental::debt_optimizer::{DebtOptimizer, Debt, PayoffStrategy};
+
+        let mut optimizer = DebtOptimizer::new(100_000);
+        optimizer.add_debt(Debt {
+            name: "Massive Debt".to_string(),
+            balance_cents: balance,
+            interest_rate_pct: 15,
+            min_payment_cents: 50_000,
+        });
+
+        let _ = optimizer.simulate(PayoffStrategy::Avalanche);
+    }
 }
