@@ -321,6 +321,32 @@ pub struct PostgresStore {
 }
 
 impl PostgresStore {
+    fn execute_reconciliation_run_transaction(
+        connection: &mut PgConnection,
+        run_row: &NewReconciliationRunRow<'_>,
+        transaction_rows: &[NewReconciliationRunTransactionRow<'_>],
+        statement_line_rows: &[NewReconciliationRunStatementLineRow<'_>],
+    ) -> Result<(), StoreError> {
+        connection
+            .transaction::<(), diesel::result::Error, _>(|conn| {
+                diesel::insert_into(reconciliation_runs::table)
+                    .values(run_row)
+                    .execute(conn)?;
+                if !transaction_rows.is_empty() {
+                    diesel::insert_into(reconciliation_run_transactions::table)
+                        .values(transaction_rows)
+                        .execute(conn)?;
+                }
+                if !statement_line_rows.is_empty() {
+                    diesel::insert_into(reconciliation_run_statement_lines::table)
+                        .values(statement_line_rows)
+                        .execute(conn)?;
+                }
+                Ok(())
+            })
+            .map_err(|err| persist_failure(format!("persisting reconciliation run failed: {err}")))
+    }
+
     fn execute_reconciliation_and_close_transaction(
         connection: &mut PgConnection,
         run_row: &NewReconciliationRunRow<'_>,
@@ -430,6 +456,20 @@ impl PostgresStore {
             }
         }
         statement_line_rows
+    }
+
+    fn generate_statement_line_payloads(
+        connection: &mut PgConnection,
+        records: &[NewImportRecord],
+    ) -> Result<Vec<String>, StoreError> {
+        let mut statement_line_payloads = Vec::with_capacity(records.len());
+        for record in records {
+            if record.statement_line().is_some() {
+                let line_id = Self::next_statement_line_id(connection)?;
+                statement_line_payloads.push(line_id);
+            }
+        }
+        Ok(statement_line_payloads)
     }
 
     fn build_reconciliation_transaction_rows<'a>(
@@ -679,9 +719,9 @@ impl PostgresStore {
             HashMap::with_capacity(transaction_ids.len());
 
         for posting_row in posting_rows {
-            /// ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`
-            /// on the `String` transaction ID for every single posting row.
-            /// This reduces heap allocations by roughly 50-75% depending on average postings per transaction.
+            // ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`
+            // on the `String` transaction ID for every single posting row.
+            // This reduces heap allocations by roughly 50-75% depending on average postings per transaction.
             if let Some(postings) = postings_by_transaction.get_mut(&posting_row.transaction_id) {
                 postings.push(posting_row);
             } else {
@@ -1302,6 +1342,50 @@ impl PostgresStore {
             })
     }
 
+    #[allow(clippy::too_many_arguments)]
+    fn try_validate_fetch_run_params(
+        source_id: &str,
+        institution_id: &str,
+        ledger_account: &str,
+        month_key: &str,
+        status: StoredFetchRunStatus,
+        artifact_path: Option<&str>,
+        output_format: Option<StoredFetchArtifactFormat>,
+        opening_balance_cents: Option<i64>,
+        closing_balance_cents: Option<i64>,
+    ) -> Result<(), StoreError> {
+        if source_id.is_empty() {
+            return Err(persist_failure("source_id must not be empty".to_owned()));
+        }
+        if institution_id.is_empty() {
+            return Err(persist_failure(
+                "institution_id must not be empty".to_owned(),
+            ));
+        }
+        if ledger_account.is_empty() {
+            return Err(persist_failure(
+                "ledger_account must not be empty".to_owned(),
+            ));
+        }
+        if month_key.is_empty() {
+            return Err(persist_failure("month_key must not be empty".to_owned()));
+        }
+        if matches!(
+            status,
+            StoredFetchRunStatus::Downloaded | StoredFetchRunStatus::Imported
+        ) && (artifact_path.is_none()
+            || output_format.is_none()
+            || opening_balance_cents.is_none()
+            || closing_balance_cents.is_none())
+        {
+            return Err(persist_failure(format!(
+                "status '{}' requires artifact path, format, and balance metadata",
+                status.as_str()
+            )));
+        }
+        Ok(())
+    }
+
     fn try_validate_reconciliation_run_params(
         month_key: &str,
         checking_account: &str,
@@ -1796,13 +1880,8 @@ impl LedgerStore for PostgresStore {
         };
         let import_record_rows = Self::build_import_record_rows(records, &batch_id, imported_at_us);
 
-        let mut statement_line_payloads = Vec::with_capacity(records.len());
-        for record in records {
-            if record.statement_line().is_some() {
-                let line_id = Self::next_statement_line_id(&mut connection)?;
-                statement_line_payloads.push(line_id);
-            }
-        }
+        let statement_line_payloads =
+            Self::generate_statement_line_payloads(&mut connection, records)?;
         let statement_line_rows = Self::build_statement_line_rows(
             records,
             &statement_line_payloads,
@@ -1843,35 +1922,17 @@ impl LedgerStore for PostgresStore {
         closing_balance_cents: Option<i64>,
         error_summary: Option<&str>,
     ) -> Result<StoredFetchRun, StoreError> {
-        if source_id.is_empty() {
-            return Err(persist_failure("source_id must not be empty".to_owned()));
-        }
-        if institution_id.is_empty() {
-            return Err(persist_failure(
-                "institution_id must not be empty".to_owned(),
-            ));
-        }
-        if ledger_account.is_empty() {
-            return Err(persist_failure(
-                "ledger_account must not be empty".to_owned(),
-            ));
-        }
-        if month_key.is_empty() {
-            return Err(persist_failure("month_key must not be empty".to_owned()));
-        }
-        if matches!(
+        Self::try_validate_fetch_run_params(
+            source_id,
+            institution_id,
+            ledger_account,
+            month_key,
             status,
-            StoredFetchRunStatus::Downloaded | StoredFetchRunStatus::Imported
-        ) && (artifact_path.is_none()
-            || output_format.is_none()
-            || opening_balance_cents.is_none()
-            || closing_balance_cents.is_none())
-        {
-            return Err(persist_failure(format!(
-                "status '{}' requires artifact path, format, and balance metadata",
-                status.as_str()
-            )));
-        }
+            artifact_path,
+            output_format,
+            opening_balance_cents,
+            closing_balance_cents,
+        )?;
 
         let created_at_us = now_timestamp_us()?;
         let normalized_error_summary = error_summary.filter(|value| !value.is_empty());
@@ -1962,26 +2023,12 @@ impl LedgerStore for PostgresStore {
         let statement_line_rows =
             Self::build_reconciliation_statement_line_rows(&run_id, &statement_line_ids);
 
-        connection
-            .transaction::<(), diesel::result::Error, _>(|conn| {
-                diesel::insert_into(reconciliation_runs::table)
-                    .values(&run_row)
-                    .execute(conn)?;
-                if !transaction_rows.is_empty() {
-                    diesel::insert_into(reconciliation_run_transactions::table)
-                        .values(&transaction_rows)
-                        .execute(conn)?;
-                }
-                if !statement_line_rows.is_empty() {
-                    diesel::insert_into(reconciliation_run_statement_lines::table)
-                        .values(&statement_line_rows)
-                        .execute(conn)?;
-                }
-                Ok(())
-            })
-            .map_err(|err| {
-                persist_failure(format!("persisting reconciliation run failed: {err}"))
-            })?;
+        Self::execute_reconciliation_run_transaction(
+            &mut connection,
+            &run_row,
+            &transaction_rows,
+            &statement_line_rows,
+        )?;
 
         Ok(StoredReconciliationRun::new(
             &run_id,
