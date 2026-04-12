@@ -293,6 +293,25 @@ mod tests {
     }
 
     #[test]
+    fn post_double_entry_rejects_negative_amount() {
+        let mut poster = FakePoster::default();
+        let err = post_double_entry(
+            "paycheck",
+            "assets:checking",
+            "income:salary",
+            -1,
+            &mut poster,
+        )
+        .expect_err("invalid amount");
+
+        assert_eq!(
+            err.to_string(),
+            "Invalid value '-1' for argument '--amount-cents'."
+        );
+        assert_eq!(poster.calls, 0);
+    }
+
+    #[test]
     fn post_double_entry_rejects_non_positive_amount() {
         let mut poster = FakePoster::default();
         let err = post_double_entry(
