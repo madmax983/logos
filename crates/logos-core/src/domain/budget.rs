@@ -202,3 +202,28 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod sentinel_tests {
+    use super::*;
+
+    #[test]
+    fn should_return_exactly_i64_max_when_rollover_balance_is_exactly_i64_max() {
+        assert_eq!(rollover_end_balance(i64::MAX, 0, 0), i64::MAX);
+    }
+
+    #[test]
+    fn should_clamp_when_rollover_balance_is_exactly_i64_max_plus_one() {
+        assert_eq!(rollover_end_balance(i64::MAX, 1, 0), i64::MAX);
+    }
+
+    #[test]
+    fn should_return_exactly_i64_min_when_rollover_balance_is_exactly_i64_min() {
+        assert_eq!(rollover_end_balance(i64::MIN, 0, 0), i64::MIN);
+    }
+
+    #[test]
+    fn should_clamp_when_rollover_balance_is_exactly_i64_min_minus_one() {
+        assert_eq!(rollover_end_balance(i64::MIN, 0, 1), i64::MIN);
+    }
+}
