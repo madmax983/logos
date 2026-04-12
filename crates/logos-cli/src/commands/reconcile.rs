@@ -1,5 +1,6 @@
 #![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
+use crate::format::us_timestamp;
 use comfy_table::{Attribute, Cell, Color};
 use logos_runtime::AppRuntime;
 use logos_store::model::StoredReconciliationRun;
@@ -135,7 +136,7 @@ fn render_month_output(
         Cell::new(run.matched_transaction_count()),
         Cell::new(format!("${:.2}", (run.inflow_cents() as f64) / 100.0)).fg(Color::Green),
         Cell::new(format!("${:.2}", (run.outflow_cents() as f64) / 100.0)).fg(Color::Red),
-        Cell::new(run.created_at()).fg(Color::DarkGrey),
+        Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
     ]);
     table.to_string()
 }
@@ -196,7 +197,7 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
         Cell::new(run.matched_transaction_count()),
         Cell::new(format!("${:.2}", (run.inflow_cents() as f64) / 100.0)).fg(Color::Green),
         Cell::new(format!("${:.2}", (run.outflow_cents() as f64) / 100.0)).fg(Color::Red),
-        Cell::new(run.created_at()).fg(Color::DarkGrey),
+        Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
     ]);
     table.to_string()
 }
@@ -248,7 +249,7 @@ fn render_list_output(
             variance_cell,
             reconciled_cell,
             Cell::new(run.matched_transaction_count()),
-            Cell::new(run.created_at()).fg(Color::DarkGrey),
+            Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
         ]);
     }
 
@@ -291,6 +292,7 @@ mod tests {
         assert!(output.contains("$-15.00"));
         assert!(output.contains("$100.00"));
         assert!(output.contains("$25.00"));
+        assert!(output.contains("1970-01-01 00:28:20 UTC"));
     }
 
     #[test]
@@ -321,6 +323,7 @@ mod tests {
         assert!(output.contains("$5.00"));
         assert!(output.contains("$150.00"));
         assert!(output.contains("$30.00"));
+        assert!(output.contains("1970-01-01 00:28:20 UTC"));
     }
 
     #[test]
@@ -367,5 +370,6 @@ mod tests {
         assert!(output.contains("$0.00"));
         assert!(output.contains("recon-10"));
         assert!(output.contains("$-5.00"));
+        assert!(output.contains("1970-01-01 00:28:20 UTC"));
     }
 }

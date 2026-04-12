@@ -1,4 +1,5 @@
 use crate::args::CliError;
+use crate::format::us_timestamp;
 use logos_runtime::AppRuntime;
 use logos_store::model::StoredMonthClose;
 
@@ -73,7 +74,7 @@ fn render_close_month_output(
         close.checking_account().to_owned(),
         close.reconciliation_run_id().to_owned(),
         analytics_artifact_id.unwrap_or("").to_owned(),
-        close.closed_at().to_string(),
+        us_timestamp(close.closed_at()),
     ]);
 
     format!("close.month\n{table}")
@@ -102,6 +103,6 @@ mod tests {
         assert!(output.contains("assets:checking"));
         assert!(output.contains("recon-11"));
         assert!(output.contains("artifact-7"));
-        assert!(output.contains("1700000555"));
+        assert!(output.contains("1970-01-01 00:28:20 UTC"));
     }
 }
