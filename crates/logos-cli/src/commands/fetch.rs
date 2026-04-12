@@ -1,5 +1,6 @@
 #![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
+use crate::format::us_timestamp;
 use comfy_table::{Cell, Color};
 use logos_runtime::AppRuntime;
 use logos_store::model::{StoredFetchRun, StoredFetchRunStatus};
@@ -81,7 +82,7 @@ fn render_list_output(
             Cell::new(run.ledger_account()),
             Cell::new(run.source_id()),
             status_cell(run.status()),
-            Cell::new(run.created_at().to_string()),
+            Cell::new(us_timestamp(run.created_at())),
         ]);
     }
 
@@ -125,7 +126,7 @@ fn render_show_output(run: &StoredFetchRun) -> String {
         ),
         run.error_summary()
             .map_or_else(|| Cell::new("-"), |err| Cell::new(err).fg(Color::Red)),
-        Cell::new(run.created_at().to_string()),
+        Cell::new(us_timestamp(run.created_at())),
     ]);
     table.to_string()
 }
@@ -157,6 +158,7 @@ mod tests {
         assert!(output.contains("fetch-3"));
         assert!(output.contains("pcu:checking"));
         assert!(output.contains("downloaded"));
+        assert!(output.contains("1970-01-01 00:28:20 UTC"));
     }
 
     #[test]
@@ -182,6 +184,7 @@ mod tests {
         assert!(output.contains("downloaded"));
         assert!(output.contains("$1000.00"));
         assert!(output.contains("$1987.66"));
+        assert!(output.contains("1970-01-01 00:28:20 UTC"));
     }
 
     #[test]
@@ -206,5 +209,6 @@ mod tests {
         assert!(output.contains("american-express"));
         assert!(output.contains("needs_attention"));
         assert!(output.contains("mfa challenge required"));
+        assert!(output.contains("1970-01-01 00:28:20 UTC"));
     }
 }

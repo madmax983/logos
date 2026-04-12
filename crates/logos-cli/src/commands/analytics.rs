@@ -1,14 +1,8 @@
 use crate::args::CliError;
+use crate::format::us_timestamp;
 use comfy_table::{Cell, Color};
 
 use logos_runtime::AppRuntime;
-
-fn format_us_timestamp(us: i64) -> String {
-    chrono::DateTime::from_timestamp_micros(us).map_or_else(
-        || us.to_string(),
-        |dt| dt.format("%Y-%m-%d %H:%M:%S UTC").to_string(),
-    )
-}
 
 /// Handles `ledger analytics snapshot create`.
 ///
@@ -87,9 +81,9 @@ fn render_snapshot_manifest_list(
             Cell::new(manifest.row_count().to_string()),
             Cell::new(manifest.content_hash()),
             Cell::new(manifest.artifact_uri()),
-            Cell::new(format_us_timestamp(manifest.snapshot_valid_at())),
-            Cell::new(format_us_timestamp(manifest.snapshot_tx_at())),
-            Cell::new(format_us_timestamp(manifest.created_at())),
+            Cell::new(us_timestamp(manifest.snapshot_valid_at())),
+            Cell::new(us_timestamp(manifest.snapshot_tx_at())),
+            Cell::new(us_timestamp(manifest.created_at())),
             Cell::new(supersedes),
         ]);
     }
@@ -184,9 +178,9 @@ fn render_snapshot_manifest(
         Cell::new(manifest.row_count().to_string()),
         Cell::new(manifest.content_hash()),
         Cell::new(manifest.artifact_uri()),
-        Cell::new(format_us_timestamp(manifest.snapshot_valid_at())),
-        Cell::new(format_us_timestamp(manifest.snapshot_tx_at())),
-        Cell::new(format_us_timestamp(manifest.created_at())),
+        Cell::new(us_timestamp(manifest.snapshot_valid_at())),
+        Cell::new(us_timestamp(manifest.snapshot_tx_at())),
+        Cell::new(us_timestamp(manifest.created_at())),
         Cell::new(supersedes),
     ]);
 
