@@ -179,4 +179,53 @@ mod tests {
         assert_eq!(anomalies[0].account, "expenses:food");
         assert_eq!(anomalies[0].amount_cents, 3500);
     }
+
+    #[test]
+    fn test_median_empty_slice() {
+        assert!((median(&[]) - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_detector_not_enough_data() {
+        let detector = AnomalyDetector::new(1.5);
+        let mut transactions = Vec::new();
+
+        let amounts = vec![1000, 1200, 1400]; // Only 3 items, skips bounds logic
+
+        for amount in amounts {
+            let tx = TransactionBuilder::new("Groceries")
+                .posting(
+                    Posting::credit(AccountId::new("assets:checking").unwrap(), amount).unwrap(),
+                )
+                .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), amount).unwrap())
+                .build()
+                .unwrap();
+            transactions.push(tx);
+        }
+
+        let anomalies = detector.detect(&transactions);
+        assert_eq!(anomalies.len(), 0);
+    }
+
+    #[test]
+    fn test_detector_no_anomalies() {
+        let detector = AnomalyDetector::new(1.5);
+        let mut transactions = Vec::new();
+
+        let amounts = vec![1000, 1200, 1400, 1500, 2000];
+
+        for amount in amounts {
+            let tx = TransactionBuilder::new("Groceries")
+                .posting(
+                    Posting::credit(AccountId::new("assets:checking").unwrap(), amount).unwrap(),
+                )
+                .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), amount).unwrap())
+                .build()
+                .unwrap();
+            transactions.push(tx);
+        }
+
+        let anomalies = detector.detect(&transactions);
+        assert_eq!(anomalies.len(), 0);
+    }
 }

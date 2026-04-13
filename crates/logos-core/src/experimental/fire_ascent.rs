@@ -246,4 +246,20 @@ mod tests {
         assert!(result.instant_summit);
         assert!(result.success);
     }
+
+    #[test]
+    fn test_impossible_ascent() {
+        let mut fire_sim = FireSimulator::new(100_000);
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 0,
+        });
+
+        let projector = NetWorthProjector::new(0, 0);
+
+        let ascent_sim = FireAscentSimulator::new(fire_sim, projector, 12);
+        let result = ascent_sim.ascend();
+
+        assert!(result.impossible);
+        assert!(!result.success);
+    }
 }

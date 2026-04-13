@@ -114,6 +114,13 @@ mod tests {
     }
 
     #[test]
+    fn test_observed_distribution_empty() {
+        let analyzer = BenfordLawAnalyzer::new();
+        let observed = analyzer.observed_distribution();
+        assert!(observed.is_empty());
+    }
+
+    #[test]
     fn test_expected_distribution() {
         let expected = BenfordLawAnalyzer::expected_distribution();
         assert!((expected[&1] - 0.301).abs() < 0.01);

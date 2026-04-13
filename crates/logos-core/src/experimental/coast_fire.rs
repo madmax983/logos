@@ -90,7 +90,7 @@ impl CoastFireSimulator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::planning::fire::FireSimulator;
+    use crate::planning::fire::{FireConfig, FireSimulator};
 
     #[test]
     fn test_coast_fire_calculation() {
@@ -131,5 +131,31 @@ mod tests {
         assert_eq!(result.fire_target_cents, 0);
         assert_eq!(result.coast_fire_cents, 0);
         assert!(result.is_coasting);
+    }
+
+    #[test]
+    fn test_max_fire_target() {
+        let mut fire_sim = FireSimulator::new(100_000);
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 0,
+        });
+
+        let sim = CoastFireSimulator::new(fire_sim, 7.0, 20);
+        let result = sim.calculate();
+
+        assert_eq!(result.fire_target_cents, i64::MAX);
+        assert_eq!(result.coast_fire_cents, i64::MAX);
+        assert!(!result.is_coasting);
+    }
+
+    #[test]
+    fn test_negative_compound_factor() {
+        let fire_sim = FireSimulator::new(100_000);
+        // Annual growth rate of -200% gives compound factor < 0
+        let sim = CoastFireSimulator::new(fire_sim, -200.0, 1);
+        let result = sim.calculate();
+
+        assert_eq!(result.fire_target_cents, 30_000_000);
+        assert_eq!(result.coast_fire_cents, 30_000_000);
     }
 }

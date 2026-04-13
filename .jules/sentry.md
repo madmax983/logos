@@ -24,3 +24,6 @@
 ## 2026-04-08 - Fix CLI Flag Value Parsing Regression with Negative Numbers
 **Learning:** Fixing CLI argument parsers by rejecting any token starting with `"-"` (to prevent consuming subsequent flags as values) creates a critical regression when parsing negative amounts (like `-5000` for account balances).
 **Action:** When preventing flags from being parsed as values in a CLI, specifically filter out tokens starting with `"--"` instead of `"-"` so that valid negative numeric strings can still be parsed.
+## 2026-04-13 - [Coverage Improvements for logos-core/experimental]
+**Learning:** Adding test coverage to `logos-core/src/experimental/` modules (`asset_depreciation.rs`, `benford_law.rs`, `coast_fire.rs`, `fire_goal_seeker.rs`, `predictive_ledger.rs`, `trinity_simulator.rs`) uncovered edge cases involving bounds checking and zero parameters (such as `useful_life_years = 0`, `target_cents = 0`, `target_cents = i64::MAX`). Tested various methods under specific conditions to cover their full logic flow. Replicating the inline Linear Congruential Generator logic manually is necessary to avoid relying on external dependencies for tests, ensuring determinism.
+**Action:** Ensure to provide specific inputs targeting mathematical operations boundaries or early return constraints (like target goals of 0 or `i64::MAX`).
