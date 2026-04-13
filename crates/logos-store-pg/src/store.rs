@@ -555,6 +555,8 @@ impl PostgresStore {
         )
     }
 
+        // # Errors
+        // Returns `StoreError` if connection fails.
     /// # Errors
     /// Returns `StoreError` if connection fails.
     pub fn connect(database_url: &str) -> Result<Self, StoreError> {
@@ -579,15 +581,19 @@ impl PostgresStore {
         self.connection.borrow_mut()
     }
 
+        // # Errors
+        // Returns `StoreError` on fetch failure.
     /// # Errors
-    /// Returns `StoreError` on fetch failure.
+    /// Returns `StoreError` if checking migrations fails.
     pub fn pending_migrations(&mut self) -> Result<Vec<String>, StoreError> {
         let mut connection = self.connection.borrow_mut();
         pending_migration_names(&mut connection)
     }
 
+        // # Errors
+        // Returns `StoreError` on execution failure.
     /// # Errors
-    /// Returns `StoreError` on execution failure.
+    /// Returns `StoreError` if running migrations fails.
     pub fn run_migrations(&mut self) -> Result<Vec<String>, StoreError> {
         let mut connection = self.connection.borrow_mut();
         run_pending_migrations(&mut connection)
@@ -679,9 +685,9 @@ impl PostgresStore {
             HashMap::with_capacity(transaction_ids.len());
 
         for posting_row in posting_rows {
-            /// ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`
-            /// on the `String` transaction ID for every single posting row.
-            /// This reduces heap allocations by roughly 50-75% depending on average postings per transaction.
+        // ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`
+        // on the `String` transaction ID for every single posting row.
+        // This reduces heap allocations by roughly 50-75% depending on average postings per transaction.
             if let Some(postings) = postings_by_transaction.get_mut(&posting_row.transaction_id) {
                 postings.push(posting_row);
             } else {
