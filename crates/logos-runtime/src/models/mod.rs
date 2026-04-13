@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use logos_store::model::StoredFetchRun;
 use logos_store::model::{StoredMonthClose, StoredReconciliationRun};
 use std::path::{Path, PathBuf};

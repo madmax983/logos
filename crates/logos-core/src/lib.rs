@@ -12,7 +12,7 @@
 //! - **[`domain`]**: The foundational pieces of the ledger. Accounts, Transactions, Budgets, and RSUs.
 //! - **[`error`]**: Defines [`DomainError`], the one-stop shop for everything that can go wrong when breaking the rules.
 //! - **[`planning`]**: High-level financial forecasting. From automated RSU distribution to FIRE simulations and Net Worth Projection.
-//! - **[`experimental`]**: Beta features or proofs of concept. Use at your own risk.
+//! - **`experimental`**: Beta features or proofs of concept. Use at your own risk. Only available when the `nova` feature is enabled.
 //!
 //! ## Examples
 //!
@@ -46,6 +46,9 @@
 
 pub mod domain;
 pub mod error;
+/// Experimental features developed in 'Nova' mode (e.g. fire ascent, mermaid exporter).
+/// These modules are purely additive and do not alter core domain logic.
+#[cfg(feature = "nova")]
 pub mod experimental;
 pub mod planning;
 

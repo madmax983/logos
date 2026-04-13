@@ -50,16 +50,19 @@ impl SecretBundle {
         })
     }
 
+    /// The resolved plaintext username.
     #[must_use]
     pub fn username(&self) -> &str {
         &self.username
     }
 
+    /// The resolved plaintext password.
     #[must_use]
     pub fn password(&self) -> &str {
         &self.password
     }
 
+    /// The resolved Time-Based One-Time Password, if one was provided.
     #[must_use]
     pub fn totp_code(&self) -> Option<&str> {
         self.totp_code.as_deref()

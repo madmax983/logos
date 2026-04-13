@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 diesel::table! {
     transactions (id) {
         id -> Text,

@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 #[cfg(feature = "nova")]
 pub mod asset_depreciation;
 #[cfg(feature = "nova")]

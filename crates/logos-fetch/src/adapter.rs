@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Traits and models for adapters that fetch financial statements.
 //!
 //! This module defines the `StatementAdapter` interface that must be

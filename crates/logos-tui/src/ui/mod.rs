@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 pub mod budget;
 pub mod home;
 pub mod reconcile;

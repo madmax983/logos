@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Domain models for statement fetching and artifacts.
 //!
 //! This module defines the core data structures used by `logos-fetch` to describe

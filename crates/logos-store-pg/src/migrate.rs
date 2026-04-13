@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use diesel::migration::Migration;
 use diesel::pg::PgConnection;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};

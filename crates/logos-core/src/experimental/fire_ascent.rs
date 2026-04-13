@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use crate::planning::fire::FireSimulator;
 use crate::planning::net_worth_projector::NetWorthProjector;
 

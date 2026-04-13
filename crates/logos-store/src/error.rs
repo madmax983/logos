@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use core::fmt;
 
 use logos_core::{DomainError, TransactionId};

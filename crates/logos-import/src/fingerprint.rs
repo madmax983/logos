@@ -12,6 +12,13 @@ const FIELD_MEMO: u8 = 4;
 const FIELD_ACCOUNT: u8 = 5;
 const FIELD_CATEGORY: u8 = 6;
 
+/// Generates a stable, cryptographically secure hash representing the exact contents
+/// of an import record.
+///
+/// This is used internally by the ledger database to automatically deduplicate
+/// transactions. If you upload the exact same bank statement twice, the fingerprint
+/// ensures that the duplicate rows are safely ignored instead of double-counting
+/// your expenses.
 #[must_use]
 pub fn deterministic_fingerprint(record: &ImportRecord) -> String {
     let mut hasher = Hasher::new();

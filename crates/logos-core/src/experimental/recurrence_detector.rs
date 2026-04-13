@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use crate::domain::transaction::Transaction;
 use crate::experimental::cashflow_projector::RecurringTemplate;
 use std::collections::HashMap;

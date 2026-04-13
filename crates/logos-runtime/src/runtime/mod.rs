@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 struct SnapshotPostingRow {
     txn_id: String,
     description: String,

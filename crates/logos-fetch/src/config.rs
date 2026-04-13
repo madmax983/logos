@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Configuration models for statement sources.
 //!
 //! This module provides parsing and deserialization for the overall fetch configuration,

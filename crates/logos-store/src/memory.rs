@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! The Memory Store
 //!
 //! An ephemeral, hashmap-backed implementation of the [`LedgerStore`] trait.

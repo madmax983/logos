@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Asset Depreciation Simulator
 //!
 //! A module to project the future value of physical assets (like vehicles or hardware)

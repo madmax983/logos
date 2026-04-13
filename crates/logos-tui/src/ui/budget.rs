@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use comfy_table::Table;
 
 use crate::app::BudgetSnapshot;

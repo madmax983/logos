@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use comfy_table::{Cell, Color, Table};
 
 use crate::app::RegisterSnapshot;

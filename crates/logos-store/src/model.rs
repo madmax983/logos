@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Storage Models
 //!
 //! Defines the "plain old data" structs that represent how domain concepts are serialized and retrieved from the persistence layer.

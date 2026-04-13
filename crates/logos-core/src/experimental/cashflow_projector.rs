@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Cashflow Projection Module
 //!
 //! # Seeing Around Corners

@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use logos_import::ImportError;
 use logos_store::error::StoreError;
 use std::fmt;

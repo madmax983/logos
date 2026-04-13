@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! Terminal session lifecycle and raw rendering abstractions.
 //!
 //! Provides the boundary between the internal `App` state and the `ratatui` + `crossterm`

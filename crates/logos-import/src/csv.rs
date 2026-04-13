@@ -1,14 +1,48 @@
 use core::fmt;
 
+/// Represents the ways an import operation can fail.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ImportError {
-    MissingColumns { expected: usize, found: usize },
+    /// The CSV row did not have the required number of columns.
+    MissingColumns {
+        /// The expected minimum number of columns.
+        expected: usize,
+        /// The actual number of columns found.
+        found: usize,
+    },
+    /// The amount field in the CSV row was invalid or missing.
     InvalidAmount,
-    InvalidAmountAtColumn { column: usize, value: String },
-    InvalidCsvRow { message: String },
-    FileReadFailed { path: String, message: String },
-    PdfTextExtractionFailed { path: String, message: String },
-    NoStatementRows { path: String },
+    /// The amount field at a specific column could not be parsed.
+    InvalidAmountAtColumn {
+        /// The 0-based index of the column containing the invalid amount.
+        column: usize,
+        /// The string value that failed to parse as an integer amount in cents.
+        value: String,
+    },
+    /// The CSV row had a malformed syntax (e.g. unterminated quotes).
+    InvalidCsvRow {
+        /// A descriptive message of what was wrong with the row syntax.
+        message: String,
+    },
+    /// The file could not be read from the filesystem.
+    FileReadFailed {
+        /// The path of the file that was attempted to be read.
+        path: String,
+        /// The underlying OS error message.
+        message: String,
+    },
+    /// Text extraction from a PDF document failed.
+    PdfTextExtractionFailed {
+        /// The path of the PDF file.
+        path: String,
+        /// The specific error from the PDF extraction engine.
+        message: String,
+    },
+    /// The document was parsed successfully but did not contain any matching statement rows.
+    NoStatementRows {
+        /// The path to the document that contained no statement records.
+        path: String,
+    },
 }
 
 impl fmt::Display for ImportError {
@@ -37,13 +71,20 @@ impl fmt::Display for ImportError {
 
 impl std::error::Error for ImportError {}
 
+/// Represents the column indices for a generic CSV mapping.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CsvMapping {
+    /// A unique identifier for the source system generating this CSV.
     pub source_id: String,
+    /// The 0-based column index where the date/time is located.
     pub timestamp_idx: usize,
+    /// The 0-based column index where the transaction amount (in cents) is located.
     pub amount_idx: usize,
+    /// The 0-based column index where the transaction description or memo is located.
     pub memo_idx: usize,
+    /// The 0-based column index where the account name is located.
     pub account_idx: usize,
+    /// The 0-based column index where the category is located.
     pub category_idx: usize,
 }
 
@@ -60,6 +101,10 @@ impl Default for CsvMapping {
     }
 }
 
+/// An intermediate representation of a single transaction parsed from an external file.
+///
+/// This type ensures all required fields are present before attempting to construct
+/// a full `Transaction` via the core builder, which enforces double-entry rules.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportRecord {
     source_id: String,
@@ -71,6 +116,7 @@ pub struct ImportRecord {
 }
 
 impl ImportRecord {
+    /// Creates a new `ImportRecord` from raw, parsed fields.
     #[must_use]
     pub fn new(
         source_id: &str,
@@ -90,31 +136,37 @@ impl ImportRecord {
         }
     }
 
+    /// The source system identifier.
     #[must_use]
     pub fn source_id(&self) -> &str {
         &self.source_id
     }
 
+    /// The raw timestamp string from the import source.
     #[must_use]
     pub fn timestamp(&self) -> &str {
         &self.timestamp
     }
 
+    /// The parsed transaction amount in cents.
     #[must_use]
     pub const fn amount_cents(&self) -> i64 {
         self.amount_cents
     }
 
+    /// The description or memo attached to the transaction.
     #[must_use]
     pub fn memo(&self) -> &str {
         &self.memo
     }
 
+    /// The primary account name affected by this transaction.
     #[must_use]
     pub fn account(&self) -> &str {
         &self.account
     }
 
+    /// The category group or categorization tag.
     #[must_use]
     pub fn category(&self) -> &str {
         &self.category

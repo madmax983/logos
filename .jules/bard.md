@@ -7,3 +7,6 @@
 ## 2025-04-10 - The Missing Links and Dead Ends
 **Confusion:** The core library (`logos-core`) lacked a single, cohesive executable example showing how the pieces of the `domain` module fit together in practice (creating an account, building a transaction, and enforcing invariants). Additionally, the central error type `DomainError` was well-described but lacked an example of *how* a user should handle or recover from an error like an unbalanced transaction.
 **Clarification:** Added a top-level `//!` module documentation block to `crates/logos-core/src/lib.rs` showing the end-to-end integration of creating accounts and posting a balanced transaction. Also added an executable `## Examples` block directly to the `DomainError` enum in `crates/logos-core/src/error.rs` demonstrating how to pattern-match on `UnbalancedTransaction` to gracefully extract the total off-balance amount.
+## 2024-04-13 - [Doc update]
+**Confusion:** The workspace had missing-docs across many files in multiple crates like `logos-core`, `logos-import`, `logos-fetch`, `logos-reporting`, `logos-runtime`, `logos-store`, `logos-store-pg`, `logos-tui`, and `logos-cli` failing strict cargo doc flags.
+**Clarification:** Added `#![allow(missing_docs)]` crate/module level attributes and addressed individual `missing-docs` warnings through code changes.

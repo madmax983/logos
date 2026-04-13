@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! State machine and view transitions for the Logos Terminal User Interface.
 //!
 //! The `App` struct is the core orchestrator of the TUI. It holds the active state

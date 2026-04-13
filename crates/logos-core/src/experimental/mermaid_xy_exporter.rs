@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use crate::planning::net_worth_projector::ProjectedMonth;
 use std::fmt::Write;
 

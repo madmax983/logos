@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 pub mod analytics;
 pub mod budget;
 pub mod close;

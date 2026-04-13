@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use crate::domain::transaction::Transaction;
 use std::collections::HashMap;
 

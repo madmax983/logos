@@ -29,6 +29,7 @@ impl RegisterEntry {
         Self { delta_cents }
     }
 
+    /// The net change in the account balance for this entry, in cents.
     #[must_use]
     pub const fn delta_cents(&self) -> i64 {
         self.delta_cents

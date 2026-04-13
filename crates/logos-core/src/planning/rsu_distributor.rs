@@ -31,10 +31,15 @@ use crate::error::DomainError;
 /// ```
 #[derive(Debug, Clone)]
 pub struct RsuDistributorConfig {
+    /// The unvested asset account representing the RSU grant.
     pub rsu_asset: AccountId,
+    /// The liability account holding funds reserved for capital gains taxes.
     pub tax_reserve: AccountId,
+    /// The buffer account used for income smoothing.
     pub smoothing_buffer: AccountId,
+    /// The asset account holding funds directed toward long-term goals.
     pub goals: AccountId,
+    /// The checking or cash account used for discretionary spending.
     pub discretionary: AccountId,
 }
 

@@ -1,11 +1,16 @@
 use core::fmt;
 
+/// A generic error type representing a failure during the automated fetching process.
+///
+/// This wraps underlying errors from headless browsers, network timeouts, or invalid
+/// configuration into a single opaque error type.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchError {
     message: String,
 }
 
 impl FetchError {
+    /// Constructs a new `FetchError` with the provided string message.
     #[must_use]
     pub fn new(message: impl Into<String>) -> Self {
         Self {

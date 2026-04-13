@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! The Ledger Store Contract
 //!
 //! This module defines the [`LedgerStore`] trait, which acts as the persistence backbone for all `logos` business logic.

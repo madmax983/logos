@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -679,9 +680,9 @@ impl PostgresStore {
             HashMap::with_capacity(transaction_ids.len());
 
         for posting_row in posting_rows {
-            /// ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`
-            /// on the `String` transaction ID for every single posting row.
-            /// This reduces heap allocations by roughly 50-75% depending on average postings per transaction.
+            // ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`
+            // on the `String` transaction ID for every single posting row.
+            // This reduces heap allocations by roughly 50-75% depending on average postings per transaction.
             if let Some(postings) = postings_by_transaction.get_mut(&posting_row.transaction_id) {
                 postings.push(posting_row);
             } else {

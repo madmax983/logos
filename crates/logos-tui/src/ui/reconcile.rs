@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use comfy_table::{Cell, Color, Table};
 use crossterm::style::Stylize;
 
