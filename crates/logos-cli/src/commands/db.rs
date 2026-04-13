@@ -99,7 +99,7 @@ fn connect_store_with_env(
     })?;
     PostgresStore::connect(&database_url).map_err(|err| CliError::CommandRuntimeFailed {
         command: command.to_owned(),
-        message: format!("database connection failed: {err}"),
+        message: err.to_string(),
     })
 }
 
@@ -118,7 +118,7 @@ mod tests {
         };
         assert_eq!(
             err.to_string(),
-            "Command 'db.status' failed: DATABASE_URL is not set."
+            "Command 'db.status' failed: DATABASE_URL is not set"
         );
     }
 }
