@@ -28,15 +28,17 @@ impl MermaidSankeyExporter {
     /// The algorithm proportionally distributes credits to debits within each
     /// transaction to determine flow.
     #[must_use]
+    /// ⚡ Bolt Optimization: Uses `.iter().filter()` instead of `.partition()` to avoid
+    /// allocating two intermediate `Vec<&Posting>` (credits and debits) per transaction
+    /// during the export generation loop.
     pub fn export_sankey(&self) -> String {
         let mut flows: HashMap<(&str, &str), i64> = HashMap::new();
 
         for tx in &self.transactions {
-            let (credits, debits): (Vec<&Posting>, Vec<&Posting>) =
-                tx.postings().iter().partition(|p| p.amount() < 0);
-
-            let total_credit: i64 = credits
+            let total_credit: i64 = tx
+                .postings()
                 .iter()
+                .filter(|p| p.amount() < 0)
                 .map(|p| p.amount().abs())
                 .fold(0_i64, i64::saturating_add);
 
@@ -44,14 +46,14 @@ impl MermaidSankeyExporter {
                 continue; // Prevent division by zero, though valid txns shouldn't have 0 total
             }
 
-            for credit in &credits {
+            for credit in tx.postings().iter().filter(|p| p.amount() < 0) {
                 let credit_amount = credit.amount().abs();
 
                 // Determine the proportion of the total credit pool this specific credit represents
                 #[allow(clippy::cast_precision_loss)]
                 let credit_proportion = credit_amount as f64 / total_credit as f64;
 
-                for debit in &debits {
+                for debit in tx.postings().iter().filter(|p| p.amount() >= 0) {
                     let debit_amount = debit.amount();
 
                     // The flow from this credit to this debit is the debit's amount multiplied by the credit's proportion
