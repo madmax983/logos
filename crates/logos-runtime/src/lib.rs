@@ -1,5 +1,5 @@
-pub mod error;
-pub mod models;
+pub(crate) mod error;
+pub(crate) mod models;
 pub mod runtime;
 
 pub use error::RuntimeError;
