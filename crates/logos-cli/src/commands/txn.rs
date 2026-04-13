@@ -328,7 +328,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Command 'txn.add' failed: missing columns: expected 5, found 2."
+            "Command 'txn.add' failed: missing columns: expected 5, found 2"
         );
     }
 
@@ -379,7 +379,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Command 'txn.correct' failed: missing columns: expected 5, found 2."
+            "Command 'txn.correct' failed: missing columns: expected 5, found 2"
         );
     }
 }

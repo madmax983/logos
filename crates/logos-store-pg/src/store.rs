@@ -566,7 +566,7 @@ impl PostgresStore {
 
         let connection =
             PgConnection::establish(database_url).map_err(|err| StoreError::ConnectionFailed {
-                message: err.to_string(),
+                message: if err.to_string().contains("Connection refused") { "Connection Refused: Postgres may still be starting up.".to_string() } else { err.to_string() },
             })?;
 
         Ok(Self {
@@ -679,9 +679,9 @@ impl PostgresStore {
             HashMap::with_capacity(transaction_ids.len());
 
         for posting_row in posting_rows {
-            /// ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`
-            /// on the `String` transaction ID for every single posting row.
-            /// This reduces heap allocations by roughly 50-75% depending on average postings per transaction.
+            // ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`
+            // on the `String` transaction ID for every single posting row.
+            // This reduces heap allocations by roughly 50-75% depending on average postings per transaction.
             if let Some(postings) = postings_by_transaction.get_mut(&posting_row.transaction_id) {
                 postings.push(posting_row);
             } else {
