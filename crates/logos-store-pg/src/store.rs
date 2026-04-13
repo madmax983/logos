@@ -321,6 +321,34 @@ pub struct PostgresStore {
 }
 
 impl PostgresStore {
+    fn execute_reconciliation_run_transaction(
+        connection: &mut PgConnection,
+        run_row: &NewReconciliationRunRow<'_>,
+        transaction_rows: &[NewReconciliationRunTransactionRow<'_>],
+        statement_line_rows: &[NewReconciliationRunStatementLineRow<'_>],
+    ) -> Result<(), StoreError> {
+        connection
+            .transaction::<(), diesel::result::Error, _>(|conn| {
+                diesel::insert_into(reconciliation_runs::table)
+                    .values(run_row)
+                    .execute(conn)?;
+                if !transaction_rows.is_empty() {
+                    diesel::insert_into(reconciliation_run_transactions::table)
+                        .values(transaction_rows)
+                        .execute(conn)?;
+                }
+                if !statement_line_rows.is_empty() {
+                    diesel::insert_into(reconciliation_run_statement_lines::table)
+                        .values(statement_line_rows)
+                        .execute(conn)?;
+                }
+                Ok(())
+            })
+            .map_err(|err| {
+                persist_failure(format!("persisting reconciliation run failed: {err}"))
+            })
+    }
+
     fn execute_reconciliation_and_close_transaction(
         connection: &mut PgConnection,
         run_row: &NewReconciliationRunRow<'_>,
@@ -679,9 +707,9 @@ impl PostgresStore {
             HashMap::with_capacity(transaction_ids.len());
 
         for posting_row in posting_rows {
-            /// ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`
-            /// on the `String` transaction ID for every single posting row.
-            /// This reduces heap allocations by roughly 50-75% depending on average postings per transaction.
+            // ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`
+            // on the `String` transaction ID for every single posting row.
+            // This reduces heap allocations by roughly 50-75% depending on average postings per transaction.
             if let Some(postings) = postings_by_transaction.get_mut(&posting_row.transaction_id) {
                 postings.push(posting_row);
             } else {
@@ -1962,26 +1990,12 @@ impl LedgerStore for PostgresStore {
         let statement_line_rows =
             Self::build_reconciliation_statement_line_rows(&run_id, &statement_line_ids);
 
-        connection
-            .transaction::<(), diesel::result::Error, _>(|conn| {
-                diesel::insert_into(reconciliation_runs::table)
-                    .values(&run_row)
-                    .execute(conn)?;
-                if !transaction_rows.is_empty() {
-                    diesel::insert_into(reconciliation_run_transactions::table)
-                        .values(&transaction_rows)
-                        .execute(conn)?;
-                }
-                if !statement_line_rows.is_empty() {
-                    diesel::insert_into(reconciliation_run_statement_lines::table)
-                        .values(&statement_line_rows)
-                        .execute(conn)?;
-                }
-                Ok(())
-            })
-            .map_err(|err| {
-                persist_failure(format!("persisting reconciliation run failed: {err}"))
-            })?;
+        Self::execute_reconciliation_run_transaction(
+            &mut connection,
+            &run_row,
+            &transaction_rows,
+            &statement_line_rows,
+        )?;
 
         Ok(StoredReconciliationRun::new(
             &run_id,
