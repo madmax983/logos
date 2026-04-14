@@ -1,6 +1,13 @@
 //! Cashflow projection engine.
 //!
-//! Provides the math to calculate net cash flow from income and expenses.
+//! # The Velocity of Money
+//!
+//! While net worth measures your total wealth, cashflow measures your momentum.
+//! This module provides the math to calculate the net result of money flowing into
+//! your accounts versus money flowing out.
+//!
+//! A positive cashflow (surplus) indicates wealth accumulation, while a negative
+//! cashflow (deficit) indicates wealth depletion, regardless of your overall net worth.
 
 /// Projects net cash flow by subtracting total expenses from total income.
 ///

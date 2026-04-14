@@ -1,7 +1,13 @@
 //! Register balance projection.
 //!
-//! Provides structures and functions to calculate the running balance of an account
-//! by applying a sequence of historical delta entries to an opening balance.
+//! # The Flow of Time
+//!
+//! Because `logos-core` treats the ledger as an append-only log of transactions,
+//! the concept of a "current balance" does not inherently exist on the ledger itself.
+//!
+//! This module bridges that gap. It provides structures and functions to reconstruct
+//! the running balance of an account by applying a chronological sequence of historical
+//! delta entries to a known starting balance.
 
 /// A single delta (change in value) to apply to a register balance.
 ///

@@ -1,6 +1,13 @@
 //! Net worth calculation engine.
 //!
-//! Provides the math to calculate total net worth from assets and liabilities.
+//! # The Bottom Line
+//!
+//! This module answers the simplest and most brutal financial question: *"What do I own,
+//! minus what do I owe?"*
+//!
+//! It provides the math to calculate total net worth by aggregating all asset balances
+//! and subtracting all liability balances, yielding the true bottom line of your
+//! financial health.
 
 /// Projects total net worth by subtracting total liabilities from total assets.
 ///

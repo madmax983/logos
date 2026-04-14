@@ -1,6 +1,14 @@
 //! Budget variance calculations.
 //!
-//! Provides the logic to compare planned targets against actuals.
+//! # The Reality Check
+//!
+//! A budget is just a hypothesis until the month ends. This module provides the logic
+//! to compare your planned targets against cold, hard reality. It answers the question:
+//! *"Did I spend what I said I was going to spend?"*
+//!
+//! By calculating the variance between the budget limit and the actual spending, it
+//! allows the system to determine if an envelope has a surplus (which can be rolled over)
+//! or a deficit (which must be covered).
 
 /// Projects the variance between a planned budget and actual activity.
 ///

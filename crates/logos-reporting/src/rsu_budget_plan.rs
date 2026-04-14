@@ -1,9 +1,16 @@
-//! # Scenario-Based Budget Modeling
+//! Scenario-Based Budget Modeling
 //!
-//! Provides the mathematical models for converting volatile Restricted Stock Units (RSUs)
+//! # Taming the Rollercoaster
+//!
+//! RSUs are typically paid quarterly and their value is incredibly volatile. Standard budgeting
+//! requires a stable, predictable monthly income. How do you reconcile the two?
+//!
+//! This module provides the mathematical models for converting volatile Restricted Stock Units (RSUs)
 //! into stable monthly budgets. Because stock prices fluctuate, this module enforces
-//! a "Bear Case First" planning model, guaranteeing that fixed commitments are always
-//! covered by the worst-case price scenario.
+//! a "Bear Case First" planning model. It calculates the minimum safe monthly income derived from the
+//! worst-case price scenario, guaranteeing that fixed commitments are always safely covered.
+//! Any surplus generated from "base" or "bull" scenarios is automatically modeled as sweeps
+//! into investing or reserve buckets.
 
 use logos_core::{HaircutTierTable, forecast_value_cents};
 

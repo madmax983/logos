@@ -1,8 +1,14 @@
-//! # RSU Forecasting
+//! RSU Forecasting
 //!
-//! Provides aggregation metrics for projected RSU vesting events.
-//! This module summarizes a series of discrete future liquidity events
-//! into high-level totals for reporting.
+//! # The Future in Focus
+//!
+//! RSU grants consist of many discrete vesting events scattered months or years
+//! into the future. Looking at a raw schedule of hundreds of fractional share drops
+//! is overwhelming and unhelpful for high-level planning.
+//!
+//! This module solves that by rolling up those discrete, future liquidity events
+//! into high-level aggregated totals. It provides the reporting layer necessary to
+//! summarize total anticipated value and event frequency over a given time horizon.
 
 /// A high-level summary of a series of projected RSU vesting events.
 ///
