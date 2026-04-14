@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Write;
 
-use crate::domain::transaction::{Posting, Transaction};
+use crate::domain::transaction::Transaction;
 
 /// Exports a collection of transactions into a Mermaid Sankey diagram.
 ///
@@ -94,7 +94,7 @@ impl MermaidSankeyExporter {
 mod tests {
     use super::*;
     use crate::AccountId;
-    use crate::domain::transaction::TransactionBuilder;
+    use crate::domain::transaction::{Posting, TransactionBuilder};
 
     #[test]
     fn test_simple_transfer() {

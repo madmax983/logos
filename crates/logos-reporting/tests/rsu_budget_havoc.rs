@@ -1,6 +1,6 @@
 #![allow(clippy::should_panic_without_expect)]
 
-use logos_reporting::{project_rsu_budget_plan, RsuBudgetPlanInput, ScenarioPriceInputs};
+use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
 use proptest::prelude::*;
 
 proptest! {
