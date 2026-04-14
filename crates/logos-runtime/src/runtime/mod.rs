@@ -1079,9 +1079,13 @@ impl<S: LedgerStore> AppRuntime<S> {
 
         let mut imported_count = 0_usize;
         let mut duplicate_count = 0_usize;
-        let mut seen_in_call: HashSet<String> = HashSet::new();
-        let mut imported_records = Vec::new();
-        let mut imported_keys = Vec::new();
+
+        // ⚡ Bolt Optimization: Pre-allocate collections to prevent repeated heap allocations
+        // and re-hashing as records are imported.
+        let estimated_lines = csv_text.lines().count();
+        let mut seen_in_call: HashSet<String> = HashSet::with_capacity(estimated_lines);
+        let mut imported_records = Vec::with_capacity(estimated_lines);
+        let mut imported_keys = Vec::with_capacity(estimated_lines);
 
         for (line_idx, row) in csv_text.lines().enumerate() {
             if skip_header && line_idx == 0 {

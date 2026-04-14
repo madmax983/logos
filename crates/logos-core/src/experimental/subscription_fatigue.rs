@@ -91,10 +91,7 @@ mod tests {
         for _ in 0..3 {
             let tx = TransactionBuilder::new("Gym")
                 .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 5000).unwrap())
-                .posting(
-                    Posting::debit(AccountId::new("expenses:health").unwrap(), 5000)
-                        .unwrap(),
-                )
+                .posting(Posting::debit(AccountId::new("expenses:health").unwrap(), 5000).unwrap())
                 .build()
                 .unwrap();
             transactions.push(tx);
@@ -112,15 +109,26 @@ mod tests {
 
         assert_eq!(report.items.len(), 2);
 
-        let gym = report.items.iter().find(|i| i.description == "Gym").unwrap();
+        let gym = report
+            .items
+            .iter()
+            .find(|i| i.description == "Gym")
+            .unwrap();
         assert_eq!(gym.monthly_cost_cents, 5000);
 
-        let netflix = report.items.iter().find(|i| i.description == "Netflix").unwrap();
+        let netflix = report
+            .items
+            .iter()
+            .find(|i| i.description == "Netflix")
+            .unwrap();
         assert_eq!(netflix.monthly_cost_cents, 1599);
 
         assert_eq!(report.total_monthly_cost_cents, 6599);
 
         // Ensure total opportunity cost is the sum of the individual items
-        assert_eq!(report.total_opportunity_cost_cents, gym.future_value_cents + netflix.future_value_cents);
+        assert_eq!(
+            report.total_opportunity_cost_cents,
+            gym.future_value_cents + netflix.future_value_cents
+        );
     }
 }
