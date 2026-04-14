@@ -33,6 +33,8 @@ pub mod anomaly_detector;
 #[cfg(feature = "nova")]
 pub mod category_trends;
 #[cfg(feature = "nova")]
+pub mod income_router;
+#[cfg(feature = "nova")]
 pub mod runway_simulator;
 #[cfg(feature = "nova")]
 pub mod subscription_fatigue;
