@@ -903,7 +903,7 @@ fn e2e_month_autopilot_is_atomic_when_close_reference_is_invalid() {
         .run_month_autopilot(&request)
         .expect_err("autopilot should fail");
     assert!(
-        err.to_string().contains("unknown artifact"),
+        err.to_string().contains("Unknown artifact"),
         "unexpected error: {err}"
     );
     assert_eq!(runtime.reconciliation_run_count(), 0);

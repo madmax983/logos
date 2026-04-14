@@ -16,7 +16,7 @@ pub fn migrate() -> Result<(), CliError> {
         .run_migrations()
         .map_err(|err| CliError::CommandRuntimeFailed {
             command: "db.migrate".to_owned(),
-            message: format!("migration execution failed: {err}"),
+            message: err.to_string(),
         })?;
 
     if applied.is_empty() {
@@ -118,7 +118,7 @@ mod tests {
         };
         assert_eq!(
             err.to_string(),
-            "Command 'db.status' failed: DATABASE_URL is not set"
+            "DATABASE_URL is not set"
         );
     }
 }

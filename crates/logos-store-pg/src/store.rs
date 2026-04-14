@@ -606,7 +606,7 @@ impl PostgresStore {
 
         let connection =
             PgConnection::establish(database_url).map_err(|err| StoreError::ConnectionFailed {
-                message: if err.to_string().contains("Connection refused") { "Connection Refused: Postgres may still be starting up.".to_string() } else { err.to_string() },
+                message: if err.to_string().contains("Connection refused") { "Connection Refused: Postgres may still be starting up".to_string() } else { err.to_string() },
             })?;
 
         Ok(Self {

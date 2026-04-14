@@ -59,7 +59,7 @@ pub fn add(
 ) -> Result<(), CliError> {
     let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "txn.add".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+        message: err.to_string(),
     })?;
     let transaction_id = post_double_entry(
         description,
@@ -104,7 +104,7 @@ pub fn add(
 pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
     let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "txn.correct".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+        message: err.to_string(),
     })?;
     apply_correction(supersedes_id, reason, &mut runtime)?;
     let mut table = comfy_table::Table::new();
@@ -289,7 +289,7 @@ mod tests {
         .expect_err("empty description");
 
         assert_eq!(poster.calls, 0);
-        assert_eq!(err.to_string(), "Missing transaction description.");
+        assert_eq!(err.to_string(), "Missing transaction description");
     }
 
     #[test]
@@ -306,7 +306,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Invalid value '-1' for argument '--amount-cents'."
+            "Invalid value '-1' for argument '--amount-cents'"
         );
         assert_eq!(poster.calls, 0);
     }
@@ -325,7 +325,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Invalid value '0' for argument '--amount-cents'."
+            "Invalid value '0' for argument '--amount-cents'"
         );
         assert_eq!(poster.calls, 0);
     }
@@ -347,7 +347,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Command 'txn.add' failed: missing columns: expected 5, found 2"
+            "missing columns: expected 5, found 2"
         );
     }
 
@@ -374,7 +374,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Missing value for argument '--supersedes-id'."
+            "Missing value for argument '--supersedes-id'"
         );
         assert_eq!(poster.correction_calls, 0);
     }
@@ -384,7 +384,7 @@ mod tests {
         let mut poster = FakePoster::default();
         let err = apply_correction("txn-7", "   ", &mut poster).expect_err("missing reason");
 
-        assert_eq!(err.to_string(), "Missing value for argument '--reason'.");
+        assert_eq!(err.to_string(), "Missing value for argument '--reason'");
         assert_eq!(poster.correction_calls, 0);
     }
 
@@ -398,7 +398,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Command 'txn.correct' failed: missing columns: expected 5, found 2"
+            "missing columns: expected 5, found 2"
         );
     }
 }

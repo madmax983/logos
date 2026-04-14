@@ -20,22 +20,20 @@ impl fmt::Display for StoreError {
             Self::UnknownTransaction { transaction_id } => {
                 write!(
                     f,
-                    "cannot apply correction: unknown transaction '{}'",
+                    "Unknown transaction '{}'",
                     transaction_id.as_str()
                 )
             }
             Self::UnknownArtifact { artifact_id } => {
                 write!(
                     f,
-                    "cannot link analytics artifact: unknown artifact '{artifact_id}'"
+                    "Unknown artifact '{artifact_id}'"
                 )
             }
-            Self::LoadFailed { message } => write!(f, "failed to load store: {message}"),
-            Self::PersistFailed { message } => write!(f, "failed to persist store: {message}"),
-            Self::ConnectionFailed { message } => {
-                write!(f, "failed to connect to store: {message}")
-            }
-            Self::MigrationFailed { message } => write!(f, "store migration failed: {message}"),
+            Self::LoadFailed { message } => write!(f, "{message}"),
+            Self::PersistFailed { message } => write!(f, "{message}"),
+            Self::ConnectionFailed { message } => write!(f, "{message}"),
+            Self::MigrationFailed { message } => write!(f, "{message}"),
         }
     }
 }

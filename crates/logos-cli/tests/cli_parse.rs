@@ -39,7 +39,7 @@ fn rejects_txn_correct_when_missing_reason() {
     let args = vec!["ledger", "txn", "correct", "--supersedes-id", "txn-7"];
     let err = logos_cli::parse_args(args).expect_err("missing reason");
 
-    assert_eq!(err.to_string(), "Missing value for argument '--reason'.");
+    assert_eq!(err.to_string(), "Missing value for argument '--reason'");
 }
 
 #[test]
@@ -59,7 +59,7 @@ fn rejects_txn_add_when_missing_debit_account_flag() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--debit-account'."
+        "Missing value for argument '--debit-account'"
     );
 }
 
@@ -80,7 +80,7 @@ fn rejects_txn_add_when_missing_credit_account_flag() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--credit-account'."
+        "Missing value for argument '--credit-account'"
     );
 }
 
@@ -101,7 +101,7 @@ fn rejects_txn_add_when_missing_amount_cents_flag() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--amount-cents'."
+        "Missing value for argument '--amount-cents'"
     );
 }
 
@@ -124,7 +124,7 @@ fn rejects_txn_add_when_amount_cents_is_not_integer() {
 
     assert_eq!(
         err.to_string(),
-        "Invalid value 'ten' for argument '--amount-cents'."
+        "Invalid value 'ten' for argument '--amount-cents'"
     );
 }
 
@@ -333,7 +333,7 @@ fn rejects_analytics_snapshot_show_without_artifact_id() {
     let err = logos_cli::parse_args(args).expect_err("missing artifact id");
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--artifact-id'."
+        "Missing value for argument '--artifact-id'"
     );
 }
 
@@ -418,7 +418,7 @@ fn rejects_import_pdf_when_missing_file_flag() {
     let args = vec!["ledger", "import", "pdf"];
     let err = logos_cli::parse_args(args).expect_err("missing file flag");
 
-    assert_eq!(err.to_string(), "Missing value for argument '--file'.");
+    assert_eq!(err.to_string(), "Missing value for argument '--file'");
 }
 
 #[test]
@@ -510,7 +510,7 @@ fn rejects_import_csv_when_missing_required_flag_value() {
         "--timestamp-idx".to_string(),
     ];
     let err = logos_cli::parse_args(args).expect_err("missing file flag value");
-    assert_eq!(err.to_string(), "Missing value for argument '--file'.");
+    assert_eq!(err.to_string(), "Missing value for argument '--file'");
 }
 
 #[test]
@@ -526,7 +526,7 @@ fn rejects_budget_set_when_missing_optional_flag_value() {
     // Since `--budget-cents` is parsed first in the source, it is the one missing its value!
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--budget-cents'."
+        "Missing value for argument '--budget-cents'"
     );
 }
 
@@ -545,7 +545,7 @@ fn rejects_import_csv_when_mapping_index_is_not_integer() {
 
     assert_eq!(
         err.to_string(),
-        "Invalid value 'x' for argument '--amount-idx'."
+        "Invalid value 'x' for argument '--amount-idx'"
     );
 }
 
@@ -596,7 +596,7 @@ fn rejects_budget_set_when_budget_cents_is_not_integer() {
 
     assert_eq!(
         err.to_string(),
-        "Invalid value 'ten' for argument '--budget-cents'."
+        "Invalid value 'ten' for argument '--budget-cents'"
     );
 }
 
@@ -624,7 +624,7 @@ fn rejects_budget_set_when_month_is_invalid() {
 
     assert_eq!(
         err.to_string(),
-        "Invalid value '2026-13' for argument '--month'."
+        "Invalid value '2026-13' for argument '--month'"
     );
 }
 
@@ -687,7 +687,7 @@ fn rejects_budget_rsu_plan_without_quarterly_units() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--quarterly-units'."
+        "Missing value for argument '--quarterly-units'"
     );
 }
 
@@ -756,7 +756,7 @@ fn rejects_report_month_when_month_is_invalid() {
 
     assert_eq!(
         err.to_string(),
-        "Invalid value '2026-00' for argument '--month'."
+        "Invalid value '2026-00' for argument '--month'"
     );
 }
 
@@ -833,7 +833,7 @@ fn rejects_reconcile_month_when_missing_opening_balance() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--opening-balance-cents'."
+        "Missing value for argument '--opening-balance-cents'"
     );
 }
 
@@ -852,7 +852,7 @@ fn rejects_reconcile_month_when_closing_balance_is_not_integer() {
 
     assert_eq!(
         err.to_string(),
-        "Invalid value 'ten' for argument '--closing-balance-cents'."
+        "Invalid value 'ten' for argument '--closing-balance-cents'"
     );
 }
 
@@ -913,7 +913,7 @@ fn rejects_reconcile_show_without_run_id() {
     let args = vec!["ledger", "reconcile", "show"];
     let err = logos_cli::parse_args(args).expect_err("missing run id");
 
-    assert_eq!(err.to_string(), "Missing value for argument '--run-id'.");
+    assert_eq!(err.to_string(), "Missing value for argument '--run-id'");
 }
 
 #[test]
@@ -958,7 +958,7 @@ fn rejects_fetch_show_without_run_id() {
     let args = vec!["ledger", "fetch", "show-run"];
     let err = logos_cli::parse_args(args).expect_err("missing run id");
 
-    assert_eq!(err.to_string(), "Missing value for argument '--run-id'.");
+    assert_eq!(err.to_string(), "Missing value for argument '--run-id'");
 }
 
 #[test]
@@ -1053,7 +1053,7 @@ fn rejects_month_autopilot_when_only_one_balance_flag_is_present() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--opening-balance-cents' or '--closing-balance-cents'."
+        "Missing value for argument '--opening-balance-cents' or '--closing-balance-cents'"
     );
 }
 
@@ -1114,7 +1114,7 @@ fn rejects_close_month_without_run_id() {
     let args = vec!["ledger", "close", "month"];
     let err = logos_cli::parse_args(args).expect_err("missing run id");
 
-    assert_eq!(err.to_string(), "Missing value for argument '--run-id'.");
+    assert_eq!(err.to_string(), "Missing value for argument '--run-id'");
 }
 
 #[test]
@@ -1154,5 +1154,5 @@ fn rejects_aletheia_command_after_cutover() {
     let args = vec!["ledger", "aletheia", "status"];
     let err = logos_cli::parse_args(args).expect_err("aletheia must be gone");
 
-    assert_eq!(err.to_string(), "Unknown command 'aletheia'.");
+    assert_eq!(err.to_string(), "Unknown command 'aletheia'");
 }

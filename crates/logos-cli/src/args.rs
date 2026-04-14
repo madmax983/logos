@@ -21,25 +21,25 @@ pub enum CliError {
 impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::MissingCommand => write!(f, "Missing command."),
+            Self::MissingCommand => write!(f, "Missing command"),
             Self::MissingSubcommand { command } => {
-                write!(f, "Missing subcommand for command '{command}'.")
+                write!(f, "Missing subcommand for command '{command}'")
             }
-            Self::UnknownCommand { command } => write!(f, "Unknown command '{command}'."),
+            Self::UnknownCommand { command } => write!(f, "Unknown command '{command}'"),
             Self::UnknownSubcommand {
                 command,
                 subcommand,
             } => write!(
                 f,
-                "Unknown subcommand '{subcommand}' for command '{command}'."
+                "Unknown subcommand '{subcommand}' for command '{command}'"
             ),
-            Self::MissingArgValue { flag } => write!(f, "Missing value for argument '{flag}'."),
+            Self::MissingArgValue { flag } => write!(f, "Missing value for argument '{flag}'"),
             Self::InvalidArgValue { flag, value } => {
-                write!(f, "Invalid value '{value}' for argument '{flag}'.")
+                write!(f, "Invalid value '{value}' for argument '{flag}'")
             }
-            Self::MissingTxnDescription => write!(f, "Missing transaction description."),
-            Self::CommandRuntimeFailed { command, message } => {
-                write!(f, "Command '{command}' failed: {message}")
+            Self::MissingTxnDescription => write!(f, "Missing transaction description"),
+            Self::CommandRuntimeFailed { command: _, message } => {
+                write!(f, "{message}")
             }
         }
     }
