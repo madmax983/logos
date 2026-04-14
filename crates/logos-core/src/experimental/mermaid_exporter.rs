@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::fmt::Write;
 
-use crate::domain::transaction::{Posting, Transaction};
+use crate::domain::transaction::{Transaction};
+#[cfg(test)]
+use crate::domain::transaction::Posting;
 
 /// Exports a collection of transactions into a Mermaid Sankey diagram.
 ///
