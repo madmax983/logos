@@ -36,3 +36,4 @@ pub mod category_trends;
 pub mod runway_simulator;
 #[cfg(feature = "nova")]
 pub mod subscription_fatigue;
+pub mod story_demo;

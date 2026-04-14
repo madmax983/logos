@@ -1,4 +1,6 @@
 # logos
+> **REQUIRES FEATURE NOVA**
+
 
 Forward-looking personal finance CLI/TUI with strict double-entry, budget envelopes, RSU planning policy, and `logos-proof` Verus invariants.
 
