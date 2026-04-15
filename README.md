@@ -1,5 +1,7 @@
 # logos
 
+**REQUIRES FEATURE NOVA**
+
 Forward-looking personal finance CLI/TUI with strict double-entry, budget envelopes, RSU planning policy, and `logos-proof` Verus invariants.
 
 ## Current Status
@@ -42,6 +44,10 @@ Verus proofs:
 ```
 
 ## Example Commands
+
+**REQUIRES FEATURE NOVA**
+
+**REQUIRES FEATURE NOVA**
 
 ```sh
 # Required: point logos at Postgres
