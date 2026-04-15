@@ -56,7 +56,7 @@ impl RunwaySimulator {
             0.0
         };
 
-        while current_assets > 0 && months < 1200 {
+        while current_assets > 0 {
             #[allow(clippy::cast_possible_truncation)]
             let current_burn_cents = current_burn.round() as i64;
 

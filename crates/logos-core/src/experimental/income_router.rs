@@ -73,7 +73,7 @@ impl IncomeRouter {
         }
 
         // Sweep remainder to the first bucket (if any)
-        if remaining_cents > 0 && !allocations.is_empty() {
+        if remaining_cents > 0 {
             allocations[0].1 += remaining_cents;
         }
 
@@ -185,5 +185,35 @@ mod tests {
         assert!(postings.contains(&Posting::debit(dest1, 4).unwrap()));
         assert!(postings.contains(&Posting::debit(dest2, 3).unwrap()));
         assert!(postings.contains(&Posting::debit(dest3, 3).unwrap()));
+    }
+
+    #[test]
+    fn test_zero_amount_allocation_is_skipped() {
+        let source = AccountId::new("income:salary").unwrap();
+        let dest1 = AccountId::new("assets:checking").unwrap();
+        let dest2 = AccountId::new("assets:savings").unwrap();
+
+        let router = IncomeRouter::new(
+            source,
+            vec![
+                RouteRule {
+                    destination: dest1.clone(),
+                    percentage: 99,
+                },
+                RouteRule {
+                    destination: dest2,
+                    percentage: 1,
+                },
+            ],
+        )
+        .unwrap();
+
+        // 1% of 40 cents is 0.4 cents, which truncates to 0 cents.
+        // It should skip dest2 and put all 40 cents in dest1 (39 + 1 remainder).
+        let tx = router.route_income("Paycheck", 40).unwrap();
+        let postings = tx.postings();
+
+        assert_eq!(postings.len(), 2);
+        assert!(postings.contains(&Posting::debit(dest1, 40).unwrap()));
     }
 }

@@ -114,4 +114,32 @@ xychart-beta
 ";
         assert_eq!(exporter.export_net_worth_xy(&timeline), expected);
     }
+
+    #[test]
+    fn test_export_net_worth_timeline_negative() {
+        let exporter = MermaidXyExporter::new();
+        let timeline = vec![
+            ProjectedMonth {
+                month_index: 1,
+                net_worth_cents: -500_000,
+                vested_value_cents: 0,
+                saved_cents: 0,
+            },
+            ProjectedMonth {
+                month_index: 2,
+                net_worth_cents: -200_000,
+                vested_value_cents: 0,
+                saved_cents: 0,
+            },
+        ];
+
+        let expected = "\
+```mermaid\nxychart-beta
+    title \"Net Worth Projection\"
+    x-axis \"Month\" [1, 2]
+    y-axis \"Net Worth ($)\" -5000 --> 0
+    line [-5000, -2000]
+```\n";
+        assert_eq!(exporter.export_net_worth_xy(&timeline), expected);
+    }
 }
