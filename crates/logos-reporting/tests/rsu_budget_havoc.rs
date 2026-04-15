@@ -5,11 +5,12 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    #[should_panic(expected = "attempt to subtract with overflow")]
-    fn project_rsu_budget_plan_panics_on_overflow(
-        fixed_commitments_cents in i64::MIN..-10_i64,
+    fn project_rsu_budget_plan_saturates_on_overflow(
+        fixed_commitments_cents in 0_i64..i64::MAX,
     ) {
         let prices = ScenarioPriceInputs::new(10, 20, 30).unwrap();
-        // Since fixed commitments is validated >= 0
+        let input = RsuBudgetPlanInput::new(100, 0, prices, fixed_commitments_cents, 10, 20).unwrap();
+        let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+        assert!(plan.conservative_budget_cents() >= 0);
     }
 }
