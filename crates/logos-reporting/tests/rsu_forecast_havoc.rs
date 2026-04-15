@@ -5,9 +5,11 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    #[should_panic(expected = "attempt to subtract with overflow")]
     fn project_rsu_forecast_summary_saturates_on_overflow(
-        val1 in 1i64..=100i64,
+        val1 in i64::MAX - 10..=i64::MAX,
+        val2 in i64::MAX - 10..=i64::MAX,
     ) {
+        let summary = project_rsu_forecast_summary(&[val1, val2]);
+        assert_eq!(summary.projected_total_cents(), i64::MAX);
     }
 }
