@@ -119,3 +119,29 @@ proptest! {
         let _ = optimizer.simulate(PayoffStrategy::Avalanche);
     }
 }
+
+proptest! {
+    #[cfg(feature = "nova")]
+    #[test]
+    #[should_panic(expected = "attempt to multiply with overflow")]
+    fn income_router_panics_on_overflow(
+        amount_cents in (i64::MAX / 2)..=i64::MAX,
+    ) {
+        use logos_core::experimental::income_router::{IncomeRouter, RouteRule};
+        use logos_core::domain::account::AccountId;
+
+        let source = AccountId::new("income:salary").unwrap();
+        let dest1 = AccountId::new("assets:checking").unwrap();
+
+        let router = IncomeRouter::new(
+            source,
+            vec![RouteRule {
+                destination: dest1,
+                percentage: 100,
+            }],
+        )
+        .unwrap();
+
+        let _ = router.route_income("Paycheck", amount_cents);
+    }
+}
