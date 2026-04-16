@@ -308,7 +308,7 @@ mod tests {
             0.0, 12345,
         );
 
-        let _result = sim_volatile.run(1, 10);
+        let result = sim_volatile.run(1, 10);
 
         // With seed 12345, the random normal draws will cause exactly some paths to fail
         // and some to succeed. We run 10 paths.
