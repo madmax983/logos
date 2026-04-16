@@ -2,7 +2,7 @@ use logos_import::CsvMapping;
 use std::path::Path;
 
 use crate::args::CliError;
-use logos_runtime::AppRuntime;
+
 
 /// Handles `ledger import pdf`.
 ///
@@ -10,7 +10,7 @@ use logos_runtime::AppRuntime;
 ///
 /// Returns an error when runtime initialization or import execution fails.
 pub fn pdf(file_path: &str, account: &str, dry_run: bool, ocr: bool) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "import.pdf".to_owned(),
         message: format!("{err}"),
     })?;
@@ -52,7 +52,7 @@ pub fn csv(
     skip_header: bool,
     dry_run: bool,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "import.csv".to_owned(),
         message: format!("{err}"),
     })?;

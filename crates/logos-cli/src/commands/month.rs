@@ -20,12 +20,12 @@ pub fn autopilot(
     analytics_artifact_id: Option<&str>,
     confirm_close: bool,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "month.autopilot".to_owned(),
         message: format!("{err}"),
     })?;
     let resolved_month_key =
-        month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
+        month_key.map_or_else(AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local, str::to_owned);
     let mut request = MonthAutopilotRequest::new(&resolved_month_key, checking_account);
     if let (Some(opening_balance_cents), Some(closing_balance_cents)) =
         (opening_balance_cents, closing_balance_cents)

@@ -2,7 +2,7 @@ use crate::args::CliError;
 use crate::format::us_timestamp;
 use comfy_table::{Cell, Color};
 
-use logos_runtime::AppRuntime;
+
 
 /// Handles `ledger analytics snapshot create`.
 ///
@@ -15,7 +15,7 @@ pub fn snapshot_create(
     schema_version: i64,
     supersedes_artifact_id: Option<&str>,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.snapshot.create".to_owned(),
         message: format!("{err}"),
     })?;
@@ -41,7 +41,7 @@ pub fn snapshot_create(
 ///
 /// Returns an error when runtime initialization fails.
 pub fn snapshot_list() -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.snapshot.list".to_owned(),
         message: format!("{err}"),
     })?;
@@ -97,7 +97,7 @@ fn render_snapshot_manifest_list(
 ///
 /// Returns an error when runtime initialization fails or the manifest id is missing.
 pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.snapshot.show".to_owned(),
         message: format!("{err}"),
     })?;
@@ -121,7 +121,7 @@ pub fn sankey() -> Result<(), CliError> {
     use chrono::Utc;
     use logos_core::experimental::mermaid_exporter::MermaidSankeyExporter;
 
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.sankey".to_owned(),
         message: format!("{err}"),
     })?;

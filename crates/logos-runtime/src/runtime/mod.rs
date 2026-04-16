@@ -38,7 +38,6 @@ use logos_store::{
     },
     traits::LedgerStore,
 };
-use logos_store_pg::PostgresStore;
 use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
 use std::collections::HashSet;
 use std::env;
@@ -53,7 +52,6 @@ use crate::models::{
     MonthReport, PdfImportSummary,
 };
 
-const DATABASE_URL_ENV: &str = "DATABASE_URL";
 const LOGOS_ARTIFACTS_PATH_ENV: &str = "LOGOS_ARTIFACTS_PATH";
 const LOGOS_FETCH_CONFIG_PATH_ENV: &str = "LOGOS_FETCH_CONFIG_PATH";
 const DEFAULT_STATE_DIRECTORY: &str = ".logos";
@@ -63,7 +61,7 @@ const PARQUET_DIRECTORY: &str = "parquet";
 const DEFAULT_ANALYTICS_SCHEMA_VERSION: i64 = 1;
 
 #[derive(Debug)]
-pub struct AppRuntime<S = PostgresStore> {
+pub struct AppRuntime<S> {
     store: S,
     imported_records: usize,
     artifacts_root: PathBuf,
@@ -88,58 +86,25 @@ impl<S> AppRuntime<S> {
     }
 }
 
-impl AppRuntime<PostgresStore> {
-    /// Creates a runtime backed by the configured Postgres database.
-    ///
-    /// `DATABASE_URL` is required. Runtime initialization fails fast when pending
-    /// Diesel migrations exist so schema changes remain explicit via `ledger db migrate`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error when the database URL is missing, the database connection fails,
-    /// or pending migrations exist.
-    pub fn new() -> Result<Self, RuntimeError> {
-        let database_url =
-            env::var(DATABASE_URL_ENV).map_err(|_| RuntimeError::Initialization {
-                message: format!("{DATABASE_URL_ENV} is not set"),
-            })?;
-        Self::open(&database_url)
-    }
 
-    /// Creates a runtime pinned to an explicit Postgres connection string.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error when connecting to Postgres fails or pending migrations exist.
-    pub fn open(database_url: &str) -> Result<Self, RuntimeError> {
-        let mut store = PostgresStore::connect(database_url)?;
-        let pending = store.pending_migrations()?;
-        if !pending.is_empty() {
-            let joined = pending.join(", ");
-            return Err(RuntimeError::Initialization {
-                message: format!(
-                    "pending database migrations detected ({joined}); run `ledger db migrate`"
-                ),
-            });
-        }
+
+impl AppRuntime<MemoryStore> {
+    #[must_use]
+    pub fn new_in_memory() -> Self {
         let state_root = default_state_root();
-        Ok(Self::with_store(
-            store,
+        Self::with_store(
+            MemoryStore::new_in_memory(),
             default_artifacts_root(&state_root),
             Some(default_fetch_config_path(&state_root)),
-        ))
+        )
     }
+}
 
-    #[must_use]
-    pub fn default_state_root() -> PathBuf {
-        default_state_root()
-    }
-
+impl<S> AppRuntime<S> {
     #[must_use]
     pub fn current_month_key_local() -> String {
         Local::now().format("%Y-%m").to_string()
     }
-
     #[must_use]
     pub fn current_month_key_utc() -> String {
         let wallclock_us = SystemTime::now()
@@ -150,19 +115,16 @@ impl AppRuntime<PostgresStore> {
             .unwrap_or(0);
         month_key_from_wallclock_utc(wallclock_us)
     }
-
     #[must_use]
     pub const fn default_analytics_schema_version() -> i64 {
         DEFAULT_ANALYTICS_SCHEMA_VERSION
     }
-
     fn secret_bundle_for_fetch_source(
         source: &StatementSource,
     ) -> Result<SecretBundle, RuntimeError> {
         let resolver = OnePasswordCliSecretResolver::from_environment();
         Self::secret_bundle_for_fetch_source_with_resolver(source, &resolver)
     }
-
     fn secret_bundle_for_fetch_source_with_resolver<R>(
         source: &StatementSource,
         resolver: &R,
@@ -181,18 +143,6 @@ impl AppRuntime<PostgresStore> {
                 .resolve(source)
                 .map_err(|err| fetch_error_to_runtime(&err)),
         }
-    }
-}
-
-impl AppRuntime<MemoryStore> {
-    #[must_use]
-    pub fn new_in_memory() -> Self {
-        let state_root = default_state_root();
-        Self::with_store(
-            MemoryStore::new_in_memory(),
-            default_artifacts_root(&state_root),
-            Some(default_fetch_config_path(&state_root)),
-        )
     }
 }
 
@@ -709,7 +659,7 @@ impl<S: LedgerStore> AppRuntime<S> {
                     continue;
                 }
             };
-            let secrets = match AppRuntime::<PostgresStore>::secret_bundle_for_fetch_source(&source)
+            let secrets = match Self::secret_bundle_for_fetch_source(&source)
             {
                 Ok(secrets) => secrets,
                 Err(err) => {
@@ -1449,7 +1399,8 @@ fn import_batch_key(
     hasher.finalize().to_hex().to_string()
 }
 
-fn default_artifacts_root(state_root: &Path) -> PathBuf {
+#[must_use]
+pub fn default_artifacts_root(state_root: &Path) -> PathBuf {
     if let Some(path) = env::var_os(LOGOS_ARTIFACTS_PATH_ENV) {
         return PathBuf::from(path);
     }
@@ -1457,7 +1408,8 @@ fn default_artifacts_root(state_root: &Path) -> PathBuf {
     state_root.join(ARTIFACTS_DIRECTORY)
 }
 
-fn default_fetch_config_path(state_root: &Path) -> PathBuf {
+#[must_use]
+pub fn default_fetch_config_path(state_root: &Path) -> PathBuf {
     if let Some(path) = env::var_os(LOGOS_FETCH_CONFIG_PATH_ENV) {
         return PathBuf::from(path);
     }
@@ -1465,7 +1417,8 @@ fn default_fetch_config_path(state_root: &Path) -> PathBuf {
     state_root.join(DEFAULT_FETCH_CONFIG_NAME)
 }
 
-fn default_state_root() -> PathBuf {
+#[must_use]
+pub fn default_state_root() -> PathBuf {
     if let Some(home) = env::var_os("HOME").or_else(|| env::var_os("USERPROFILE")) {
         return PathBuf::from(home).join(DEFAULT_STATE_DIRECTORY);
     }
@@ -1722,7 +1675,7 @@ mod tests {
             bundle: SecretBundle::new("wrong", "wrong", Some("999999")).expect("bundle"),
         };
 
-        let bundle = AppRuntime::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
+        let bundle = AppRuntime::<logos_store::memory::MemoryStore>::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
             .expect("bundle");
 
         assert_eq!(
@@ -1750,7 +1703,7 @@ mod tests {
             bundle: SecretBundle::new("markm", "s3cr3t", Some("123456")).expect("bundle"),
         };
 
-        let bundle = AppRuntime::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
+        let bundle = AppRuntime::<logos_store::memory::MemoryStore>::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
             .expect("bundle");
 
         assert_eq!(
