@@ -19,7 +19,7 @@ trait TxnPoster {
     ) -> Result<(), RuntimeError>;
 }
 
-impl TxnPoster for AppRuntime {
+impl TxnPoster for AppRuntime<logos_store_pg::PostgresStore> {
     fn post_double_entry(
         &mut self,
         description: &str,
@@ -57,7 +57,7 @@ pub fn add(
     credit_account: &str,
     amount_cents: i64,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "txn.add".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
@@ -102,7 +102,7 @@ pub fn add(
 ///
 /// Returns an error when correction validation or runtime persistence fails.
 pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "txn.correct".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;

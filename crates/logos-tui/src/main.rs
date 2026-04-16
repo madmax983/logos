@@ -12,7 +12,19 @@ fn main() {
 
 fn run() -> io::Result<()> {
     let mut app = App::new();
-    let runtime = AppRuntime::new().ok();
+    let database_url = std::env::var("DATABASE_URL").unwrap_or_default();
+    let runtime = if database_url.is_empty() {
+        None
+    } else {
+        logos_store_pg::PostgresStore::connect(&database_url).ok().map(|store| {
+            let state_root = logos_runtime::runtime::default_state_root();
+            AppRuntime::with_store(
+                store,
+                logos_runtime::runtime::default_artifacts_root(&state_root),
+                Some(logos_runtime::runtime::default_fetch_config_path(&state_root)),
+            )
+        })
+    };
     let mut terminal = TerminalSession::enter()?;
 
     loop {

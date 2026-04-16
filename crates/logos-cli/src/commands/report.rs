@@ -6,7 +6,7 @@ trait ReportRuntime {
     fn month_report_for(&self, checking_account: &str, month_key: &str) -> MonthReport;
 }
 
-impl ReportRuntime for AppRuntime {
+impl ReportRuntime for AppRuntime<logos_store_pg::PostgresStore> {
     fn month_report_for(&self, checking_account: &str, month_key: &str) -> MonthReport {
         Self::month_report_for(self, checking_account, month_key)
     }
@@ -18,12 +18,12 @@ impl ReportRuntime for AppRuntime {
 ///
 /// Returns an error when runtime initialization fails.
 pub fn month(checking_account: &str, month_key: Option<&str>) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "report.month".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
     let resolved_month_key =
-        month_key.map_or_else(AppRuntime::current_month_key_local, str::to_owned);
+        month_key.map_or_else(AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local, str::to_owned);
     let output = render_month_output(&runtime, checking_account, &resolved_month_key);
     println!("{output}");
     Ok(())

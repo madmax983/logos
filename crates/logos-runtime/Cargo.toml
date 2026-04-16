@@ -15,7 +15,6 @@ logos-fetch = { path = "../logos-fetch" }
 logos-import = { path = "../logos-import" }
 logos-reporting = { path = "../logos-reporting" }
 logos-store = { path = "../logos-store" }
-logos-store-pg = { path = "../logos-store-pg" }
 polars = { version = "0.46.0", features = ["parquet"] }
 tokio = { version = "1.48.0", features = ["rt"] }
 

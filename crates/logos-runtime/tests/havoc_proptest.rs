@@ -22,7 +22,7 @@ proptest! {
             amount
         ).unwrap();
 
-        let month_key = logos_runtime::runtime::AppRuntime::current_month_key_local();
+        let month_key = logos_runtime::AppRuntime::<logos_store::memory::MemoryStore>::current_month_key_local();
 
         let _ = runtime.month_report_for("assets:checking", &month_key);
     }

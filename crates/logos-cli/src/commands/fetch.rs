@@ -2,7 +2,7 @@
 use crate::args::CliError;
 use crate::format::us_timestamp;
 use comfy_table::{Cell, Color};
-use logos_runtime::AppRuntime;
+
 use logos_store::model::{StoredFetchRun, StoredFetchRunStatus};
 
 /// Handles `ledger fetch list-runs`.
@@ -11,7 +11,7 @@ use logos_store::model::{StoredFetchRun, StoredFetchRunStatus};
 ///
 /// Returns an error when runtime initialization fails.
 pub fn list_runs(month_key: Option<&str>, checking_account: Option<&str>) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "fetch.list".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
@@ -26,7 +26,7 @@ pub fn list_runs(month_key: Option<&str>, checking_account: Option<&str>) -> Res
 ///
 /// Returns an error when runtime initialization fails.
 pub fn show_run(run_id: &str) -> Result<(), CliError> {
-    let runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "fetch.show".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;

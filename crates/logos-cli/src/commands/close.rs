@@ -1,6 +1,6 @@
 use crate::args::CliError;
 use crate::format::us_timestamp;
-use logos_runtime::AppRuntime;
+
 use logos_store::model::StoredMonthClose;
 
 /// Handles `ledger close month`.
@@ -14,7 +14,7 @@ pub fn month(
     run_id: &str,
     analytics_artifact_id: Option<&str>,
 ) -> Result<(), CliError> {
-    let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
+    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "close.month".to_owned(),
         message: format!("runtime initialization failed: {err}"),
     })?;
