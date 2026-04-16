@@ -46,6 +46,7 @@
 
 pub mod domain;
 pub mod error;
+/// Experimental features and proof-of-concepts. Use at your own risk.
 pub mod experimental;
 pub mod planning;
 

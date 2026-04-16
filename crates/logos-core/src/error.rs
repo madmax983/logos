@@ -65,21 +65,45 @@ pub enum DomainError {
     CorrectionCannotSupersedeSelf,
     /// Returned when an RSU allocation policy does not equal exactly 100%.
     /// The `total` field tells you what sum you provided.
-    InvalidAllocationTotal { total: u16 },
+    InvalidAllocationTotal {
+        /// The sum of the allocation percentages provided.
+        total: u16,
+    },
     /// Returned when a specific time horizon in a haircut table exceeds 100%.
     /// `tier` indicates the culprit (e.g., "short" or "medium"), and `percentage` is what you tried to set.
-    InvalidHaircutPercentage { tier: &'static str, percentage: u8 },
+    InvalidHaircutPercentage {
+        /// The tier that exceeded 100%.
+        tier: &'static str,
+        /// The percentage that was provided.
+        percentage: u8,
+    },
     /// Returned when your risk haircut tiers are backwards.
     /// Risk should increase over time, so you must have `short <= medium <= long`.
-    InvalidHaircutOrdering { short: u8, medium: u8, long: u8 },
+    InvalidHaircutOrdering {
+        /// The short-term haircut percentage.
+        short: u8,
+        /// The medium-term haircut percentage.
+        medium: u8,
+        /// The long-term haircut percentage.
+        long: u8,
+    },
     /// Returned when you pass a zero or negative amount to a debit. Debits must be strictly positive.
-    InvalidDebitAmount { amount: i64 },
+    InvalidDebitAmount {
+        /// The amount that was provided.
+        amount: i64,
+    },
     /// Returned when you pass a zero or negative amount to a credit. Credits must be strictly positive
     /// before they are converted internally to negatives.
-    InvalidCreditAmount { amount: i64 },
+    InvalidCreditAmount {
+        /// The amount that was provided.
+        amount: i64,
+    },
     /// The fundamental rule of accounting broken. A transaction's debits and credits
     /// must perfectly cancel each other out to `0`. The `total` tells you how far off balance you are.
-    UnbalancedTransaction { total: i64 },
+    UnbalancedTransaction {
+        /// The amount that the transaction is off balance.
+        total: i64,
+    },
     /// Returned when an operation exceeds the bounds of a 64-bit signed integer.
     AmountOverflow,
 }

@@ -4,20 +4,30 @@ use crate::planning::net_worth_projector::NetWorthProjector;
 /// Represents a milestone in the journey to FIRE.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AscentMilestone {
+    /// The name of the milestone (e.g., "Coast FIRE").
     pub name: &'static str,
+    /// The target net worth in cents to achieve this milestone.
     pub target_cents: i64,
+    /// The month the milestone was reached, if at all.
     pub month_reached: Option<u16>,
 }
 
 /// The result of simulating a FIRE ascent.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AscentResult {
+    /// The final target net worth in cents (the "summit").
     pub summit_cents: i64,
+    /// The maximum number of months to simulate.
     pub max_months: u16,
+    /// The final net worth achieved at the end of the simulation.
     pub final_net_worth_cents: i64,
+    /// A list of milestones and their achievement status.
     pub milestones: Vec<AscentMilestone>,
+    /// Whether the summit was successfully reached.
     pub success: bool,
+    /// Whether the starting net worth was already at or above the summit.
     pub instant_summit: bool,
+    /// Whether the goal is mathematically impossible given the current trajectory.
     pub impossible: bool,
 }
 
