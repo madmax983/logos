@@ -1,4 +1,5 @@
 #![allow(clippy::should_panic_without_expect)]
+#![allow(clippy::tuple_array_conversions)]
 
 use logos_reporting::project_rsu_forecast_summary;
 use proptest::prelude::*;
