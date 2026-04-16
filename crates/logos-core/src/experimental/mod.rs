@@ -7,6 +7,7 @@ pub mod cashflow_projector;
 pub mod coast_fire;
 #[cfg(feature = "nova")]
 pub mod debt_optimizer;
+/// Simulating the FIRE journey as a mountain ascent.
 pub mod fire_ascent;
 #[cfg(feature = "nova")]
 pub mod fire_goal_seeker;
@@ -16,6 +17,7 @@ pub mod goal_fund_projector;
 pub mod goal_seeker;
 #[cfg(feature = "nova")]
 pub mod inflation;
+/// Visualizing cashflows using Mermaid Sankey diagrams.
 pub mod mermaid_exporter;
 #[cfg(feature = "nova")]
 pub mod mermaid_xy_exporter;
@@ -24,6 +26,7 @@ pub mod monte_carlo;
 pub mod opportunity_cost;
 #[cfg(feature = "nova")]
 pub mod predictive_ledger;
+/// Detecting recurring transactions to aid in automated classification and projection.
 pub mod recurrence_detector;
 #[cfg(feature = "nova")]
 pub mod trinity_simulator;

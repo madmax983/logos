@@ -36,9 +36,13 @@ use crate::domain::transaction::{Posting, TransactionBuilder};
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecurringTemplate {
+    /// A description for the recurring template, effectively the future transaction's payee or note.
     pub description: String,
+    /// The amount of the recurring flow, in cents.
     pub amount_cents: i64,
+    /// The account to credit (source of funds).
     pub credit_account: String,
+    /// The account to debit (destination of funds).
     pub debit_account: String,
 }
 
