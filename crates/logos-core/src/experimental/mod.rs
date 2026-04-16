@@ -1,4 +1,7 @@
 #[cfg(feature = "nova")]
+pub mod portfolio_rebalancer;
+
+#[cfg(feature = "nova")]
 pub mod asset_depreciation;
 #[cfg(feature = "nova")]
 pub mod benford_law;
