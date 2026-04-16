@@ -554,7 +554,8 @@ pub fn project_rsu_budget_plan(
     );
 
     let conservative_budget_cents = bear_monthly;
-    let baseline_remaining_cents = conservative_budget_cents.saturating_sub(input.fixed_commitments_cents);
+    let baseline_remaining_cents =
+        conservative_budget_cents.saturating_sub(input.fixed_commitments_cents);
 
     Ok(RsuBudgetPlan {
         month_key: month_key.to_owned(),
