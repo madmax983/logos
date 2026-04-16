@@ -59,7 +59,7 @@ pub fn add(
 ) -> Result<(), CliError> {
     let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "txn.add".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+        message: format!("{err}"),
     })?;
     let transaction_id = post_double_entry(
         description,
@@ -104,7 +104,7 @@ pub fn add(
 pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
     let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "txn.correct".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+        message: format!("{err}"),
     })?;
     apply_correction(supersedes_id, reason, &mut runtime)?;
     let mut table = comfy_table::Table::new();
@@ -347,7 +347,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Command 'txn.add' failed: missing columns: expected 5, found 2"
+            "missing columns: expected 5, found 2"
         );
     }
 
@@ -398,7 +398,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Command 'txn.correct' failed: missing columns: expected 5, found 2"
+            "missing columns: expected 5, found 2"
         );
     }
 }

@@ -118,7 +118,7 @@ mod tests {
         };
         assert_eq!(
             err.to_string(),
-            "Command 'db.status' failed: DATABASE_URL is not set"
+            "DATABASE_URL is not set"
         );
     }
 }

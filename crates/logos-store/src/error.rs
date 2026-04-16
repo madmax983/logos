@@ -33,7 +33,7 @@ impl fmt::Display for StoreError {
             Self::LoadFailed { message } => write!(f, "failed to load store: {message}"),
             Self::PersistFailed { message } => write!(f, "failed to persist store: {message}"),
             Self::ConnectionFailed { message } => {
-                write!(f, "failed to connect to store: {message}")
+                write!(f, "{message}")
             }
             Self::MigrationFailed { message } => write!(f, "store migration failed: {message}"),
         }

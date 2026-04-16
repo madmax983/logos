@@ -38,8 +38,8 @@ impl fmt::Display for CliError {
                 write!(f, "Invalid value '{value}' for argument '{flag}'.")
             }
             Self::MissingTxnDescription => write!(f, "Missing transaction description."),
-            Self::CommandRuntimeFailed { command, message } => {
-                write!(f, "Command '{command}' failed: {message}")
+            Self::CommandRuntimeFailed { command: _, message } => {
+                write!(f, "{message}")
             }
         }
     }
