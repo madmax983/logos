@@ -247,3 +247,102 @@ pub fn parse_simple_csv_row(row: &str, mapping: &CsvMapping) -> Result<ImportRec
         columns[mapping.category_idx].trim(),
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_csv_columns_table() {
+        struct TestCase {
+            name: &'static str,
+            input: &'static str,
+            expected: Result<Vec<&'static str>, ImportError>,
+        }
+
+        let cases = vec![
+            TestCase {
+                name: "normal fields",
+                input: "a,b,c",
+                expected: Ok(vec!["a", "b", "c"]),
+            },
+            TestCase {
+                name: "quoted fields",
+                input: "\"a\",\"b\",\"c\"",
+                expected: Ok(vec!["a", "b", "c"]),
+            },
+            TestCase {
+                name: "quoted field with comma",
+                input: "a,\"b,c\",d",
+                expected: Ok(vec!["a", "b,c", "d"]),
+            },
+            TestCase {
+                name: "escaped quotes",
+                input: "a,\"b\"\"c\",d",
+                expected: Ok(vec!["a", "b\"c", "d"]),
+            },
+            TestCase {
+                name: "empty field at end",
+                input: "a,b,",
+                expected: Ok(vec!["a", "b", ""]),
+            },
+            TestCase {
+                name: "empty field at start",
+                input: ",a,b",
+                expected: Ok(vec!["", "a", "b"]),
+            },
+            TestCase {
+                name: "all empty fields",
+                input: ",,",
+                expected: Ok(vec!["", "", ""]),
+            },
+            TestCase {
+                name: "whitespace before quote is ignored",
+                input: "a, \"b\",c",
+                expected: Ok(vec!["a", "b", "c"]),
+            },
+            TestCase {
+                name: "whitespace after quote is ignored",
+                input: "a,\"b\" ,c",
+                expected: Ok(vec!["a", "b", "c"]),
+            },
+            TestCase {
+                name: "unterminated quote",
+                input: "a,\"b,c",
+                expected: Err(ImportError::InvalidCsvRow {
+                    message: "unterminated quoted field".to_string(),
+                }),
+            },
+            TestCase {
+                name: "unexpected quote in unquoted field",
+                input: "a,b\"c,d",
+                expected: Err(ImportError::InvalidCsvRow {
+                    message: "unexpected quote in unquoted field".to_string(),
+                }),
+            },
+            TestCase {
+                name: "unexpected characters after closing quote",
+                input: "a,\"b\"c,d",
+                expected: Err(ImportError::InvalidCsvRow {
+                    message: "unexpected characters after closing quote".to_string(),
+                }),
+            },
+        ];
+
+        for case in cases {
+            let actual = parse_csv_columns(case.input);
+            match case.expected {
+                Ok(expected) => {
+                    let actual = actual.unwrap();
+                    let expected_strings: Vec<String> =
+                        expected.into_iter().map(String::from).collect();
+                    assert_eq!(actual, expected_strings, "Failed test case: {}", case.name);
+                }
+                Err(expected_err) => {
+                    let err = actual.unwrap_err();
+                    assert_eq!(err, expected_err, "Failed test case: {}", case.name);
+                }
+            }
+        }
+    }
+}
