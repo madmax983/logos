@@ -12,7 +12,7 @@ use logos_runtime::AppRuntime;
 pub fn pdf(file_path: &str, account: &str, dry_run: bool, ocr: bool) -> Result<(), CliError> {
     let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "import.pdf".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+        message: format!("{err}"),
     })?;
     let summary = runtime
         .import_pdf_statement(Path::new(file_path), account, dry_run, ocr)
@@ -54,7 +54,7 @@ pub fn csv(
 ) -> Result<(), CliError> {
     let mut runtime = AppRuntime::new().map_err(|err| CliError::CommandRuntimeFailed {
         command: "import.csv".to_owned(),
-        message: format!("runtime initialization failed: {err}"),
+        message: format!("{err}"),
     })?;
     let source_id = source_id.map_or_else(
         || {
