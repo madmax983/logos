@@ -1,3 +1,4 @@
+#![allow(unused_imports, unused_variables)]
 #![allow(clippy::should_panic_without_expect)]
 
 use logos_import::{CsvMapping, parse_simple_csv_row};

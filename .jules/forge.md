@@ -3,3 +3,6 @@
 **Refactoring God Functions in PostgresStore**
 **Learning:** Extracting parts of "God Functions" (like `write_import_batch` and `write_reconciliation_run_and_month_close`) requires careful attention to where the extracted helper methods are placed. Placing helper methods inside trait implementations (`impl LedgerStore for PostgresStore`) causes compiler errors. Extracting purely data-mapping logic (like `fn map_statement_line`) avoids complicated lifetime/borrow-checker issues associated with attempting to extract both string allocations and the rows referencing them simultaneously.
 **Action:** When breaking down massive functions, prefer extracting pure data mappers into `const fn` (where applicable) on the struct's main inherent `impl` block.
+**Refactoring repetitive scenario logic in `project_rsu_budget_plan`**
+**Learning:** `project_rsu_budget_plan` in `logos-reporting/src/rsu_budget_plan.rs` was assigning identical logic to three separate variable groups for bear, base, and bull projections, resulting in repetitive, verbose code.
+**Action:** Extract repetitive assignment logic into a single array iteration mapping via `.map()` when dealing with multiple uniform scenarios.

@@ -534,27 +534,29 @@ pub fn project_rsu_budget_plan(
     }
 
     let tiers = HaircutTierTable::default();
-    let bear_monthly = monthly_income(
-        input.scenario_prices.bear,
-        input.quarterly_units,
-        input.days_to_vest,
-        tiers,
-    );
-    let base_monthly = monthly_income(
-        input.scenario_prices.base,
-        input.quarterly_units,
-        input.days_to_vest,
-        tiers,
-    );
-    let bull_monthly = monthly_income(
-        input.scenario_prices.bull,
-        input.quarterly_units,
-        input.days_to_vest,
-        tiers,
-    );
+    let scenarios = [
+        (ScenarioKey::Bear, input.scenario_prices.bear),
+        (ScenarioKey::Base, input.scenario_prices.base),
+        (ScenarioKey::Bull, input.scenario_prices.bull),
+    ]
+    .map(|(key, price)| {
+        let monthly = monthly_income(price, input.quarterly_units, input.days_to_vest, tiers);
+        (key, monthly)
+    });
 
-    let conservative_budget_cents = bear_monthly;
-    let baseline_remaining_cents = conservative_budget_cents.saturating_sub(input.fixed_commitments_cents);
+    let conservative_budget_cents = scenarios[0].1;
+    let baseline_remaining_cents =
+        conservative_budget_cents.saturating_sub(input.fixed_commitments_cents);
+
+    let scenarios = scenarios.map(|(key, monthly)| {
+        scenario_projection(
+            key,
+            monthly,
+            conservative_budget_cents,
+            input.reserve_sweep_pct,
+            input.investing_sweep_pct,
+        )
+    });
 
     Ok(RsuBudgetPlan {
         month_key: month_key.to_owned(),
@@ -563,29 +565,7 @@ pub fn project_rsu_budget_plan(
         baseline_remaining_cents,
         reserve_sweep_pct: input.reserve_sweep_pct,
         investing_sweep_pct: input.investing_sweep_pct,
-        scenarios: [
-            scenario_projection(
-                ScenarioKey::Bear,
-                bear_monthly,
-                conservative_budget_cents,
-                input.reserve_sweep_pct,
-                input.investing_sweep_pct,
-            ),
-            scenario_projection(
-                ScenarioKey::Base,
-                base_monthly,
-                conservative_budget_cents,
-                input.reserve_sweep_pct,
-                input.investing_sweep_pct,
-            ),
-            scenario_projection(
-                ScenarioKey::Bull,
-                bull_monthly,
-                conservative_budget_cents,
-                input.reserve_sweep_pct,
-                input.investing_sweep_pct,
-            ),
-        ],
+        scenarios,
     })
 }
 

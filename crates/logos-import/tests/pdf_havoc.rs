@@ -1,3 +1,4 @@
+#![allow(unused_imports, unused_variables)]
 #![allow(clippy::should_panic_without_expect)]
 
 use logos_import::pdf::parse_pdf_statement_file;

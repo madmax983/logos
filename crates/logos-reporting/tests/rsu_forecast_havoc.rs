@@ -1,3 +1,4 @@
+#![allow(clippy::tuple_array_conversions)]
 #![allow(clippy::should_panic_without_expect)]
 
 use logos_reporting::project_rsu_forecast_summary;
