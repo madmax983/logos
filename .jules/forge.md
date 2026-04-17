@@ -3,3 +3,7 @@
 **Refactoring God Functions in PostgresStore**
 **Learning:** Extracting parts of "God Functions" (like `write_import_batch` and `write_reconciliation_run_and_month_close`) requires careful attention to where the extracted helper methods are placed. Placing helper methods inside trait implementations (`impl LedgerStore for PostgresStore`) causes compiler errors. Extracting purely data-mapping logic (like `fn map_statement_line`) avoids complicated lifetime/borrow-checker issues associated with attempting to extract both string allocations and the rows referencing them simultaneously.
 **Action:** When breaking down massive functions, prefer extracting pure data mappers into `const fn` (where applicable) on the struct's main inherent `impl` block.
+
+**Refactoring God Functions in PostgresStore**
+**Learning:** The God functions `write_import_batch` and `write_reconciliation_run_and_month_close` were already successfully reduced below the 100-line threshold by earlier extractions. The `#[allow(clippy::too_many_lines)]` macros left over were stale.
+**Action:** Remember to remove stale bypass directives once refactors bring functions within the threshold.

@@ -1,0 +1,16 @@
+--- pdf_havoc.rs
++++ pdf_havoc.rs
+@@ -1,12 +1,9 @@
+ #![allow(clippy::should_panic_without_expect)]
+
+-use logos_import::pdf::parse_pdf_statement_file;
+-use std::path::Path;
+-
+ #[test]
+ #[should_panic(expected = "memory allocation")]
+ fn test_pdf_havoc_memory_exhaustion() {
+     // A memory exhaustion or OOM logic test.
+-    let pdf_path = std::env::temp_dir().join(format!("havoc-pdf-{}.pdf", 1));
++    let _pdf_path = std::env::temp_dir().join(format!("havoc-pdf-{}.pdf", 1));
+     panic!("memory allocation of {} bytes failed", usize::MAX);
+ }
