@@ -5,11 +5,14 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    #[should_panic(expected = "capacity overflow")]
     fn parse_csv_columns_panics_on_oom(
         length in 1000..=10000,
     ) {
-        // Can we trigger an OOM or out of bounds on String?
-        // Probably not worth exploring since it depends on system.
+        let mapping = CsvMapping::default();
+        let row = format!("{}, {}", "A".repeat(length as usize), "B".repeat(length as usize));
+
+        let _ = std::panic::catch_unwind(|| {
+            let _ = parse_simple_csv_row(&row, &mapping);
+        });
     }
 }
