@@ -118,9 +118,7 @@ proptest! {
 
         let _ = optimizer.simulate(PayoffStrategy::Avalanche);
     }
-}
 
-proptest! {
     #[cfg(feature = "nova")]
     #[test]
     #[should_panic(expected = "attempt to multiply with overflow")]
@@ -143,5 +141,16 @@ proptest! {
         .unwrap();
 
         let _ = router.route_income("Paycheck", amount_cents);
+    }
+
+    #[cfg(feature = "nova")]
+    #[test]
+    #[should_panic(expected = "attempt to subtract with overflow")]
+    fn runway_simulator_panics_on_overflow(
+        assets in (i64::MAX / 2)..i64::MAX,
+    ) {
+        use logos_core::experimental::runway_simulator::RunwaySimulator;
+        let sim = RunwaySimulator::new(assets, i64::MIN, 0.0);
+        let _ = sim.calculate_runway();
     }
 }
