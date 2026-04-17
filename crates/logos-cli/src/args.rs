@@ -39,7 +39,14 @@ impl fmt::Display for CliError {
             }
             Self::MissingTxnDescription => write!(f, "Missing transaction description."),
             Self::CommandRuntimeFailed { command, message } => {
-                write!(f, "Command '{command}' failed: {message}")
+                if message.to_lowercase().contains("connection refused") {
+                    write!(
+                        f,
+                        "Connection Failed: Postgres database could not be reached. Is it running?"
+                    )
+                } else {
+                    write!(f, "Command '{command}' failed: {message}")
+                }
             }
         }
     }
