@@ -10,3 +10,6 @@
 ## 2025-04-15 - The Planning Narrative
 **Confusion:** The planning module `logos-reporting::rsu_budget_plan` lacked narrative cohesion, and `logos-core::planning` had a confusing structure where the story of the destination (FIRE), journey (Net Worth), and action (RSU) were completely missing.
 **Clarification:** I added module-level documentation `//!` to `crates/logos-core/src/planning/mod.rs` to tie together `fire`, `net_worth_projector` and `rsu_distributor`. I also fixed the failing test where `project_rsu_budget_plan` panicked when `conservative_budget_cents - input.fixed_commitments_cents` overflowed due to missing `saturating_sub`.
+## 2025-04-17 - The Missing Reporting Picture
+**Confusion:** The `logos-reporting` crate lacked a high-level conceptual overview showing how the pure functions for cashflow, net worth, and register balances compose together to build a complete financial picture.
+**Clarification:** Added a module-level `//!` documentation to `crates/logos-reporting/src/lib.rs` that includes an overarching executable doctest demonstrating the usage of multiple projection functions together.
