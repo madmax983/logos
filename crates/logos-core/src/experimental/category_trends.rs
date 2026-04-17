@@ -44,7 +44,11 @@ impl CategoryTrendAnalyzer {
                 // We only care about debits (spending)
                 if posting.amount() > 0 {
                     if let Some(group_id) = self.account_to_category.get(posting.account()) {
-                        *trends.entry(group_id.clone()).or_insert(0) += posting.amount();
+                        if let Some(total) = trends.get_mut(group_id) {
+                            *total += posting.amount();
+                        } else {
+                            trends.insert(group_id.clone(), posting.amount());
+                        }
                     }
                 }
             }
