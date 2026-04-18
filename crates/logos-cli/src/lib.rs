@@ -1,7 +1,7 @@
 pub mod args;
 pub mod commands;
-pub mod runtime;
 pub mod format;
+pub mod runtime;
 
 pub use args::{CliError, ParsedArgs, parse_args};
 

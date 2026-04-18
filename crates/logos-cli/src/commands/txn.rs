@@ -57,10 +57,11 @@ pub fn add(
     credit_account: &str,
     amount_cents: i64,
 ) -> Result<(), CliError> {
-    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "txn.add".to_owned(),
-        message: format!("{err}"),
-    })?;
+    let mut runtime =
+        crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+            command: "txn.add".to_owned(),
+            message: format!("{err}"),
+        })?;
     let transaction_id = post_double_entry(
         description,
         debit_account,
@@ -102,10 +103,11 @@ pub fn add(
 ///
 /// Returns an error when correction validation or runtime persistence fails.
 pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
-    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "txn.correct".to_owned(),
-        message: format!("{err}"),
-    })?;
+    let mut runtime =
+        crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+            command: "txn.correct".to_owned(),
+            message: format!("{err}"),
+        })?;
     apply_correction(supersedes_id, reason, &mut runtime)?;
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
@@ -345,10 +347,7 @@ mod tests {
         )
         .expect_err("runtime error");
 
-        assert_eq!(
-            err.to_string(),
-            "missing columns: expected 5, found 2"
-        );
+        assert_eq!(err.to_string(), "missing columns: expected 5, found 2");
     }
 
     #[test]
@@ -396,9 +395,6 @@ mod tests {
         };
         let err = apply_correction("txn-9", "fix memo", &mut poster).expect_err("runtime error");
 
-        assert_eq!(
-            err.to_string(),
-            "missing columns: expected 5, found 2"
-        );
+        assert_eq!(err.to_string(), "missing columns: expected 5, found 2");
     }
 }

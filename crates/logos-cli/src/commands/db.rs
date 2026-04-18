@@ -116,9 +116,6 @@ mod tests {
         let Err(err) = connect_store_with_env("db.status", None) else {
             panic!("missing database url must fail");
         };
-        assert_eq!(
-            err.to_string(),
-            "DATABASE_URL is not set"
-        );
+        assert_eq!(err.to_string(), "DATABASE_URL is not set");
     }
 }
