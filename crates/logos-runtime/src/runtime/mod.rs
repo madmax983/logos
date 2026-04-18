@@ -38,7 +38,7 @@ use logos_store::{
     },
     traits::LedgerStore,
 };
-use polars::prelude::{DataFrame, NamedFrom, ParquetWriter, Series};
+use polars::prelude::{DataFrame, ParquetWriter, Series};
 use std::collections::HashSet;
 use std::env;
 use std::fs::{self, File};
@@ -85,8 +85,6 @@ impl<S> AppRuntime<S> {
         }
     }
 }
-
-
 
 impl AppRuntime<MemoryStore> {
     #[must_use]
@@ -659,8 +657,7 @@ impl<S: LedgerStore> AppRuntime<S> {
                     continue;
                 }
             };
-            let secrets = match Self::secret_bundle_for_fetch_source(&source)
-            {
+            let secrets = match Self::secret_bundle_for_fetch_source(&source) {
                 Ok(secrets) => secrets,
                 Err(err) => {
                     if fetch_required && first_required_error.is_none() {
@@ -1529,30 +1526,56 @@ fn hash_rows(
     hasher.finalize().to_hex().to_string()
 }
 
+/// Writes ledger snapshot rows to a Parquet file.
+///
+/// ⚡ Bolt Optimization: Eliminates 8 intermediate heap allocations by collecting
+/// directly from the `rows` slice iterators into Polars `Series` objects using
+/// `FromIterator`, rather than allocating intermediate `Vec<T>`s first.
 fn write_rows_to_parquet(
     parquet_path: &Path,
     rows: &[SnapshotPostingRow],
     as_of_valid: i64,
     as_of_tx: i64,
 ) -> Result<(), RuntimeError> {
-    let txn_ids: Vec<&str> = rows.iter().map(|row| row.txn_id.as_str()).collect();
-    let descriptions: Vec<&str> = rows.iter().map(|row| row.description.as_str()).collect();
-    let effective_at_values: Vec<i64> = rows.iter().map(|row| row.effective_at_us).collect();
-    let posting_ordinals: Vec<i64> = rows.iter().map(|row| row.posting_ordinal).collect();
-    let accounts: Vec<&str> = rows.iter().map(|row| row.account.as_str()).collect();
-    let amounts: Vec<i64> = rows.iter().map(|row| row.amount_cents).collect();
-    let snapshot_valid_values = vec![as_of_valid; rows.len()];
-    let snapshot_tx_values = vec![as_of_tx; rows.len()];
-
     let mut frame = DataFrame::new(vec![
-        Series::new("txn_id".into(), txn_ids).into(),
-        Series::new("description".into(), descriptions).into(),
-        Series::new("effective_at_us".into(), effective_at_values).into(),
-        Series::new("posting_ordinal".into(), posting_ordinals).into(),
-        Series::new("account".into(), accounts).into(),
-        Series::new("amount_cents".into(), amounts).into(),
-        Series::new("snapshot_valid_at_us".into(), snapshot_valid_values).into(),
-        Series::new("snapshot_tx_at_us".into(), snapshot_tx_values).into(),
+        rows.iter()
+            .map(|row| row.txn_id.as_str())
+            .collect::<Series>()
+            .with_name("txn_id".into())
+            .into(),
+        rows.iter()
+            .map(|row| row.description.as_str())
+            .collect::<Series>()
+            .with_name("description".into())
+            .into(),
+        rows.iter()
+            .map(|row| row.effective_at_us)
+            .collect::<Series>()
+            .with_name("effective_at_us".into())
+            .into(),
+        rows.iter()
+            .map(|row| row.posting_ordinal)
+            .collect::<Series>()
+            .with_name("posting_ordinal".into())
+            .into(),
+        rows.iter()
+            .map(|row| row.account.as_str())
+            .collect::<Series>()
+            .with_name("account".into())
+            .into(),
+        rows.iter()
+            .map(|row| row.amount_cents)
+            .collect::<Series>()
+            .with_name("amount_cents".into())
+            .into(),
+        std::iter::repeat_n(as_of_valid, rows.len())
+            .collect::<Series>()
+            .with_name("snapshot_valid_at_us".into())
+            .into(),
+        std::iter::repeat_n(as_of_tx, rows.len())
+            .collect::<Series>()
+            .with_name("snapshot_tx_at_us".into())
+            .into(),
     ])
     .map_err(|err| RuntimeError::Analytics {
         message: format!("failed to construct analytics frame: {err}"),
