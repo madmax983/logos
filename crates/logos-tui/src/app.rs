@@ -661,7 +661,8 @@ pub struct App {
 
 impl Default for App {
     fn default() -> Self {
-        let current_month_key = logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local();
+        let current_month_key =
+            logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local();
         Self {
             view: View::Home,
             exit_requested: false,

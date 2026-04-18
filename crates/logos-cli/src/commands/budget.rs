@@ -34,12 +34,15 @@ pub fn set(
     budget_cents: i64,
     expense_account_prefix: &str,
 ) -> Result<(), CliError> {
-    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "budget.set".to_owned(),
-        message: format!("{err}"),
-    })?;
-    let resolved_month_key =
-        month_key.map_or_else(AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local, str::to_owned);
+    let mut runtime =
+        crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+            command: "budget.set".to_owned(),
+            message: format!("{err}"),
+        })?;
+    let resolved_month_key = month_key.map_or_else(
+        AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local,
+        str::to_owned,
+    );
     runtime
         .set_budget_target_for_month(&resolved_month_key, expense_account_prefix, budget_cents)
         .map_err(|err| CliError::CommandRuntimeFailed {
@@ -77,8 +80,10 @@ pub fn rsu_plan(
         command: "budget.rsu-plan".to_owned(),
         message: format!("{err}"),
     })?;
-    let resolved_month_key =
-        month_key.map_or_else(AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local, str::to_owned);
+    let resolved_month_key = month_key.map_or_else(
+        AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local,
+        str::to_owned,
+    );
     let plan = runtime
         .plan_rsu_budget_for_month(
             &resolved_month_key,
