@@ -297,4 +297,23 @@ mod tests {
             Err(DomainError::InvalidCreditAmount { amount: -100 })
         );
     }
+
+    #[test]
+    fn should_not_debit_tax_if_tax_cents_is_zero_to_kill_mutants() {
+        let policy = AllocationPolicy::new(0, 0, 0, 100).unwrap();
+        let config = RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").unwrap(),
+            tax_reserve: AccountId::new("assets:tax").unwrap(),
+            smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+            goals: AccountId::new("assets:goals").unwrap(),
+            discretionary: AccountId::new("assets:checking").unwrap(),
+        };
+        let distributor = RsuAutoDistributor::new(config);
+
+        let tx = distributor
+            .distribute_rsu_vest("Vest", 100, &policy)
+            .unwrap();
+        let postings = tx.postings();
+        assert_eq!(postings.len(), 2);
+    }
 }

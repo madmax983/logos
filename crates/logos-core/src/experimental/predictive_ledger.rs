@@ -236,4 +236,36 @@ mod tests {
         }
         assert_eq!(total_credit, 7_500_000);
     }
+
+    #[test]
+    fn should_set_haircut_tiers() {
+        let config = RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").unwrap(),
+            tax_reserve: AccountId::new("assets:tax").unwrap(),
+            smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+            goals: AccountId::new("assets:goals").unwrap(),
+            discretionary: AccountId::new("assets:checking").unwrap(),
+        };
+        let distributor = RsuAutoDistributor::new(config);
+        let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
+
+        let mut ledger = PredictiveLedger::new(distributor, policy);
+        ledger.set_haircut_tiers(HaircutTierTable::new(10, 20, 30).unwrap());
+
+        ledger.add_upcoming_vest(UpcomingVest {
+            avg_close_price_cents: 10_000,
+            units: 1000,
+            days_to_vest: 15,
+        });
+
+        let txs = ledger.project_transactions().unwrap();
+
+        let mut total_credit = 0;
+        for p in txs[0].postings() {
+            if p.amount() < 0 {
+                total_credit += p.amount().abs();
+            }
+        }
+        assert_eq!(total_credit, 9_000_000);
+    }
 }

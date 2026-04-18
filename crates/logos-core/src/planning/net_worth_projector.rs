@@ -375,4 +375,13 @@ mod tests {
             let _ = projector.project_timeline(months);
         }
     }
+
+    #[test]
+    fn should_cross_milestone_exactly_and_not_trigger_less_than_mutants() {
+        let mut projector = NetWorthProjector::new(100_000, 10_000);
+        projector.add_milestone_cents(110_000);
+        let (_, crossed) = projector.project_timeline(1);
+        assert_eq!(crossed.len(), 1);
+        assert_eq!(crossed[0], (110_000, 1));
+    }
 }

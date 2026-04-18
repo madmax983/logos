@@ -16,12 +16,15 @@ pub fn month(
     opening_balance_cents: i64,
     closing_balance_cents: i64,
 ) -> Result<(), CliError> {
-    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "reconcile.month".to_owned(),
-        message: format!("{err}"),
-    })?;
-    let resolved_month_key =
-        month_key.map_or_else(AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local, str::to_owned);
+    let mut runtime =
+        crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+            command: "reconcile.month".to_owned(),
+            message: format!("{err}"),
+        })?;
+    let resolved_month_key = month_key.map_or_else(
+        AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local,
+        str::to_owned,
+    );
     let run = runtime
         .reconcile_and_persist_month_for(
             checking_account,

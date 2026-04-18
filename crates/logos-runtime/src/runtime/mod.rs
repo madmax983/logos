@@ -86,8 +86,6 @@ impl<S> AppRuntime<S> {
     }
 }
 
-
-
 impl AppRuntime<MemoryStore> {
     #[must_use]
     pub fn new_in_memory() -> Self {
@@ -659,8 +657,7 @@ impl<S: LedgerStore> AppRuntime<S> {
                     continue;
                 }
             };
-            let secrets = match Self::secret_bundle_for_fetch_source(&source)
-            {
+            let secrets = match Self::secret_bundle_for_fetch_source(&source) {
                 Ok(secrets) => secrets,
                 Err(err) => {
                     if fetch_required && first_required_error.is_none() {

@@ -14,10 +14,11 @@ pub fn month(
     run_id: &str,
     analytics_artifact_id: Option<&str>,
 ) -> Result<(), CliError> {
-    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "close.month".to_owned(),
-        message: format!("{err}"),
-    })?;
+    let mut runtime =
+        crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+            command: "close.month".to_owned(),
+            message: format!("{err}"),
+        })?;
     let resolved_month_key = if let Some(explicit_month) = month_key {
         explicit_month.to_owned()
     } else {
