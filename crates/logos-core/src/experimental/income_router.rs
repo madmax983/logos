@@ -186,4 +186,69 @@ mod tests {
         assert!(postings.contains(&Posting::debit(dest2, 3).unwrap()));
         assert!(postings.contains(&Posting::debit(dest3, 3).unwrap()));
     }
+
+    #[test]
+    fn should_not_sweep_when_allocations_are_empty() {
+        let source = AccountId::new("income:salary").unwrap();
+        let dest = AccountId::new("assets:checking").unwrap();
+        let router = IncomeRouter::new(
+            source,
+            vec![RouteRule {
+                destination: dest.clone(),
+                percentage: 100,
+            }],
+        )
+        .unwrap();
+
+        let tx = router.route_income("Paycheck", 100).unwrap();
+        let postings = tx.postings();
+        assert!(postings.contains(&Posting::debit(dest, 100).unwrap()));
+    }
+
+    #[test]
+    fn should_handle_zero_amount() {
+        let source = AccountId::new("income:salary").unwrap();
+        let dest = AccountId::new("assets:checking").unwrap();
+        let router = IncomeRouter::new(
+            source,
+            vec![RouteRule {
+                destination: dest,
+                percentage: 100,
+            }],
+        )
+        .unwrap();
+
+        assert_eq!(
+            router.route_income("Paycheck", 0).unwrap_err(),
+            DomainError::InvalidCreditAmount { amount: 0 }
+        );
+    }
+
+    #[test]
+    fn should_not_create_zero_postings() {
+        let source = AccountId::new("income:salary").unwrap();
+        let dest1 = AccountId::new("assets:checking").unwrap();
+        let dest2 = AccountId::new("assets:savings").unwrap();
+
+        let router = IncomeRouter::new(
+            source,
+            vec![
+                RouteRule {
+                    destination: dest1,
+                    percentage: 100,
+                },
+                RouteRule {
+                    destination: dest2,
+                    percentage: 0,
+                },
+            ],
+        )
+        .unwrap();
+
+        let tx = router
+            .route_income("Paycheck", 100)
+            .expect("Should not fail from 0 posting");
+        let postings = tx.postings();
+        assert_eq!(postings.len(), 2);
+    }
 }

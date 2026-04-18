@@ -396,4 +396,11 @@ mod tests {
             let _ = sim.safe_net_worth_cents();
         }
     }
+
+    #[test]
+    fn should_handle_progress_pct_below_zero_safe_net_worth() {
+        let mut sim = FireSimulator::new(500_000);
+        sim.add_assets_liabilities(0, 10_000_000);
+        assert_eq!(sim.fire_progress_pct(), 0);
+    }
 }
