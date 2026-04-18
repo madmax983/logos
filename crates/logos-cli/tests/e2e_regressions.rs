@@ -16,7 +16,8 @@ fn e2e_correction_tracks_latest_superseded_transaction() {
 
 #[test]
 fn e2e_current_month_key_local_is_yyyy_mm() {
-    let month_key = logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local();
+    let month_key =
+        logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local();
 
     assert_eq!(month_key.len(), 7);
     assert_eq!(month_key.as_bytes()[4], b'-');

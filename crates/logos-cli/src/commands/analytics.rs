@@ -2,8 +2,6 @@ use crate::args::CliError;
 use crate::format::us_timestamp;
 use comfy_table::{Cell, Color};
 
-
-
 /// Handles `ledger analytics snapshot create`.
 ///
 /// # Errors
@@ -15,10 +13,11 @@ pub fn snapshot_create(
     schema_version: i64,
     supersedes_artifact_id: Option<&str>,
 ) -> Result<(), CliError> {
-    let mut runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
-        command: "analytics.snapshot.create".to_owned(),
-        message: format!("{err}"),
-    })?;
+    let mut runtime =
+        crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+            command: "analytics.snapshot.create".to_owned(),
+            message: format!("{err}"),
+        })?;
     let manifest = runtime
         .create_analytics_snapshot(
             as_of_valid_time_us,

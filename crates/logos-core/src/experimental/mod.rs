@@ -1,4 +1,7 @@
 #[cfg(feature = "nova")]
+pub mod lifestyle_creep;
+
+#[cfg(feature = "nova")]
 pub mod portfolio_rebalancer;
 
 #[cfg(feature = "nova")]
