@@ -39,7 +39,7 @@ fn rejects_txn_correct_when_missing_reason() {
     let args = vec!["ledger", "txn", "correct", "--supersedes-id", "txn-7"];
     let err = logos_cli::parse_args(args).expect_err("missing reason");
 
-    assert_eq!(err.to_string(), "Missing value for argument '--reason'.");
+    assert_eq!(err.to_string(), "Missing required argument '--reason'.");
 }
 
 #[test]
@@ -59,7 +59,7 @@ fn rejects_txn_add_when_missing_debit_account_flag() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--debit-account'."
+        "Missing required argument '--debit-account'."
     );
 }
 
@@ -80,7 +80,7 @@ fn rejects_txn_add_when_missing_credit_account_flag() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--credit-account'."
+        "Missing required argument '--credit-account'."
     );
 }
 
@@ -101,7 +101,7 @@ fn rejects_txn_add_when_missing_amount_cents_flag() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--amount-cents'."
+        "Missing required argument '--amount-cents'."
     );
 }
 
@@ -333,7 +333,7 @@ fn rejects_analytics_snapshot_show_without_artifact_id() {
     let err = logos_cli::parse_args(args).expect_err("missing artifact id");
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--artifact-id'."
+        "Missing required argument '--artifact-id'."
     );
 }
 
@@ -418,7 +418,7 @@ fn rejects_import_pdf_when_missing_file_flag() {
     let args = vec!["ledger", "import", "pdf"];
     let err = logos_cli::parse_args(args).expect_err("missing file flag");
 
-    assert_eq!(err.to_string(), "Missing value for argument '--file'.");
+    assert_eq!(err.to_string(), "Missing required argument '--file'.");
 }
 
 #[test]
@@ -510,7 +510,7 @@ fn rejects_import_csv_when_missing_required_flag_value() {
         "--timestamp-idx".to_string(),
     ];
     let err = logos_cli::parse_args(args).expect_err("missing file flag value");
-    assert_eq!(err.to_string(), "Missing value for argument '--file'.");
+    assert_eq!(err.to_string(), "Missing required argument '--file'.");
 }
 
 #[test]
@@ -687,7 +687,7 @@ fn rejects_budget_rsu_plan_without_quarterly_units() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--quarterly-units'."
+        "Missing required argument '--quarterly-units'."
     );
 }
 
@@ -833,7 +833,7 @@ fn rejects_reconcile_month_when_missing_opening_balance() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--opening-balance-cents'."
+        "Missing required argument '--opening-balance-cents'."
     );
 }
 
@@ -913,7 +913,7 @@ fn rejects_reconcile_show_without_run_id() {
     let args = vec!["ledger", "reconcile", "show"];
     let err = logos_cli::parse_args(args).expect_err("missing run id");
 
-    assert_eq!(err.to_string(), "Missing value for argument '--run-id'.");
+    assert_eq!(err.to_string(), "Missing required argument '--run-id'.");
 }
 
 #[test]
@@ -958,7 +958,7 @@ fn rejects_fetch_show_without_run_id() {
     let args = vec!["ledger", "fetch", "show-run"];
     let err = logos_cli::parse_args(args).expect_err("missing run id");
 
-    assert_eq!(err.to_string(), "Missing value for argument '--run-id'.");
+    assert_eq!(err.to_string(), "Missing required argument '--run-id'.");
 }
 
 #[test]
@@ -1114,7 +1114,7 @@ fn rejects_close_month_without_run_id() {
     let args = vec!["ledger", "close", "month"];
     let err = logos_cli::parse_args(args).expect_err("missing run id");
 
-    assert_eq!(err.to_string(), "Missing value for argument '--run-id'.");
+    assert_eq!(err.to_string(), "Missing required argument '--run-id'.");
 }
 
 #[test]

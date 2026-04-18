@@ -12,6 +12,7 @@ pub enum CliError {
     MissingSubcommand { command: String },
     UnknownCommand { command: String },
     UnknownSubcommand { command: String, subcommand: String },
+    MissingRequiredArg { flag: String },
     MissingArgValue { flag: String },
     InvalidArgValue { flag: String, value: String },
     MissingTxnDescription,
@@ -33,6 +34,7 @@ impl fmt::Display for CliError {
                 f,
                 "Unknown subcommand '{subcommand}' for command '{command}'."
             ),
+            Self::MissingRequiredArg { flag } => write!(f, "Missing required argument '{flag}'."),
             Self::MissingArgValue { flag } => write!(f, "Missing value for argument '{flag}'."),
             Self::InvalidArgValue { flag, value } => {
                 write!(f, "Invalid value '{value}' for argument '{flag}'.")
@@ -1171,7 +1173,7 @@ fn parse_flag_value(args: &[String], flag: &str) -> Result<String, CliError> {
     let idx = args
         .iter()
         .position(|arg| arg == flag)
-        .ok_or_else(|| CliError::MissingArgValue {
+        .ok_or_else(|| CliError::MissingRequiredArg {
             flag: flag.to_owned(),
         })?;
     let value = args
