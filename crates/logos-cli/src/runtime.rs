@@ -11,6 +11,7 @@ const DATABASE_URL_ENV: &str = "DATABASE_URL";
 /// Returns an error when `DATABASE_URL` is missing, the database connection fails,
 /// or applying migrations fails.
 pub fn init_runtime() -> Result<AppRuntime<PostgresStore>, CliError> {
+    println!("Loading history...");
     let database_url =
         env::var(DATABASE_URL_ENV).map_err(|_| CliError::CommandRuntimeFailed {
             command: "init".to_owned(),
@@ -31,6 +32,7 @@ pub fn init_runtime() -> Result<AppRuntime<PostgresStore>, CliError> {
             message: format!("pending database migrations detected ({joined}); run `ledger db migrate`"),
         });
     }
+    println!("Database loaded.");
     let state_root = logos_runtime::runtime::default_state_root();
     Ok(AppRuntime::with_store(
         store,
