@@ -13,3 +13,6 @@
 ## 2025-04-17 - The Missing Reporting Picture
 **Confusion:** The `logos-reporting` crate lacked a high-level conceptual overview showing how the pure functions for cashflow, net worth, and register balances compose together to build a complete financial picture.
 **Clarification:** Added a module-level `//!` documentation to `crates/logos-reporting/src/lib.rs` that includes an overarching executable doctest demonstrating the usage of multiple projection functions together.
+## 2025-04-19 - The Persistence Boundary
+**Confusion:** The `logos-store` crate was a "Black Box" lacking module-level documentation explaining the persistence contract and how it shields `logos-core`. Additionally, the `StoreError` type was a "Dead End", with no documentation explaining its variants or how users should handle storage failures.
+**Clarification:** Added `//!` module documentation to `crates/logos-store/src/lib.rs` detailing the `LedgerStore` contract with a `MemoryStore` executable example. Added `///` doc comments and an executable `## Examples` block to `crates/logos-store/src/error.rs` to clarify error recovery.
