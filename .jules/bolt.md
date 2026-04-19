@@ -7,3 +7,6 @@
 **Vec capacity pre-allocation for lines**
 **Learning:** For strings processed iteratively (e.g., CSV imports), `str::lines().count()` is an efficient way to count elements without reallocating since it acts as a fast iterator (often optimized). Passing this to `Vec::with_capacity()` prevents multiple allocations and `HashSet` rehashing when importing a large number of rows.
 **Action:** When a function initializes `Vec::new()` or `HashSet::new()` before looping over `.lines()` or an iterator with a predictable length, calculate the length and use `with_capacity` to eliminate intermediate memory allocations.
+## Avoid fighting the borrow checker with HashSet string deduplication
+**Learning:** When deduplicating items using `HashSet` and simultaneously collecting them into a `Vec` or passing them out of the current scope, using a `HashSet<&str>` to avoid `.clone()` on locally created `String`s often results in complex borrow checker errors (E0502), because the `String` must eventually be moved or pushed.
+**Action:** Do not attempt to prematurely optimize `.insert(string.clone())` into `HashSet` on hot import paths if the string must also be collected, without carefully structuring the lifetime boundaries. The extra allocation from `.clone()` is often the correct trade-off for memory safety.
