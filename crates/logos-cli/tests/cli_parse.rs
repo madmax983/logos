@@ -510,7 +510,7 @@ fn rejects_import_csv_when_missing_required_flag_value() {
         "--timestamp-idx".to_string(),
     ];
     let err = logos_cli::parse_args(args).expect_err("missing file flag value");
-    assert_eq!(err.to_string(), "Missing required argument '--file'.");
+    assert_eq!(err.to_string(), "Missing value for argument '--file'.");
 }
 
 #[test]
