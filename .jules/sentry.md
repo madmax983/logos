@@ -1,7 +1,6 @@
-## 2026-04-12 - [Fire Ascent Simulator - Edge Case Coverage]
-**Learning:** `FireAscentSimulator::ascend` has an uncovered branch handling the case where `fire_number == i64::MAX`. This happens when `safe_withdrawal_rate_pct` is set to `0`, making FIRE impossible. Adding a test for this proves the system correctly identifies and handles impossible ascents.
-**Action:** When dealing with simulators that calculate targets based on rates, explicitly test the boundary conditions like `0%` rates to ensure the system gracefully handles impossible states.
-
-## 2026-04-12 - [Excluding Equivalent Mutants]
-**Learning:** Some mathematical boundary constraints (`amount > 0` becoming `amount >= 0`) create unviable or equivalent mutants because passing `0` to constructors (like `Posting::debit`) inherently causes domain errors that are cleanly caught and propagated via `?` up the stack.
-**Action:** Added regex exclusions to `.cargo/mutants.toml` to safely ignore these known unviable permutations.
+## 2024-04-19 - Fix test asserting missing argument value instead of flag
+**Learning:** `parse_flag_value` returns `MissingArgValue` when the flag is present but the value is missing or appears to be another flag (starts with `--`). The test `rejects_import_csv_when_missing_required_flag_value` was expecting `MissingRequiredArg` instead of `MissingArgValue` due to the arguments sequence passed.
+**Action:** When a flag is followed by another flag instead of a value, the parser considers the value missing for the first flag. Update tests and assertions to reflect this behavior.
+## 2024-04-19 - Fix test asserting missing argument value instead of flag
+**Learning:** `parse_flag_value` returns `MissingArgValue` when the flag is present but the value is missing or appears to be another flag (starts with `--`). The test `rejects_import_csv_when_missing_required_flag_value` was expecting `MissingRequiredArg` instead of `MissingArgValue` due to the arguments sequence passed.
+**Action:** When a flag is followed by another flag instead of a value, the parser considers the value missing for the first flag. Update tests and assertions to reflect this behavior.
