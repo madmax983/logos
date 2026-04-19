@@ -1277,7 +1277,7 @@ fn parse_paired_i64_flags(
     match (left, right) {
         (Some(left), Some(right)) => Ok((Some(left), Some(right))),
         (None, None) => Ok((None, None)),
-        _ => Err(CliError::MissingArgValue {
+        _ => Err(CliError::MissingRequiredArg {
             flag: format!("{left_flag}' or '{right_flag}"),
         }),
     }
