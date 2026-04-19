@@ -1053,7 +1053,7 @@ fn rejects_month_autopilot_when_only_one_balance_flag_is_present() {
 
     assert_eq!(
         err.to_string(),
-        "Missing value for argument '--opening-balance-cents' or '--closing-balance-cents'."
+        "Missing required argument '--opening-balance-cents' or '--closing-balance-cents'."
     );
 }
 
