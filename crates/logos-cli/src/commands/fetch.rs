@@ -118,11 +118,11 @@ fn render_show_output(run: &StoredFetchRun) -> String {
         Cell::new(run.artifact_path().unwrap_or("-")),
         run.opening_balance_cents().map_or_else(
             || Cell::new("-"),
-            |value| Cell::new(format!("${:.2}", (value as f64) / 100.0)).fg(Color::Blue),
+            |value| Cell::new(crate::format::currency(value)).fg(Color::Blue),
         ),
         run.closing_balance_cents().map_or_else(
             || Cell::new("-"),
-            |value| Cell::new(format!("${:.2}", (value as f64) / 100.0)).fg(Color::Blue),
+            |value| Cell::new(crate::format::currency(value)).fg(Color::Blue),
         ),
         run.error_summary()
             .map_or_else(|| Cell::new("-"), |err| Cell::new(err).fg(Color::Red)),

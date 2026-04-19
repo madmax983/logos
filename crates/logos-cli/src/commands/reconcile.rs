@@ -108,7 +108,7 @@ fn render_month_output(
     let variance_cell = if run.variance_cents() == 0 {
         Cell::new("$0.00").fg(Color::Green)
     } else {
-        Cell::new(format!("${:.2}", (run.variance_cents() as f64) / 100.0))
+        Cell::new(crate::format::currency(run.variance_cents()))
             .fg(Color::Red)
             .add_attribute(Attribute::Bold)
     };
@@ -123,8 +123,8 @@ fn render_month_output(
         Cell::new(run.run_id()).fg(Color::DarkGrey),
         Cell::new(month_key),
         Cell::new(checking_account),
-        Cell::new(format!("${:.2}", (opening_balance_cents as f64) / 100.0)),
-        Cell::new(format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0)),
+        Cell::new(crate::format::currency(opening_balance_cents)),
+        Cell::new(crate::format::currency(run.ledger_delta_cents())),
         Cell::new(format!(
             "${:.2}",
             (run.expected_closing_balance_cents() as f64) / 100.0
@@ -137,8 +137,8 @@ fn render_month_output(
         reconciled_cell,
         Cell::new(run.matched_postings()),
         Cell::new(run.matched_transaction_count()),
-        Cell::new(format!("${:.2}", (run.inflow_cents() as f64) / 100.0)).fg(Color::Green),
-        Cell::new(format!("${:.2}", (run.outflow_cents() as f64) / 100.0)).fg(Color::Red),
+        Cell::new(crate::format::currency(run.inflow_cents())).fg(Color::Green),
+        Cell::new(crate::format::currency(run.outflow_cents())).fg(Color::Red),
         Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
     ]);
     table.to_string()
@@ -166,7 +166,7 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
     let variance_cell = if run.variance_cents() == 0 {
         Cell::new("$0.00").fg(Color::Green)
     } else {
-        Cell::new(format!("${:.2}", (run.variance_cents() as f64) / 100.0))
+        Cell::new(crate::format::currency(run.variance_cents()))
             .fg(Color::Red)
             .add_attribute(Attribute::Bold)
     };
@@ -185,7 +185,7 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
             "${:.2}",
             (run.opening_balance_cents() as f64) / 100.0
         )),
-        Cell::new(format!("${:.2}", (run.ledger_delta_cents() as f64) / 100.0)),
+        Cell::new(crate::format::currency(run.ledger_delta_cents())),
         Cell::new(format!(
             "${:.2}",
             (run.expected_closing_balance_cents() as f64) / 100.0
@@ -198,8 +198,8 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
         reconciled_cell,
         Cell::new(run.matched_postings()),
         Cell::new(run.matched_transaction_count()),
-        Cell::new(format!("${:.2}", (run.inflow_cents() as f64) / 100.0)).fg(Color::Green),
-        Cell::new(format!("${:.2}", (run.outflow_cents() as f64) / 100.0)).fg(Color::Red),
+        Cell::new(crate::format::currency(run.inflow_cents())).fg(Color::Green),
+        Cell::new(crate::format::currency(run.outflow_cents())).fg(Color::Red),
         Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
     ]);
     table.to_string()
@@ -234,7 +234,7 @@ fn render_list_output(
         let variance_cell = if run.variance_cents() == 0 {
             Cell::new("$0.00").fg(Color::Green)
         } else {
-            Cell::new(format!("${:.2}", (run.variance_cents() as f64) / 100.0))
+            Cell::new(crate::format::currency(run.variance_cents()))
                 .fg(Color::Red)
                 .add_attribute(Attribute::Bold)
         };
@@ -292,7 +292,7 @@ mod tests {
         assert!(output.contains("$75.00"));
         assert!(output.contains("$1075.00"));
         assert!(output.contains("$1060.00"));
-        assert!(output.contains("$-15.00"));
+        assert!(output.contains("-$15.00"));
         assert!(output.contains("$100.00"));
         assert!(output.contains("$25.00"));
         assert!(output.contains("1970-01-01 00:28:20 UTC"));
@@ -372,7 +372,7 @@ mod tests {
         assert!(output.contains("recon-9"));
         assert!(output.contains("$0.00"));
         assert!(output.contains("recon-10"));
-        assert!(output.contains("$-5.00"));
+        assert!(output.contains("-$5.00"));
         assert!(output.contains("1970-01-01 00:28:20 UTC"));
     }
 }

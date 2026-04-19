@@ -57,7 +57,7 @@ fn render_month_output(
     } else {
         Color::Red
     };
-    let cashflow_cell = Cell::new(format!("${:.2}", (cashflow_cents as f64) / 100.0))
+    let cashflow_cell = Cell::new(crate::format::currency(cashflow_cents))
         .fg(cashflow_color)
         .add_attribute(Attribute::Bold);
 
@@ -68,8 +68,8 @@ fn render_month_output(
             "${:.2}",
             (report.checking_balance_cents() as f64) / 100.0
         )),
-        Cell::new(format!("${:.2}", (report.income_cents() as f64) / 100.0)),
-        Cell::new(format!("${:.2}", (report.expense_cents() as f64) / 100.0)),
+        Cell::new(crate::format::currency(report.income_cents())),
+        Cell::new(crate::format::currency(report.expense_cents())),
         cashflow_cell,
     ]);
 
