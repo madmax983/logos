@@ -321,6 +321,115 @@ pub struct PostgresStore {
 }
 
 impl PostgresStore {
+    #[allow(clippy::too_many_arguments)]
+    const fn build_import_batch_row<'a>(
+        batch_id: &'a str,
+        import_kind: &'a str,
+        source_uri: &'a str,
+        batch_key: &'a str,
+        record_count: i64,
+        duplicate_count: i64,
+        dry_run: bool,
+        ocr_enabled: bool,
+        imported_at_us: i64,
+    ) -> NewImportBatchRow<'a> {
+        NewImportBatchRow {
+            batch_id,
+            import_kind,
+            source_uri,
+            batch_key,
+            record_count,
+            duplicate_count,
+            dry_run,
+            ocr_enabled,
+            imported_at_us,
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    const fn build_reconciliation_run_row<'a>(
+        run_id: &'a str,
+        month_key: &'a str,
+        checking_account: &'a str,
+        opening_balance_cents: i64,
+        ledger_delta_cents: i64,
+        expected_closing_balance_cents: i64,
+        statement_closing_balance_cents: i64,
+        variance_cents: i64,
+        reconciled: bool,
+        matched_postings: i64,
+        matched_transaction_count: i64,
+        inflow_cents: i64,
+        outflow_cents: i64,
+        created_at_us: i64,
+    ) -> NewReconciliationRunRow<'a> {
+        NewReconciliationRunRow {
+            run_id,
+            month_key,
+            checking_account,
+            opening_balance_cents,
+            ledger_delta_cents,
+            expected_closing_balance_cents,
+            statement_closing_balance_cents,
+            variance_cents,
+            reconciled,
+            matched_postings,
+            matched_transaction_count,
+            inflow_cents,
+            outflow_cents,
+            created_at_us,
+        }
+    }
+
+    const fn build_month_close_row<'a>(
+        close_id: &'a str,
+        month_key: &'a str,
+        checking_account: &'a str,
+        reconciliation_run_id: &'a str,
+        analytics_artifact_id: Option<&'a str>,
+        closed_at_us: i64,
+    ) -> NewMonthCloseRow<'a> {
+        NewMonthCloseRow {
+            close_id,
+            month_key,
+            checking_account,
+            reconciliation_run_id,
+            analytics_artifact_id,
+            closed_at_us,
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    const fn build_fetch_run_row<'a>(
+        run_id: &'a str,
+        source_id: &'a str,
+        institution_id: &'a str,
+        ledger_account: &'a str,
+        month_key: &'a str,
+        status: &'a str,
+        artifact_path: Option<&'a str>,
+        output_format: Option<&'a str>,
+        opening_balance_cents: Option<i64>,
+        closing_balance_cents: Option<i64>,
+        error_summary: Option<&'a str>,
+        created_at_us: i64,
+    ) -> NewFetchRunRow<'a> {
+        NewFetchRunRow {
+            run_id,
+            source_id,
+            institution_id,
+            ledger_account,
+            month_key,
+            status,
+            artifact_path,
+            output_format,
+            opening_balance_cents,
+            closing_balance_cents,
+            error_summary,
+            created_at_us,
+        }
+    }
+
     fn execute_reconciliation_run_transaction(
         connection: &mut PgConnection,
         run_row: &NewReconciliationRunRow<'_>,
@@ -1486,6 +1595,129 @@ impl PostgresStore {
     }
 }
 
+
+struct ImportBatchPayload<'a> {
+    batch_id: &'a str,
+    import_kind: &'a str,
+    source_uri: &'a str,
+    batch_key: &'a str,
+    record_count: i64,
+    duplicate_count: i64,
+    dry_run: bool,
+    ocr_enabled: bool,
+    imported_at_us: i64,
+}
+
+impl<'a> From<&ImportBatchPayload<'a>> for NewImportBatchRow<'a> {
+    fn from(payload: &ImportBatchPayload<'a>) -> Self {
+        Self {
+            batch_id: payload.batch_id,
+            import_kind: payload.import_kind,
+            source_uri: payload.source_uri,
+            batch_key: payload.batch_key,
+            record_count: payload.record_count,
+            duplicate_count: payload.duplicate_count,
+            dry_run: payload.dry_run,
+            ocr_enabled: payload.ocr_enabled,
+            imported_at_us: payload.imported_at_us,
+        }
+    }
+}
+
+struct FetchRunPayload<'a> {
+    run_id: &'a str,
+    source_id: &'a str,
+    institution_id: &'a str,
+    ledger_account: &'a str,
+    month_key: &'a str,
+    status: &'a str,
+    artifact_path: Option<&'a str>,
+    output_format: Option<&'a str>,
+    opening_balance_cents: Option<i64>,
+    closing_balance_cents: Option<i64>,
+    error_summary: Option<&'a str>,
+    created_at_us: i64,
+}
+
+impl<'a> From<&FetchRunPayload<'a>> for NewFetchRunRow<'a> {
+    fn from(payload: &FetchRunPayload<'a>) -> Self {
+        Self {
+            run_id: payload.run_id,
+            source_id: payload.source_id,
+            institution_id: payload.institution_id,
+            ledger_account: payload.ledger_account,
+            month_key: payload.month_key,
+            status: payload.status,
+            artifact_path: payload.artifact_path,
+            output_format: payload.output_format,
+            opening_balance_cents: payload.opening_balance_cents,
+            closing_balance_cents: payload.closing_balance_cents,
+            error_summary: payload.error_summary,
+            created_at_us: payload.created_at_us,
+        }
+    }
+}
+
+struct ReconciliationRunPayload<'a> {
+    run_id: &'a str,
+    month_key: &'a str,
+    checking_account: &'a str,
+    opening_balance_cents: i64,
+    ledger_delta_cents: i64,
+    expected_closing_balance_cents: i64,
+    statement_closing_balance_cents: i64,
+    variance_cents: i64,
+    reconciled: bool,
+    matched_postings: i64,
+    matched_transaction_count: i64,
+    inflow_cents: i64,
+    outflow_cents: i64,
+    created_at_us: i64,
+}
+
+impl<'a> From<&ReconciliationRunPayload<'a>> for NewReconciliationRunRow<'a> {
+    fn from(payload: &ReconciliationRunPayload<'a>) -> Self {
+        Self {
+            run_id: payload.run_id,
+            month_key: payload.month_key,
+            checking_account: payload.checking_account,
+            opening_balance_cents: payload.opening_balance_cents,
+            ledger_delta_cents: payload.ledger_delta_cents,
+            expected_closing_balance_cents: payload.expected_closing_balance_cents,
+            statement_closing_balance_cents: payload.statement_closing_balance_cents,
+            variance_cents: payload.variance_cents,
+            reconciled: payload.reconciled,
+            matched_postings: payload.matched_postings,
+            matched_transaction_count: payload.matched_transaction_count,
+            inflow_cents: payload.inflow_cents,
+            outflow_cents: payload.outflow_cents,
+            created_at_us: payload.created_at_us,
+        }
+    }
+}
+
+struct MonthClosePayload<'a> {
+    close_id: &'a str,
+    month_key: &'a str,
+    checking_account: &'a str,
+    reconciliation_run_id: &'a str,
+    analytics_artifact_id: Option<&'a str>,
+    closed_at_us: i64,
+}
+
+impl<'a> From<&MonthClosePayload<'a>> for NewMonthCloseRow<'a> {
+    fn from(payload: &MonthClosePayload<'a>) -> Self {
+        Self {
+            close_id: payload.close_id,
+            month_key: payload.month_key,
+            checking_account: payload.checking_account,
+            reconciliation_run_id: payload.reconciliation_run_id,
+            analytics_artifact_id: payload.analytics_artifact_id,
+            closed_at_us: payload.closed_at_us,
+        }
+    }
+}
+
 impl LedgerStore for PostgresStore {
     fn transaction_count(&self) -> usize {
         expect_read("transaction_count", self.try_transaction_count())
@@ -1842,7 +2074,6 @@ impl LedgerStore for PostgresStore {
         ))
     }
 
-    #[allow(clippy::too_many_lines)]
     fn write_import_batch(
         &mut self,
         import_kind: &str,
@@ -1871,8 +2102,8 @@ impl LedgerStore for PostgresStore {
         Self::ensure_transactions_exist(&mut connection, &imported_txn_ids)?;
 
         let batch_id = Self::next_import_batch_id(&mut connection)?;
-        let batch_row = NewImportBatchRow {
-            batch_id: &batch_id,
+        let batch_row = Self::build_import_batch_row(
+            &batch_id,
             import_kind,
             source_uri,
             batch_key,
@@ -1881,7 +2112,7 @@ impl LedgerStore for PostgresStore {
             dry_run,
             ocr_enabled,
             imported_at_us,
-        };
+        );
         let import_record_rows = Self::build_import_record_rows(records, &batch_id, imported_at_us);
 
         let statement_line_payloads =
@@ -1942,20 +2173,22 @@ impl LedgerStore for PostgresStore {
         let normalized_error_summary = error_summary.filter(|value| !value.is_empty());
         let mut connection = self.connection.borrow_mut();
         let run_id = Self::next_fetch_run_id(&mut connection)?;
-        let row = NewFetchRunRow {
-            run_id: &run_id,
+        let status_str = status.as_str();
+        let output_format_str = output_format.map(StoredFetchArtifactFormat::as_str);
+        let row = Self::build_fetch_run_row(
+            &run_id,
             source_id,
             institution_id,
             ledger_account,
             month_key,
-            status: status.as_str(),
+            status_str,
             artifact_path,
-            output_format: output_format.map(StoredFetchArtifactFormat::as_str),
+            output_format_str,
             opening_balance_cents,
             closing_balance_cents,
-            error_summary: normalized_error_summary,
+            normalized_error_summary,
             created_at_us,
-        };
+        );
         diesel::insert_into(fetch_runs::table)
             .values(&row)
             .execute(&mut *connection)
@@ -2006,8 +2239,8 @@ impl LedgerStore for PostgresStore {
         let statement_line_ids =
             Self::statement_line_ids_for_transaction_ids(&mut connection, reconciled_txn_ids)?;
         let run_id = Self::next_reconciliation_run_id(&mut connection)?;
-        let run_row = NewReconciliationRunRow {
-            run_id: &run_id,
+        let run_row = Self::build_reconciliation_run_row(
+            &run_id,
             month_key,
             checking_account,
             opening_balance_cents,
@@ -2021,7 +2254,7 @@ impl LedgerStore for PostgresStore {
             inflow_cents,
             outflow_cents,
             created_at_us,
-        };
+        );
         let transaction_rows =
             Self::build_reconciliation_transaction_rows(&run_id, reconciled_txn_ids);
         let statement_line_rows =
@@ -2052,7 +2285,6 @@ impl LedgerStore for PostgresStore {
         ))
     }
 
-    #[allow(clippy::too_many_lines)]
     fn write_reconciliation_run_and_month_close(
         &mut self,
         month_key: &str,
@@ -2088,8 +2320,8 @@ impl LedgerStore for PostgresStore {
         let run_id = Self::next_reconciliation_run_id(&mut connection)?;
         let close_id = Self::next_month_close_id(&mut connection)?;
 
-        let run_row = NewReconciliationRunRow {
-            run_id: &run_id,
+        let run_row = Self::build_reconciliation_run_row(
+            &run_id,
             month_key,
             checking_account,
             opening_balance_cents,
@@ -2103,15 +2335,15 @@ impl LedgerStore for PostgresStore {
             inflow_cents,
             outflow_cents,
             created_at_us,
-        };
-        let close_row = NewMonthCloseRow {
-            close_id: &close_id,
+        );
+        let close_row = Self::build_month_close_row(
+            &close_id,
             month_key,
             checking_account,
-            reconciliation_run_id: &run_id,
+            &run_id,
             analytics_artifact_id,
             closed_at_us,
-        };
+        );
         let transaction_rows =
             Self::build_reconciliation_transaction_rows(&run_id, reconciled_txn_ids);
         let statement_line_rows =
@@ -2202,14 +2434,14 @@ impl LedgerStore for PostgresStore {
         let closed_at_us = now_timestamp_us()?;
         let mut connection = self.connection.borrow_mut();
         let close_id = Self::next_month_close_id(&mut connection)?;
-        let row = NewMonthCloseRow {
-            close_id: &close_id,
+        let row = Self::build_month_close_row(
+            &close_id,
             month_key,
             checking_account,
             reconciliation_run_id,
             analytics_artifact_id,
             closed_at_us,
-        };
+        );
         diesel::insert_into(month_closes::table)
             .values(&row)
             .execute(&mut *connection)
