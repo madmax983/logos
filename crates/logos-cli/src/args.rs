@@ -1173,12 +1173,12 @@ fn parse_help_topic(args: &[String]) -> Result<HelpTopic, CliError> {
 }
 
 fn parse_flag_value(args: &[String], flag: &str) -> Result<String, CliError> {
-    let idx = args
-        .iter()
-        .position(|arg| arg == flag)
-        .ok_or_else(|| CliError::MissingRequiredArg {
-            flag: flag.to_owned(),
-        })?;
+    let idx =
+        args.iter()
+            .position(|arg| arg == flag)
+            .ok_or_else(|| CliError::MissingRequiredArg {
+                flag: flag.to_owned(),
+            })?;
     let value = args
         .get(idx + 1)
         .filter(|v| !v.starts_with("--"))
