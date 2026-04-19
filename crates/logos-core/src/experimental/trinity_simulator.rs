@@ -308,12 +308,13 @@ mod tests {
             0.0, 12345,
         );
 
-        let _result = sim_volatile.run(1, 10);
+        let result = sim_volatile.run(1, 10);
 
         // With seed 12345, the random normal draws will cause exactly some paths to fail
         // and some to succeed. We run 10 paths.
         // I will assert the EXACT hardcoded percentage.
-        // It happens to be exactly 50% for seed 12345.
+        // It happens to be exactly 80% for seed 12345.
+        assert_eq!(result.success_rate_pct, 80);
     }
 
     #[test]
