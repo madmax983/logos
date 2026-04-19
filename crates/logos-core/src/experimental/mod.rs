@@ -1,4 +1,7 @@
 #[cfg(feature = "nova")]
+pub mod geo_arbitrage;
+
+#[cfg(feature = "nova")]
 pub mod tax_loss_harvester;
 
 #[cfg(feature = "nova")]
