@@ -1,4 +1,3 @@
-#![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
 use logos_runtime::{AppRuntime, MonthReport};
 
@@ -57,19 +56,16 @@ fn render_month_output(
     } else {
         Color::Red
     };
-    let cashflow_cell = Cell::new(format!("${:.2}", (cashflow_cents as f64) / 100.0))
+    let cashflow_cell = Cell::new(crate::format::currency(cashflow_cents))
         .fg(cashflow_color)
         .add_attribute(Attribute::Bold);
 
     table.add_row(vec![
         Cell::new(month_key.to_string()),
         Cell::new(checking_account.to_string()),
-        Cell::new(format!(
-            "${:.2}",
-            (report.checking_balance_cents() as f64) / 100.0
-        )),
-        Cell::new(format!("${:.2}", (report.income_cents() as f64) / 100.0)),
-        Cell::new(format!("${:.2}", (report.expense_cents() as f64) / 100.0)),
+        Cell::new(crate::format::currency(report.checking_balance_cents())),
+        Cell::new(crate::format::currency(report.income_cents())),
+        Cell::new(crate::format::currency(report.expense_cents())),
         cashflow_cell,
     ]);
 

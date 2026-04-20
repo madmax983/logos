@@ -1,4 +1,3 @@
-#![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
 use logos_core::experimental::monte_carlo::MonteCarloProjector;
 use logos_reporting::{RsuBudgetPlan, ScenarioKey};
@@ -152,13 +151,13 @@ fn render_budget_set_output(
     } else {
         Color::Red
     };
-    let variance_cell = Cell::new(format!("${:.2}", (variance_cents as f64) / 100.0))
+    let variance_cell = Cell::new(crate::format::currency(variance_cents))
         .fg(variance_color)
         .add_attribute(Attribute::Bold);
 
     table.add_row(vec![
         Cell::new(month_key.to_string()),
-        Cell::new(format!("${:.2}", (budget_cents as f64) / 100.0)),
+        Cell::new(crate::format::currency(budget_cents)),
         Cell::new(expense_account_prefix.to_string()),
         variance_cell,
     ]);
@@ -191,19 +190,10 @@ fn render_rsu_plan_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
     ]);
     plan_table.add_row(vec![
         Cell::new(plan.month_key()).add_attribute(Attribute::Bold),
-        Cell::new(format!(
-            "${:.2}",
-            (plan.conservative_budget_cents() as f64) / 100.0
-        )),
-        Cell::new(format!(
-            "${:.2}",
-            (plan.fixed_commitments_cents() as f64) / 100.0
-        )),
-        Cell::new(format!(
-            "${:.2}",
-            (plan.baseline_remaining_cents() as f64) / 100.0
-        ))
-        .add_attribute(Attribute::Bold),
+        Cell::new(crate::format::currency(plan.conservative_budget_cents())),
+        Cell::new(crate::format::currency(plan.fixed_commitments_cents())),
+        Cell::new(crate::format::currency(plan.baseline_remaining_cents()))
+            .add_attribute(Attribute::Bold),
         Cell::new(plan.reserve_sweep_pct()),
         Cell::new(plan.investing_sweep_pct()),
     ]);
@@ -246,22 +236,12 @@ fn render_rsu_scenario_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
                 Cell::new(scenario_name(key))
                     .fg(color)
                     .add_attribute(Attribute::Bold),
-                Cell::new(format!(
-                    "${:.2}",
-                    (scenario.monthly_income_cents() as f64) / 100.0
-                )),
-                Cell::new(format!("${:.2}", (scenario.surplus_cents() as f64) / 100.0)),
-                Cell::new(format!(
-                    "${:.2}",
-                    (scenario.reserve_sweep_cents() as f64) / 100.0
-                )),
-                Cell::new(format!(
-                    "${:.2}",
-                    (scenario.investing_sweep_cents() as f64) / 100.0
-                )),
-                Cell::new(format!(
-                    "${:.2}",
-                    (scenario.available_after_sweeps_cents() as f64) / 100.0
+                Cell::new(crate::format::currency(scenario.monthly_income_cents())),
+                Cell::new(crate::format::currency(scenario.surplus_cents())),
+                Cell::new(crate::format::currency(scenario.reserve_sweep_cents())),
+                Cell::new(crate::format::currency(scenario.investing_sweep_cents())),
+                Cell::new(crate::format::currency(
+                    scenario.available_after_sweeps_cents(),
                 ))
                 .fg(color)
                 .add_attribute(Attribute::Bold),
@@ -287,19 +267,19 @@ fn render_monte_carlo_output(
 
     table.add_row(vec![
         Cell::new("P5 (Pessimistic)").fg(Color::Red),
-        Cell::new(format!("${:.2}", (result.p5_cents as f64) / 100.0)).fg(Color::Red),
+        Cell::new(crate::format::currency(result.p5_cents)).fg(Color::Red),
     ]);
     table.add_row(vec![
         Cell::new("Median (Expected)")
             .fg(Color::Green)
             .add_attribute(Attribute::Bold),
-        Cell::new(format!("${:.2}", (result.median_cents as f64) / 100.0))
+        Cell::new(crate::format::currency(result.median_cents))
             .fg(Color::Green)
             .add_attribute(Attribute::Bold),
     ]);
     table.add_row(vec![
         Cell::new("P95 (Optimistic)").fg(Color::Blue),
-        Cell::new(format!("${:.2}", (result.p95_cents as f64) / 100.0)).fg(Color::Blue),
+        Cell::new(crate::format::currency(result.p95_cents)).fg(Color::Blue),
     ]);
 
     format!("{table}")
@@ -347,7 +327,7 @@ mod tests {
         assert!(output.contains("2026-03"));
         assert!(output.contains("$50.00"));
         assert!(output.contains("expenses:"));
-        assert!(output.contains("$-12.50"));
+        assert!(output.contains("-$12.50"));
     }
 
     #[test]
@@ -375,11 +355,11 @@ mod tests {
         };
         let output = crate::commands::budget::render_monte_carlo_output(&result);
         assert!(output.contains("P5 (Pessimistic)"));
-        assert!(output.contains("$1000.00"));
+        assert!(output.contains("$1,000.00"));
         assert!(output.contains("Median (Expected)"));
-        assert!(output.contains("$1500.00"));
+        assert!(output.contains("$1,500.00"));
         assert!(output.contains("P95 (Optimistic)"));
-        assert!(output.contains("$2000.00"));
+        assert!(output.contains("$2,000.00"));
     }
 
     #[test]

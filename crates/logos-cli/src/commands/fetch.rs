@@ -1,4 +1,3 @@
-#![allow(clippy::cast_precision_loss)]
 use crate::args::CliError;
 use crate::format::us_timestamp;
 use comfy_table::{Cell, Color};
@@ -118,11 +117,11 @@ fn render_show_output(run: &StoredFetchRun) -> String {
         Cell::new(run.artifact_path().unwrap_or("-")),
         run.opening_balance_cents().map_or_else(
             || Cell::new("-"),
-            |value| Cell::new(format!("${:.2}", (value as f64) / 100.0)).fg(Color::Blue),
+            |value| Cell::new(crate::format::currency(value)).fg(Color::Blue),
         ),
         run.closing_balance_cents().map_or_else(
             || Cell::new("-"),
-            |value| Cell::new(format!("${:.2}", (value as f64) / 100.0)).fg(Color::Blue),
+            |value| Cell::new(crate::format::currency(value)).fg(Color::Blue),
         ),
         run.error_summary()
             .map_or_else(|| Cell::new("-"), |err| Cell::new(err).fg(Color::Red)),
@@ -182,8 +181,8 @@ mod tests {
         assert!(output.contains("fetch-3"));
         assert!(output.contains("provident-credit-union"));
         assert!(output.contains("downloaded"));
-        assert!(output.contains("$1000.00"));
-        assert!(output.contains("$1987.66"));
+        assert!(output.contains("$1,000.00"));
+        assert!(output.contains("$1,987.66"));
         assert!(output.contains("1970-01-01 00:28:20 UTC"));
     }
 
