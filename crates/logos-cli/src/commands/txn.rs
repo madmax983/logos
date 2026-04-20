@@ -50,7 +50,6 @@ impl TxnPoster for AppRuntime<logos_store_pg::PostgresStore> {
 /// # Errors
 ///
 /// Returns an error when write validation or runtime persistence fails.
-#[allow(clippy::cast_precision_loss)]
 pub fn add(
     description: &str,
     debit_account: &str,
@@ -69,7 +68,7 @@ pub fn add(
         amount_cents,
         &mut runtime,
     )?;
-    let amount = format!("${:.2}", (amount_cents as f64) / 100.0);
+    let amount = crate::format::currency(amount_cents);
 
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
