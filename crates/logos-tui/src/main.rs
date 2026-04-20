@@ -1,7 +1,7 @@
 use std::io;
 
 use logos_runtime::AppRuntime;
-use logos_tui::{App, terminal::TerminalSession};
+use logos_tui::{App, TerminalSession};
 
 fn main() {
     if let Err(err) = run() {
@@ -19,13 +19,11 @@ fn run() -> io::Result<()> {
         logos_store_pg::PostgresStore::connect(&database_url)
             .ok()
             .map(|store| {
-                let state_root = logos_runtime::runtime::default_state_root();
+                let state_root = logos_runtime::default_state_root();
                 AppRuntime::with_store(
                     store,
-                    logos_runtime::runtime::default_artifacts_root(&state_root),
-                    Some(logos_runtime::runtime::default_fetch_config_path(
-                        &state_root,
-                    )),
+                    logos_runtime::default_artifacts_root(&state_root),
+                    Some(logos_runtime::default_fetch_config_path(&state_root)),
                 )
             })
     };

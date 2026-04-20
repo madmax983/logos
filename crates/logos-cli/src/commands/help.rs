@@ -145,6 +145,7 @@ Environment:
 /// # Errors
 ///
 /// This handler never errors.
+#[allow(clippy::unnecessary_wraps)]
 pub fn show(topic: HelpTopic) -> Result<(), CliError> {
     let text = help_text(topic);
     println!("{text}");

@@ -298,7 +298,7 @@ fn test_is_unsigned_amount_token_rejects_signed_and_invalid_tokens() {
     )
     .unwrap();
     let result =
-        logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+        logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
     assert_eq!(result[0].amount_cents(), -5000);
 
     // Case 2: Unsigned running balance SHOULD trigger the override
@@ -315,7 +315,7 @@ fn test_is_unsigned_amount_token_rejects_signed_and_invalid_tokens() {
     )
     .unwrap();
     let result2 =
-        logos_import::pdf::parse_pdf_statement_file(&pdf_path2, "assets:checking", false).unwrap();
+        logos_import::parse_pdf_statement_file(&pdf_path2, "assets:checking", false).unwrap();
     assert_eq!(result2[0].amount_cents(), 1000);
 
     std::fs::remove_file(&pdf_path).ok();
@@ -333,7 +333,7 @@ fn test_parse_slash_date_year_raw_under_100_adds_2000() {
     )
     .unwrap();
     let result =
-        logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+        logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
     assert_eq!(result[0].timestamp(), "2026-02-01T00:00:00");
 
     let pdf_path2 = std::env::temp_dir().join(format!("slash-date-2-{}.pdf", std::process::id()));
@@ -345,7 +345,7 @@ fn test_parse_slash_date_year_raw_under_100_adds_2000() {
     )
     .unwrap();
     let result2 =
-        logos_import::pdf::parse_pdf_statement_file(&pdf_path2, "assets:checking", false).unwrap();
+        logos_import::parse_pdf_statement_file(&pdf_path2, "assets:checking", false).unwrap();
     assert_eq!(result2[0].timestamp(), "2026-02-01T00:00:00");
 
     std::fs::remove_file(&pdf_path).ok();
@@ -369,7 +369,7 @@ fn test_valid_calendar_date_rejects_invalid_months_and_days() {
 ",
     )
     .unwrap();
-    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
+    let result = logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert!(matches!(
@@ -397,7 +397,7 @@ fn test_is_leap_year_logic() {
     )
     .unwrap();
     let result =
-        logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+        logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
     assert_eq!(result.len(), 2);
     assert_eq!(result[0].timestamp(), "2024-02-29T00:00:00");
     assert_eq!(result[1].timestamp(), "2000-02-29T00:00:00");
@@ -421,7 +421,7 @@ fn test_parse_cents_from_sanitized_handles_various_fraction_lengths() {
     )
     .unwrap();
     let result =
-        logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+        logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
     assert_eq!(result.len(), 4);
     assert_eq!(result[0].amount_cents(), 1000);
     assert_eq!(result[1].amount_cents(), 1000);
@@ -444,7 +444,7 @@ fn test_extract_pdf_text_falls_back_to_literal_strings_or_fails() {
     .unwrap();
     // Assuming pdftotext won't parse this fake pdf, it should fallback to literal strings.
     // If it does, we get 1 record.
-    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
+    let result = logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
     if let Ok(records) = result {
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].amount_cents(), 1000);
@@ -458,7 +458,7 @@ fn test_extract_pdf_text_falls_back_to_literal_strings_or_fails() {
 ",
     )
     .unwrap();
-    let result2 = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
+    let result2 = logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
     assert!(result2.is_err());
     let err2 = result2.unwrap_err();
     assert!(matches!(
@@ -475,7 +475,7 @@ fn test_extract_pdf_text_with_ocr_fails_if_no_text_extracted() {
     // Give it a file that isn't a valid PDF, so pdftoppm will fail
     std::fs::write(&pdf_path, b"%PDF-1.4\nBLAH").unwrap();
 
-    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", true);
+    let result = logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", true);
     assert!(result.is_err());
     // Should be an OCR error bubble up to PdfTextExtractionFailed
     let err = result.unwrap_err();
@@ -502,7 +502,7 @@ fn test_extract_pdf_literal_strings_handles_escape_sequences() {
     )
     .unwrap();
 
-    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
+    let result = logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
     if let Ok(records) = result {
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].memo(), "TXN(NAME)");
@@ -519,7 +519,7 @@ fn pdf_parse_date_and_amount_token_distances_swapped_exact() {
     // Testing amount_index <= date_index + 1 bounds.
     // So if date_index is 0, amount_index cannot be 1 (meaning no memo between date and amount).
     std::fs::write(&pdf_path, b"%PDF-1.4\n(01/01/2026 10.00)\n").unwrap();
-    let result = logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
+    let result = logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false);
     // The row has no memo (date token, then amount token), so parse_statement_line should return None.
     assert!(matches!(
         result,
@@ -536,7 +536,7 @@ fn test_parse_slash_date_year_raw_100_does_not_add_2000() {
     // 01/01/100 should be parsed as year 100.
     std::fs::write(&pdf_path, b"%PDF-1.4\n(01/01/100 ITEM 10.00)\n").unwrap();
     let records =
-        logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+        logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
     assert_eq!(records.len(), 1);
     assert_eq!(records[0].timestamp(), "0100-01-01T00:00:00");
     std::fs::remove_file(&pdf_path).ok();
@@ -553,7 +553,7 @@ fn test_valid_calendar_date_all_months() {
     )
     .unwrap();
     let records =
-        logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+        logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
     assert_eq!(records.len(), 12);
     std::fs::remove_file(&pdf_path).ok();
 }
@@ -565,7 +565,7 @@ fn pdf_parse_zero_amount_category() {
     // Testing boundary of `< 0`. If amount is 0, it should be "income:imported"
     std::fs::write(&pdf_path, b"%PDF-1.4\n(01/01/2026 TEST 0.00)\n").unwrap();
     let records =
-        logos_import::pdf::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
+        logos_import::parse_pdf_statement_file(&pdf_path, "assets:checking", false).unwrap();
     assert_eq!(records.len(), 1);
     assert_eq!(records[0].amount_cents(), 0);
     assert_eq!(records[0].category(), "income:imported");

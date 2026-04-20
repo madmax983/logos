@@ -109,6 +109,7 @@ pub fn rsu_plan(
 /// # Errors
 ///
 /// Returns an error when execution fails.
+#[allow(clippy::unnecessary_wraps)]
 pub fn monte_carlo(
     initial_cents: i64,
     monthly_contribution_cents: i64,

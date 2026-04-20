@@ -257,6 +257,7 @@ mod tests {
 /// # Errors
 ///
 /// Returns an error when runtime initialization fails.
+#[allow(clippy::unnecessary_wraps)]
 pub fn fire_sim(
     monthly_expenses_cents: i64,
     liquid_assets_cents: i64,

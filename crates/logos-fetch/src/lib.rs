@@ -5,19 +5,19 @@
 //! like [`StatementSource`] and [`FetchedStatementArtifact`].
 
 /// Statement adapter definitions and common types for fetching data.
-pub mod adapter;
+pub(crate) mod adapter;
 /// Specific implementations of [`StatementAdapter`](crate::adapter::StatementAdapter).
-pub mod adapters;
+pub(crate) mod adapters;
 /// Configuration models for statement sources.
-pub mod config;
+pub(crate) mod config;
 /// Error types for fetch operations.
-pub mod error;
+pub(crate) mod error;
 /// Core domain models like `StatementSource` and `FetchRunStatus`.
-pub mod model;
+pub(crate) mod model;
 /// Traits and implementations for resolving secrets (e.g., from 1Password).
-pub mod resolver;
+pub(crate) mod resolver;
 /// Domain models for resolved secret bundles.
-pub mod secrets;
+pub(crate) mod secrets;
 
 pub use adapter::{FakeStatementAdapter, FetchRequest, FetchResult, StatementAdapter};
 pub use adapters::ProvidentAdapter;
