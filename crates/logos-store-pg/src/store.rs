@@ -1595,7 +1595,6 @@ impl PostgresStore {
     }
 }
 
-
 struct ImportBatchPayload<'a> {
     batch_id: &'a str,
     import_kind: &'a str,

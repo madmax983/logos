@@ -143,4 +143,83 @@ mod tests {
             DomainError::InvalidAllocationTotal { total: 99 }
         );
     }
+
+    #[test]
+    fn test_perfectly_balanced_portfolio_returns_error() {
+        let aapl = AccountId::new("assets:aapl").unwrap();
+        let asset_id = aapl.clone();
+
+        let rebalancer = PortfolioRebalancer::new(vec![TargetAllocation {
+            asset: asset_id,
+            percentage: 100,
+        }])
+        .unwrap();
+
+        let mut current_balances = HashMap::new();
+        current_balances.insert(aapl, 50_000);
+
+        let tx = rebalancer.rebalance("Rebalance", &current_balances);
+        assert_eq!(tx.unwrap_err(), DomainError::EmptyTransactionPostings);
+    }
+
+    #[test]
+    fn test_portfolio_with_zero_balance_returns_error() {
+        let aapl = AccountId::new("assets:aapl").unwrap();
+
+        let rebalancer = PortfolioRebalancer::new(vec![TargetAllocation {
+            asset: aapl,
+            percentage: 100,
+        }])
+        .unwrap();
+
+        let current_balances = HashMap::new();
+
+        let tx = rebalancer.rebalance("Rebalance", &current_balances);
+        assert_eq!(tx.unwrap_err(), DomainError::EmptyTransactionPostings);
+    }
+
+    #[test]
+    fn test_portfolio_rebalance_with_fractional_cents_remainder() {
+        let aapl = AccountId::new("assets:aapl").unwrap();
+        let tsla = AccountId::new("assets:tsla").unwrap();
+        let msft = AccountId::new("assets:msft").unwrap();
+
+        let rebalancer = PortfolioRebalancer::new(vec![
+            TargetAllocation {
+                asset: aapl.clone(),
+                percentage: 33,
+            },
+            TargetAllocation {
+                asset: tsla.clone(),
+                percentage: 33,
+            },
+            TargetAllocation {
+                asset: msft.clone(),
+                percentage: 34,
+            },
+        ])
+        .unwrap();
+
+        let mut current_balances = HashMap::new();
+        current_balances.insert(aapl.clone(), 10);
+
+        let tx = rebalancer
+            .rebalance("Rebalance", &current_balances)
+            .unwrap();
+        let postings = tx.postings();
+
+        // Total value = 10.
+        // aapl target = 10 * 33 / 100 = 3
+        // tsla target = 10 * 33 / 100 = 3
+        // msft target = 10 * 34 / 100 = 3
+        // remaining = 1. Added to aapl -> aapl target = 4
+        // aapl diff = 4 - 10 = -6 (credit 6)
+        // tsla diff = 3 - 0 = 3 (debit 3)
+        // msft diff = 3 - 0 = 3 (debit 3)
+
+        assert_eq!(postings.len(), 3);
+        assert!(postings.contains(&Posting::credit(aapl, 6).unwrap()));
+        assert!(postings.contains(&Posting::debit(tsla, 3).unwrap()));
+        assert!(postings.contains(&Posting::debit(msft, 3).unwrap()));
+    }
 }
