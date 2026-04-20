@@ -164,4 +164,51 @@ mod tests {
             avalanche_result.total_interest_paid_cents < snowball_result.total_interest_paid_cents
         );
     }
+
+    #[test]
+    fn test_infinite_loop_prevention_kill() {
+        let mut optimizer = DebtOptimizer::new(10);
+        optimizer.add_debt(Debt {
+            name: "Impossible Loan".to_string(),
+            balance_cents: 10_000,
+            interest_rate_pct: 15,
+            min_payment_cents: 10,
+        });
+
+        let result = optimizer.simulate(PayoffStrategy::Avalanche);
+        assert_eq!(result.total_months, 1201);
+    }
+
+    #[test]
+    fn test_remaining_cash_exact_minimum_kill() {
+        let mut optimizer = DebtOptimizer::new(500);
+        optimizer.add_debt(Debt {
+            name: "Loan 1".to_string(),
+            balance_cents: 1_000,
+            interest_rate_pct: 0,
+            min_payment_cents: 500,
+        });
+        let result = optimizer.simulate(PayoffStrategy::Avalanche);
+        assert_eq!(result.total_months, 2);
+    }
+
+    #[test]
+    fn test_kill_remaining_cash_divide_mutants() {
+        let mut optimizer = DebtOptimizer::new(100);
+        optimizer.add_debt(Debt {
+            name: "First".to_string(),
+            balance_cents: 100,
+            interest_rate_pct: 0,
+            min_payment_cents: 100,
+        });
+        optimizer.add_debt(Debt {
+            name: "Second".to_string(),
+            balance_cents: 101,
+            interest_rate_pct: 0,
+            min_payment_cents: 0,
+        });
+
+        let result = optimizer.simulate(PayoffStrategy::Avalanche);
+        assert_eq!(result.total_months, 3);
+    }
 }

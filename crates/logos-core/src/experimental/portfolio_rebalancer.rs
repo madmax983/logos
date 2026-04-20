@@ -143,4 +143,71 @@ mod tests {
             DomainError::InvalidAllocationTotal { total: 99 }
         );
     }
+
+    #[test]
+    fn test_fractional_cents_are_swept_to_first_target() {
+        let aapl = AccountId::new("assets:aapl").unwrap();
+        let tsla = AccountId::new("assets:tsla").unwrap();
+        let msft = AccountId::new("assets:msft").unwrap();
+
+        let rebalancer = PortfolioRebalancer::new(vec![
+            TargetAllocation { asset: aapl.clone(), percentage: 33 },
+            TargetAllocation { asset: tsla.clone(), percentage: 33 },
+            TargetAllocation { asset: msft.clone(), percentage: 34 },
+        ]).unwrap();
+
+        let mut current_balances = std::collections::HashMap::new();
+        current_balances.insert(aapl.clone(), 101);
+
+        let tx = rebalancer.rebalance("Rebalance", &current_balances).unwrap();
+        let postings = tx.postings();
+
+        assert_eq!(postings.len(), 3);
+        assert!(postings.contains(&Posting::credit(aapl.clone(), 67).unwrap()));
+        assert!(postings.contains(&Posting::debit(tsla.clone(), 33).unwrap()));
+        assert!(postings.contains(&Posting::debit(msft.clone(), 34).unwrap()));
+    }
+
+    #[test]
+    fn test_perfectly_balanced_asset_is_ignored() {
+        let aapl = AccountId::new("assets:aapl").unwrap();
+        let tsla = AccountId::new("assets:tsla").unwrap();
+        let msft = AccountId::new("assets:msft").unwrap();
+
+        let rebalancer = PortfolioRebalancer::new(vec![
+            TargetAllocation { asset: aapl.clone(), percentage: 50 },
+            TargetAllocation { asset: tsla.clone(), percentage: 30 },
+            TargetAllocation { asset: msft.clone(), percentage: 20 },
+        ]).unwrap();
+
+        let mut current_balances = std::collections::HashMap::new();
+        current_balances.insert(aapl.clone(), 40_000);
+        current_balances.insert(tsla.clone(), 40_000);
+        current_balances.insert(msft.clone(), 20_000);
+
+        let tx = rebalancer.rebalance("Rebalance", &current_balances).unwrap();
+        let postings = tx.postings();
+
+        assert_eq!(postings.len(), 2);
+        assert!(postings.contains(&Posting::debit(aapl.clone(), 10_000).unwrap()));
+        assert!(postings.contains(&Posting::credit(tsla.clone(), 10_000).unwrap()));
+    }
+
+    #[test]
+    fn test_empty_targets_with_remaining_value() {
+        let aapl = AccountId::new("assets:aapl").unwrap();
+        let tsla = AccountId::new("assets:tsla").unwrap();
+
+        let rebalancer = PortfolioRebalancer::new(vec![
+            TargetAllocation { asset: aapl.clone(), percentage: 50 },
+            TargetAllocation { asset: tsla.clone(), percentage: 50 },
+        ]).unwrap();
+
+        let mut current_balances = std::collections::HashMap::new();
+        current_balances.insert(aapl.clone(), 50);
+        current_balances.insert(tsla.clone(), 50);
+
+        let tx = rebalancer.rebalance("Rebalance", &current_balances);
+        assert!(matches!(tx.unwrap_err(), DomainError::EmptyTransactionPostings));
+    }
 }
