@@ -619,13 +619,15 @@ impl<S: LedgerStore> AppRuntime<S> {
             return Ok(Vec::new());
         };
 
-        let matched_sources: Vec<_> = config
+        // ⚡ Bolt Optimization: Using a `.peekable()` iterator here instead of `.cloned().collect::<Vec<_>>()`
+        // eliminates an unconditional heap allocation and avoids deeply cloning `StatementSource` config objects
+        // just to iterate over them and construct fetch requests.
+        let mut matched_sources = config
             .sources()
             .iter()
             .filter(|source| source.ledger_account() == request.checking_account())
-            .cloned()
-            .collect();
-        if matched_sources.is_empty() {
+            .peekable();
+        if matched_sources.peek().is_none() {
             return Ok(Vec::new());
         }
 
@@ -640,7 +642,7 @@ impl<S: LedgerStore> AppRuntime<S> {
         let mut staged_artifact = false;
         let mut persisted_runs = Vec::new();
         for source in matched_sources {
-            let fetch_request = match FetchRequest::new(&source, request.month_key()) {
+            let fetch_request = match FetchRequest::new(source, request.month_key()) {
                 Ok(fetch_request) => fetch_request,
                 Err(err) => {
                     let err = fetch_error_to_runtime(&err);
@@ -650,14 +652,14 @@ impl<S: LedgerStore> AppRuntime<S> {
                         });
                     }
                     persisted_runs.push(self.persist_failed_fetch_run(
-                        &source,
+                        source,
                         request.month_key(),
                         &err.to_string(),
                     )?);
                     continue;
                 }
             };
-            let secrets = match Self::secret_bundle_for_fetch_source(&source) {
+            let secrets = match Self::secret_bundle_for_fetch_source(source) {
                 Ok(secrets) => secrets,
                 Err(err) => {
                     if fetch_required && first_required_error.is_none() {
@@ -666,7 +668,7 @@ impl<S: LedgerStore> AppRuntime<S> {
                         });
                     }
                     persisted_runs.push(self.persist_failed_fetch_run(
-                        &source,
+                        source,
                         request.month_key(),
                         &err.to_string(),
                     )?);
@@ -674,7 +676,7 @@ impl<S: LedgerStore> AppRuntime<S> {
                 }
             };
             let result =
-                match Self::run_fetch_adapter(&fetch_runtime, &source, &fetch_request, &secrets) {
+                match Self::run_fetch_adapter(&fetch_runtime, source, &fetch_request, &secrets) {
                     Ok(result) => result,
                     Err(err) => {
                         if fetch_required && first_required_error.is_none() {
@@ -683,7 +685,7 @@ impl<S: LedgerStore> AppRuntime<S> {
                             });
                         }
                         persisted_runs.push(self.persist_failed_fetch_run(
-                            &source,
+                            source,
                             request.month_key(),
                             &err.to_string(),
                         )?);
@@ -706,7 +708,7 @@ impl<S: LedgerStore> AppRuntime<S> {
                     });
                 }
                 persisted_runs.push(self.persist_failed_fetch_run(
-                    &source,
+                    source,
                     request.month_key(),
                     &message,
                 )?);
@@ -719,21 +721,21 @@ impl<S: LedgerStore> AppRuntime<S> {
                         staged_artifact = true;
                     }
                     persisted_runs.push(self.persist_fetch_run_from_result(
-                        &source,
+                        source,
                         request.month_key(),
                         &result,
                     )?);
                 }
                 FetchRunStatus::NoNewStatement => {
                     persisted_runs.push(self.persist_fetch_run_from_result(
-                        &source,
+                        source,
                         request.month_key(),
                         &result,
                     )?);
                 }
                 FetchRunStatus::NeedsAttention | FetchRunStatus::Failed => {
                     persisted_runs.push(self.persist_fetch_run_from_result(
-                        &source,
+                        source,
                         request.month_key(),
                         &result,
                     )?);

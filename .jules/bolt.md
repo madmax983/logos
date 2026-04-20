@@ -10,3 +10,7 @@
 ## Avoid fighting the borrow checker with HashSet string deduplication
 **Learning:** When deduplicating items using `HashSet` and simultaneously collecting them into a `Vec` or passing them out of the current scope, using a `HashSet<&str>` to avoid `.clone()` on locally created `String`s often results in complex borrow checker errors (E0502), because the `String` must eventually be moved or pushed.
 **Action:** Do not attempt to prematurely optimize `.insert(string.clone())` into `HashSet` on hot import paths if the string must also be collected, without carefully structuring the lifetime boundaries. The extra allocation from `.clone()` is often the correct trade-off for memory safety.
+## YYYY-MM-DD - Iterator Cloned Optimization
+
+**Learning:** Removing `.cloned()` and `.collect::<Vec<_>>()` from an iterator chain successfully avoids intermediate heap allocations and deep cloning of objects. However, doing so changes the iterator's yielded item type from owned values (e.g. `T`) to references (e.g. `&T`).
+**Action:** When removing `.cloned()` from iterator chains to avoid intermediate allocations, ensure you update downstream variables in the loop body (e.g., changing `&item` to `item`) to resolve `clippy::needless_borrow` warnings, as the iterator will now yield references instead of owned values.
