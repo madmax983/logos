@@ -319,7 +319,7 @@ impl FetchedStatementArtifact {
     }
 }
 
-pub(crate) fn is_valid_month_key(value: &str) -> bool {
+pub fn is_valid_month_key(value: &str) -> bool {
     let bytes = value.as_bytes();
     if bytes.len() != 7 || bytes[4] != b'-' {
         return false;

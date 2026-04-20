@@ -3,7 +3,7 @@
 //! The Persistence Contract. This crate acts as the boundary between the pure business logic in `logos-core`
 //! and the harsh reality of databases and file systems.
 //!
-//! By defining the [`LedgerStore`] trait here, `logos-core` doesn't need to know if data is saved in PostgreSQL,
+//! By defining the [`LedgerStore`] trait here, `logos-core` doesn't need to know if data is saved in `PostgreSQL`,
 //! a local file, or just memory. It only knows that the storage contract will be upheld.
 //!
 //! ## The "Black Box" of Storage

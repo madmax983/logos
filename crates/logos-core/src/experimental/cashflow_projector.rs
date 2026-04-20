@@ -181,13 +181,12 @@ impl CashflowProjector {
                         // ⚡ Bolt Optimization: Avoid unconditional `.to_owned()` string allocation.
                         // We first check if the key exists using a slice, and only allocate
                         // a new owned String if we need to insert a new entry.
-                        if let Some(balance) = current_balances.get_mut(posting.account().as_str()) {
+                        if let Some(balance) = current_balances.get_mut(posting.account().as_str())
+                        {
                             *balance += posting.amount();
                         } else {
-                            current_balances.insert(
-                                posting.account().as_str().to_owned(),
-                                posting.amount(),
-                            );
+                            current_balances
+                                .insert(posting.account().as_str().to_owned(), posting.amount());
                         }
                     }
                 }

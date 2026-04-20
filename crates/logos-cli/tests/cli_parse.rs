@@ -255,7 +255,7 @@ fn parses_analytics_snapshot_create_with_defaults() {
     assert_eq!(parsed.command_path(), "analytics.snapshot.create");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Analytics(logos_cli::args::AnalyticsCommand::SnapshotCreate {
+        logos_cli::Command::Analytics(logos_cli::AnalyticsCommand::SnapshotCreate {
             as_of_valid_time_us,
             as_of_tx_time_us,
             schema_version,
@@ -287,7 +287,7 @@ fn parses_analytics_snapshot_create_with_explicit_flags() {
 
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Analytics(logos_cli::args::AnalyticsCommand::SnapshotCreate {
+        logos_cli::Command::Analytics(logos_cli::AnalyticsCommand::SnapshotCreate {
             as_of_valid_time_us,
             as_of_tx_time_us,
             schema_version,
@@ -345,7 +345,7 @@ fn parses_import_pdf_with_default_value_flags() {
     assert_eq!(parsed.command_path(), "import.pdf");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Import(logos_cli::args::ImportCommand::Pdf {
+        logos_cli::Command::Import(logos_cli::ImportCommand::Pdf {
             file_path,
             account,
             dry_run,
@@ -374,7 +374,7 @@ fn parses_import_pdf_with_explicit_value_flags() {
     assert_eq!(parsed.command_path(), "import.pdf");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Import(logos_cli::args::ImportCommand::Pdf {
+        logos_cli::Command::Import(logos_cli::ImportCommand::Pdf {
             file_path,
             account,
             dry_run,
@@ -401,7 +401,7 @@ fn parses_import_pdf_with_ocr_flag() {
     assert_eq!(parsed.command_path(), "import.pdf");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Import(logos_cli::args::ImportCommand::Pdf {
+        logos_cli::Command::Import(logos_cli::ImportCommand::Pdf {
             file_path,
             account,
             dry_run,
@@ -429,7 +429,7 @@ fn parses_import_csv_with_defaults() {
     assert_eq!(parsed.command_path(), "import.csv");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Import(logos_cli::args::ImportCommand::Csv {
+        logos_cli::Command::Import(logos_cli::ImportCommand::Csv {
             file_path,
             source_id,
             timestamp_idx,
@@ -478,7 +478,7 @@ fn parses_import_csv_with_explicit_mapping_flags() {
 
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Import(logos_cli::args::ImportCommand::Csv {
+        logos_cli::Command::Import(logos_cli::ImportCommand::Csv {
             file_path,
             source_id,
             timestamp_idx,
@@ -557,7 +557,7 @@ fn parses_budget_set_with_default_value_flags() {
     assert_eq!(parsed.command_path(), "budget.set");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Budget(logos_cli::args::BudgetCommand::Set {
+        logos_cli::Command::Budget(logos_cli::BudgetCommand::Set {
             month_key,
             budget_cents,
             expense_account_prefix
@@ -581,7 +581,7 @@ fn parses_budget_set_with_explicit_value_flags() {
     assert_eq!(parsed.command_path(), "budget.set");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Budget(logos_cli::args::BudgetCommand::Set {
+        logos_cli::Command::Budget(logos_cli::BudgetCommand::Set {
             month_key,
             budget_cents,
             expense_account_prefix
@@ -607,7 +607,7 @@ fn parses_budget_set_with_month_flag() {
 
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Budget(logos_cli::args::BudgetCommand::Set {
+        logos_cli::Command::Budget(logos_cli::BudgetCommand::Set {
             month_key,
             budget_cents,
             expense_account_prefix
@@ -648,7 +648,7 @@ fn parses_budget_rsu_plan_with_defaults() {
     assert_eq!(parsed.command_path(), "budget.rsu-plan");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Budget(logos_cli::args::BudgetCommand::RsuPlan {
+        logos_cli::Command::Budget(logos_cli::BudgetCommand::RsuPlan {
             month_key,
             quarterly_units,
             days_to_vest,
@@ -707,7 +707,7 @@ fn parses_report_month_with_default_value_flags() {
     assert_eq!(parsed.command_path(), "report.month");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Report(logos_cli::args::ReportCommand::Month {
+        logos_cli::Command::Report(logos_cli::ReportCommand::Month {
             checking_account,
             month_key
         }) if checking_account == "assets:checking" && month_key.is_none()
@@ -728,7 +728,7 @@ fn parses_report_month_with_explicit_checking_account() {
     assert_eq!(parsed.command_path(), "report.month");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Report(logos_cli::args::ReportCommand::Month {
+        logos_cli::Command::Report(logos_cli::ReportCommand::Month {
             checking_account,
             month_key
         }) if checking_account == "assets:brokerage" && month_key.is_none()
@@ -742,7 +742,7 @@ fn parses_report_month_with_month_flag() {
 
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Report(logos_cli::args::ReportCommand::Month {
+        logos_cli::Command::Report(logos_cli::ReportCommand::Month {
             checking_account,
             month_key
         }) if checking_account == "assets:checking" && month_key.as_deref() == Some("2026-04")
@@ -776,7 +776,7 @@ fn parses_reconcile_month_with_defaults() {
     assert_eq!(parsed.command_path(), "reconcile.month");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Reconcile(logos_cli::args::ReconcileCommand::Month {
+        logos_cli::Command::Reconcile(logos_cli::ReconcileCommand::Month {
             checking_account,
             month_key,
             opening_balance_cents,
@@ -808,7 +808,7 @@ fn parses_reconcile_month_with_explicit_value_flags() {
     assert_eq!(parsed.command_path(), "reconcile.month");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Reconcile(logos_cli::args::ReconcileCommand::Month {
+        logos_cli::Command::Reconcile(logos_cli::ReconcileCommand::Month {
             checking_account,
             month_key,
             opening_balance_cents,
@@ -872,7 +872,7 @@ fn parses_reconcile_list_with_optional_filters() {
     assert_eq!(parsed.command_path(), "reconcile.list");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Reconcile(logos_cli::args::ReconcileCommand::List {
+        logos_cli::Command::Reconcile(logos_cli::ReconcileCommand::List {
             month_key,
             checking_account,
         }) if month_key.as_deref() == Some("2026-04")
@@ -888,7 +888,7 @@ fn parses_reconcile_list_without_filters() {
     assert_eq!(parsed.command_path(), "reconcile.list");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Reconcile(logos_cli::args::ReconcileCommand::List {
+        logos_cli::Command::Reconcile(logos_cli::ReconcileCommand::List {
             month_key,
             checking_account,
         }) if month_key.is_none() && checking_account.is_none()
@@ -903,7 +903,7 @@ fn parses_reconcile_show_with_run_id() {
     assert_eq!(parsed.command_path(), "reconcile.show");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Reconcile(logos_cli::args::ReconcileCommand::Show { run_id })
+        logos_cli::Command::Reconcile(logos_cli::ReconcileCommand::Show { run_id })
             if run_id == "recon-17"
     ));
 }
@@ -932,7 +932,7 @@ fn parses_fetch_list_runs_with_optional_filters() {
     assert_eq!(parsed.command_path(), "fetch.list");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Fetch(logos_cli::args::FetchCommand::ListRuns {
+        logos_cli::Command::Fetch(logos_cli::FetchCommand::ListRuns {
             month_key,
             checking_account,
         }) if month_key.as_deref() == Some("2026-04")
@@ -948,7 +948,7 @@ fn parses_fetch_show_with_run_id() {
     assert_eq!(parsed.command_path(), "fetch.show");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Fetch(logos_cli::args::FetchCommand::ShowRun { run_id })
+        logos_cli::Command::Fetch(logos_cli::FetchCommand::ShowRun { run_id })
             if run_id == "fetch-17"
     ));
 }
@@ -969,7 +969,7 @@ fn parses_month_autopilot_with_defaults() {
     assert_eq!(parsed.command_path(), "month.autopilot");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Month(logos_cli::args::MonthCommand::Autopilot {
+        logos_cli::Command::Month(logos_cli::MonthCommand::Autopilot {
             month_key,
             checking_account,
             opening_balance_cents,
@@ -1017,7 +1017,7 @@ fn parses_month_autopilot_with_explicit_flags() {
 
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Month(logos_cli::args::MonthCommand::Autopilot {
+        logos_cli::Command::Month(logos_cli::MonthCommand::Autopilot {
             month_key,
             checking_account,
             opening_balance_cents,
@@ -1065,7 +1065,7 @@ fn parses_close_month_with_required_run_id() {
     assert_eq!(parsed.command_path(), "close.month");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Close(logos_cli::args::CloseCommand::Month {
+        logos_cli::Command::Close(logos_cli::CloseCommand::Month {
             month_key,
             checking_account,
             run_id,
@@ -1097,7 +1097,7 @@ fn parses_close_month_with_explicit_flags() {
     assert_eq!(parsed.command_path(), "close.month");
     assert!(matches!(
         parsed.command(),
-        logos_cli::args::Command::Close(logos_cli::args::CloseCommand::Month {
+        logos_cli::Command::Close(logos_cli::CloseCommand::Month {
             month_key,
             checking_account,
             run_id,

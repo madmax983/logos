@@ -35,12 +35,10 @@ pub fn init_runtime() -> Result<AppRuntime<PostgresStore>, CliError> {
             ),
         });
     }
-    let state_root = logos_runtime::runtime::default_state_root();
+    let state_root = logos_runtime::default_state_root();
     Ok(AppRuntime::with_store(
         store,
-        logos_runtime::runtime::default_artifacts_root(&state_root),
-        Some(logos_runtime::runtime::default_fetch_config_path(
-            &state_root,
-        )),
+        logos_runtime::default_artifacts_root(&state_root),
+        Some(logos_runtime::default_fetch_config_path(&state_root)),
     ))
 }

@@ -1,4 +1,4 @@
-use logos_runtime::runtime::AppRuntime;
+use logos_runtime::AppRuntime;
 use proptest::prelude::*;
 
 proptest! {
