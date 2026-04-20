@@ -12,6 +12,23 @@ const FIELD_MEMO: u8 = 4;
 const FIELD_ACCOUNT: u8 = 5;
 const FIELD_CATEGORY: u8 = 6;
 
+/// Generates a cryptographically secure, deterministic identifier for an `ImportRecord`.
+///
+/// This uses the Blake3 hashing algorithm to create a unique fingerprint based on the
+/// core fields of the record. This fingerprint is crucial for **Idempotency**: it allows
+/// `logos-store` to reject duplicate rows when a user accidentally imports overlapping
+/// bank statements, preventing double-counting.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_import::{ImportRecord, deterministic_fingerprint};
+///
+/// let record_a = ImportRecord::new("chase", "2023-10-01", -500, "Coffee", "assets", "expenses");
+/// let record_b = ImportRecord::new("chase", "2023-10-01", -500, "Coffee", "assets", "expenses");
+///
+/// assert_eq!(deterministic_fingerprint(&record_a), deterministic_fingerprint(&record_b));
+/// ```
 #[must_use]
 pub fn deterministic_fingerprint(record: &ImportRecord) -> String {
     let mut hasher = Hasher::new();

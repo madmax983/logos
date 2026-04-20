@@ -1,5 +1,25 @@
 use core::fmt;
 
+/// Represents a failure when translating messy external statement data into the system.
+///
+/// This enum is the primary diagnostic tool for operators when an import fails.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_import::{ImportError, CsvMapping, parse_simple_csv_row};
+///
+/// let mapping = CsvMapping { amount_idx: 5, ..Default::default() };
+/// let result = parse_simple_csv_row("2023-01-01,A,B,C", &mapping);
+///
+/// match result {
+///     Err(ImportError::MissingColumns { expected, found }) => {
+///         assert_eq!(expected, 6);
+///         assert_eq!(found, 4);
+///     }
+///     _ => panic!("Expected MissingColumns error"),
+/// }
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ImportError {
     MissingColumns { expected: usize, found: usize },
@@ -60,6 +80,28 @@ impl Default for CsvMapping {
     }
 }
 
+/// The normalized representation of an external bank statement line.
+///
+/// `ImportRecord` strips away the varied formatting of different financial institutions
+/// and provides a stable, predictable structure that can be fingerprinted and eventually
+/// converted into a strict double-entry transaction.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_import::ImportRecord;
+///
+/// let record = ImportRecord::new(
+///     "chase.csv",
+///     "2023-10-05",
+///     -15000,
+///     "Grocery Store",
+///     "assets:checking",
+///     "expenses:food"
+/// );
+///
+/// assert_eq!(record.amount_cents(), -15000);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportRecord {
     source_id: String,
