@@ -143,12 +143,12 @@ pub fn sankey() -> Result<(), CliError> {
 }
 
 fn render_sankey_output(raw_mermaid: &str) -> String {
-    let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec!["Sankey Flow Diagram"]);
-    table.add_row(vec![raw_mermaid]);
+    use crossterm::style::Stylize;
 
-    format!("analytics.sankey\n{table}")
+    let header = "📊 Sankey Flow Diagram Generated!".green().bold();
+    let instruction = "Copy the code below and paste it into https://mermaid.live to view your cashflow:".italic();
+
+    format!("\n{header}\n{instruction}\n\n{raw_mermaid}\n")
 }
 
 fn render_snapshot_manifest(
@@ -193,15 +193,15 @@ mod tests {
 
     #[test]
     fn render_sankey_output_is_deterministic() {
+        use crossterm::style::Stylize;
+
         let raw = "```mermaid\nsankey-beta\nincome:salary,assets:checking,500.00\n```\n";
         let output = render_sankey_output(raw);
 
-        let mut expected_table = comfy_table::Table::new();
-        expected_table.load_preset(comfy_table::presets::UTF8_FULL);
-        expected_table.set_header(vec!["Sankey Flow Diagram"]);
-        expected_table.add_row(vec![raw]);
+        let header = "📊 Sankey Flow Diagram Generated!".green().bold();
+        let instruction = "Copy the code below and paste it into https://mermaid.live to view your cashflow:".italic();
 
-        let expected = format!("analytics.sankey\n{expected_table}");
+        let expected = format!("\n{header}\n{instruction}\n\n{raw}\n");
         assert_eq!(output, expected);
     }
 
