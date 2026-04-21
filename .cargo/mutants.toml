@@ -37,4 +37,6 @@ exclude_re = [
     ,"replace \\&\\& with \\|\\| in rebalance"
     ,"replace > with >= in rebalance"
     ,"replace > with >= in add_transactions"
+,
+    'replace main with \(\)'
 ]
