@@ -1,3 +1,4 @@
+//! Command Line Argument Parsing
 use core::fmt;
 
 use crate::commands;

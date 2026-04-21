@@ -1,3 +1,4 @@
+//! PDF Statement Parsing
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};

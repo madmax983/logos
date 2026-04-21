@@ -1,7 +1,20 @@
+//! Application Runtime Models
 use logos_store::model::StoredFetchRun;
 use logos_store::model::{StoredMonthClose, StoredReconciliationRun};
 use std::path::{Path, PathBuf};
 
+/// A snapshot of financial health for a specific month.
+///
+/// Provides a high-level summary of liquidity and cashflow.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::MonthReport;
+///
+/// let report = MonthReport::new(5000_00, 8000_00, 6000_00, 2000_00);
+/// assert_eq!(report.cashflow_cents(), 2000_00);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MonthReport {
     checking_balance: i64,
@@ -22,6 +35,19 @@ pub struct MonthReconciliation {
     outflow_cents: i64,
 }
 
+/// A summary of an import operation.
+///
+/// Tracks how many records were successfully imported and how many were skipped as duplicates.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::ImportSummary;
+///
+/// let summary = ImportSummary::new(10, 2, false);
+/// assert_eq!(summary.imported_count(), 10);
+/// assert_eq!(summary.duplicate_count(), 2);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ImportSummary {
     imported_count: usize,
