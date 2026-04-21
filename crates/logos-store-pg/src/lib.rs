@@ -1,3 +1,4 @@
+//! `PostgreSQL` storage implementation for Logos
 pub(crate) mod migrate;
 pub(crate) mod schema;
 pub(crate) mod store;

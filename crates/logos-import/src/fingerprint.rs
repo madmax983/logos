@@ -1,3 +1,4 @@
+//! Deterministic fingerprint generation.
 use std::hash::{Hash, Hasher as StdHasher};
 
 use blake3::Hasher;

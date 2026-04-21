@@ -1,3 +1,4 @@
+//! Concrete `LedgerStore` implementation using `PostgreSQL`
 use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};

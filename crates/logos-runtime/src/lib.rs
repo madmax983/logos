@@ -1,3 +1,4 @@
+//! The Logos Application Runtime
 pub(crate) mod error;
 pub(crate) mod models;
 pub(crate) mod runtime;

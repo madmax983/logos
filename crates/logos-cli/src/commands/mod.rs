@@ -1,3 +1,4 @@
+//! CLI Command Implementations
 pub mod analytics;
 pub mod budget;
 pub mod close;
