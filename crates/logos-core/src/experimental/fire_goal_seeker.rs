@@ -147,4 +147,79 @@ mod tests {
         let result = projector.run(120, 1000);
         assert!(result.p5_cents >= 150_000_000);
     }
+
+    #[test]
+    fn test_goal_seeker_zero_target() {
+        let fire_sim = FireSimulator::new(0);
+        let seeker = FireGoalSeeker::new(fire_sim, 0, 0.07, 0.15, 42);
+        assert_eq!(
+            seeker.seek_monthly_contribution(120, ConfidenceLevel::Moderate),
+            Some(0)
+        );
+    }
+
+    #[test]
+    fn test_goal_seeker_unreachable_target() {
+        let mut fire_sim = FireSimulator::new(500_000);
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 0,
+        }); // Target i64::MAX
+        let seeker = FireGoalSeeker::new(fire_sim, 0, 0.07, 0.15, 42);
+        assert_eq!(
+            seeker.seek_monthly_contribution(120, ConfidenceLevel::Moderate),
+            None
+        );
+    }
+
+    #[test]
+    fn test_goal_seeker_zero_months_success() {
+        let mut fire_sim = FireSimulator::new(10_000); // 100_000_00 / 4 * 100 = 2_500_000 / 4 = 3_000_000 cents
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 4,
+        });
+
+        let seeker = FireGoalSeeker::new(fire_sim, 5_000_000_00, 0.07, 0.15, 42);
+        assert_eq!(
+            seeker.seek_monthly_contribution(0, ConfidenceLevel::Moderate),
+            Some(0)
+        );
+    }
+
+    #[test]
+    fn test_goal_seeker_zero_months_failure() {
+        let mut fire_sim = FireSimulator::new(100_000); // $1k expenses, target $300k
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 4,
+        });
+
+        let seeker = FireGoalSeeker::new(fire_sim, 0, 0.07, 0.15, 42);
+        assert_eq!(
+            seeker.seek_monthly_contribution(0, ConfidenceLevel::Moderate),
+            None
+        );
+    }
+
+    #[test]
+    fn test_goal_seeker_confidence_levels() {
+        let mut fire_sim = FireSimulator::new(500_000);
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 4,
+        });
+
+        let seeker = FireGoalSeeker::new(fire_sim, 50_000_000, 0.07, 0.15, 42);
+
+        let req_cons = seeker
+            .seek_monthly_contribution(120, ConfidenceLevel::Conservative)
+            .unwrap();
+        let req_mod = seeker
+            .seek_monthly_contribution(120, ConfidenceLevel::Moderate)
+            .unwrap();
+        let req_agg = seeker
+            .seek_monthly_contribution(120, ConfidenceLevel::Aggressive)
+            .unwrap();
+
+        // Conservative path requires MORE monthly contribution to guarantee hitting the target
+        assert!(req_cons > req_mod);
+        assert!(req_mod > req_agg);
+    }
 }
