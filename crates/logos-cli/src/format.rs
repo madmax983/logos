@@ -6,6 +6,13 @@ pub fn us_timestamp(us: i64) -> String {
     )
 }
 
+/// Formats currency with commas, e.g., $1,500,000.00
+///
+/// ⚡ Bolt Optimization:
+/// Previously, this function used `String::insert(0, c)` repeatedly within a loop,
+/// causing O(n^2) shifts of all existing bytes per character. By pre-allocating the string capacity,
+/// iterating forward over the bytes, and using `push`, we achieve O(n) performance
+/// and eliminate intermediate allocations on the formatting hot path.
 #[must_use]
 pub fn currency(cents: i64) -> String {
     let sign = if cents < 0 { "-" } else { "" };
@@ -14,15 +21,22 @@ pub fn currency(cents: i64) -> String {
     let remainder = abs_cents % 100;
 
     let dollars_str = dollars.to_string();
-    let mut with_commas = String::new();
-    for (i, c) in dollars_str.chars().rev().enumerate() {
-        if i > 0 && i % 3 == 0 {
-            with_commas.insert(0, ',');
+    let bytes = dollars_str.as_bytes();
+    let len = bytes.len();
+
+    let mut out = String::with_capacity(len + len / 3 + 6);
+    out.push_str(sign);
+    out.push('$');
+
+    for (i, &b) in bytes.iter().enumerate() {
+        if i > 0 && (len - i) % 3 == 0 {
+            out.push(',');
         }
-        with_commas.insert(0, c);
+        out.push(b as char);
     }
 
-    format!("{sign}${with_commas}.{remainder:02}")
+    let _ = std::fmt::write(&mut out, format_args!(".{remainder:02}"));
+    out
 }
 
 #[cfg(test)]
