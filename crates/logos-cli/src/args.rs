@@ -144,6 +144,15 @@ fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError>
             *liquid_assets_cents,
             *monthly_savings_cents,
         ),
+        AnalyticsCommand::NetWorthProject {
+            initial_net_worth_cents,
+            monthly_savings_cents,
+            months,
+        } => commands::analytics::net_worth_project(
+            *initial_net_worth_cents,
+            *monthly_savings_cents,
+            *months,
+        ),
     }
 }
 
@@ -388,6 +397,7 @@ impl Command {
             Self::Analytics(AnalyticsCommand::SnapshotShow { .. }) => "analytics.snapshot.show",
             Self::Analytics(AnalyticsCommand::Sankey) => "analytics.sankey",
             Self::Analytics(AnalyticsCommand::FireSim { .. }) => "analytics.fire-sim",
+            Self::Analytics(AnalyticsCommand::NetWorthProject { .. }) => "analytics.net-worth",
             Self::Import(ImportCommand::Pdf { .. }) => "import.pdf",
             Self::Import(ImportCommand::Csv { .. }) => "import.csv",
             Self::Fetch(FetchCommand::ListRuns { .. }) => "fetch.list",
@@ -457,6 +467,11 @@ pub enum AnalyticsCommand {
         monthly_expenses_cents: i64,
         liquid_assets_cents: i64,
         monthly_savings_cents: i64,
+    },
+    NetWorthProject {
+        initial_net_worth_cents: i64,
+        monthly_savings_cents: i64,
+        months: u16,
     },
 }
 
@@ -778,6 +793,20 @@ fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
                     monthly_expenses_cents,
                     liquid_assets_cents,
                     monthly_savings_cents,
+                }),
+            })
+        }
+        "net-worth" => {
+            let initial_net_worth_cents =
+                parse_required_parsed_flag(&args[2..], "--initial-net-worth-cents")?;
+            let monthly_savings_cents =
+                parse_required_parsed_flag(&args[2..], "--monthly-savings-cents")?;
+            let months = parse_required_parsed_flag(&args[2..], "--months")?;
+            Ok(ParsedArgs {
+                command: Command::Analytics(AnalyticsCommand::NetWorthProject {
+                    initial_net_worth_cents,
+                    monthly_savings_cents,
+                    months,
                 }),
             })
         }

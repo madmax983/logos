@@ -257,6 +257,49 @@ mod tests {
 /// # Errors
 ///
 /// Returns an error when runtime initialization fails.
+/// Handles `ledger analytics net-worth`.
+///
+/// # Errors
+///
+/// Returns an error when runtime initialization fails.
+#[allow(clippy::unnecessary_wraps)]
+pub fn net_worth_project(
+    initial_net_worth_cents: i64,
+    monthly_savings_cents: i64,
+    months: u16,
+) -> Result<(), CliError> {
+    use logos_core::planning::net_worth_projector::NetWorthProjector;
+
+    let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
+    let (timeline, _) = projector.project_timeline(months);
+
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec!["Month", "Net Worth", "Saved Cash", "Vested Value"]);
+
+    for month in timeline {
+        table.add_row(vec![
+            comfy_table::Cell::new(month.month_index.to_string()),
+            comfy_table::Cell::new(crate::format::currency(month.net_worth_cents))
+                .fg(comfy_table::Color::Green),
+            comfy_table::Cell::new(crate::format::currency(month.saved_cents)),
+            comfy_table::Cell::new(crate::format::currency(month.vested_value_cents)),
+        ]);
+    }
+
+    println!(
+        "analytics.net-worth
+{table}"
+    );
+
+    Ok(())
+}
+
+/// Handles `ledger analytics fire-sim`.
+///
+/// # Errors
+///
+/// Returns an error when runtime initialization fails.
 #[allow(clippy::unnecessary_wraps)]
 pub fn fire_sim(
     monthly_expenses_cents: i64,
@@ -384,6 +427,12 @@ fn render_fire_sim_output(
 #[cfg(test)]
 mod fire_sim_tests {
     use super::*;
+
+    #[test]
+    fn test_net_worth_project_calculates_correctly() {
+        let result = super::net_worth_project(10_000_000, 500_000, 12);
+        assert!(result.is_ok());
+    }
 
     #[test]
     fn test_fire_sim_calculates_correctly() {
