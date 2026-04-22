@@ -6,7 +6,7 @@ use logos_core::TransactionId;
 use logos_fetch::{FetchedStatementArtifact, OutputFormat};
 use logos_import::CsvMapping;
 use logos_runtime::{AppRuntime, MonthAutopilotRequest};
-use logos_store::model::StoredFetchRunStatus;
+use logos_store::StoredFetchRunStatus;
 use logos_store_pg::PostgresStore;
 use testcontainers_modules::{postgres, testcontainers::runners::SyncRunner};
 

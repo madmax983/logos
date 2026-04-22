@@ -50,7 +50,7 @@ pub fn snapshot_list() -> Result<(), CliError> {
 }
 
 fn render_snapshot_manifest_list(
-    manifests: &[logos_store::model::StoredAnalyticsArtifactManifest],
+    manifests: &[logos_store::StoredAnalyticsArtifactManifest],
 ) -> String {
     if manifests.is_empty() {
         return "No analytics snapshots found. Try creating one with 'ledger analytics snapshot create'.".to_owned();
@@ -152,7 +152,7 @@ fn render_sankey_output(raw_mermaid: &str) -> String {
 }
 
 fn render_snapshot_manifest(
-    manifest: &logos_store::model::StoredAnalyticsArtifactManifest,
+    manifest: &logos_store::StoredAnalyticsArtifactManifest,
 ) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
@@ -189,7 +189,7 @@ fn render_snapshot_manifest(
 #[cfg(test)]
 mod tests {
     use super::{render_sankey_output, render_snapshot_manifest, render_snapshot_manifest_list};
-    use logos_store::model::StoredAnalyticsArtifactManifest;
+    use logos_store::StoredAnalyticsArtifactManifest;
 
     #[test]
     fn render_sankey_output_is_deterministic() {

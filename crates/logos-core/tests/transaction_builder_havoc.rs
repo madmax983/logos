@@ -1,4 +1,4 @@
-use logos_core::domain::transaction::{TransactionBuilder, Posting};
+use logos_core::{TransactionBuilder, Posting};
 use logos_core::AccountId;
 use proptest::prelude::*;
 

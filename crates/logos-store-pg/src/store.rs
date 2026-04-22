@@ -9,14 +9,14 @@ use diesel::prelude::*;
 use diesel::sql_query;
 use diesel::sql_types::BigInt;
 use logos_core::{AccountId, Correction, Posting, TransactionBuilder, TransactionId};
-use logos_store::error::StoreError;
-use logos_store::model::{
+use logos_store::StoreError;
+use logos_store::{
     NewImportRecord, StoredAnalyticsArtifactManifest, StoredBudgetTarget,
     StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredImportBatch,
     StoredImportRecord, StoredMonthClose, StoredReconciliationRun, StoredStatementLine,
     StoredTransaction,
 };
-use logos_store::traits::LedgerStore;
+use logos_store::LedgerStore;
 
 use crate::migrate::{pending_migration_names, run_pending_migrations};
 use crate::schema::{

@@ -1,5 +1,5 @@
 use logos_import::ImportError;
-use logos_store::error::StoreError;
+use logos_store::StoreError;
 use std::fmt;
 
 #[derive(Debug)]

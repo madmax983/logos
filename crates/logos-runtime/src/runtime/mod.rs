@@ -30,13 +30,11 @@ use logos_reporting::{
 };
 use logos_store::{
     MemoryStore,
-    error::StoreError,
-    model::{
-        NewImportRecord, StoredAnalyticsArtifactManifest, StoredFetchArtifactFormat,
-        StoredFetchRun, StoredFetchRunStatus, StoredMonthClose, StoredReconciliationRun,
-        StoredStatementLine, StoredTransaction,
-    },
-    traits::LedgerStore,
+    StoreError,
+    NewImportRecord, StoredAnalyticsArtifactManifest, StoredFetchArtifactFormat,
+    StoredFetchRun, StoredFetchRunStatus, StoredMonthClose, StoredReconciliationRun,
+    StoredStatementLine, StoredTransaction,
+    LedgerStore,
 };
 use polars::prelude::{DataFrame, ParquetWriter, Series};
 use std::collections::HashSet;
@@ -1700,7 +1698,7 @@ mod tests {
             bundle: SecretBundle::new("wrong", "wrong", Some("999999")).expect("bundle"),
         };
 
-        let bundle = AppRuntime::<logos_store::memory::MemoryStore>::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
+        let bundle = AppRuntime::<logos_store::MemoryStore>::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
             .expect("bundle");
 
         assert_eq!(
@@ -1728,7 +1726,7 @@ mod tests {
             bundle: SecretBundle::new("markm", "s3cr3t", Some("123456")).expect("bundle"),
         };
 
-        let bundle = AppRuntime::<logos_store::memory::MemoryStore>::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
+        let bundle = AppRuntime::<logos_store::MemoryStore>::secret_bundle_for_fetch_source_with_resolver(&source, &resolver)
             .expect("bundle");
 
         assert_eq!(

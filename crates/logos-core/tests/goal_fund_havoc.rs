@@ -1,7 +1,7 @@
 #![allow(clippy::should_panic_without_expect)]
 
 #[cfg(feature = "nova")]
-use logos_core::domain::rsu::AllocationPolicy;
+use logos_core::AllocationPolicy;
 #[cfg(feature = "nova")]
 use logos_core::experimental::goal_fund_projector::GoalFundProjector;
 #[cfg(feature = "nova")]

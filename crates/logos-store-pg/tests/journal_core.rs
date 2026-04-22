@@ -1,8 +1,8 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use logos_core::{AccountId, Correction, Posting, TransactionBuilder, TransactionId};
-use logos_store::error::StoreError;
-use logos_store::traits::LedgerStore;
+use logos_store::StoreError;
+use logos_store::LedgerStore;
 use logos_store_pg::PostgresStore;
 use testcontainers_modules::{postgres, testcontainers::runners::SyncRunner};
 

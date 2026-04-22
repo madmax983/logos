@@ -44,8 +44,8 @@
 //! assert!(matches!(bad_txn, Err(DomainError::UnbalancedTransaction { total: 100_00 })));
 //! ```
 
-pub mod domain;
-pub mod error;
+pub(crate) mod domain;
+pub(crate) mod error;
 /// Experimental features and proof-of-concepts. Use at your own risk.
 pub mod experimental;
 pub mod planning;

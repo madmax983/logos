@@ -21,3 +21,10 @@
 **[Facade for logos-fetch, logos-runtime, logos-tui, logos-cli]**
 **Tangle:** The `logos-fetch`, `logos-runtime`, `logos-tui`, and `logos-cli` crates exposed all their internal implementation modules publicly (e.g., `pub mod adapter;`, `pub mod app;`), leaking internal details and violating encapsulation.
 **Blueprint:** Refactored `crates/logos-fetch/src/lib.rs`, `crates/logos-runtime/src/lib.rs`, `crates/logos-tui/src/lib.rs`, and `crates/logos-cli/src/lib.rs` into proper Facades. Changed internal modules to `pub(crate) mod` and strictly re-exported only the required public API using `pub use`.
+**[Facade for logos-core]**
+**Tangle:** The `logos-core` crate exposed its internal implementation modules (`domain`, `error`) publicly (`pub mod`), leaking internal details and violating encapsulation.
+**Blueprint:** Refactored `crates/logos-core/src/lib.rs` into a Facade. Changed internal modules `domain` and `error` to `pub(crate) mod` and explicitly re-exported only the necessary types and functions using `pub use`. The `experimental` and `planning` modules remain public due to the way they are structured and tested in downstream modules.
+
+**[Facade for logos-store]**
+**Tangle:** The `logos-store` crate exposed its internal implementation modules (`error`, `memory`, `model`, `traits`) publicly (`pub mod`), leaking internal details and violating encapsulation.
+**Blueprint:** Refactored `crates/logos-store/src/lib.rs` into a Facade. Changed internal modules to `pub(crate) mod` and explicitly re-exported only the necessary types and functions using `pub use`.

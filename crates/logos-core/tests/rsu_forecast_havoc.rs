@@ -1,5 +1,5 @@
 use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
-use logos_core::domain::rsu::AllocationPolicy;
+use logos_core::AllocationPolicy;
 use logos_core::AccountId;
 use proptest::prelude::*;
 

@@ -1,6 +1,6 @@
 use logos_core::Posting;
-use logos_core::domain::account::AccountId;
-use logos_core::domain::rsu::AllocationPolicy;
+use logos_core::AccountId;
+use logos_core::AllocationPolicy;
 use logos_core::planning::fire::{FireSimulator, UpcomingVest};
 use logos_core::planning::net_worth_projector::NetWorthProjector;
 use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};

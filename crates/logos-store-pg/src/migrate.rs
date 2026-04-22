@@ -2,7 +2,7 @@ use diesel::migration::Migration;
 use diesel::pg::PgConnection;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 
-use logos_store::error::StoreError;
+use logos_store::StoreError;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
