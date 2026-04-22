@@ -14,3 +14,6 @@
 
 **Learning:** Removing `.cloned()` and `.collect::<Vec<_>>()` from an iterator chain successfully avoids intermediate heap allocations and deep cloning of objects. However, doing so changes the iterator's yielded item type from owned values (e.g. `T`) to references (e.g. `&T`).
 **Action:** When removing `.cloned()` from iterator chains to avoid intermediate allocations, ensure you update downstream variables in the loop body (e.g., changing `&item` to `item`) to resolve `clippy::needless_borrow` warnings, as the iterator will now yield references instead of owned values.
+**[Title: O(n^2) String insertions on formatting path]
+**Learning:** `String::insert(0, c)` causes all existing bytes in the string to be shifted right by one. Using this inside a loop over characters turns formatting into an O(n^2) operation with frequent implicit re-allocations.
+**Action:** Always pre-allocate with `String::with_capacity` if the max length is bounded, and build the string sequentially from left to right using `push` or `push_str`.
