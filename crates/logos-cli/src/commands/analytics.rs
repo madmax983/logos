@@ -282,6 +282,25 @@ pub fn fire_sim(
     );
     let ascent_result = ascent_sim.ascend();
 
+    let output = render_fire_sim_output(
+        monthly_expenses_cents,
+        fire_number,
+        current_net_worth,
+        monthly_savings_cents,
+        &ascent_result,
+    );
+    println!("{output}");
+
+    Ok(())
+}
+
+fn render_fire_sim_output(
+    monthly_expenses_cents: i64,
+    fire_number: i64,
+    current_net_worth: i64,
+    monthly_savings_cents: i64,
+    ascent_result: &logos_core::experimental::fire_ascent::AscentResult,
+) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
     table.set_header(vec!["Metric", "Value"]);
@@ -334,7 +353,7 @@ pub fn fire_sim(
                 .add_attribute(comfy_table::Attribute::Bold),
         ]);
     } else {
-        for milestone in ascent_result.milestones {
+        for milestone in &ascent_result.milestones {
             let target_dollars = crate::format::currency(milestone.target_cents);
 
             if let Some(month) = milestone.month_reached {
@@ -359,9 +378,7 @@ pub fn fire_sim(
         }
     }
 
-    println!("analytics.fire-sim\n{table}\n\n{journey_table}");
-
-    Ok(())
+    format!("analytics.fire-sim\n{table}\n\n{journey_table}")
 }
 
 #[cfg(test)]
