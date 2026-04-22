@@ -307,6 +307,31 @@ fn parses_analytics_snapshot_list() {
 }
 
 #[test]
+fn parses_analytics_net_worth() {
+    let args = vec![
+        "ledger",
+        "analytics",
+        "net-worth",
+        "--initial-net-worth-cents",
+        "10000000",
+        "--monthly-savings-cents",
+        "500000",
+        "--months",
+        "12",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parses");
+    assert_eq!(parsed.command_path(), "analytics.net-worth");
+    assert_eq!(
+        parsed.command(),
+        &logos_cli::Command::Analytics(logos_cli::AnalyticsCommand::NetWorthProject {
+            initial_net_worth_cents: 10_000_000,
+            monthly_savings_cents: 500_000,
+            months: 12,
+        })
+    );
+}
+
+#[test]
 fn parses_analytics_sankey() {
     let args = vec!["ledger", "analytics", "sankey"];
     let parsed = logos_cli::parse_args(args).expect("parse");
