@@ -9,16 +9,6 @@ use tempfile::TempDir;
 use logos_fetch::{OpCliSecretRefReader, SecretRefReader};
 
 fn create_mock_op(temp_dir: &TempDir, fail: bool) -> std::path::PathBuf {
-    //
-
-    // Create a Rust-based cross-platform executable wrapper.
-    // Instead of using a shell script, we compile a small rust program.
-    // However, that might be too slow for a test.
-    // Another cross-platform way is to mock it by just using `echo` and `false`/`exit 1`, or
-    // we can write a small cargo project and compile it, but that's overkill.
-    // Is `sh` available on Windows via MSYS2? Yes usually in CI, but to be truly cross-platform:
-
-    // Instead, we can use a simpler approach: just point the op_bin to a script if unix, or bat file if windows.
     let (file_name, script) = if fail {
         if cfg!(windows) {
             (
@@ -81,13 +71,10 @@ where
     }
 }
 
-// Group both scenarios into one test function so they run sequentially
-// and don't race on the environment variable.
 #[test]
 fn op_cli_reader_integration_tests() {
     let temp_dir = TempDir::new().unwrap();
 
-    // 1. Success case
     let mock_op_success = create_mock_op(&temp_dir, false);
 
     with_env_var(
@@ -102,7 +89,6 @@ fn op_cli_reader_integration_tests() {
         },
     );
 
-    // 2. Failure case
     let mock_op_failure = create_mock_op(&temp_dir, true);
 
     with_env_var(
@@ -119,4 +105,34 @@ fn op_cli_reader_integration_tests() {
             );
         },
     );
+}
+
+// 👺 Havoc: Prove that `unsafe { env::set_var }` is fragile by attacking it concurrently
+#[test]
+fn havoc_test_unsafe_env_mutation_data_race() {
+    use std::thread;
+
+    // The target env var that the integration test relies on
+    let target_key = "LOGOS_FETCH_OP_BIN";
+
+    // We launch threads that continuously corrupt the environment variable while the integration test might be running.
+    // If run together via `cargo test`, this guarantees a data race and process state corruption.
+    let mut handles = vec![];
+
+    for i in 0..10 {
+        let handle = thread::spawn(move || {
+            for j in 0..1000 {
+                let val = format!("garbage_path_corruption_{}_{}", i, j);
+                unsafe {
+                    env::set_var(target_key, &val);
+                }
+                let _ = env::var(target_key).unwrap_or_default();
+            }
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        let _ = handle.join();
+    }
 }
