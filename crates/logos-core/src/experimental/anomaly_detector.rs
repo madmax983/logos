@@ -112,6 +112,7 @@ impl AnomalyDetector {
     }
 }
 
+#[must_use]
 fn median(sorted_data: &[i64]) -> f64 {
     let n = sorted_data.len();
     if n == 0 {
@@ -137,6 +138,86 @@ mod tests {
     use super::*;
     use crate::domain::account::AccountId;
     use crate::domain::transaction::{Posting, TransactionBuilder};
+
+    #[test]
+    fn test_anomaly_detector_not_enough_data() {
+        let detector = AnomalyDetector::new(1.5);
+        let mut transactions = Vec::new();
+
+        let amounts = vec![1000, 1200, 1400]; // less than 4
+
+        for amount in amounts {
+            let tx = TransactionBuilder::new("Groceries")
+                .posting(
+                    Posting::credit(AccountId::new("assets:checking").unwrap(), amount).unwrap(),
+                )
+                .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), amount).unwrap())
+                .build()
+                .unwrap();
+            transactions.push(tx);
+        }
+
+        let anomalies = detector.detect(&transactions);
+        assert_eq!(anomalies.len(), 0);
+    }
+
+    #[test]
+    fn test_anomaly_detector_empty() {
+        let detector = AnomalyDetector::new(1.5);
+        let transactions = Vec::new();
+        let anomalies = detector.detect(&transactions);
+        assert_eq!(anomalies.len(), 0);
+    }
+
+    #[test]
+    fn test_anomaly_detector_odd_number_of_transactions() {
+        let detector = AnomalyDetector::new(1.5);
+        let mut transactions = Vec::new();
+
+        let amounts = vec![1000, 1200, 1400, 1500, 2000];
+
+        for amount in amounts {
+            let tx = TransactionBuilder::new("Groceries")
+                .posting(
+                    Posting::credit(AccountId::new("assets:checking").unwrap(), amount).unwrap(),
+                )
+                .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), amount).unwrap())
+                .build()
+                .unwrap();
+            transactions.push(tx);
+        }
+
+        let anomalies = detector.detect(&transactions);
+        assert_eq!(anomalies.len(), 0);
+    }
+
+    #[test]
+    fn test_anomaly_detector_even_number_of_transactions() {
+        let detector = AnomalyDetector::new(1.5);
+        let mut transactions = Vec::new();
+
+        let amounts = vec![1000, 1200, 1400, 1500, 2000, 2200];
+
+        for amount in amounts {
+            let tx = TransactionBuilder::new("Groceries")
+                .posting(
+                    Posting::credit(AccountId::new("assets:checking").unwrap(), amount).unwrap(),
+                )
+                .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), amount).unwrap())
+                .build()
+                .unwrap();
+            transactions.push(tx);
+        }
+
+        let anomalies = detector.detect(&transactions);
+        assert_eq!(anomalies.len(), 0);
+    }
+
+    #[test]
+    fn test_median_empty_slice() {
+        let empty: &[i64] = &[];
+        assert!((median(empty) - 0.0).abs() < f64::EPSILON);
+    }
 
     #[test]
     fn test_detects_anomalies_using_iqr() {
