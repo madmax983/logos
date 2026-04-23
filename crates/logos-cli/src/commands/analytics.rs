@@ -146,7 +146,9 @@ fn render_sankey_output(raw_mermaid: &str) -> String {
     use crossterm::style::Stylize;
 
     let header = "📊 Sankey Flow Diagram Generated!".green().bold();
-    let instruction = "Copy the code below and paste it into https://mermaid.live to view your cashflow:".italic();
+    let instruction =
+        "Copy the code below and paste it into https://mermaid.live to view your cashflow:"
+            .italic();
 
     format!("\n{header}\n{instruction}\n\n{raw_mermaid}\n")
 }
@@ -199,7 +201,9 @@ mod tests {
         let output = render_sankey_output(raw);
 
         let header = "📊 Sankey Flow Diagram Generated!".green().bold();
-        let instruction = "Copy the code below and paste it into https://mermaid.live to view your cashflow:".italic();
+        let instruction =
+            "Copy the code below and paste it into https://mermaid.live to view your cashflow:"
+                .italic();
 
         let expected = format!("\n{header}\n{instruction}\n\n{raw}\n");
         assert_eq!(output, expected);
@@ -287,10 +291,9 @@ pub fn net_worth_project(
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    use crossterm::style::Stylize;
+    let header = "📈 Net Worth Projection".green().bold();
+    println!("\n{header}\n{table}\n");
 
     Ok(())
 }
@@ -421,7 +424,9 @@ fn render_fire_sim_output(
         }
     }
 
-    format!("analytics.fire-sim\n{table}\n\n{journey_table}")
+    use crossterm::style::Stylize;
+    let header = "🔥 FIRE Simulation".red().bold();
+    format!("\n{header}\n{table}\n\n{journey_table}\n")
 }
 
 #[cfg(test)]
