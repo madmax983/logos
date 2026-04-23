@@ -23,16 +23,20 @@ impl MermaidXyExporter {
         let mut output = String::from("```mermaid\nxychart-beta\n");
         let _ = writeln!(output, "    title \"Net Worth Projection\"");
 
-        let mut x_labels = Vec::new();
-        let mut y_values = Vec::new();
+        let mut x_axis_str = String::with_capacity(timeline.len() * 4);
+        let mut y_str = String::with_capacity(timeline.len() * 7);
         let mut min_nw = i64::MAX;
         let mut max_nw = i64::MIN;
 
-        for month in timeline {
-            x_labels.push(month.month_index.to_string());
+        for (i, month) in timeline.iter().enumerate() {
+            if i > 0 {
+                x_axis_str.push_str(", ");
+                y_str.push_str(", ");
+            }
+            let _ = write!(x_axis_str, "{}", month.month_index);
 
             let nw_dollars = month.net_worth_cents / 100;
-            y_values.push(nw_dollars);
+            let _ = write!(y_str, "{nw_dollars}");
 
             if nw_dollars < min_nw {
                 min_nw = nw_dollars;
@@ -42,23 +46,13 @@ impl MermaidXyExporter {
             }
         }
 
-        let x_axis_str = x_labels.join(", ");
         let _ = writeln!(output, "    x-axis \"Month\" [{x_axis_str}]");
 
         // Give a little padding for the y-axis
         let y_min = if min_nw < 0 { min_nw } else { 0 };
         let y_max = if max_nw < 0 { 0 } else { max_nw };
 
-        let _ = writeln!(output, "    y-axis \"Net Worth ($)\" {y_min} --> {y_max}",);
-
-        let mut y_str = String::new();
-        for (i, val) in y_values.iter().enumerate() {
-            if i > 0 {
-                y_str.push_str(", ");
-            }
-            let _ = write!(y_str, "{val}");
-        }
-
+        let _ = writeln!(output, "    y-axis \"Net Worth ($)\" {y_min} --> {y_max}");
         let _ = writeln!(output, "    line [{y_str}]");
         output.push_str("```\n");
 
