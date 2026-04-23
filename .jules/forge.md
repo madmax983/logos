@@ -8,3 +8,7 @@
 **Refactoring God Functions in CLI/TUI**
 **Learning:** Functions like `fire_sim` and `render` were combining business logic/state assembly with complex UI rendering (creating and populating comfy_table models). This caused them to exceed 100 lines and become hard to read.
 **Action:** Extract the rendering logic into helper functions (e.g. `render_fire_sim_output`, `render_runs_table`, `render_evidence_table`). Pass only the minimal necessary state into the rendering helpers.
+
+**Refactoring God Functions in CLI/TUI**
+**Learning:** `render_month_output` and `render_show_output` duplicated identical complex `comfy_table` construction logic for `StoredReconciliationRun`, creating unnecessary sprawl.
+**Action:** Extract the rendering logic into a single helper function (`render_single_run_table`) that accepts the minimal state and override parameters for context-specific overrides (like `month_key`).
