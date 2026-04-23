@@ -47,3 +47,6 @@ pub mod income_router;
 pub mod runway_simulator;
 #[cfg(feature = "nova")]
 pub mod subscription_fatigue;
+
+#[cfg(feature = "nova")]
+pub mod round_up_simulator;
