@@ -17,3 +17,6 @@
 **[Title: O(n^2) String insertions on formatting path]
 **Learning:** `String::insert(0, c)` causes all existing bytes in the string to be shifted right by one. Using this inside a loop over characters turns formatting into an O(n^2) operation with frequent implicit re-allocations.
 **Action:** Always pre-allocate with `String::with_capacity` if the max length is bounded, and build the string sequentially from left to right using `push` or `push_str`.
+## YYYY-MM-DD - Avoiding repeated string insertions inside formatting loops
+**Learning:** `String::insert(0, c)` causes all existing bytes in the string to be shifted right by one. Using this inside a loop over characters turns formatting into an O(n^2) operation with frequent implicit re-allocations. Similar issues can occur with repeated `.push_str()` on loops without pre-allocating the underlying buffer.
+**Action:** Always pre-allocate with `String::with_capacity` if the max length is bounded, and build the string sequentially from left to right using `push` or `push_str`. For loops building multiple strings (like X/Y axes), estimating capacity based on item count avoids continual reallocation.
