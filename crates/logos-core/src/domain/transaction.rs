@@ -155,6 +155,24 @@ impl Posting {
 /// Transactions cannot be instantiated directly; you must use a
 /// [`TransactionBuilder`] to guarantee that the sum of all its [`Posting`]
 /// amounts equals zero.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::transaction::{Posting, TransactionBuilder};
+/// use logos_core::domain::account::AccountId;
+///
+/// let checking = AccountId::new("assets:checking").unwrap();
+/// let salary = AccountId::new("income:salary").unwrap();
+///
+/// let txn = TransactionBuilder::new("March Salary")
+///     .posting(Posting::debit(checking, 5000_00).unwrap())
+///     .posting(Posting::credit(salary, 5000_00).unwrap())
+///     .build()
+///     .expect("This transaction balances perfectly!");
+///
+/// assert_eq!(txn.postings().len(), 2);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Transaction {
     description: String,

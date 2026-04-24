@@ -47,6 +47,23 @@ pub struct RsuDistributorConfig {
 /// according to an [`AllocationPolicy`].
 ///
 /// Creates a single, balanced [`Transaction`] representing the vest event.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::planning::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
+/// use logos_core::domain::account::AccountId;
+///
+/// let config = RsuDistributorConfig {
+///     rsu_asset: AccountId::new("assets:rsu").unwrap(),
+///     tax_reserve: AccountId::new("assets:tax").unwrap(),
+///     smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+///     goals: AccountId::new("assets:goals").unwrap(),
+///     discretionary: AccountId::new("assets:checking").unwrap(),
+/// };
+///
+/// let distributor = RsuAutoDistributor::new(config);
+/// ```
 #[derive(Debug, Clone)]
 pub struct RsuAutoDistributor {
     config: RsuDistributorConfig,

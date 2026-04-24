@@ -9,6 +9,15 @@
 ///
 /// Contains the rolled-over start balance, the amount newly assigned to the
 /// envelope during the month, and the total amount spent.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::budget::BudgetMonth;
+///
+/// let month = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
+/// assert_eq!(month.end_balance(), 400_00);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BudgetMonth {
     month_key: String,

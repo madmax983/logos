@@ -26,6 +26,14 @@ use crate::error::DomainError;
 ///
 /// A "haircut" reduces the projected value of a vest to account for market risk.
 /// Vests further in the future receive larger haircuts (larger discounts).
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::rsu::HaircutTierTable;
+///
+/// let default_table = HaircutTierTable::default();
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HaircutTierTable {
     short: u8,
@@ -132,6 +140,15 @@ impl HaircutTierTable {
 /// The policy divides the projected value into four categories:
 /// tax reserves, income smoothing buffers, specific financial goals,
 /// and discretionary spending.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::rsu::AllocationPolicy;
+///
+/// let policy = AllocationPolicy::new(40, 20, 30, 10).expect("valid policy");
+/// assert_eq!(policy.tax_reserve_pct(), 40);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AllocationPolicy {
     tax_reserve: u8,

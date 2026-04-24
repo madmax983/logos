@@ -12,6 +12,15 @@ use crate::error::DomainError;
 /// Wraps an `Arc<str>` to enforce domain boundaries, prevent stringly-typed
 /// parameter mix-ups, and provide cheap zero-cost cloning since accounts
 /// are frequently passed and duplicated.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::account::AccountId;
+///
+/// let id = AccountId::new("assets:checking").expect("Valid account id");
+/// assert_eq!(id.as_str(), "assets:checking");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AccountId(std::sync::Arc<str>);
 
@@ -60,6 +69,15 @@ impl AccountId {
 /// Every account in the ledger belongs to one of these types. The type
 /// determines whether an increase in the account's value is recorded as a
 /// debit (positive) or a credit (negative).
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::account::AccountType;
+///
+/// let account_type = AccountType::Asset;
+/// assert_eq!(account_type.normal_balance_sign(), 1);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AccountType {
     /// Resources owned by the entity (e.g., checking accounts, cash).
