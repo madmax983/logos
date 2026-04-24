@@ -152,6 +152,107 @@ impl RsuAutoDistributor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn should_calculate_goals_cents_correctly() {
+        let policy = AllocationPolicy::new(30, 20, 50, 0).unwrap();
+        let config = RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").unwrap(),
+            tax_reserve: AccountId::new("assets:tax").unwrap(),
+            smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+            goals: AccountId::new("assets:goals").unwrap(),
+            discretionary: AccountId::new("assets:checking").unwrap(),
+        };
+        let distributor = RsuAutoDistributor::new(config);
+
+        let tx = distributor
+            .distribute_rsu_vest("Vest 1", 10_000, &policy)
+            .unwrap();
+        let postings = tx.postings();
+
+        assert!(
+            postings
+                .contains(&Posting::debit(AccountId::new("assets:goals").unwrap(), 5000).unwrap())
+        );
+    }
+
+    #[test]
+    fn should_calculate_discretionary_cents_correctly() {
+        let policy = AllocationPolicy::new(30, 20, 10, 40).unwrap();
+        let config = RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").unwrap(),
+            tax_reserve: AccountId::new("assets:tax").unwrap(),
+            smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+            goals: AccountId::new("assets:goals").unwrap(),
+            discretionary: AccountId::new("assets:checking").unwrap(),
+        };
+        let distributor = RsuAutoDistributor::new(config);
+
+        let tx = distributor
+            .distribute_rsu_vest("Vest 1", 10_000, &policy)
+            .unwrap();
+        let postings = tx.postings();
+
+        assert!(
+            postings.contains(
+                &Posting::debit(AccountId::new("assets:checking").unwrap(), 4000).unwrap()
+            )
+        );
+    }
+
+    #[test]
+    fn should_calculate_goals_and_discretionary_correctly() {
+        let policy = AllocationPolicy::new(30, 20, 10, 40).unwrap();
+        let config = RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").unwrap(),
+            tax_reserve: AccountId::new("assets:tax").unwrap(),
+            smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+            goals: AccountId::new("assets:goals").unwrap(),
+            discretionary: AccountId::new("assets:checking").unwrap(),
+        };
+        let distributor = RsuAutoDistributor::new(config);
+
+        let tx = distributor
+            .distribute_rsu_vest("Vest 1", 10_000, &policy)
+            .unwrap();
+        let postings = tx.postings();
+
+        assert!(
+            postings
+                .contains(&Posting::debit(AccountId::new("assets:goals").unwrap(), 1000).unwrap())
+        );
+        assert!(
+            postings.contains(
+                &Posting::debit(AccountId::new("assets:checking").unwrap(), 4000).unwrap()
+            )
+        );
+        assert!(
+            postings
+                .contains(&Posting::debit(AccountId::new("assets:buffer").unwrap(), 2000).unwrap())
+        );
+    }
+
+    #[test]
+    fn should_calculate_smoothing_cents_correctly() {
+        let policy = AllocationPolicy::new(30, 40, 10, 20).unwrap();
+        let config = RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").unwrap(),
+            tax_reserve: AccountId::new("assets:tax").unwrap(),
+            smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+            goals: AccountId::new("assets:goals").unwrap(),
+            discretionary: AccountId::new("assets:checking").unwrap(),
+        };
+        let distributor = RsuAutoDistributor::new(config);
+
+        let tx = distributor
+            .distribute_rsu_vest("Vest 1", 10_000, &policy)
+            .unwrap();
+        let postings = tx.postings();
+
+        assert!(
+            postings
+                .contains(&Posting::debit(AccountId::new("assets:buffer").unwrap(), 4000).unwrap())
+        );
+    }
 
     #[test]
     fn test_perfect_distribution() {
