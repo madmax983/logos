@@ -23,7 +23,7 @@ use crate::domain::rsu::{HaircutTierTable, forecast_value_cents};
 ///
 /// # Examples
 /// ```
-/// use logos_core::planning::fire::FireConfig;
+/// use logos_core::fire::FireConfig;
 ///
 /// let config = FireConfig { safe_withdrawal_rate_pct: 3 };
 /// ```
@@ -45,7 +45,7 @@ impl Default for FireConfig {
 ///
 /// # Examples
 /// ```
-/// use logos_core::planning::fire::UpcomingVest;
+/// use logos_core::fire::UpcomingVest;
 ///
 /// let vest = UpcomingVest {
 ///     avg_close_price_cents: 100_000, // $1,000.00
@@ -72,7 +72,7 @@ pub struct UpcomingVest {
 ///
 /// # Examples
 /// ```
-/// use logos_core::planning::fire::{FireConfig, FireSimulator, UpcomingVest};
+/// use logos_core::fire::{FireConfig, FireSimulator, UpcomingVest};
 ///
 /// // Create a simulator for $5,000 monthly expenses ($60,000/yr).
 /// // The default Safe Withdrawal Rate is 4%, yielding a $1,500,000 FIRE number.
@@ -113,7 +113,7 @@ impl FireSimulator {
     ///
     /// # Examples
     /// ```
-    /// use logos_core::planning::fire::FireSimulator;
+    /// use logos_core::fire::FireSimulator;
     ///
     /// // Simulator for $5,000 monthly expenses ($60,000/yr)
     /// let sim = FireSimulator::new(500_000);
@@ -137,7 +137,7 @@ impl FireSimulator {
     ///
     /// # Examples
     /// ```
-    /// use logos_core::planning::fire::{FireConfig, FireSimulator};
+    /// use logos_core::fire::{FireConfig, FireSimulator};
     ///
     /// let mut sim = FireSimulator::new(500_000);
     /// sim.set_config(FireConfig { safe_withdrawal_rate_pct: 3 });
@@ -153,7 +153,7 @@ impl FireSimulator {
     ///
     /// # Examples
     /// ```
-    /// use logos_core::planning::fire::FireSimulator;
+    /// use logos_core::fire::FireSimulator;
     ///
     /// let mut sim = FireSimulator::new(500_000);
     /// // Add $200k in assets, $50k in liabilities
@@ -171,7 +171,7 @@ impl FireSimulator {
     ///
     /// # Examples
     /// ```
-    /// use logos_core::planning::fire::{FireSimulator, UpcomingVest};
+    /// use logos_core::fire::{FireSimulator, UpcomingVest};
     ///
     /// let mut sim = FireSimulator::new(500_000);
     ///
@@ -195,7 +195,7 @@ impl FireSimulator {
     ///
     /// # Examples
     /// ```
-    /// use logos_core::planning::fire::FireSimulator;
+    /// use logos_core::fire::FireSimulator;
     ///
     /// // $5000/month expenses = $60,000/yr.
     /// // At 4% safe withdrawal rate, target is $1.5M.
@@ -219,7 +219,7 @@ impl FireSimulator {
     ///
     /// # Examples
     /// ```
-    /// use logos_core::planning::fire::FireSimulator;
+    /// use logos_core::fire::FireSimulator;
     ///
     /// let mut sim = FireSimulator::new(500_000);
     /// sim.add_assets_liabilities(20_000_000, 5_000_000); // $150k base NW
@@ -249,7 +249,7 @@ impl FireSimulator {
     ///
     /// # Examples
     /// ```
-    /// use logos_core::planning::fire::FireSimulator;
+    /// use logos_core::fire::FireSimulator;
     ///
     /// let mut sim = FireSimulator::new(500_000); // $1.5M FIRE number
     /// sim.add_assets_liabilities(30_000_000, 0); // $300k NW

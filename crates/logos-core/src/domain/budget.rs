@@ -28,7 +28,7 @@ impl BudgetMonth {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::budget::BudgetMonth;
+    /// use logos_core::BudgetMonth;
     ///
     /// // February's envelope had $100 unspent at the end of the month.
     /// // In March, we "rollover" that $100 as the `start_balance`.
@@ -54,7 +54,7 @@ impl BudgetMonth {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::budget::BudgetMonth;
+    /// use logos_core::BudgetMonth;
     ///
     /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
     /// assert_eq!(budget.month_key(), "2026-03");
@@ -72,7 +72,7 @@ impl BudgetMonth {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::budget::BudgetMonth;
+    /// use logos_core::BudgetMonth;
     ///
     /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
     /// assert_eq!(budget.start_balance(), 100_00);
@@ -90,7 +90,7 @@ impl BudgetMonth {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::budget::BudgetMonth;
+    /// use logos_core::BudgetMonth;
     ///
     /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
     /// assert_eq!(budget.assigned(), 500_00);
@@ -107,7 +107,7 @@ impl BudgetMonth {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::budget::BudgetMonth;
+    /// use logos_core::BudgetMonth;
     ///
     /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
     /// assert_eq!(budget.spent(), 200_00);
@@ -124,7 +124,7 @@ impl BudgetMonth {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::budget::BudgetMonth;
+    /// use logos_core::BudgetMonth;
     ///
     /// let budget = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
     /// assert_eq!(budget.end_balance(), 400_00);
@@ -145,7 +145,7 @@ impl BudgetMonth {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::budget::rollover_end_balance;
+/// use logos_core::rollover_end_balance;
 ///
 /// // Start with $100 (10000 cents), assign $50 (5000 cents), spend $120 (12000 cents).
 /// // Remaining balance should be $30 (3000 cents).

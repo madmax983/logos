@@ -1,4 +1,4 @@
-use logos_core::domain::rsu::{AllocationPolicy, HaircutTierTable, forecast_value_cents};
+use logos_core::{AllocationPolicy, HaircutTierTable, forecast_value_cents};
 
 #[test]
 fn test_haircut_tier_table() {

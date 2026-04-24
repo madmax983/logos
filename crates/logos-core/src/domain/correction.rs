@@ -29,7 +29,7 @@ impl TransactionId {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::correction::TransactionId;
+    /// use logos_core::TransactionId;
     ///
     /// let id = TransactionId::new(" tx-123 ").unwrap();
     /// assert_eq!(id.as_str(), "tx-123");
@@ -52,7 +52,7 @@ impl TransactionId {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::correction::TransactionId;
+    /// use logos_core::TransactionId;
     ///
     /// let id = TransactionId::new("tx-123").unwrap();
     /// assert_eq!(id.as_str(), "tx-123");
@@ -85,7 +85,7 @@ impl Correction {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::correction::{Correction, TransactionId};
+    /// use logos_core::{Correction, TransactionId};
     ///
     /// let old_tx = TransactionId::new("tx-123")?;
     /// let correction = Correction::new(old_tx, "Fixed wrong account")?;
@@ -98,7 +98,7 @@ impl Correction {
     /// Returns an error when the provided `reason` is empty after trimming.
     ///
     /// ```
-    /// use logos_core::domain::correction::{Correction, TransactionId};
+    /// use logos_core::{Correction, TransactionId};
     ///
     /// let old_tx = TransactionId::new("tx-123").expect("valid id");
     /// assert!(Correction::new(old_tx, "   ").is_err());
@@ -124,7 +124,7 @@ impl Correction {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::correction::{Correction, TransactionId};
+    /// use logos_core::{Correction, TransactionId};
     ///
     /// let bad_tx = TransactionId::new("tx-err-1").unwrap();
     /// let correction = Correction::new(bad_tx.clone(), "Incorrect amount entered").unwrap();
@@ -140,7 +140,7 @@ impl Correction {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::correction::{Correction, TransactionId};
+    /// use logos_core::{Correction, TransactionId};
     ///
     /// let old_tx = TransactionId::new("tx-123").unwrap();
     /// let correction = Correction::new(old_tx, "Fixed wrong account").unwrap();
@@ -159,7 +159,7 @@ impl Correction {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::correction::{Correction, TransactionId};
+    /// use logos_core::{Correction, TransactionId};
     ///
     /// let old_tx = TransactionId::new("tx-123").unwrap();
     /// let new_tx = TransactionId::new("tx-456").unwrap();
@@ -189,7 +189,7 @@ impl Correction {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::correction::{Correction, TransactionId};
+    /// use logos_core::{Correction, TransactionId};
     ///
     /// let old_tx = TransactionId::new("tx-123")?;
     /// let new_tx = TransactionId::new("tx-456")?;

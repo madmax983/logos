@@ -1,6 +1,6 @@
 #![allow(clippy::should_panic_without_expect)]
 
-use logos_core::experimental::debt_optimizer::{Debt, DebtOptimizer, PayoffStrategy};
+use logos_core::debt_optimizer::{Debt, DebtOptimizer, PayoffStrategy};
 use proptest::prelude::*;
 
 proptest! {

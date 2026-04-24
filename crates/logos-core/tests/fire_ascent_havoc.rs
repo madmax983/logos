@@ -1,8 +1,8 @@
 #![allow(clippy::should_panic_without_expect)]
 
-use logos_core::experimental::fire_ascent::FireAscentSimulator;
-use logos_core::planning::fire::{FireConfig, FireSimulator};
-use logos_core::planning::net_worth_projector::NetWorthProjector;
+use logos_core::fire_ascent::FireAscentSimulator;
+use logos_core::fire::{FireConfig, FireSimulator};
+use logos_core::net_worth_projector::NetWorthProjector;
 use proptest::prelude::*;
 
 proptest! {

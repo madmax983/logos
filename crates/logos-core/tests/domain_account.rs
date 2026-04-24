@@ -1,4 +1,4 @@
-use logos_core::domain::account::AccountType;
+use logos_core::AccountType;
 
 #[test]
 fn test_account_type_normal_balance_sign() {

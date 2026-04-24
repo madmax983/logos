@@ -1,5 +1,5 @@
 #![allow(clippy::should_panic_without_expect)]
-use logos_core::experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
+use logos_core::cashflow_projector::{CashflowProjector, RecurringTemplate};
 use proptest::prelude::*;
 
 proptest! {

@@ -50,7 +50,7 @@ pub fn snapshot_list() -> Result<(), CliError> {
 }
 
 fn render_snapshot_manifest_list(
-    manifests: &[logos_store::model::StoredAnalyticsArtifactManifest],
+    manifests: &[logos_store::StoredAnalyticsArtifactManifest],
 ) -> String {
     if manifests.is_empty() {
         return "No analytics snapshots found. Try creating one with 'ledger analytics snapshot create'.".to_owned();
@@ -118,7 +118,7 @@ pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
 /// Returns an error when runtime initialization fails or querying transactions fails.
 pub fn sankey() -> Result<(), CliError> {
     use chrono::Utc;
-    use logos_core::experimental::mermaid_exporter::MermaidSankeyExporter;
+    use logos_core::mermaid_exporter::MermaidSankeyExporter;
 
     let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.sankey".to_owned(),
@@ -146,14 +146,14 @@ fn render_sankey_output(raw_mermaid: &str) -> String {
     use crossterm::style::Stylize;
 
     let header = "📊 Sankey Flow Diagram Generated!".green().bold();
-    let instruction = "Copy the code below and paste it into https://mermaid.live to view your cashflow:".italic();
+    let instruction =
+        "Copy the code below and paste it into https://mermaid.live to view your cashflow:"
+            .italic();
 
     format!("\n{header}\n{instruction}\n\n{raw_mermaid}\n")
 }
 
-fn render_snapshot_manifest(
-    manifest: &logos_store::model::StoredAnalyticsArtifactManifest,
-) -> String {
+fn render_snapshot_manifest(manifest: &logos_store::StoredAnalyticsArtifactManifest) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
     table.set_header(vec![
@@ -189,7 +189,7 @@ fn render_snapshot_manifest(
 #[cfg(test)]
 mod tests {
     use super::{render_sankey_output, render_snapshot_manifest, render_snapshot_manifest_list};
-    use logos_store::model::StoredAnalyticsArtifactManifest;
+    use logos_store::StoredAnalyticsArtifactManifest;
 
     #[test]
     fn render_sankey_output_is_deterministic() {
@@ -199,7 +199,9 @@ mod tests {
         let output = render_sankey_output(raw);
 
         let header = "📊 Sankey Flow Diagram Generated!".green().bold();
-        let instruction = "Copy the code below and paste it into https://mermaid.live to view your cashflow:".italic();
+        let instruction =
+            "Copy the code below and paste it into https://mermaid.live to view your cashflow:"
+                .italic();
 
         let expected = format!("\n{header}\n{instruction}\n\n{raw}\n");
         assert_eq!(output, expected);
@@ -268,7 +270,7 @@ pub fn net_worth_project(
     monthly_savings_cents: i64,
     months: u16,
 ) -> Result<(), CliError> {
-    use logos_core::planning::net_worth_projector::NetWorthProjector;
+    use logos_core::net_worth_projector::NetWorthProjector;
 
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
     let (timeline, _) = projector.project_timeline(months);
@@ -306,8 +308,8 @@ pub fn fire_sim(
     liquid_assets_cents: i64,
     monthly_savings_cents: i64,
 ) -> Result<(), CliError> {
-    use logos_core::planning::fire::FireSimulator;
-    use logos_core::planning::net_worth_projector::NetWorthProjector;
+    use logos_core::fire::FireSimulator;
+    use logos_core::net_worth_projector::NetWorthProjector;
 
     let mut sim = FireSimulator::new(monthly_expenses_cents);
     sim.add_assets_liabilities(liquid_assets_cents, 0);
@@ -318,7 +320,7 @@ pub fn fire_sim(
     let projector = NetWorthProjector::new(current_net_worth, monthly_savings_cents);
     let months_to_simulate = 1200; // up to 100 years
 
-    let ascent_sim = logos_core::experimental::fire_ascent::FireAscentSimulator::new(
+    let ascent_sim = logos_core::fire_ascent::FireAscentSimulator::new(
         sim,
         projector,
         months_to_simulate,
@@ -342,7 +344,7 @@ fn render_fire_sim_output(
     fire_number: i64,
     current_net_worth: i64,
     monthly_savings_cents: i64,
-    ascent_result: &logos_core::experimental::fire_ascent::AscentResult,
+    ascent_result: &logos_core::fire_ascent::AscentResult,
 ) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);

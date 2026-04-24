@@ -18,7 +18,7 @@ use crate::error::DomainError;
 /// ## Examples
 ///
 /// ```
-/// use logos_core::planning::rsu_distributor::RsuDistributorConfig;
+/// use logos_core::rsu_distributor::RsuDistributorConfig;
 /// use logos_core::AccountId;
 ///
 /// let config = RsuDistributorConfig {
@@ -58,7 +58,7 @@ impl RsuAutoDistributor {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::planning::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
+    /// use logos_core::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
     /// use logos_core::AccountId;
     ///
     /// let config = RsuDistributorConfig {
@@ -85,8 +85,8 @@ impl RsuAutoDistributor {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::planning::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
-    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// use logos_core::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
+    /// use logos_core::AllocationPolicy;
     /// use logos_core::AccountId;
     ///
     /// let config = RsuDistributorConfig {

@@ -95,7 +95,7 @@ impl AccountType {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::account::AccountType;
+    /// use logos_core::AccountType;
     ///
     /// // Assets are increased by debits (positive values)
     /// assert_eq!(AccountType::Asset.normal_balance_sign(), 1);

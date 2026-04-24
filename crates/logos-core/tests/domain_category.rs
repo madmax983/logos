@@ -1,4 +1,4 @@
-use logos_core::domain::category::{Category, CategoryGroup};
+use logos_core::{Category, CategoryGroup};
 
 #[test]
 fn test_category_group_name() {

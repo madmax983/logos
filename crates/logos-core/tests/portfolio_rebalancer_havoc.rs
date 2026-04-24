@@ -1,6 +1,6 @@
 #![allow(clippy::should_panic_without_expect)]
-use logos_core::domain::account::AccountId;
-use logos_core::experimental::portfolio_rebalancer::{PortfolioRebalancer, TargetAllocation};
+use logos_core::AccountId;
+use logos_core::portfolio_rebalancer::{PortfolioRebalancer, TargetAllocation};
 use proptest::prelude::*;
 use std::collections::HashMap;
 
