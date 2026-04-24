@@ -1,0 +1,13 @@
+--- crates/logos-store-pg/src/store.rs
++++ crates/logos-store-pg/src/store.rs
+@@ -1443,9 +1442,8 @@
+         if transaction_ids.is_empty() {
+             return Ok(Vec::new());
+         }
+-        let ids: Vec<&str> = transaction_ids.iter().map(TransactionId::as_str).collect();
+         statement_lines::table
+-            .filter(statement_lines::imported_txn_id.eq_any(ids))
++            .filter(statement_lines::imported_txn_id.eq_any(transaction_ids.iter().map(TransactionId::as_str)))
+             .select(statement_lines::line_id)
+             .order(statement_lines::line_id.asc())
+             .load::<String>(connection)

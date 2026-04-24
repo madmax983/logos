@@ -1,0 +1,11 @@
+--- crates/logos-store-pg/src/store.rs
++++ crates/logos-store-pg/src/store.rs
+@@ -830,7 +830,7 @@
+             .map_err(|err| load_failure(format!("loading postings failed: {err}")))?;
+
+         let mut postings_by_transaction: HashMap<String, Vec<PostingRow>> =
+-            HashMap::with_capacity(transaction_ids.len());
++            HashMap::with_capacity(rows.len());
+
+         for posting_row in posting_rows {
+             // ⚡ Bolt: Using `get_mut` followed by an `insert` fallback avoids an unconditional `.clone()`

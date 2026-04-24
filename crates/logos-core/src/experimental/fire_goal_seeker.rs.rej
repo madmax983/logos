@@ -1,0 +1,10 @@
+--- crates/logos-core/src/experimental/fire_goal_seeker.rs
++++ crates/logos-core/src/experimental/fire_goal_seeker.rs
+@@ -178,7 +178,7 @@
+         );
+
+         // 5M target, 7% return, 15% savings rate
+-        let mut seeker = FireGoalSeeker::new(fire_sim, 5_000_000_00, 0.07, 0.15, 42);
++        let mut seeker = FireGoalSeeker::new(fire_sim, 500_000_000, 0.07, 0.15, 42);
+
+         let required_income = seeker.seek_required_income(10 * 12);
