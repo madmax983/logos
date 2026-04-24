@@ -1,4 +1,7 @@
 #[cfg(feature = "nova")]
+pub mod life_energy_calculator;
+
+#[cfg(feature = "nova")]
 pub mod tax_loss_harvester;
 
 #[cfg(feature = "nova")]
