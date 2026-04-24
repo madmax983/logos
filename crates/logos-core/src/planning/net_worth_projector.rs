@@ -250,6 +250,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn should_return_empty_timeline_if_zero_months() {
+        let projector = NetWorthProjector::new(100_000, 10_000);
+        let (timeline, _) = projector.project_timeline(0);
+        assert_eq!(timeline.len(), 0);
+    }
+
+    #[test]
+    fn should_terminate_loop() {
+        let projector = NetWorthProjector::new(100_000, 10_000);
+        let (timeline, _) = projector.project_timeline(1);
+        assert_eq!(timeline.len(), 1);
+    }
+
+    #[test]
     fn test_project_timeline_no_vests() {
         let mut projector = NetWorthProjector::new(100_000, 10_000);
         projector.add_milestone_cents(115_000);
@@ -337,6 +351,22 @@ mod tests {
         // Milestones
         assert_eq!(crossed_milestones.len(), 1);
         assert_eq!(crossed_milestones[0], (100_000, 2)); // Crossed 100k in month 2
+    }
+
+    #[test]
+    fn should_not_vest_if_vest_day_is_after_month_end() {
+        let mut projector = NetWorthProjector::new(50_000, 5_000);
+
+        projector.add_upcoming_vest(UpcomingVest {
+            avg_close_price_cents: 10_000,
+            units: 10,
+            days_to_vest: 61, // Month 3
+        });
+
+        let (timeline, _) = projector.project_timeline(2); // Only project 2 months
+
+        assert_eq!(timeline[0].vested_value_cents, 0);
+        assert_eq!(timeline[1].vested_value_cents, 0);
     }
 
     #[test]
