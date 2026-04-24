@@ -20,6 +20,15 @@ use crate::error::DomainError;
 ///
 /// Uses `Arc<str>` instead of `String` to ensure zero-cost cloning, as transaction IDs are
 /// frequently copied across the storage boundaries and mapped in memory.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::correction::TransactionId;
+///
+/// let id = TransactionId::new("tx-123").unwrap();
+/// assert_eq!(id.as_str(), "tx-123");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TransactionId(std::sync::Arc<str>);
 
@@ -67,6 +76,16 @@ impl TransactionId {
 ///
 /// This structure enforces that a reason is provided for the change, leaving
 /// an audit trail of modifications.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::correction::{Correction, TransactionId};
+///
+/// let old_tx = TransactionId::new("tx-123").unwrap();
+/// let correction = Correction::new(old_tx, "Fixed wrong account").unwrap();
+/// assert_eq!(correction.reason(), "Fixed wrong account");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Correction {
     supersedes_id: TransactionId,

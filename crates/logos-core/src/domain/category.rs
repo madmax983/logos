@@ -15,6 +15,15 @@ use std::sync::Arc;
 ///
 /// Uses `Arc<str>` internally to provide zero-cost cloning (reducing heap
 /// allocations) across budgeting logic where IDs are frequently duplicated.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::category::CategoryGroupId;
+///
+/// let id = CategoryGroupId::from_name("Housing").unwrap();
+/// assert_eq!(id.as_str(), "housing");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CategoryGroupId(Arc<str>);
 
@@ -73,6 +82,15 @@ impl CategoryGroupId {
 ///
 /// For example, a `CategoryGroup` named "Housing" might contain categories
 /// like "Rent" and "Utilities".
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::category::CategoryGroup;
+///
+/// let group = CategoryGroup::new("Housing").unwrap();
+/// assert_eq!(group.name(), "Housing");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CategoryGroup {
     id: CategoryGroupId,
@@ -145,6 +163,16 @@ impl CategoryGroup {
 /// A specific budget envelope where funds are assigned and spent.
 ///
 /// A `Category` is always scoped to a parent [`CategoryGroup`].
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::domain::category::{Category, CategoryGroup};
+///
+/// let group = CategoryGroup::new("Housing").unwrap();
+/// let category = Category::new(group.id().clone(), "Rent").unwrap();
+/// assert_eq!(category.name(), "Rent");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Category {
     group_id: CategoryGroupId,
