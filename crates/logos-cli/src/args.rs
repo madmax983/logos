@@ -268,27 +268,9 @@ fn execute_budget_command(command: &BudgetCommand) -> Result<(), CliError> {
             budget_cents,
             expense_account_prefix,
         } => commands::budget::set(month_key.as_deref(), *budget_cents, expense_account_prefix),
-        BudgetCommand::RsuPlan {
-            month_key,
-            quarterly_units,
-            days_to_vest,
-            bear_price_cents,
-            base_price_cents,
-            bull_price_cents,
-            fixed_commitments_cents,
-            reserve_sweep_pct,
-            investing_sweep_pct,
-        } => commands::budget::rsu_plan(
-            month_key.as_deref(),
-            *quarterly_units,
-            *days_to_vest,
-            *bear_price_cents,
-            *base_price_cents,
-            *bull_price_cents,
-            *fixed_commitments_cents,
-            *reserve_sweep_pct,
-            *investing_sweep_pct,
-        ),
+        BudgetCommand::RsuPlan { month_key, input } => {
+            commands::budget::rsu_plan(month_key.as_deref(), *input)
+        }
         BudgetCommand::MonteCarlo {
             initial_cents,
             monthly_contribution_cents,
@@ -558,14 +540,7 @@ pub enum BudgetCommand {
     },
     RsuPlan {
         month_key: Option<String>,
-        quarterly_units: u32,
-        days_to_vest: u16,
-        bear_price_cents: i64,
-        base_price_cents: i64,
-        bull_price_cents: i64,
-        fixed_commitments_cents: i64,
-        reserve_sweep_pct: u8,
-        investing_sweep_pct: u8,
+        input: logos_reporting::RsuBudgetPlanInput,
     },
     MonteCarlo {
         initial_cents: i64,
@@ -699,18 +674,32 @@ fn parse_budget_rsu_plan(args: &[String]) -> Result<ParsedArgs, CliError> {
         parse_optional_parsed_flag::<u8>(&args[2..], "--reserve-sweep-pct", 60)?;
     let investing_sweep_pct =
         parse_optional_parsed_flag::<u8>(&args[2..], "--investing-sweep-pct", 30)?;
+
+    let scenario_prices = logos_reporting::ScenarioPriceInputs::new(
+        bear_price_cents,
+        base_price_cents,
+        bull_price_cents,
+    )
+    .map_err(|e| CliError::InvalidArgValue {
+        flag: "--scenario-prices".to_owned(),
+        value: e,
+    })?;
+
+    let input = logos_reporting::RsuBudgetPlanInput::new(
+        quarterly_units,
+        days_to_vest,
+        scenario_prices,
+        fixed_commitments_cents,
+        reserve_sweep_pct,
+        investing_sweep_pct,
+    )
+    .map_err(|e| CliError::InvalidArgValue {
+        flag: "--rsu-plan-input".to_owned(),
+        value: e,
+    })?;
+
     Ok(ParsedArgs {
-        command: Command::Budget(BudgetCommand::RsuPlan {
-            month_key,
-            quarterly_units,
-            days_to_vest,
-            bear_price_cents,
-            base_price_cents,
-            bull_price_cents,
-            fixed_commitments_cents,
-            reserve_sweep_pct,
-            investing_sweep_pct,
-        }),
+        command: Command::Budget(BudgetCommand::RsuPlan { month_key, input }),
     })
 }
 

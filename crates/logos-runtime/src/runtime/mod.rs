@@ -26,7 +26,7 @@ use logos_import::{
     deterministic_fingerprint_legacy_v1, parse_pdf_statement_file, parse_simple_csv_row,
 };
 use logos_reporting::{
-    RegisterEntry, RsuBudgetPlan, RsuBudgetPlanInput, ScenarioPriceInputs, project_budget_variance,
+    RegisterEntry, RsuBudgetPlan, RsuBudgetPlanInput, project_budget_variance,
     project_cashflow, project_register_balance_iter, project_rsu_budget_plan,
 };
 use logos_store::{
@@ -936,31 +936,11 @@ impl<S: LedgerStore> AppRuntime<S> {
     /// # Errors
     ///
     /// Returns an error when planning inputs are invalid.
-    #[allow(clippy::too_many_arguments)]
     pub fn plan_rsu_budget_for_month(
         &self,
         month_key: &str,
-        quarterly_units: u32,
-        days_to_vest: u16,
-        bear_price_cents: i64,
-        base_price_cents: i64,
-        bull_price_cents: i64,
-        fixed_commitments_cents: i64,
-        reserve_sweep_pct: u8,
-        investing_sweep_pct: u8,
+        input: RsuBudgetPlanInput,
     ) -> Result<RsuBudgetPlan, RuntimeError> {
-        let scenario_prices =
-            ScenarioPriceInputs::new(bear_price_cents, base_price_cents, bull_price_cents)
-                .map_err(|message| RuntimeError::Analytics { message })?;
-        let input = RsuBudgetPlanInput::new(
-            quarterly_units,
-            days_to_vest,
-            scenario_prices,
-            fixed_commitments_cents,
-            reserve_sweep_pct,
-            investing_sweep_pct,
-        )
-        .map_err(|message| RuntimeError::Analytics { message })?;
         project_rsu_budget_plan(month_key, &input)
             .map_err(|message| RuntimeError::Analytics { message })
     }

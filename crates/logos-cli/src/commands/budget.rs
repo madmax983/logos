@@ -63,17 +63,9 @@ pub fn set(
 /// # Errors
 ///
 /// Returns an error when runtime initialization or planning fails.
-#[allow(clippy::too_many_arguments)]
 pub fn rsu_plan(
     month_key: Option<&str>,
-    quarterly_units: u32,
-    days_to_vest: u16,
-    bear_price_cents: i64,
-    base_price_cents: i64,
-    bull_price_cents: i64,
-    fixed_commitments_cents: i64,
-    reserve_sweep_pct: u8,
-    investing_sweep_pct: u8,
+    input: logos_reporting::RsuBudgetPlanInput,
 ) -> Result<(), CliError> {
     let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "budget.rsu-plan".to_owned(),
@@ -84,17 +76,7 @@ pub fn rsu_plan(
         str::to_owned,
     );
     let plan = runtime
-        .plan_rsu_budget_for_month(
-            &resolved_month_key,
-            quarterly_units,
-            days_to_vest,
-            bear_price_cents,
-            base_price_cents,
-            bull_price_cents,
-            fixed_commitments_cents,
-            reserve_sweep_pct,
-            investing_sweep_pct,
-        )
+        .plan_rsu_budget_for_month(&resolved_month_key, input)
         .map_err(|err| CliError::CommandRuntimeFailed {
             command: "budget.rsu-plan".to_owned(),
             message: err.to_string(),

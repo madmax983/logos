@@ -675,23 +675,16 @@ fn parses_budget_rsu_plan_with_defaults() {
         parsed.command(),
         logos_cli::Command::Budget(logos_cli::BudgetCommand::RsuPlan {
             month_key,
-            quarterly_units,
-            days_to_vest,
-            bear_price_cents,
-            base_price_cents,
-            bull_price_cents,
-            fixed_commitments_cents,
-            reserve_sweep_pct,
-            investing_sweep_pct,
+            input,
         }) if month_key.is_none()
-            && *quarterly_units == 300
-            && *days_to_vest == 45
-            && *bear_price_cents == 10_000
-            && *base_price_cents == 12_000
-            && *bull_price_cents == 16_000
-            && *fixed_commitments_cents == 0
-            && *reserve_sweep_pct == 60
-            && *investing_sweep_pct == 30
+            && *input == logos_reporting::RsuBudgetPlanInput::new(
+                300,
+                45,
+                logos_reporting::ScenarioPriceInputs::new(10_000, 12_000, 16_000).unwrap(),
+                0,
+                60,
+                30
+            ).unwrap()
     ));
 }
 

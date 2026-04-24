@@ -191,8 +191,10 @@ fn e2e_runtime_rsu_budget_plan_returns_conservative_baseline() {
     let month_key =
         logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_utc();
 
+    let prices = logos_reporting::ScenarioPriceInputs::new(10_000, 12_000, 16_000).unwrap();
+    let rsu_plan_input = logos_reporting::RsuBudgetPlanInput::new(300, 45, prices, 250_000, 60, 30).unwrap();
     let plan = runtime
-        .plan_rsu_budget_for_month(&month_key, 300, 45, 10_000, 12_000, 16_000, 250_000, 60, 30)
+        .plan_rsu_budget_for_month(&month_key, rsu_plan_input)
         .expect("plan");
     let bear = plan.bear().expect("bear");
 
