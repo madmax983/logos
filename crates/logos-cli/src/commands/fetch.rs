@@ -55,11 +55,15 @@ fn render_list_output(
     checking_account: Option<&str>,
     runs: &[StoredFetchRun],
 ) -> String {
+    use crossterm::style::Stylize;
     let filter_month = month_key.unwrap_or("*");
     let filter_account = checking_account.unwrap_or("*");
     if runs.is_empty() {
         return format!(
-            "fetch.list filter_month={filter_month} filter_checking_account={filter_account} count=0"
+            "{} No statement fetch runs found (month: {}, account: {})",
+            "ℹ".blue(),
+            filter_month,
+            filter_account
         );
     }
 
@@ -153,7 +157,7 @@ mod tests {
         );
         let output = render_list_output(Some("2026-03"), Some("assets:checking"), &[run]);
 
-        assert!(output.contains("fetch.list filter_month=2026-03"));
+        assert!(!output.contains("No statement fetch runs found"));
         assert!(output.contains("fetch-3"));
         assert!(output.contains("pcu:checking"));
         assert!(output.contains("downloaded"));

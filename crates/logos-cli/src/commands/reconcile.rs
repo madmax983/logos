@@ -202,11 +202,15 @@ fn render_list_output(
     checking_account: Option<&str>,
     runs: &[StoredReconciliationRun],
 ) -> String {
+    use crossterm::style::Stylize;
     let filter_month = month_key.unwrap_or("*");
     let filter_account = checking_account.unwrap_or("*");
     if runs.is_empty() {
         return format!(
-            "reconcile.list filter_month={filter_month} filter_checking_account={filter_account} count=0"
+            "{} No reconciliation runs found (month: {}, account: {})",
+            "ℹ".blue(),
+            filter_month,
+            filter_account
         );
     }
 
@@ -360,7 +364,7 @@ mod tests {
 
         let output = render_list_output(Some("2026-05"), Some("assets:checking"), &runs);
 
-        assert!(output.contains("reconcile.list"));
+        assert!(!output.contains("No reconciliation runs found"));
         assert!(output.contains("recon-9"));
         assert!(output.contains("$0.00"));
         assert!(output.contains("recon-10"));
