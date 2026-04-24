@@ -1,5 +1,5 @@
 use crate::args::CliError;
-use logos_core::experimental::monte_carlo::MonteCarloProjector;
+use logos_core::monte_carlo::MonteCarloProjector;
 use logos_reporting::{RsuBudgetPlan, ScenarioKey};
 use logos_runtime::AppRuntime;
 
@@ -260,7 +260,7 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
 }
 
 fn render_monte_carlo_output(
-    result: &logos_core::experimental::monte_carlo::MonteCarloResult,
+    result: &logos_core::monte_carlo::MonteCarloResult,
 ) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
@@ -349,7 +349,7 @@ mod tests {
 
     #[test]
     fn render_monte_carlo_output_is_deterministic() {
-        let result = logos_core::experimental::monte_carlo::MonteCarloResult {
+        let result = logos_core::monte_carlo::MonteCarloResult {
             p5_cents: 100_000,
             median_cents: 150_000,
             p95_cents: 200_000,

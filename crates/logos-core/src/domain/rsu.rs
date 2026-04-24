@@ -62,7 +62,7 @@ impl HaircutTierTable {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::rsu::HaircutTierTable;
+    /// use logos_core::HaircutTierTable;
     ///
     /// let tiers = HaircutTierTable::new(20, 30, 50).expect("valid tiers");
     /// assert_eq!(tiers.haircut_for_days(15), 20); // short (< 30 days)
@@ -101,7 +101,7 @@ impl HaircutTierTable {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::rsu::HaircutTierTable;
+    /// use logos_core::HaircutTierTable;
     ///
     /// let tiers = HaircutTierTable::conservative_defaults();
     /// assert_eq!(tiers.haircut_for_days(15), 25);
@@ -116,7 +116,7 @@ impl HaircutTierTable {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::rsu::HaircutTierTable;
+    /// use logos_core::HaircutTierTable;
     ///
     /// let tiers = HaircutTierTable::default();
     /// assert_eq!(tiers.haircut_for_days(15), 25);
@@ -163,7 +163,7 @@ impl AllocationPolicy {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// use logos_core::AllocationPolicy;
     ///
     /// // 40% tax, 20% smoothing, 30% goals, 10% discretionary = 100%
     /// let policy = AllocationPolicy::new(40, 20, 30, 10).expect("valid policy");
@@ -202,7 +202,7 @@ impl AllocationPolicy {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// use logos_core::AllocationPolicy;
     /// let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
     /// assert_eq!(policy.tax_reserve_pct(), 40);
     /// ```
@@ -216,7 +216,7 @@ impl AllocationPolicy {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// use logos_core::AllocationPolicy;
     /// let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
     /// assert_eq!(policy.smoothing_buffer_pct(), 20);
     /// ```
@@ -230,7 +230,7 @@ impl AllocationPolicy {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// use logos_core::AllocationPolicy;
     /// let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
     /// assert_eq!(policy.goals_pct(), 30);
     /// ```
@@ -244,7 +244,7 @@ impl AllocationPolicy {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::rsu::AllocationPolicy;
+    /// use logos_core::AllocationPolicy;
     /// let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
     /// assert_eq!(policy.discretionary_pct(), 10);
     /// ```
@@ -263,7 +263,7 @@ impl AllocationPolicy {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::rsu::{HaircutTierTable, forecast_value_cents};
+/// use logos_core::{HaircutTierTable, forecast_value_cents};
 ///
 /// let tiers = HaircutTierTable::default();
 /// // 100 units at $10.00 (1000 cents) vesting in 15 days (short tier, 25% haircut).

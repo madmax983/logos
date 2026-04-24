@@ -1,4 +1,4 @@
-use logos_core::domain::correction::{Correction, TransactionId};
+use logos_core::{Correction, TransactionId};
 
 #[test]
 fn test_correction_reason() {

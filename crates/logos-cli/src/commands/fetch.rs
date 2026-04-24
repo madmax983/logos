@@ -2,7 +2,7 @@ use crate::args::CliError;
 use crate::format::us_timestamp;
 use comfy_table::{Cell, Color};
 
-use logos_store::model::{StoredFetchRun, StoredFetchRunStatus};
+use logos_store::{StoredFetchRun, StoredFetchRunStatus};
 
 /// Handles `ledger fetch list-runs`.
 ///
@@ -133,7 +133,7 @@ fn render_show_output(run: &StoredFetchRun) -> String {
 #[cfg(test)]
 mod tests {
     use super::{render_list_output, render_show_output};
-    use logos_store::model::{StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus};
+    use logos_store::{StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus};
 
     #[test]
     fn render_list_output_is_deterministic() {

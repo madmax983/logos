@@ -1,9 +1,9 @@
 use logos_core::{AccountId, Posting, TransactionBuilder, TransactionId};
-use logos_store::error::StoreError;
-use logos_store::model::{
+use logos_store::LedgerStore;
+use logos_store::StoreError;
+use logos_store::{
     StoredFetchArtifactFormat, StoredFetchRun, StoredFetchRunStatus, StoredTransaction,
 };
-use logos_store::traits::LedgerStore;
 
 #[allow(dead_code)]
 fn _touch_runtime_contract<T: LedgerStore>(store: &mut T) {

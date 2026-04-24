@@ -25,7 +25,7 @@ use crate::domain::transaction::{Posting, TransactionBuilder};
 /// ## Examples
 ///
 /// ```
-/// use logos_core::experimental::cashflow_projector::RecurringTemplate;
+/// use logos_core::cashflow_projector::RecurringTemplate;
 ///
 /// let template = RecurringTemplate {
 ///     description: "Netflix".to_string(),
@@ -54,7 +54,7 @@ pub struct RecurringTemplate {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
+/// use logos_core::cashflow_projector::{CashflowProjector, RecurringTemplate};
 ///
 /// let mut projector = CashflowProjector::new();
 /// projector.set_initial_balance("assets:checking", 100_000); // Start with $1000
@@ -82,7 +82,7 @@ impl CashflowProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::experimental::cashflow_projector::CashflowProjector;
+    /// use logos_core::cashflow_projector::CashflowProjector;
     ///
     /// let projector = CashflowProjector::new();
     /// ```
@@ -99,7 +99,7 @@ impl CashflowProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::experimental::cashflow_projector::CashflowProjector;
+    /// use logos_core::cashflow_projector::CashflowProjector;
     ///
     /// let mut projector = CashflowProjector::new();
     /// projector.set_initial_balance("assets:checking", 500_000); // $5000.00
@@ -114,7 +114,7 @@ impl CashflowProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
+    /// use logos_core::cashflow_projector::{CashflowProjector, RecurringTemplate};
     ///
     /// let mut projector = CashflowProjector::new();
     /// projector.add_recurring_template(RecurringTemplate {
@@ -136,7 +136,7 @@ impl CashflowProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
+    /// use logos_core::cashflow_projector::{CashflowProjector, RecurringTemplate};
     ///
     /// let mut projector = CashflowProjector::new();
     /// projector.set_initial_balance("assets:savings", 10_000_00); // $10k
@@ -203,7 +203,7 @@ impl CashflowProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
+    /// use logos_core::cashflow_projector::{CashflowProjector, RecurringTemplate};
     ///
     /// let mut projector = CashflowProjector::new();
     /// projector.set_initial_balance("assets:checking", 100_000);

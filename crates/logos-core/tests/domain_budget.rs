@@ -1,4 +1,4 @@
-use logos_core::domain::budget::{BudgetMonth, rollover_end_balance};
+use logos_core::{BudgetMonth, rollover_end_balance};
 
 #[test]
 fn test_budget_month() {

@@ -38,8 +38,8 @@ use crate::error::DomainError;
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::transaction::Posting;
-/// use logos_core::domain::account::AccountId;
+/// use logos_core::Posting;
+/// use logos_core::AccountId;
 ///
 /// // Create a debit posting for $10.00 (1000 cents).
 /// let d = Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).expect("debit should succeed");
@@ -61,7 +61,7 @@ impl Posting {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::Posting;
     /// use logos_core::AccountId;
     ///
     /// let posting = Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).unwrap();
@@ -84,7 +84,7 @@ impl Posting {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::Posting;
     /// use logos_core::AccountId;
     ///
     /// let posting = Posting::credit(AccountId::new("income:salary").unwrap(), 1000).unwrap();
@@ -112,7 +112,7 @@ impl Posting {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::Posting;
     /// use logos_core::AccountId;
     ///
     /// let account = AccountId::new("assets:checking").unwrap();
@@ -132,7 +132,7 @@ impl Posting {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::Posting;
     /// use logos_core::AccountId;
     ///
     /// let account_debit = AccountId::new("assets:checking").unwrap();
@@ -185,7 +185,7 @@ impl Transaction {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+    /// use logos_core::{TransactionBuilder, Posting};
     /// use logos_core::AccountId;
     ///
     /// let txn = TransactionBuilder::new("Buy groceries")
@@ -206,7 +206,7 @@ impl Transaction {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+    /// use logos_core::{TransactionBuilder, Posting};
     /// use logos_core::AccountId;
     ///
     /// let txn = TransactionBuilder::new("Buy groceries")
@@ -232,7 +232,7 @@ impl Transaction {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+/// use logos_core::{TransactionBuilder, Posting};
 /// use logos_core::AccountId;
 ///
 /// // A successful balanced transaction:
@@ -248,7 +248,7 @@ impl Transaction {
 /// Unbalanced transactions will return a `DomainError`:
 ///
 /// ```
-/// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+/// use logos_core::{TransactionBuilder, Posting};
 /// use logos_core::AccountId;
 ///
 /// let result = TransactionBuilder::new("Oops")
@@ -269,7 +269,7 @@ impl TransactionBuilder {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::transaction::TransactionBuilder;
+    /// use logos_core::TransactionBuilder;
     ///
     /// let builder = TransactionBuilder::new("Buy groceries");
     /// ```
@@ -286,7 +286,7 @@ impl TransactionBuilder {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+    /// use logos_core::{TransactionBuilder, Posting};
     /// use logos_core::AccountId;
     ///
     /// let builder = TransactionBuilder::new("Buy groceries")
@@ -308,7 +308,7 @@ impl TransactionBuilder {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+    /// use logos_core::{TransactionBuilder, Posting};
     /// use logos_core::AccountId;
     ///
     /// let txn = TransactionBuilder::new("Buy groceries")

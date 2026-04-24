@@ -39,7 +39,7 @@ impl CategoryGroupId {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::category::CategoryGroupId;
+    /// use logos_core::CategoryGroupId;
     ///
     /// let id = CategoryGroupId::from_name(" Living Expenses ")?;
     /// assert_eq!(id.as_str(), "living-expenses");
@@ -67,7 +67,7 @@ impl CategoryGroupId {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::category::CategoryGroupId;
+    /// use logos_core::CategoryGroupId;
     ///
     /// let id = CategoryGroupId::from_name("Housing").unwrap();
     /// assert_eq!(id.as_str(), "housing");
@@ -103,7 +103,7 @@ impl CategoryGroup {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::category::CategoryGroup;
+    /// use logos_core::CategoryGroup;
     ///
     /// let group = CategoryGroup::new(" Housing ").expect("valid name");
     /// assert_eq!(group.name(), "Housing");
@@ -133,7 +133,7 @@ impl CategoryGroup {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::category::CategoryGroup;
+    /// use logos_core::CategoryGroup;
     ///
     /// let group = CategoryGroup::new("Housing").unwrap();
     /// assert_eq!(group.id().as_str(), "housing");
@@ -148,7 +148,7 @@ impl CategoryGroup {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::category::{Category, CategoryGroup};
+    /// use logos_core::{Category, CategoryGroup};
     ///
     /// let group = CategoryGroup::new("Housing").unwrap();
     /// let category = Category::new(group.id().clone(), "Rent").unwrap();
@@ -185,7 +185,7 @@ impl Category {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::category::{Category, CategoryGroup};
+    /// use logos_core::{Category, CategoryGroup};
     ///
     /// let group = CategoryGroup::new("Housing").expect("valid group");
     /// let category = Category::new(group.id().clone(), " Rent ").expect("valid category");
@@ -221,7 +221,7 @@ impl Category {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::category::{Category, CategoryGroup};
+    /// use logos_core::{Category, CategoryGroup};
     ///
     /// let group = CategoryGroup::new("Housing").unwrap();
     /// let category = Category::new(group.id().clone(), "Rent").unwrap();
@@ -237,7 +237,7 @@ impl Category {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::domain::category::{Category, CategoryGroup};
+    /// use logos_core::{Category, CategoryGroup};
     ///
     /// let group = CategoryGroup::new("Housing").unwrap();
     /// let category = Category::new(group.id().clone(), "Rent").unwrap();

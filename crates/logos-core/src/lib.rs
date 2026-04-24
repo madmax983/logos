@@ -44,11 +44,13 @@
 //! assert!(matches!(bad_txn, Err(DomainError::UnbalancedTransaction { total: 100_00 })));
 //! ```
 
-pub mod domain;
-pub mod error;
+pub(crate) mod domain;
+pub(crate) mod error;
 /// Experimental features and proof-of-concepts. Use at your own risk.
-pub mod experimental;
-pub mod planning;
+pub(crate) mod experimental;
+pub use experimental::*;
+pub(crate) mod planning;
+pub use planning::*;
 
 pub use domain::account::{AccountId, AccountType};
 pub use domain::budget::{BudgetMonth, rollover_end_balance};

@@ -1,6 +1,6 @@
 //! Application Runtime Models
-use logos_store::model::StoredFetchRun;
-use logos_store::model::{StoredMonthClose, StoredReconciliationRun};
+use logos_store::StoredFetchRun;
+use logos_store::{StoredMonthClose, StoredReconciliationRun};
 use std::path::{Path, PathBuf};
 
 /// A snapshot of financial health for a specific month.

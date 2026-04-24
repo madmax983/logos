@@ -1,5 +1,5 @@
 use logos_core::AccountId;
-use logos_core::domain::transaction::{Posting, TransactionBuilder};
+use logos_core::{Posting, TransactionBuilder};
 
 #[test]
 fn test_posting_account() {

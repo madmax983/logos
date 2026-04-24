@@ -1,9 +1,9 @@
+use logos_core::AccountId;
+use logos_core::AllocationPolicy;
 use logos_core::Posting;
-use logos_core::domain::account::AccountId;
-use logos_core::domain::rsu::AllocationPolicy;
-use logos_core::planning::fire::{FireSimulator, UpcomingVest};
-use logos_core::planning::net_worth_projector::NetWorthProjector;
-use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
+use logos_core::fire::{FireSimulator, UpcomingVest};
+use logos_core::net_worth_projector::NetWorthProjector;
+use logos_core::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
 
 #[test]
 fn planning_rsu_distributor_builds_balanced_transaction() {
