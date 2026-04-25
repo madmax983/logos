@@ -423,7 +423,7 @@ fn render_fire_sim_output(
         }
     }
 
-    format!("analytics.fire-sim\n{table}\n\n{journey_table}")
+    format!("{table}\n\n{journey_table}")
 }
 
 #[cfg(test)]

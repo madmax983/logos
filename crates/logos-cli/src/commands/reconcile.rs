@@ -198,16 +198,13 @@ fn render_show_output(run: &StoredReconciliationRun) -> String {
 }
 
 fn render_list_output(
-    month_key: Option<&str>,
-    checking_account: Option<&str>,
+    _month_key: Option<&str>,
+    _checking_account: Option<&str>,
     runs: &[StoredReconciliationRun],
 ) -> String {
-    let filter_month = month_key.unwrap_or("*");
-    let filter_account = checking_account.unwrap_or("*");
+
     if runs.is_empty() {
-        return format!(
-            "reconcile.list filter_month={filter_month} filter_checking_account={filter_account} count=0"
-        );
+        return "No reconciliation runs found for the given filters.".to_string();
     }
 
     let mut table = comfy_table::Table::new();
@@ -248,10 +245,7 @@ fn render_list_output(
         ]);
     }
 
-    format!(
-        "reconcile.list filter_month={filter_month} filter_checking_account={filter_account} count={}\n{table}",
-        runs.len()
-    )
+    format!("{table}")
 }
 
 #[cfg(test)]
@@ -360,7 +354,7 @@ mod tests {
 
         let output = render_list_output(Some("2026-05"), Some("assets:checking"), &runs);
 
-        assert!(output.contains("reconcile.list"));
+        assert!(output.contains("recon-9"));
         assert!(output.contains("recon-9"));
         assert!(output.contains("$0.00"));
         assert!(output.contains("recon-10"));
