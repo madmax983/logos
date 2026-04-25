@@ -1,4 +1,5 @@
 #![allow(clippy::should_panic_without_expect)]
+#![cfg(feature = "nova")]
 
 use logos_core::experimental::debt_optimizer::{Debt, DebtOptimizer, PayoffStrategy};
 use proptest::prelude::*;
