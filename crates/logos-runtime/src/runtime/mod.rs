@@ -1341,6 +1341,8 @@ impl<S: LedgerStore> AppRuntime<S> {
         checking_account: &str,
         month_key: &str,
     ) -> Vec<TransactionId> {
+        // ⚡ Bolt: Using `filter_map` and cloning only the ID avoids cloning the entire transaction list.
+        // We also avoid the initial `Vec` allocation and `dedup` by mapping directly from the iterator.
         let mut ids: Vec<_> = self
             .store
             .transactions()
