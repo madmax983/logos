@@ -41,7 +41,7 @@ pub fn migrate() -> Result<(), CliError> {
         comfy_table::Cell::new(joined),
     ]);
 
-    println!("db.migrate\n{table}");
+    println!("{table}");
     Ok(())
 }
 
@@ -85,7 +85,7 @@ pub fn status() -> Result<(), CliError> {
         comfy_table::Cell::new(joined),
     ]);
 
-    println!("db.status\n{table}");
+    println!("{table}");
     Ok(())
 }
 

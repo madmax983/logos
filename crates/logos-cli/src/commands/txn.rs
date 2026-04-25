@@ -92,7 +92,7 @@ pub fn add(
         comfy_table::Cell::new(credit_account),
     ]);
 
-    println!("txn.add\n{table}");
+    println!("{table}");
     Ok(())
 }
 
@@ -124,7 +124,7 @@ pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
         comfy_table::Cell::new(reason),
     ]);
 
-    println!("txn.correct\n{table}");
+    println!("{table}");
     Ok(())
 }
 
