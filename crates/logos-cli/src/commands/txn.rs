@@ -45,6 +45,40 @@ impl TxnPoster for AppRuntime<logos_store_pg::PostgresStore> {
     }
 }
 
+fn render_txn_add_output(
+    transaction_id: &str,
+    description: &str,
+    debit_account: &str,
+    credit_account: &str,
+    amount_cents: i64,
+) -> String {
+    let amount = crate::format::currency(amount_cents);
+
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        comfy_table::Cell::new("Status")
+            .add_attribute(comfy_table::Attribute::Bold)
+            .fg(comfy_table::Color::Green),
+        comfy_table::Cell::new("Transaction ID").add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Description").add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Amount").add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Debit Account").add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Credit Account").add_attribute(comfy_table::Attribute::Bold),
+    ]);
+
+    table.add_row(vec![
+        comfy_table::Cell::new("✔ Added").fg(comfy_table::Color::Green),
+        comfy_table::Cell::new(transaction_id),
+        comfy_table::Cell::new(description),
+        comfy_table::Cell::new(amount).fg(comfy_table::Color::Blue),
+        comfy_table::Cell::new(debit_account),
+        comfy_table::Cell::new(credit_account),
+    ]);
+
+    format!("txn.add\n{table}")
+}
+
 /// Handles `ledger txn add`.
 ///
 /// # Errors
@@ -68,46 +102,21 @@ pub fn add(
         amount_cents,
         &mut runtime,
     )?;
-    let amount = crate::format::currency(amount_cents);
 
-    let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec![
-        comfy_table::Cell::new("Status")
-            .add_attribute(comfy_table::Attribute::Bold)
-            .fg(comfy_table::Color::Green),
-        comfy_table::Cell::new("Transaction ID").add_attribute(comfy_table::Attribute::Bold),
-        comfy_table::Cell::new("Description").add_attribute(comfy_table::Attribute::Bold),
-        comfy_table::Cell::new("Amount").add_attribute(comfy_table::Attribute::Bold),
-        comfy_table::Cell::new("Debit Account").add_attribute(comfy_table::Attribute::Bold),
-        comfy_table::Cell::new("Credit Account").add_attribute(comfy_table::Attribute::Bold),
-    ]);
-
-    table.add_row(vec![
-        comfy_table::Cell::new("✔ Added").fg(comfy_table::Color::Green),
-        comfy_table::Cell::new(transaction_id.as_str()),
-        comfy_table::Cell::new(description),
-        comfy_table::Cell::new(amount).fg(comfy_table::Color::Blue),
-        comfy_table::Cell::new(debit_account),
-        comfy_table::Cell::new(credit_account),
-    ]);
-
-    println!("txn.add\n{table}");
+    println!(
+        "{}",
+        render_txn_add_output(
+            transaction_id.as_str(),
+            description,
+            debit_account,
+            credit_account,
+            amount_cents
+        )
+    );
     Ok(())
 }
 
-/// Handles `ledger txn correct`.
-///
-/// # Errors
-///
-/// Returns an error when correction validation or runtime persistence fails.
-pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
-    let mut runtime =
-        crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
-            command: "txn.correct".to_owned(),
-            message: format!("{err}"),
-        })?;
-    apply_correction(supersedes_id, reason, &mut runtime)?;
+fn render_txn_correct_output(supersedes_id: &str, reason: &str) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
     table.set_header(vec![
@@ -124,7 +133,23 @@ pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
         comfy_table::Cell::new(reason),
     ]);
 
-    println!("txn.correct\n{table}");
+    format!("txn.correct\n{table}")
+}
+
+/// Handles `ledger txn correct`.
+///
+/// # Errors
+///
+/// Returns an error when correction validation or runtime persistence fails.
+pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
+    let mut runtime =
+        crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+            command: "txn.correct".to_owned(),
+            message: format!("{err}"),
+        })?;
+    apply_correction(supersedes_id, reason, &mut runtime)?;
+
+    println!("{}", render_txn_correct_output(supersedes_id, reason));
     Ok(())
 }
 

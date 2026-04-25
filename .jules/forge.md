@@ -8,3 +8,6 @@
 **Refactoring God Functions in CLI/TUI**
 **Learning:** Functions like `fire_sim` and `render` were combining business logic/state assembly with complex UI rendering (creating and populating comfy_table models). This caused them to exceed 100 lines and become hard to read.
 **Action:** Extract the rendering logic into helper functions (e.g. `render_fire_sim_output`, `render_runs_table`, `render_evidence_table`). Pass only the minimal necessary state into the rendering helpers.
+**Refactoring God Functions in CLI/TUI and Preserving Public Documentation**
+**Learning:** Extracting output rendering logic into private helper functions (like `render_txn_add_output`) from public command handlers (like `add`) can inadvertently carry over the public doc comments (`///`) to the private helpers.
+**Action:** When extracting parts of functions, make sure public documentation, especially `/// # Errors` or descriptions, remains attached to the original public function and is not accidentally moved to the new private helper.
