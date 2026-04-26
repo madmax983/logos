@@ -445,3 +445,47 @@ mod fire_sim_tests {
         assert!(result.is_ok());
     }
 }
+
+
+pub fn anomaly_detect(multiplier: f64) -> Result<(), CliError> {
+    use logos_core::experimental::anomaly_detector::AnomalyDetector;
+
+    let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+        command: "analytics.anomaly-detect".to_owned(),
+        message: format!("{err}"),
+    })?;
+
+    // Using an arbitrary valid timestamp to extract all transactions.
+    let now_us = chrono::Utc::now().timestamp_micros();
+    let stored_transactions = runtime.transactions_as_of_us(
+        now_us,
+        now_us
+    ).map_err(|err| CliError::CommandRuntimeFailed {
+        command: "analytics.anomaly-detect".to_owned(),
+        message: format!("Failed to load transactions: {err}"),
+    })?;
+    let transactions: Vec<_> = stored_transactions.into_iter().map(|s| s.transaction().clone()).collect();
+
+    let detector = AnomalyDetector::new(multiplier);
+    let anomalies = detector.detect(&transactions);
+
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Account",
+        "Description",
+        "Amount",
+    ]);
+
+    for anomaly in anomalies {
+        table.add_row(vec![
+            comfy_table::Cell::new(&anomaly.account).fg(comfy_table::Color::Blue),
+            comfy_table::Cell::new(&anomaly.description),
+            comfy_table::Cell::new(crate::format::currency(anomaly.amount_cents)).fg(comfy_table::Color::Red),
+        ]);
+    }
+
+    println!("analytics.anomaly-detect\n{table}");
+
+    Ok(())
+}

@@ -119,6 +119,9 @@ fn execute_txn_command(command: &TxnCommand) -> Result<(), CliError> {
 
 fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError> {
     match command {
+        AnalyticsCommand::AnomalyDetect { multiplier } => {
+            commands::analytics::anomaly_detect(multiplier.parse::<f64>().unwrap_or(1.5))
+        }
         AnalyticsCommand::SnapshotCreate {
             as_of_valid_time_us,
             as_of_tx_time_us,
@@ -392,6 +395,7 @@ impl Command {
             Self::Db(DbCommand::Status) => "db.status",
             Self::Txn(TxnCommand::Add { .. }) => "txn.add",
             Self::Txn(TxnCommand::Correct { .. }) => "txn.correct",
+            Self::Analytics(AnalyticsCommand::AnomalyDetect { .. }) => "analytics.anomaly-detect",
             Self::Analytics(AnalyticsCommand::SnapshotCreate { .. }) => "analytics.snapshot.create",
             Self::Analytics(AnalyticsCommand::SnapshotList) => "analytics.snapshot.list",
             Self::Analytics(AnalyticsCommand::SnapshotShow { .. }) => "analytics.snapshot.show",
@@ -452,6 +456,9 @@ pub enum TxnCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AnalyticsCommand {
+    AnomalyDetect {
+        multiplier: String,
+    },
     SnapshotCreate {
         as_of_valid_time_us: Option<i64>,
         as_of_tx_time_us: Option<i64>,
@@ -778,6 +785,12 @@ fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
             command: Command::Help(HelpTopic::Analytics),
         }),
         "snapshot" => parse_analytics_snapshot(args),
+        "anomaly-detect" => {
+            let multiplier = parse_optional_flag_value(&args[2..], "--multiplier")?.unwrap_or_else(|| "1.5".to_string());
+            Ok(ParsedArgs {
+                command: Command::Analytics(AnalyticsCommand::AnomalyDetect { multiplier }),
+            })
+        }
         "sankey" => Ok(ParsedArgs {
             command: Command::Analytics(AnalyticsCommand::Sankey),
         }),

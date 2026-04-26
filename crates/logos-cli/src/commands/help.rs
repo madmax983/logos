@@ -119,6 +119,8 @@ Usage: ledger analytics <subcommand> [options]
 Subcommands:
   snapshot create [--as-of-valid-us <i64>] [--as-of-tx-us <i64>] [--schema-version <i64>] [--supersedes <artifact-id>]
                                      Create immutable parquet analytics snapshot + manifest
+  anomaly-detect [--multiplier <f64>]
+                                     Detect anomalous transactions using IQR.
   snapshot list                      List known analytics manifests
   snapshot show --artifact-id <id>   Show one manifest
   sankey                             Generate Mermaid Sankey diagram from current transactions
