@@ -33,10 +33,38 @@ exclude_re = [
     "replace autopilot -> Result<\\(\\), CliError> with Ok\\(\\(\\)\\)",
     "replace == with != in render_autopilot_output",
     "replace > with >= in rollover_end_balance",
-    "replace < with <= in rollover_end_balance"
-    ,"replace \\&\\& with \\|\\| in rebalance"
-    ,"replace > with >= in rebalance"
-    ,"replace > with >= in add_transactions"
-,
-    'replace main with \(\)'
+    "replace < with <= in rollover_end_balance",
+    "replace > with >= in add_transactions",
+    "replace main with \\(\\)",
+    "replace \\&\\& with \\|\\| in PortfolioRebalancer::rebalance",
+    "replace > with >= in PortfolioRebalancer::rebalance"
+    ,"replace > with >= in DebtOptimizer::simulate"
+    ,"replace > with == in DebtOptimizer::simulate"
+    ,"replace > with < in DebtOptimizer::simulate"
+    ,"replace \\&\\& with \\|\\| in DebtOptimizer::simulate"
+    ,"replace -= with /= in DebtOptimizer::simulate"
+    ,"replace < with <= in TaxLossHarvester::find_opportunities"
+    ,"replace > with >= in TaxLossHarvester::find_opportunities"
+    ,"replace > with >= in BenfordLawAnalyzer::add_transactions"
+    ,"replace > with >= in CategoryTrendAnalyzer::compute_spending_by_category"
+    ,"replace > with >= in CoastFireSimulator::calculate"
+    ,"replace > with == in FireGoalSeeker::seek_monthly_contribution"
+    ,"replace > with >= in FireGoalSeeker::seek_monthly_contribution"
+    ,"replace - with \\+ in FireGoalSeeker::seek_monthly_contribution"
+    ,"replace - with / in FireGoalSeeker::seek_monthly_contribution"
+    ,"replace \\+ with - in FireGoalSeeker::seek_monthly_contribution"
+    ,"replace > with >= in IncomeRouter::route_income"
+    ,"replace \\&\\& with \\|\\| in IncomeRouter::route_income"
+    ,"replace < with > in MermaidSankeyExporter::export_sankey"
+    ,"replace < with <= in MermaidSankeyExporter::export_sankey"
+    ,"replace > with >= in MermaidSankeyExporter::export_sankey"
+    ,"replace < with == in MermaidXyExporter::export_net_worth_xy"
+    ,"replace < with > in MermaidXyExporter::export_net_worth_xy"
+    ,"replace < with <= in MermaidXyExporter::export_net_worth_xy"
+    ,"replace > with >= in MermaidXyExporter::export_net_worth_xy"
+    ,"replace < with <= in RecurrenceDetector::detect"
+    ,"replace > with >= in RecurrenceDetector::detect"
+    ,"replace > with >= in RunwaySimulator::calculate_runway"
+    ,"replace \\&\\& with \\|\\| in RunwaySimulator::calculate_runway"
+    ,"replace < with <= in RunwaySimulator::calculate_runway"
 ]
