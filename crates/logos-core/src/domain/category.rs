@@ -36,14 +36,20 @@ impl CategoryGroupId {
     /// assert_eq!(id.as_str(), "living-expenses");
     /// # Ok::<(), logos_core::DomainError>(())
     /// ```
+    /// ⚡ Bolt Optimization:
+    /// Pre-allocates string capacity based on the input length to avoid re-allocations
+    /// and iterates over characters to push them in lowercase directly. This eliminates
+    /// the intermediate `String` allocation created by `.to_ascii_lowercase()` on each segment.
     pub fn from_name(name: &str) -> Result<Self, DomainError> {
-        let mut normalized = String::new();
+        let mut normalized = String::with_capacity(name.len());
 
         for segment in name.split_whitespace() {
             if !normalized.is_empty() {
                 normalized.push('-');
             }
-            normalized.push_str(&segment.to_ascii_lowercase());
+            for ch in segment.chars() {
+                normalized.push(ch.to_ascii_lowercase());
+            }
         }
 
         if normalized.is_empty() {
