@@ -1,9 +1,18 @@
 //! Account types and their double-entry accounting behavior.
 //!
-//! This module defines the primary categories of accounts used in `logos`
-//! and their fundamental properties, such as their normal balance signs.
-//! Understanding these categories is essential for correct transaction balancing
-//! and reporting.
+//! # The Five Pillars
+//!
+//! In `logos`, every financial construct must be assigned an account, and every
+//! account must map to one of the five fundamental types of double-entry bookkeeping:
+//!
+//! 1. **Asset**: What you own (e.g., Cash, Checking, Investments).
+//! 2. **Liability**: What you owe (e.g., Credit Cards, Mortgages).
+//! 3. **Equity**: What is left over (e.g., Retained Earnings).
+//! 4. **Income**: The flow of value in (e.g., Salary, Dividends).
+//! 5. **Expense**: The flow of value out (e.g., Groceries, Rent).
+//!
+//! The type of account dictates its normal balance sign, which the engine uses
+//! to validate that every transaction perfectly balances to zero.
 
 use crate::error::DomainError;
 

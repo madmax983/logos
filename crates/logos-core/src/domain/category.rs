@@ -1,9 +1,13 @@
-//! Categorization and envelope organization structures.
+//! Budget categories and grouping logic.
 //!
-//! Budget categories in `logos` follow a hierarchical structure:
-//! Every [`Category`] belongs to a [`CategoryGroup`].
+//! # The Organization of Envelopes
+//!
+//! In the `logos` envelope budgeting system, expenses are not just tracked; they
+//! are proactively organized. Every [`Category`] represents a specific budget envelope
+//! (e.g., "Rent") and belongs to a broader [`CategoryGroup`] (e.g., "Housing").
+//!
 //! This structure helps organize expenses logically and is the foundation
-//! for the envelope budgeting feature.
+//! for calculating budget rollups and variances.
 
 use crate::error::DomainError;
 use std::sync::Arc;

@@ -1,54 +1,24 @@
-//! The Ledger's Truth: Transactions and Invariants.
+//! Strictly balanced double-entry transactions.
 //!
-//! # The Unbreakable Rules
+//! # The Golden Rule
 //!
-//! In the `logos` universe, the ledger is absolute. This module provides the core
-//! double-entry accounting structures that enforce the most fundamental law of
-//! accounting: **Debits must equal Credits**.
+//! In `logos`, money cannot be created from nothing or destroyed into nothing.
+//! Every `Transaction` must be perfectly balanced, meaning the sum of all its
+//! positive `Posting`s (debits) and negative `Posting`s (credits) must equal
+//! exactly `0`.
 //!
-//! The `logos` system operates on a zero-trust model for financial data. You cannot
-//! just "create" a transaction; you must use a [`TransactionBuilder`] to prove that
-//! your entries are perfectly balanced. If they are off by even a single cent, the
-//! system will refuse to construct the [`Transaction`].
-//!
-//! ## Sign Convention and Cents
-//!
-//! To avoid floating-point precision issues, all amounts are strictly represented
-//! in integer **cents**.
-//!
-//! To mathematically enforce the balancing invariant, `logos` uses strict sign rules:
-//! * **Debits** are inherently **positive** values (e.g., `+1000` = $10.00).
-//! * **Credits** are internally stored as **negative** values (e.g., `-1000` = -$10.00).
-//!
-//! A transaction balances when the sum of all its postings is exactly `0`.
+//! The `TransactionBuilder` enforces this rule. It is mathematically impossible
+//! to construct a `Transaction` object that does not balance.
 
-use crate::domain::account::AccountId;
+use crate::AccountId;
 use crate::error::DomainError;
 
-/// A single line item within a [`Transaction`].
+/// A single line item within a transaction.
 ///
-/// A posting affects a single account and has a monetary amount. In double-entry
-/// accounting, postings can be debits or credits. This struct ensures consistency
-/// by storing amounts with a strict sign convention.
-///
-/// ## Sign Convention
-/// * **Debits** are strictly **positive** values (e.g. `1000` = +$10.00).
-/// * **Credits** are strictly **negative** values (e.g. `-1000` = -$10.00).
-///
-/// ## Examples
-///
-/// ```
-/// use logos_core::domain::transaction::Posting;
-/// use logos_core::domain::account::AccountId;
-///
-/// // Create a debit posting for $10.00 (1000 cents).
-/// let d = Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).expect("debit should succeed");
-/// assert_eq!(d.amount(), 1000);
-///
-/// // Create a credit posting for $10.00 (represented as -1000 cents internally).
-/// let c = Posting::credit(AccountId::new("income:salary").unwrap(), 1000).expect("credit should succeed");
-/// assert_eq!(c.amount(), -1000);
-/// ```
+/// A posting associates an amount of money with a specific `AccountId`.
+/// In `logos`:
+/// * **Debits** are strictly positive amounts.
+/// * **Credits** are strictly negative amounts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Posting {
     account: AccountId,
@@ -58,56 +28,8 @@ pub struct Posting {
 impl Posting {
     /// Creates a debit posting.
     ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use logos_core::domain::transaction::Posting;
-    /// use logos_core::AccountId;
-    ///
-    /// let posting = Posting::debit(AccountId::new("assets:checking").unwrap(), 1000).unwrap();
-    /// assert_eq!(posting.amount(), 1000);
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an error when `amount` is not strictly positive.
-    pub fn debit(account: AccountId, amount: i64) -> Result<Self, DomainError> {
-        if amount <= 0 {
-            return Err(DomainError::InvalidDebitAmount { amount });
-        }
-
-        Ok(Self { account, amount })
-    }
-
-    /// Creates a credit posting, negating the provided amount.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use logos_core::domain::transaction::Posting;
-    /// use logos_core::AccountId;
-    ///
-    /// let posting = Posting::credit(AccountId::new("income:salary").unwrap(), 1000).unwrap();
-    /// assert_eq!(posting.amount(), -1000); // Credits are strictly negative
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an error when `amount` is not strictly positive.
-    /// Returns an error if negating `amount` causes an arithmetic overflow.
-    pub fn credit(account: AccountId, amount: i64) -> Result<Self, DomainError> {
-        if amount <= 0 {
-            return Err(DomainError::InvalidCreditAmount { amount });
-        }
-
-        let amount = amount.checked_neg().ok_or(DomainError::AmountOverflow)?;
-        Ok(Self { account, amount })
-    }
-
-    /// Identifies the target account affected by this posting.
-    ///
-    /// The account determines how the posting's amount impacts the ledger's overall balance
-    /// sheet, based on its specific `AccountType` (Asset, Liability, etc.).
+    /// Debits represent a positive flow of value. Depending on the account type,
+    /// a debit may increase or decrease its balance.
     ///
     /// ## Examples
     ///
@@ -116,18 +38,80 @@ impl Posting {
     /// use logos_core::AccountId;
     ///
     /// let account = AccountId::new("assets:checking").unwrap();
-    /// let posting = Posting::debit(account, 1000).unwrap();
-    /// assert_eq!(posting.account().as_str(), "assets:checking");
+    /// let debit = Posting::debit(account, 5000).expect("valid debit");
+    ///
+    /// assert_eq!(debit.amount(), 5000);
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the provided `amount` is less than or equal to zero.
+    pub fn debit(account: AccountId, amount: i64) -> Result<Self, DomainError> {
+        if amount <= 0 {
+            return Err(DomainError::InvalidDebitAmount { amount });
+        }
+
+        Ok(Self { account, amount })
+    }
+
+    /// Creates a credit posting.
+    ///
+    /// Credits represent a negative flow of value. The engine automatically negates
+    /// the provided positive input. Depending on the account type, a credit may
+    /// increase or decrease its balance.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::AccountId;
+    ///
+    /// let account = AccountId::new("income:salary").unwrap();
+    /// // You provide a positive absolute amount, the engine negates it for balancing.
+    /// let credit = Posting::credit(account, 5000).expect("valid credit");
+    ///
+    /// assert_eq!(credit.amount(), -5000);
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the provided absolute `amount` is less than or equal to zero,
+    /// or when attempting to negate `i64::MIN` (which causes an overflow).
+    pub fn credit(account: AccountId, amount: i64) -> Result<Self, DomainError> {
+        if amount <= 0 {
+            return Err(DomainError::InvalidCreditAmount { amount });
+        }
+
+        let negative_amount = amount
+            .checked_neg()
+            .ok_or(DomainError::InvalidCreditAmount { amount })?;
+
+        Ok(Self {
+            account,
+            amount: negative_amount,
+        })
+    }
+
+    /// Retrieves the account ID associated with this posting.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::domain::transaction::Posting;
+    /// use logos_core::AccountId;
+    ///
+    /// let account = AccountId::new("assets:checking").unwrap();
+    /// let debit = Posting::debit(account.clone(), 5000).unwrap();
+    /// assert_eq!(debit.account(), &account);
     /// ```
     #[must_use]
     pub const fn account(&self) -> &AccountId {
         &self.account
     }
 
-    /// The monetary value of this posting in cents, enforcing double-entry sign conventions.
+    /// Retrieves the exact posting amount.
     ///
-    /// Debits are inherently positive and Credits are internally stored as negative values,
-    /// guaranteeing that a perfectly balanced transaction will sum to exactly zero.
+    /// This amount will be positive for debits and negative for credits.
     ///
     /// ## Examples
     ///
