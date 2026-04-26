@@ -88,112 +88,26 @@ fn render_month_output(
 ) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec![
-        "Run ID",
-        "Month",
-        "Account",
-        "Opening",
-        "Ledger Δ",
-        "Expected Closing",
-        "Statement Closing",
-        "Variance",
-        "Reconciled",
-        "Matched Postings",
-        "Matched Txns",
-        "Inflow",
-        "Outflow",
-        "Created At",
-    ]);
-    let variance_cell = if run.variance_cents() == 0 {
-        Cell::new("$0.00").fg(Color::Green)
-    } else {
-        Cell::new(crate::format::currency(run.variance_cents()))
-            .fg(Color::Red)
-            .add_attribute(Attribute::Bold)
-    };
-
-    let reconciled_cell = if run.reconciled() {
-        Cell::new("true").fg(Color::Green)
-    } else {
-        Cell::new("false").fg(Color::Red)
-    };
-
-    table.add_row(vec![
-        Cell::new(run.run_id()).fg(Color::DarkGrey),
-        Cell::new(month_key),
-        Cell::new(checking_account),
-        Cell::new(crate::format::currency(opening_balance_cents)),
-        Cell::new(crate::format::currency(run.ledger_delta_cents())),
-        Cell::new(crate::format::currency(
-            run.expected_closing_balance_cents(),
-        )),
-        Cell::new(crate::format::currency(
-            run.statement_closing_balance_cents(),
-        )),
-        variance_cell,
-        reconciled_cell,
-        Cell::new(run.matched_postings()),
-        Cell::new(run.matched_transaction_count()),
-        Cell::new(crate::format::currency(run.inflow_cents())).fg(Color::Green),
-        Cell::new(crate::format::currency(run.outflow_cents())).fg(Color::Red),
-        Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
-    ]);
+    set_run_headers(&mut table);
+    table.add_row(add_run_row(
+        month_key,
+        checking_account,
+        opening_balance_cents,
+        run,
+    ));
     table.to_string()
 }
 
 fn render_show_output(run: &StoredReconciliationRun) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec![
-        "Run ID",
-        "Month",
-        "Account",
-        "Opening",
-        "Ledger Δ",
-        "Expected Closing",
-        "Statement Closing",
-        "Variance",
-        "Reconciled",
-        "Matched Postings",
-        "Matched Txns",
-        "Inflow",
-        "Outflow",
-        "Created At",
-    ]);
-    let variance_cell = if run.variance_cents() == 0 {
-        Cell::new("$0.00").fg(Color::Green)
-    } else {
-        Cell::new(crate::format::currency(run.variance_cents()))
-            .fg(Color::Red)
-            .add_attribute(Attribute::Bold)
-    };
-
-    let reconciled_cell = if run.reconciled() {
-        Cell::new("true").fg(Color::Green)
-    } else {
-        Cell::new("false").fg(Color::Red)
-    };
-
-    table.add_row(vec![
-        Cell::new(run.run_id()).fg(Color::DarkGrey),
-        Cell::new(run.month_key()),
-        Cell::new(run.checking_account()),
-        Cell::new(crate::format::currency(run.opening_balance_cents())),
-        Cell::new(crate::format::currency(run.ledger_delta_cents())),
-        Cell::new(crate::format::currency(
-            run.expected_closing_balance_cents(),
-        )),
-        Cell::new(crate::format::currency(
-            run.statement_closing_balance_cents(),
-        )),
-        variance_cell,
-        reconciled_cell,
-        Cell::new(run.matched_postings()),
-        Cell::new(run.matched_transaction_count()),
-        Cell::new(crate::format::currency(run.inflow_cents())).fg(Color::Green),
-        Cell::new(crate::format::currency(run.outflow_cents())).fg(Color::Red),
-        Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
-    ]);
+    set_run_headers(&mut table);
+    table.add_row(add_run_row(
+        run.month_key(),
+        run.checking_account(),
+        run.opening_balance_cents(),
+        run,
+    ));
     table.to_string()
 }
 
@@ -252,6 +166,67 @@ fn render_list_output(
         "reconcile.list filter_month={filter_month} filter_checking_account={filter_account} count={}\n{table}",
         runs.len()
     )
+}
+
+fn set_run_headers(table: &mut comfy_table::Table) {
+    table.set_header(vec![
+        "Run ID",
+        "Month",
+        "Account",
+        "Opening",
+        "Ledger Δ",
+        "Expected Closing",
+        "Statement Closing",
+        "Variance",
+        "Reconciled",
+        "Matched Postings",
+        "Matched Txns",
+        "Inflow",
+        "Outflow",
+        "Created At",
+    ]);
+}
+
+fn add_run_row(
+    month_key: &str,
+    checking_account: &str,
+    opening_balance_cents: i64,
+    run: &StoredReconciliationRun,
+) -> Vec<Cell> {
+    let variance_cell = if run.variance_cents() == 0 {
+        Cell::new("$0.00").fg(Color::Green)
+    } else {
+        Cell::new(crate::format::currency(run.variance_cents()))
+            .fg(Color::Red)
+            .add_attribute(Attribute::Bold)
+    };
+
+    let reconciled_cell = if run.reconciled() {
+        Cell::new("true").fg(Color::Green)
+    } else {
+        Cell::new("false").fg(Color::Red)
+    };
+
+    vec![
+        Cell::new(run.run_id()).fg(Color::DarkGrey),
+        Cell::new(month_key),
+        Cell::new(checking_account),
+        Cell::new(crate::format::currency(opening_balance_cents)),
+        Cell::new(crate::format::currency(run.ledger_delta_cents())),
+        Cell::new(crate::format::currency(
+            run.expected_closing_balance_cents(),
+        )),
+        Cell::new(crate::format::currency(
+            run.statement_closing_balance_cents(),
+        )),
+        variance_cell,
+        reconciled_cell,
+        Cell::new(run.matched_postings()),
+        Cell::new(run.matched_transaction_count()),
+        Cell::new(crate::format::currency(run.inflow_cents())).fg(Color::Green),
+        Cell::new(crate::format::currency(run.outflow_cents())).fg(Color::Red),
+        Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
+    ]
 }
 
 #[cfg(test)]
