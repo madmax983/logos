@@ -112,4 +112,16 @@ mod tests {
         assert_eq!(simulator.value_after_years(3), 512_000);
         assert_eq!(simulator.value_after_years(50), 200_000);
     }
+
+    #[test]
+    fn test_linear_depreciation_zero_useful_life() {
+        let schedule = DepreciationSchedule::Linear {
+            useful_life_years: 0,
+            salvage_value_cents: 200_000,
+        };
+        let simulator = AssetDepreciationSimulator::new(1_000_000, schedule);
+
+        assert_eq!(simulator.value_after_years(0), 200_000);
+        assert_eq!(simulator.value_after_years(1), 200_000);
+    }
 }

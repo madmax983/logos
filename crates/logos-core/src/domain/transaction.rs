@@ -428,4 +428,25 @@ mod tests {
             Err(DomainError::UnbalancedTransaction { total: 50 })
         );
     }
+
+    #[test]
+    fn test_zero_and_negative_amounts() {
+        let account = AccountId::new("assets:checking").unwrap();
+        assert_eq!(
+            Posting::debit(account.clone(), 0),
+            Err(DomainError::InvalidDebitAmount { amount: 0 })
+        );
+        assert_eq!(
+            Posting::debit(account.clone(), -500),
+            Err(DomainError::InvalidDebitAmount { amount: -500 })
+        );
+        assert_eq!(
+            Posting::credit(account.clone(), 0),
+            Err(DomainError::InvalidCreditAmount { amount: 0 })
+        );
+        assert_eq!(
+            Posting::credit(account, -500),
+            Err(DomainError::InvalidCreditAmount { amount: -500 })
+        );
+    }
 }
