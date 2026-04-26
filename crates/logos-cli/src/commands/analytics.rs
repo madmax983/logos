@@ -72,19 +72,7 @@ fn render_snapshot_manifest_list(
     ]);
 
     for manifest in manifests {
-        let supersedes = manifest.supersedes_artifact_id().unwrap_or("");
-        table.add_row(vec![
-            Cell::new(manifest.artifact_id()).fg(Color::Blue),
-            Cell::new(manifest.artifact_kind()).fg(Color::Green),
-            Cell::new(manifest.schema_version().to_string()),
-            Cell::new(manifest.row_count().to_string()),
-            Cell::new(manifest.content_hash()),
-            Cell::new(manifest.artifact_uri()),
-            Cell::new(us_timestamp(manifest.snapshot_valid_at())),
-            Cell::new(us_timestamp(manifest.snapshot_tx_at())),
-            Cell::new(us_timestamp(manifest.created_at())),
-            Cell::new(supersedes),
-        ]);
+        table.add_row(manifest_row(manifest));
     }
 
     table.to_string()
@@ -169,8 +157,14 @@ fn render_snapshot_manifest(manifest: &logos_store::StoredAnalyticsArtifactManif
         "Supersedes",
     ]);
 
+    table.add_row(manifest_row(manifest));
+
+    table.to_string()
+}
+
+fn manifest_row(manifest: &logos_store::model::StoredAnalyticsArtifactManifest) -> Vec<Cell> {
     let supersedes = manifest.supersedes_artifact_id().unwrap_or("");
-    table.add_row(vec![
+    vec![
         Cell::new(manifest.artifact_id()).fg(Color::Blue),
         Cell::new(manifest.artifact_kind()).fg(Color::Green),
         Cell::new(manifest.schema_version().to_string()),
@@ -181,9 +175,7 @@ fn render_snapshot_manifest(manifest: &logos_store::StoredAnalyticsArtifactManif
         Cell::new(us_timestamp(manifest.snapshot_tx_at())),
         Cell::new(us_timestamp(manifest.created_at())),
         Cell::new(supersedes),
-    ]);
-
-    table.to_string()
+    ]
 }
 
 #[cfg(test)]
