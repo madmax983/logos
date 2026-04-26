@@ -146,6 +146,13 @@ impl FireSimulator {
         self.config = config;
     }
 
+    /// Returns the current configuration.
+    #[must_use]
+    pub const fn config(&self) -> FireConfig {
+        self.config
+    }
+
+
     /// Injects your current liquid reality into the simulation.
     ///
     /// Before calculating how far you have left to go, we need to know where you are starting from.
@@ -225,6 +232,12 @@ impl FireSimulator {
     /// sim.add_assets_liabilities(20_000_000, 5_000_000); // $150k base NW
     /// assert_eq!(sim.safe_net_worth_cents(), 15_000_000);
     /// ```
+    /// Returns the configured monthly expenses in cents.
+    #[must_use]
+    pub const fn monthly_expenses_cents(&self) -> i64 {
+        self.monthly_expenses_cents
+    }
+
     #[must_use]
     pub fn safe_net_worth_cents(&self) -> i64 {
         let base_nw = self
