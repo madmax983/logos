@@ -13,7 +13,7 @@
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::budget::BudgetMonth;
+/// use logos_core::BudgetMonth;
 ///
 /// let month = BudgetMonth::new("2026-03", 100_00, 500_00, 200_00);
 /// assert_eq!(month.end_balance(), 400_00);

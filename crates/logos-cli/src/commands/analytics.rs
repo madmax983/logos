@@ -162,7 +162,7 @@ fn render_snapshot_manifest(manifest: &logos_store::StoredAnalyticsArtifactManif
     table.to_string()
 }
 
-fn manifest_row(manifest: &logos_store::model::StoredAnalyticsArtifactManifest) -> Vec<Cell> {
+fn manifest_row(manifest: &logos_store::StoredAnalyticsArtifactManifest) -> Vec<Cell> {
     let supersedes = manifest.supersedes_artifact_id().unwrap_or("");
     vec![
         Cell::new(manifest.artifact_id()).fg(Color::Blue),

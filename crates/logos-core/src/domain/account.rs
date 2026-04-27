@@ -16,7 +16,7 @@ use crate::error::DomainError;
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::account::AccountId;
+/// use logos_core::AccountId;
 ///
 /// let id = AccountId::new("assets:checking").expect("Valid account id");
 /// assert_eq!(id.as_str(), "assets:checking");
@@ -73,7 +73,7 @@ impl AccountId {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::account::AccountType;
+/// use logos_core::AccountType;
 ///
 /// let account_type = AccountType::Asset;
 /// assert_eq!(account_type.normal_balance_sign(), 1);

@@ -24,7 +24,7 @@ use crate::error::DomainError;
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::correction::TransactionId;
+/// use logos_core::TransactionId;
 ///
 /// let id = TransactionId::new("tx-123").unwrap();
 /// assert_eq!(id.as_str(), "tx-123");
@@ -80,7 +80,7 @@ impl TransactionId {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::correction::{Correction, TransactionId};
+/// use logos_core::{Correction, TransactionId};
 ///
 /// let old_tx = TransactionId::new("tx-123").unwrap();
 /// let correction = Correction::new(old_tx, "Fixed wrong account").unwrap();

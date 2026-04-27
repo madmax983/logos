@@ -1,7 +1,9 @@
+#![cfg(feature = "nova")]
+
 #![allow(clippy::should_panic_without_expect)]
 
-use logos_core::domain::account::AccountId;
-use logos_core::experimental::income_router::{IncomeRouter, RouteRule};
+use logos_core::AccountId;
+use logos_core::income_router::{IncomeRouter, RouteRule};
 use proptest::prelude::*;
 
 proptest! {

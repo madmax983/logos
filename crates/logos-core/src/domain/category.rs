@@ -19,7 +19,7 @@ use std::sync::Arc;
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::category::CategoryGroupId;
+/// use logos_core::CategoryGroupId;
 ///
 /// let id = CategoryGroupId::from_name("Housing").unwrap();
 /// assert_eq!(id.as_str(), "housing");
@@ -92,7 +92,7 @@ impl CategoryGroupId {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::category::CategoryGroup;
+/// use logos_core::CategoryGroup;
 ///
 /// let group = CategoryGroup::new("Housing").unwrap();
 /// assert_eq!(group.name(), "Housing");
@@ -173,7 +173,7 @@ impl CategoryGroup {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::category::{Category, CategoryGroup};
+/// use logos_core::{Category, CategoryGroup};
 ///
 /// let group = CategoryGroup::new("Housing").unwrap();
 /// let category = Category::new(group.id().clone(), "Rent").unwrap();

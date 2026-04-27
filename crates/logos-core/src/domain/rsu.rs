@@ -30,7 +30,7 @@ use crate::error::DomainError;
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::rsu::HaircutTierTable;
+/// use logos_core::HaircutTierTable;
 ///
 /// let default_table = HaircutTierTable::default();
 /// ```
@@ -144,7 +144,7 @@ impl HaircutTierTable {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::rsu::AllocationPolicy;
+/// use logos_core::AllocationPolicy;
 ///
 /// let policy = AllocationPolicy::new(40, 20, 30, 10).expect("valid policy");
 /// assert_eq!(policy.tax_reserve_pct(), 40);
