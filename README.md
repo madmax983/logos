@@ -49,6 +49,7 @@ export DATABASE_URL="postgres://logos:logos@127.0.0.1:5432/logos"
 
 # Optional local convenience database
 docker compose up -d db
+# Wait for Postgres to be ready to accept connections
 sleep 3
 
 # Apply explicit migrations

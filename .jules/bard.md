@@ -25,3 +25,6 @@
 ## 2025-04-24 - The Missing Object Examples
 **Confusion:** The public struct and enum definitions in the core domain and planning modules lacked executable examples on the types themselves. This violated the "Examples Section" rule where every public struct/enum must have an example.
 **Clarification:** Added executable doctests (`## Examples`) to `AccountId`, `AccountType`, `BudgetMonth`, `CategoryGroupId`, `CategoryGroup`, `Category`, `TransactionId`, `Correction`, `HaircutTierTable`, `AllocationPolicy`, `Transaction`, and `RsuAutoDistributor`.
+## 2025-04-27 - The Connection Refused Mystery
+**Confusion:** Users copy-pasting the "Example Commands" from `README.md` ran `docker compose up -d db` and immediately ran `cargo run -p logos-cli -- db migrate`. This caused an instant `Connection refused` error because Postgres takes a few seconds to start accepting connections after the container is created, and users didn't understand the purpose of the `sleep 3` command.
+**Clarification:** Added a comment `# Wait for Postgres to be ready to accept connections` right before `sleep 3` in `README.md` so users understand the necessity of pausing between starting the container and running migrations.
