@@ -27,8 +27,8 @@ Behavior:
 Example:
 
 ```rust
-use logos_core::domain::account::AccountId;
-use logos_core::domain::rsu::AllocationPolicy;
+use logos_core::AccountId;
+use logos_core::AllocationPolicy;
 use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
 
 let policy = AllocationPolicy::new(40, 20, 30, 10).expect("valid 100% allocation");
