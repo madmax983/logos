@@ -157,12 +157,12 @@ fn scope_and_status_lines_reflect_home_and_register_state() {
     assert!(
         home_status
             .iter()
-            .any(|line| line.contains("Cashflow: 77048806"))
+            .any(|line| line.contains("Cashflow: $770,488.06"))
     );
     assert!(
         home_status
             .iter()
-            .any(|line| line.contains("Budget Target: 300000"))
+            .any(|line| line.contains("Budget Target: $3,000.00"))
     );
     assert!(home_status.iter().any(|line| line.contains("Mode: Normal")));
 
@@ -188,7 +188,7 @@ fn scope_and_status_lines_reflect_home_and_register_state() {
     assert!(
         register_status
             .iter()
-            .any(|line| line.contains("Balance: 77048806"))
+            .any(|line| line.contains("Balance: $770,488.06"))
     );
     assert!(
         register_status

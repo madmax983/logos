@@ -1,6 +1,7 @@
 use comfy_table::Table;
 
 use crate::app::HomeSnapshot;
+use logos_cli::format::currency;
 
 #[must_use]
 pub fn render(
@@ -23,22 +24,19 @@ pub fn render(
     };
 
     let mut month_table = Table::new();
-    month_table.set_header(vec!["Metric", "Value (Cents)"]);
+    month_table.set_header(vec!["Metric", "Value"]);
     month_table.add_row(vec![
         "Checking Balance".to_owned(),
-        snapshot.checking_balance_cents().to_string(),
+        currency(snapshot.checking_balance_cents()),
     ]);
-    month_table.add_row(vec![
-        "Income".to_owned(),
-        snapshot.income_cents().to_string(),
-    ]);
+    month_table.add_row(vec!["Income".to_owned(), currency(snapshot.income_cents())]);
     month_table.add_row(vec![
         "Expense".to_owned(),
-        snapshot.expense_cents().to_string(),
+        currency(snapshot.expense_cents()),
     ]);
     month_table.add_row(vec![
         "Cashflow".to_owned(),
-        snapshot.cashflow_cents().to_string(),
+        currency(snapshot.cashflow_cents()),
     ]);
     lines.push(month_table.to_string());
     lines.push(String::new());
@@ -55,16 +53,16 @@ pub fn render(
         snapshot.expense_account_prefix().to_owned(),
     ]);
     budget_table.add_row(vec![
-        "Target (Cents)".to_owned(),
+        "Target".to_owned(),
         snapshot
             .budget_target_cents()
-            .map_or_else(|| "unconfigured".to_owned(), |value| value.to_string()),
+            .map_or_else(|| "unconfigured".to_owned(), currency),
     ]);
     budget_table.add_row(vec![
-        "Variance (Cents)".to_owned(),
+        "Variance".to_owned(),
         snapshot
             .budget_variance_cents()
-            .map_or_else(|| "unconfigured".to_owned(), |value| value.to_string()),
+            .map_or_else(|| "unconfigured".to_owned(), currency),
     ]);
     lines.push(budget_table.to_string());
 

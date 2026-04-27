@@ -30,10 +30,10 @@ fn register_view_renders_balance_and_recent_activity() {
 
     assert!(frame.contains("Register View"));
     assert!(frame.contains("assets:checking"));
-    assert!(frame.contains("77048806"));
+    assert!(frame.contains("$770,488.06"));
     assert!(frame.contains("PAYROLL"));
     assert!(frame.contains("COFFEE SHOP"));
-    assert!(frame.contains("-1234"));
+    assert!(frame.contains("-$12.34"));
 }
 
 #[test]
@@ -49,6 +49,6 @@ fn register_view_renders_empty_activity_state() {
 
     assert!(frame.contains("Register View"));
     assert!(frame.contains("assets:checking"));
-    assert!(frame.contains('0'));
+    assert!(frame.contains("$0.00"));
     assert!(frame.contains("no activity for selected account"));
 }

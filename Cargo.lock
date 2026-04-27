@@ -1585,6 +1585,7 @@ version = "0.1.0"
 dependencies = [
  "comfy-table",
  "crossterm 0.29.0",
+ "logos-cli",
  "logos-core",
  "logos-runtime",
  "logos-store-pg",

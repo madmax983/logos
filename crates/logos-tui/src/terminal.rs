@@ -22,6 +22,7 @@ use ratatui::{
 };
 
 use crate::{App, AppInput, View};
+use logos_cli::format::currency;
 
 const EVENT_POLL_INTERVAL: Duration = Duration::from_millis(250);
 
@@ -288,18 +289,18 @@ fn home_status_lines(app: &App) -> Vec<String> {
         || vec![String::from("Dashboard data unavailable")],
         |snapshot| {
             vec![
-                format!("Cashflow: {}", snapshot.cashflow_cents()),
+                format!("Cashflow: {}", currency(snapshot.cashflow_cents())),
                 format!(
                     "Budget Target: {}",
                     snapshot
                         .budget_target_cents()
-                        .map_or_else(|| String::from("unconfigured"), |value| value.to_string())
+                        .map_or_else(|| String::from("unconfigured"), currency)
                 ),
                 format!(
                     "Budget Variance: {}",
                     snapshot
                         .budget_variance_cents()
-                        .map_or_else(|| String::from("unconfigured"), |value| value.to_string())
+                        .map_or_else(|| String::from("unconfigured"), currency)
                 ),
             ]
         },
@@ -315,14 +316,14 @@ fn budget_status_lines(app: &App) -> Vec<String> {
                     "Target: {}",
                     snapshot
                         .budget_target_cents()
-                        .map_or_else(|| String::from("unconfigured"), |value| value.to_string())
+                        .map_or_else(|| String::from("unconfigured"), currency)
                 ),
-                format!("Actual: {}", snapshot.actual_expense_cents()),
+                format!("Actual: {}", currency(snapshot.actual_expense_cents())),
                 format!(
                     "Variance: {}",
                     snapshot
                         .budget_variance_cents()
-                        .map_or_else(|| String::from("unconfigured"), |value| value.to_string())
+                        .map_or_else(|| String::from("unconfigured"), currency)
                 ),
             ]
         },
@@ -334,7 +335,7 @@ fn register_status_lines(app: &App) -> Vec<String> {
         || vec![String::from("Register data unavailable")],
         |snapshot| {
             vec![
-                format!("Balance: {}", snapshot.balance_cents()),
+                format!("Balance: {}", currency(snapshot.balance_cents())),
                 format!("Recent Rows: {}", snapshot.activity().len()),
             ]
         },

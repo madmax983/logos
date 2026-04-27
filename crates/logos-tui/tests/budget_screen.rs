@@ -34,9 +34,9 @@ fn budget_view_renders_target_actual_and_variance() {
     assert!(frame.contains("Budget View"));
     assert!(frame.contains("2026-02"));
     assert!(frame.contains("expenses:"));
-    assert!(frame.contains("300000"));
-    assert!(frame.contains("1019776"));
-    assert!(frame.contains("-719776"));
+    assert!(frame.contains("$3,000.00"));
+    assert!(frame.contains("$10,197.76"));
+    assert!(frame.contains("-$7,197.76"));
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn budget_view_renders_unconfigured_target_state() {
 
     assert!(frame.contains("Budget View"));
     assert!(frame.contains("unconfigured"));
-    assert!(frame.contains("1019776"));
+    assert!(frame.contains("$10,197.76"));
 }
 
 #[test]

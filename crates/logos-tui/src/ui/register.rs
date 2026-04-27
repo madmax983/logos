@@ -1,6 +1,7 @@
 use comfy_table::{Cell, Color, Table};
 
 use crate::app::RegisterSnapshot;
+use logos_cli::format::currency;
 
 #[must_use]
 pub fn render(account: &str, snapshot: Option<&RegisterSnapshot>) -> String {
@@ -15,7 +16,7 @@ pub fn render(account: &str, snapshot: Option<&RegisterSnapshot>) -> String {
         return lines.join("\n");
     };
 
-    lines.push(format!("Balance (Cents): {}", snapshot.balance_cents()));
+    lines.push(format!("Balance: {}", currency(snapshot.balance_cents())));
     lines.push(String::new());
     lines.push(String::from("Recent Activity:"));
 
@@ -25,14 +26,14 @@ pub fn render(account: &str, snapshot: Option<&RegisterSnapshot>) -> String {
     }
 
     let mut table = Table::new();
-    table.set_header(vec!["Timestamp", "Description", "Amount (Cents)"]);
+    table.set_header(vec!["Timestamp", "Description", "Amount"]);
     for record in snapshot.activity() {
         let amount_cell = match record.amount_cents().cmp(&0) {
             std::cmp::Ordering::Greater => {
-                Cell::new(record.amount_cents().to_string()).fg(Color::Green)
+                Cell::new(currency(record.amount_cents())).fg(Color::Green)
             }
-            std::cmp::Ordering::Less => Cell::new(record.amount_cents().to_string()).fg(Color::Red),
-            std::cmp::Ordering::Equal => Cell::new(record.amount_cents().to_string()),
+            std::cmp::Ordering::Less => Cell::new(currency(record.amount_cents())).fg(Color::Red),
+            std::cmp::Ordering::Equal => Cell::new(currency(record.amount_cents())),
         };
         table.add_row(vec![
             Cell::new(record.timestamp()),
