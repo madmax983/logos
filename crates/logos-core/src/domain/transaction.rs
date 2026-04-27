@@ -159,8 +159,8 @@ impl Posting {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::domain::transaction::{Posting, TransactionBuilder};
-/// use logos_core::domain::account::AccountId;
+/// use logos_core::{Posting, TransactionBuilder};
+/// use logos_core::AccountId;
 ///
 /// let checking = AccountId::new("assets:checking").unwrap();
 /// let salary = AccountId::new("income:salary").unwrap();

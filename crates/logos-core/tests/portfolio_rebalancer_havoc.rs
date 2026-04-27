@@ -1,3 +1,5 @@
+#![cfg(feature = "nova")]
+
 #![allow(clippy::should_panic_without_expect)]
 use logos_core::AccountId;
 use logos_core::portfolio_rebalancer::{PortfolioRebalancer, TargetAllocation};

@@ -51,8 +51,8 @@ pub struct RsuDistributorConfig {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::planning::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
-/// use logos_core::domain::account::AccountId;
+/// use logos_core::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
+/// use logos_core::AccountId;
 ///
 /// let config = RsuDistributorConfig {
 ///     rsu_asset: AccountId::new("assets:rsu").unwrap(),

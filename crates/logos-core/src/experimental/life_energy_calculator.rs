@@ -117,7 +117,7 @@ mod tests {
         // $50/hr nominal, 40 hours a week
         // 5 hours commute/week
         // $100/week on gas/job expenses
-        let calc = TrueWageCalculator::new(50_00, 40.0, 5.0, 100_00);
+        let calc = TrueWageCalculator::new(50_00, 40.0, 5.0, 10_000);
 
         // Nominal weekly: $2000
         // True weekly: $1900
@@ -128,7 +128,7 @@ mod tests {
 
     #[test]
     fn test_evaluate_expense() {
-        let calc = TrueWageCalculator::new(50_00, 40.0, 5.0, 100_00); // true wage $42.22
+        let calc = TrueWageCalculator::new(50_00, 40.0, 5.0, 10_000); // true wage $42.22
 
         // $42.22 expense should cost ~1 hour
         let hours = calc.evaluate_expense(42_22);
@@ -137,7 +137,7 @@ mod tests {
 
     #[test]
     fn test_subscription_opportunity_mashup() {
-        let calc = TrueWageCalculator::new(50_00, 40.0, 5.0, 100_00); // true wage $42.22
+        let calc = TrueWageCalculator::new(50_00, 40.0, 5.0, 10_000); // true wage $42.22
         let opp_analyzer = OpportunityCostAnalyzer::new(7.0, 10);
 
         let evaluator = LifeEnergySubscriptionEvaluator::new(calc, opp_analyzer);
