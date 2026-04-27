@@ -20,3 +20,7 @@
 ## YYYY-MM-DD - Avoiding repeated string insertions inside formatting loops
 **Learning:** `String::insert(0, c)` causes all existing bytes in the string to be shifted right by one. Using this inside a loop over characters turns formatting into an O(n^2) operation with frequent implicit re-allocations. Similar issues can occur with repeated `.push_str()` on loops without pre-allocating the underlying buffer.
 **Action:** Always pre-allocate with `String::with_capacity` if the max length is bounded, and build the string sequentially from left to right using `push` or `push_str`. For loops building multiple strings (like X/Y axes), estimating capacity based on item count avoids continual reallocation.
+
+## 2026-04-27 - Reduce Iteration Allocations
+**Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
+**Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.

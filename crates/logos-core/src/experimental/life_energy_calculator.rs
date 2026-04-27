@@ -8,8 +8,8 @@
 //! not just the direct life energy cost of a subscription, but the long-term
 //! life energy opportunity cost of holding it.
 
-use crate::experimental::opportunity_cost::OpportunityCostAnalyzer;
 use crate::experimental::cashflow_projector::RecurringTemplate;
+use crate::experimental::opportunity_cost::OpportunityCostAnalyzer;
 
 /// Calculates the true hourly wage, accounting for hidden job costs.
 #[derive(Debug, Clone)]
@@ -41,7 +41,8 @@ impl TrueWageCalculator {
     #[must_use]
     #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
     pub fn true_hourly_wage_cents(&self) -> i64 {
-        let nominal_weekly_pay = (self.nominal_hourly_wage_cents as f64 * self.weekly_hours_worked) as i64;
+        let nominal_weekly_pay =
+            (self.nominal_hourly_wage_cents as f64 * self.weekly_hours_worked) as i64;
         let true_weekly_pay = nominal_weekly_pay - self.weekly_job_expenses_cents;
         let total_hours_committed = self.weekly_hours_worked + self.weekly_commute_hours;
 
@@ -84,7 +85,10 @@ pub struct LifeEnergySubscriptionEvaluator {
 
 impl LifeEnergySubscriptionEvaluator {
     #[must_use]
-    pub const fn new(wage_calculator: TrueWageCalculator, opportunity_analyzer: OpportunityCostAnalyzer) -> Self {
+    pub const fn new(
+        wage_calculator: TrueWageCalculator,
+        opportunity_analyzer: OpportunityCostAnalyzer,
+    ) -> Self {
         Self {
             wage_calculator,
             opportunity_analyzer,
@@ -93,10 +97,15 @@ impl LifeEnergySubscriptionEvaluator {
 
     /// Analyzes a recurring subscription to find its long-term life energy cost.
     #[must_use]
-    pub fn evaluate_subscription(&self, template: &RecurringTemplate) -> LifeEnergySubscriptionReport {
+    pub fn evaluate_subscription(
+        &self,
+        template: &RecurringTemplate,
+    ) -> LifeEnergySubscriptionReport {
         let opp_cost = self.opportunity_analyzer.analyze(template);
         let direct_hours = self.wage_calculator.evaluate_expense(template.amount_cents);
-        let future_hours = self.wage_calculator.evaluate_expense(opp_cost.future_value_cents);
+        let future_hours = self
+            .wage_calculator
+            .evaluate_expense(opp_cost.future_value_cents);
 
         LifeEnergySubscriptionReport {
             description: template.description.clone(),

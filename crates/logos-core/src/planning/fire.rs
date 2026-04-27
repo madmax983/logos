@@ -152,7 +152,6 @@ impl FireSimulator {
         self.config
     }
 
-
     /// Injects your current liquid reality into the simulation.
     ///
     /// Before calculating how far you have left to go, we need to know where you are starting from.
