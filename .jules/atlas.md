@@ -27,3 +27,6 @@
 **[Facade for logos-core]**
 **Tangle:** The `logos-core` crate exposed its internal implementation modules (`domain`, `error`, `planning`, `experimental`) publicly (`pub mod`), leaking internal details and violating encapsulation.
 **Blueprint:** Refactored `crates/logos-core/src/lib.rs` into a Facade. Changed internal modules to `pub(crate) mod` and explicitly re-exported only the necessary types using `pub use`.
+**[The needless_pass_by_value optimization bug]**
+**Tangle:** The `logos-store-pg` crate was hitting Clippy warnings (`needless_pass_by_value`) because mapping functions for `into_iter` were taking by-value structures (`ReconciliationRunRow`, `MonthCloseRow`) instead of references. Passing by value to `into_iter().map` allows intermediate dropping, but the clippy warning breaks build CI.
+**Blueprint:** Refactored `reconciliation_run_from_row` and `month_close_from_row` to take references, properly implementing the `clippy::needless_pass_by_value` fix without reverting the `into_iter()` optimization.
