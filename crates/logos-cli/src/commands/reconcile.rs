@@ -116,7 +116,6 @@ fn render_list_output(
     _checking_account: Option<&str>,
     runs: &[StoredReconciliationRun],
 ) -> String {
-
     if runs.is_empty() {
         return "No reconciliation runs found for the given filters.".to_string();
     }

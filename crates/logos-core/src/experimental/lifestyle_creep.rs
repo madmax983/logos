@@ -186,7 +186,7 @@ mod tests {
         let fire_sim = FireSimulator::new(500_000); // $5k expenses
         let sim = LifestyleCreepSimulator::new(
             fire_sim, 50_000_000, // $500k NW
-            1_000_000,   // $10k income
+            1_000_000,  // $10k income
             0.0,        // 0% raise
             50.0,       // 50% creep (doesn't matter since 0 raise)
             7.0,

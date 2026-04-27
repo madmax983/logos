@@ -312,11 +312,8 @@ pub fn fire_sim(
     let projector = NetWorthProjector::new(current_net_worth, monthly_savings_cents);
     let months_to_simulate = 1200; // up to 100 years
 
-    let ascent_sim = logos_core::fire_ascent::FireAscentSimulator::new(
-        sim,
-        projector,
-        months_to_simulate,
-    );
+    let ascent_sim =
+        logos_core::fire_ascent::FireAscentSimulator::new(sim, projector, months_to_simulate);
     let ascent_result = ascent_sim.ascend();
 
     let output = render_fire_sim_output(
