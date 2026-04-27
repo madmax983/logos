@@ -1060,7 +1060,7 @@ impl PostgresStore {
         ))
     }
 
-    fn reconciliation_run_from_row(row: ReconciliationRunRow) -> StoredReconciliationRun {
+    fn reconciliation_run_from_row(row: &ReconciliationRunRow) -> StoredReconciliationRun {
         StoredReconciliationRun::new(
             row.run_id.as_str(),
             row.month_key.as_str(),
@@ -1079,7 +1079,7 @@ impl PostgresStore {
         )
     }
 
-    fn month_close_from_row(row: MonthCloseRow) -> StoredMonthClose {
+    fn month_close_from_row(row: &MonthCloseRow) -> StoredMonthClose {
         StoredMonthClose::new(
             row.close_id.as_str(),
             &row.month_key,
@@ -1352,7 +1352,7 @@ impl PostgresStore {
             .first::<ReconciliationRunRow>(&mut *connection)
             .optional()
             .map_err(|err| load_failure(format!("loading reconciliation run failed: {err}")))?;
-        Ok(row.map(Self::reconciliation_run_from_row))
+        Ok(row.map(|r| Self::reconciliation_run_from_row(&r)))
     }
 
     fn try_reconciliation_runs(&self) -> Result<Vec<StoredReconciliationRun>, StoreError> {
@@ -1365,7 +1365,7 @@ impl PostgresStore {
             // dropping the intermediate `Vec` elements in-place while collecting the transformed values.
             .map(|rows| {
                 rows.into_iter()
-                    .map(Self::reconciliation_run_from_row)
+                    .map(|r| Self::reconciliation_run_from_row(&r))
                     .collect()
             })
             .map_err(|err| load_failure(format!("loading reconciliation runs failed: {err}")))
@@ -1389,7 +1389,7 @@ impl PostgresStore {
             .first::<MonthCloseRow>(&mut *connection)
             .optional()
             .map_err(|err| load_failure(format!("loading month close failed: {err}")))?;
-        Ok(row.map(Self::month_close_from_row))
+        Ok(row.map(|r| Self::month_close_from_row(&r)))
     }
 
     fn try_month_close_for_scope(
@@ -1405,7 +1405,7 @@ impl PostgresStore {
             .first::<MonthCloseRow>(&mut *connection)
             .optional()
             .map_err(|err| load_failure(format!("loading month close for scope failed: {err}")))?;
-        Ok(row.map(Self::month_close_from_row))
+        Ok(row.map(|r| Self::month_close_from_row(&r)))
     }
 
     fn try_month_closes(&self) -> Result<Vec<StoredMonthClose>, StoreError> {
@@ -1418,7 +1418,7 @@ impl PostgresStore {
             // dropping the intermediate `Vec` elements in-place while collecting the transformed values.
             .map(|rows| {
                 rows.into_iter()
-                    .map(Self::month_close_from_row)
+                    .map(|r| Self::month_close_from_row(&r))
                     .collect()
             })
             .map_err(|err| load_failure(format!("loading month closes failed: {err}")))
