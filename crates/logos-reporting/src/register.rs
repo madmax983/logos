@@ -82,3 +82,19 @@ where
             balance.saturating_add(entry.delta_cents())
         })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn project_register_balance_saturates_on_overflow() {
+        let entries = [RegisterEntry::new(1)];
+        let final_balance = project_register_balance(i64::MAX, &entries);
+        assert_eq!(final_balance, i64::MAX);
+
+        let entries_under = [RegisterEntry::new(-1)];
+        let final_balance_under = project_register_balance(i64::MIN, &entries_under);
+        assert_eq!(final_balance_under, i64::MIN);
+    }
+}

@@ -75,3 +75,19 @@ pub fn project_rsu_forecast_summary(projected_events_cents: &[i64]) -> RsuForeca
         projected_total_cents: total,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn project_rsu_forecast_summary_saturates_on_overflow() {
+        let events = [i64::MAX, 1];
+        let summary = project_rsu_forecast_summary(&events);
+        assert_eq!(summary.projected_total_cents(), i64::MAX);
+
+        let events_under = [i64::MIN, -1];
+        let summary_under = project_rsu_forecast_summary(&events_under);
+        assert_eq!(summary_under.projected_total_cents(), i64::MIN);
+    }
+}

@@ -554,8 +554,9 @@ pub fn project_rsu_budget_plan(
     );
 
     let conservative_budget_cents = bear_monthly;
-    let baseline_remaining_cents =
-        conservative_budget_cents.saturating_sub(input.fixed_commitments_cents);
+    let baseline_remaining_cents = conservative_budget_cents
+        .saturating_sub(input.fixed_commitments_cents)
+        .max(0);
 
     Ok(RsuBudgetPlan {
         month_key: month_key.to_owned(),
@@ -778,5 +779,14 @@ mod tests {
             RsuBudgetPlanInput::new(100, 10, valid_prices, 5000, 60, 50).unwrap_err(),
             "reserve_sweep_pct + investing_sweep_pct must be <= 100, got 110"
         );
+    }
+    #[test]
+    fn project_rsu_budget_plan_saturates_on_overflow() {
+        let prices = ScenarioPriceInputs::new(100, 200, 300).expect("should succeed");
+        let input =
+            RsuBudgetPlanInput::new(300, 0, prices, i64::MAX, 10, 20).expect("should succeed");
+
+        let plan = project_rsu_budget_plan("2024-01", &input).expect("should succeed");
+        assert_eq!(plan.baseline_remaining_cents(), 0);
     }
 }

@@ -10,3 +10,6 @@
 ## 2024-04-22 - Goal Seeker and Monte Carlo tests
 **Learning:** The experimental modules `fire_goal_seeker` and `monte_carlo` lacked exhaustive tests for boundary conditions (zero target, unreachable targets, confidence level comparisons). The `FireGoalSeeker`'s `seek_monthly_contribution` might return `None` or `Some(0)` in edge cases, and the probability boundaries inside `MonteCarloProjector` required careful math bound checks. Tests should ensure we don't accidentally allocate infinite bounds or incorrect percentiles.
 **Action:** Always test boundary scenarios (0 target, 0 timeframe, impossible goals) and inject deterministic math tests when dealing with probabilistic Monte Carlo engines.
+## 2026-04-27 - Arithmetic bounds and panic risks in logos-reporting
+**Learning:** Found potential overflow in budget variance, net worth, cashflow, and register balance calculations. Also identified that RsuBudgetPlan used unchecked arithmetic causing negative baseline remaining budget if fixed commitments exceed base conservative budget, which should floor at 0.
+**Action:** Add `.max(0)` to prevent negative `baseline_remaining_cents` and `.saturating_sub()` to all budget reporting modules where amounts subtract. Added unit tests for these boundary conditions directly.
