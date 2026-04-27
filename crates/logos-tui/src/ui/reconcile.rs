@@ -2,6 +2,7 @@ use comfy_table::{Cell, Color, Table};
 use crossterm::style::Stylize;
 
 use crate::app::{ReconcileRunRecord, ReconcileStatementLineRecord};
+use logos_cli::format::currency;
 
 #[must_use]
 pub fn render(
@@ -50,7 +51,7 @@ fn render_runs_table(runs: &[ReconcileRunRecord], selected_id: Option<&str>) -> 
         "Run ID",
         "Month",
         "Account",
-        "Variance (Cents)",
+        "Variance",
         "Reconciled",
         "Matched TXNs",
     ]);
@@ -65,9 +66,9 @@ fn render_runs_table(runs: &[ReconcileRunRecord], selected_id: Option<&str>) -> 
 
         let variance_val = run.variance_cents();
         let variance_cell = if variance_val == 0 {
-            Cell::new(variance_val.to_string()).fg(Color::Green)
+            Cell::new(currency(variance_val)).fg(Color::Green)
         } else {
-            Cell::new(variance_val.to_string()).fg(Color::Red)
+            Cell::new(currency(variance_val)).fg(Color::Red)
         };
 
         let reconciled_val = run.reconciled();
@@ -98,14 +99,14 @@ fn render_evidence_table(selected_statement_lines: &[ReconcileStatementLineRecor
     }
 
     let mut table = Table::new();
-    table.set_header(vec!["Line ID", "Timestamp", "Memo", "Amount (Cents)"]);
+    table.set_header(vec!["Line ID", "Timestamp", "Memo", "Amount"]);
 
     for line in selected_statement_lines {
         let amount = line.amount_cents();
         let amount_cell = match amount.cmp(&0) {
-            std::cmp::Ordering::Greater => Cell::new(amount.to_string()).fg(Color::Green),
-            std::cmp::Ordering::Less => Cell::new(amount.to_string()).fg(Color::Red),
-            std::cmp::Ordering::Equal => Cell::new(amount.to_string()),
+            std::cmp::Ordering::Greater => Cell::new(currency(amount)).fg(Color::Green),
+            std::cmp::Ordering::Less => Cell::new(currency(amount)).fg(Color::Red),
+            std::cmp::Ordering::Equal => Cell::new(currency(amount)),
         };
 
         table.add_row(vec![

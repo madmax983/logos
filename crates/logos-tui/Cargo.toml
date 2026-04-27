@@ -10,6 +10,7 @@ workspace = true
 [dependencies]
 logos-store-pg = { path = "../logos-store-pg" }
 logos-core = { path = "../logos-core" }
+logos-cli = { path = "../logos-cli" }
 logos-runtime = { path = "../logos-runtime" }
 comfy-table = "7.2.2"
 crossterm = "0.29.0"

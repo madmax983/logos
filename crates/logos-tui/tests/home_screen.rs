@@ -39,11 +39,11 @@ fn home_view_renders_month_cashflow_and_budget_summary() {
     assert!(frame.contains("Home Dashboard"));
     assert!(frame.contains("2026-02"));
     assert!(frame.contains("assets:checking"));
-    assert!(frame.contains("77048806"));
-    assert!(frame.contains("78068582"));
-    assert!(frame.contains("1019776"));
-    assert!(frame.contains("300000"));
-    assert!(frame.contains("-719776"));
+    assert!(frame.contains("$770,488.06"));
+    assert!(frame.contains("$780,685.82"));
+    assert!(frame.contains("$10,197.76"));
+    assert!(frame.contains("$3,000.00"));
+    assert!(frame.contains("-$7,197.76"));
 }
 
 #[test]

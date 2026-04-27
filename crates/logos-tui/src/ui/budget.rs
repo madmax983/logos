@@ -1,6 +1,7 @@
 use comfy_table::Table;
 
 use crate::app::BudgetSnapshot;
+use logos_cli::format::currency;
 
 #[must_use]
 pub fn render(
@@ -27,20 +28,20 @@ pub fn render(
         snapshot.expense_account_prefix().to_owned(),
     ]);
     table.add_row(vec![
-        "Target (Cents)".to_owned(),
+        "Target".to_owned(),
         snapshot
             .budget_target_cents()
-            .map_or_else(|| "unconfigured".to_owned(), |value| value.to_string()),
+            .map_or_else(|| "unconfigured".to_owned(), currency),
     ]);
     table.add_row(vec![
-        "Actual Expense (Cents)".to_owned(),
-        snapshot.actual_expense_cents().to_string(),
+        "Actual Expense".to_owned(),
+        currency(snapshot.actual_expense_cents()),
     ]);
     table.add_row(vec![
-        "Variance (Cents)".to_owned(),
+        "Variance".to_owned(),
         snapshot
             .budget_variance_cents()
-            .map_or_else(|| "unconfigured".to_owned(), |value| value.to_string()),
+            .map_or_else(|| "unconfigured".to_owned(), currency),
     ]);
     lines.push(table.to_string());
 
