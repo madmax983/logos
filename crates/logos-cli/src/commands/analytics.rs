@@ -104,6 +104,87 @@ pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
 /// # Errors
 ///
 /// Returns an error when runtime initialization fails or querying transactions fails.
+#[cfg(feature = "nova")]
+pub fn benford() -> Result<(), CliError> {
+    use chrono::Utc;
+    use logos_core::benford_law::BenfordLawAnalyzer;
+    let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+        command: "analytics.benford".to_owned(),
+        message: format!("{err}"),
+    })?;
+
+    let now_us = Utc::now().timestamp_micros();
+    let transactions = runtime
+        .transactions_as_of_us(now_us, now_us)
+        .map_err(|err| CliError::CommandRuntimeFailed {
+            command: "analytics.benford".to_owned(),
+            message: format!("failed to retrieve transactions: {err}"),
+        })?;
+
+    let core_transactions: Vec<_> = transactions
+        .into_iter()
+        .map(|t| t.transaction().clone())
+        .collect();
+
+    let mut analyzer = BenfordLawAnalyzer::new();
+    analyzer.add_transactions(&core_transactions);
+
+    let output = render_benford_output(&analyzer);
+    println!("{output}");
+
+    Ok(())
+}
+
+#[cfg(feature = "nova")]
+fn render_benford_output(analyzer: &logos_core::benford_law::BenfordLawAnalyzer) -> String {
+    use comfy_table::{Cell, Color};
+
+    let observed = analyzer.observed_distribution();
+    let expected = logos_core::benford_law::BenfordLawAnalyzer::expected_distribution();
+
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec![
+        "Digit",
+        "Expected %",
+        "Observed %",
+        "Difference",
+        "Visual",
+    ]);
+
+    for digit in 1..=9 {
+        let exp_val = expected.get(&digit).copied().unwrap_or(0.0) * 100.0;
+        let obs_val = observed.get(&digit).copied().unwrap_or(0.0) * 100.0;
+
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let bars = "█".repeat((obs_val / 2.0).round() as usize);
+
+        let diff = (obs_val - exp_val).abs();
+
+        let diff_color = if diff > 5.0 {
+            Color::Red
+        } else if diff > 2.0 {
+            Color::Yellow
+        } else {
+            Color::Green
+        };
+
+        table.add_row(vec![
+            Cell::new(digit.to_string()),
+            Cell::new(format!("{exp_val:.1}%")),
+            Cell::new(format!("{obs_val:.1}%")),
+            Cell::new(format!("{diff:.1}%")).fg(diff_color),
+            Cell::new(bars).fg(Color::Cyan),
+        ]);
+    }
+
+    format!(
+        "📊 Benford's Law Analysis
+
+{table}"
+    )
+}
+
 pub fn sankey() -> Result<(), CliError> {
     use chrono::Utc;
     use logos_core::mermaid_exporter::MermaidSankeyExporter;
@@ -430,5 +511,46 @@ mod fire_sim_tests {
         // Just checking execution completes without error
         let result = fire_sim(500_000, 1_000_000, 200_000);
         assert!(result.is_ok());
+    }
+}
+
+#[cfg(test)]
+mod benford_tests {
+    use super::*;
+
+    #[test]
+    #[cfg(feature = "nova")]
+    fn render_benford_output_is_deterministic() {
+        use logos_core::AccountId;
+        use logos_core::{Posting, TransactionBuilder};
+
+        let mut analyzer = logos_core::benford_law::BenfordLawAnalyzer::new();
+        let tx1 = TransactionBuilder::new("T1")
+            .posting(Posting::credit(AccountId::new("income").unwrap(), 100).unwrap())
+            .posting(Posting::debit(AccountId::new("checking").unwrap(), 100).unwrap())
+            .build()
+            .unwrap();
+
+        let tx2 = TransactionBuilder::new("T2")
+            .posting(Posting::credit(AccountId::new("income").unwrap(), 250).unwrap())
+            .posting(Posting::debit(AccountId::new("checking").unwrap(), 250).unwrap())
+            .build()
+            .unwrap();
+
+        analyzer.add_transactions(&[tx1, tx2]);
+        let output = render_benford_output(&analyzer);
+
+        assert!(output.contains("Benford's Law Analysis"));
+        assert!(output.contains('1'));
+        assert!(output.contains("30.1%"));
+        assert!(output.contains("50.0%"));
+        // The difference is |50.0 - 30.1| = 19.9
+        assert!(output.contains("19.9%"));
+
+        assert!(output.contains('2'));
+        assert!(output.contains("17.6%"));
+        assert!(output.contains("50.0%"));
+        // The difference is |50.0 - 17.6| = 32.4
+        assert!(output.contains("32.4%"));
     }
 }

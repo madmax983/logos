@@ -135,6 +135,8 @@ fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError>
             commands::analytics::snapshot_show(artifact_id)
         }
         AnalyticsCommand::Sankey => commands::analytics::sankey(),
+        #[cfg(feature = "nova")]
+        AnalyticsCommand::Benford => commands::analytics::benford(),
         AnalyticsCommand::FireSim {
             monthly_expenses_cents,
             liquid_assets_cents,
@@ -396,6 +398,8 @@ impl Command {
             Self::Analytics(AnalyticsCommand::SnapshotList) => "analytics.snapshot.list",
             Self::Analytics(AnalyticsCommand::SnapshotShow { .. }) => "analytics.snapshot.show",
             Self::Analytics(AnalyticsCommand::Sankey) => "analytics.sankey",
+            #[cfg(feature = "nova")]
+            Self::Analytics(AnalyticsCommand::Benford) => "analytics.benford",
             Self::Analytics(AnalyticsCommand::FireSim { .. }) => "analytics.fire-sim",
             Self::Analytics(AnalyticsCommand::NetWorthProject { .. }) => "analytics.net-worth",
             Self::Import(ImportCommand::Pdf { .. }) => "import.pdf",
@@ -452,6 +456,8 @@ pub enum TxnCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AnalyticsCommand {
+    #[cfg(feature = "nova")]
+    Benford,
     SnapshotCreate {
         as_of_valid_time_us: Option<i64>,
         as_of_tx_time_us: Option<i64>,
@@ -780,6 +786,10 @@ fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
         "snapshot" => parse_analytics_snapshot(args),
         "sankey" => Ok(ParsedArgs {
             command: Command::Analytics(AnalyticsCommand::Sankey),
+        }),
+        #[cfg(feature = "nova")]
+        "benford" => Ok(ParsedArgs {
+            command: Command::Analytics(AnalyticsCommand::Benford),
         }),
         "fire-sim" => {
             let monthly_expenses_cents =

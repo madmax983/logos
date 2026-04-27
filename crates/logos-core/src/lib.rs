@@ -47,7 +47,7 @@
 pub(crate) mod domain;
 pub(crate) mod error;
 /// Experimental features and proof-of-concepts. Use at your own risk.
-pub(crate) mod experimental;
+pub mod experimental;
 pub use experimental::*;
 pub(crate) mod planning;
 pub use planning::*;
