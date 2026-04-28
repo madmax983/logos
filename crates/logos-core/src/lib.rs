@@ -9,10 +9,10 @@
 //!
 //! ## Modules
 //!
-//! - **[`domain`]**: The foundational pieces of the ledger. Accounts, Transactions, Budgets, and RSUs.
-//! - **[`error`]**: Defines [`DomainError`], the one-stop shop for everything that can go wrong when breaking the rules.
-//! - **[`planning`]**: High-level financial forecasting. From automated RSU distribution to FIRE simulations and Net Worth Projection.
-//! - **[`experimental`]**: Beta features or proofs of concept. Use at your own risk.
+//! - **`domain`**: The foundational pieces of the ledger. Accounts, Transactions, Budgets, and RSUs.
+//! - **`error`**: Defines [`DomainError`], the one-stop shop for everything that can go wrong when breaking the rules.
+//! - **`planning`**: High-level financial forecasting. From automated RSU distribution to FIRE simulations and Net Worth Projection.
+//! - **`experimental`**: Beta features or proofs of concept. Use at your own risk.
 //!
 //! ## Examples
 //!

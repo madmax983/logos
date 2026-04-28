@@ -25,3 +25,6 @@
 ## 2025-04-24 - The Missing Object Examples
 **Confusion:** The public struct and enum definitions in the core domain and planning modules lacked executable examples on the types themselves. This violated the "Examples Section" rule where every public struct/enum must have an example.
 **Clarification:** Added executable doctests (`## Examples`) to `AccountId`, `AccountType`, `BudgetMonth`, `CategoryGroupId`, `CategoryGroup`, `Category`, `TransactionId`, `Correction`, `HaircutTierTable`, `AllocationPolicy`, `Transaction`, and `RsuAutoDistributor`.
+## 2025-04-28 - The Private Intra-Doc Links
+**Confusion:** The root level `//!` documentation in `logos-core/src/lib.rs` attempted to use intra-doc links (`[`domain`]`) for modules that were declared as `pub(crate)` (private). This caused `cargo doc` to emit warnings about linking to private items, which failed CI checks enforcing `-D warnings`.
+**Clarification:** Replaced the intra-doc links with standard markdown backticks (`` `domain` ``) since `rustdoc` cannot resolve intra-doc links to private items without `--document-private-items`.
