@@ -12,3 +12,7 @@
 **Idiomatic Closures for `needless_pass_by_value` in mapped iterators**
 **Learning:** When resolving Clippy's `needless_pass_by_value` on functions that map over an iterator (especially ones optimized with `.into_iter()` to consume the collection), blindly changing the iterator to `.iter()` breaks the performance optimization. Using the `From` trait is the most idiomatic fix (`impl From<Row> for StoredObject`), but if you must pass a reference, use `.into_iter().map(|r| func(&r))` to keep the consumption while passing the reference.
 **Action:** When updating function signatures from value to reference due to clippy, review the call sites. If mapping over an iterator, ensure you maintain the original `.into_iter()` (if it exists for optimization) by passing references inside the closure, or prefer implementing `From`/`Into`.
+
+**Refactoring God Functions in Runtime**
+**Learning:** `fetch_configured_statement_artifacts` was too long due to complex loop contents with error handling, logging, and persisting. This caused `clippy::too_many_lines`.
+**Action:** Extract the complex loop body into a private helper function (`execute_single_fetch`) that processes one item and returns a Result containing the run, artifact and any errors to fold up. This flattens the loop and simplifies the main logic.
