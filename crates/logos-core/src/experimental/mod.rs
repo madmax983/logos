@@ -45,6 +45,8 @@ pub mod anomaly_detector;
 #[cfg(feature = "nova")]
 pub mod category_trends;
 #[cfg(feature = "nova")]
+pub mod fee_drag_simulator;
+#[cfg(feature = "nova")]
 pub mod income_router;
 #[cfg(feature = "nova")]
 pub mod lifestyle_creep;
