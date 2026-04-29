@@ -1,6 +1,3 @@
-#![allow(unsafe_code)]
-
-use std::env;
 use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
@@ -55,32 +52,6 @@ fn create_mock_op(temp_dir: &TempDir, fail: bool) -> std::path::PathBuf {
     mock_op_path
 }
 
-fn with_env_var<F>(key: &str, value: &str, f: F)
-where
-    F: FnOnce(),
-{
-    let old_val = env::var_os(key);
-    unsafe {
-        env::set_var(key, value);
-    }
-
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(f));
-
-    if let Some(old) = old_val {
-        unsafe {
-            env::set_var(key, old);
-        }
-    } else {
-        unsafe {
-            env::remove_var(key);
-        }
-    }
-
-    if let Err(e) = result {
-        std::panic::resume_unwind(e);
-    }
-}
-
 // Group both scenarios into one test function so they run sequentially
 // and don't race on the environment variable.
 #[test]
@@ -89,34 +60,20 @@ fn op_cli_reader_integration_tests() {
 
     // 1. Success case
     let mock_op_success = create_mock_op(&temp_dir, false);
-
-    with_env_var(
-        "LOGOS_FETCH_OP_BIN",
-        mock_op_success.to_str().unwrap(),
-        || {
-            let reader = OpCliSecretRefReader::from_environment();
-            let val = reader
-                .read_secret_ref("op://test/val")
-                .expect("read should succeed");
-            assert_eq!(val, "exact_secret_value");
-        },
-    );
+    let reader = OpCliSecretRefReader::new(mock_op_success);
+    let val = reader
+        .read_secret_ref("op://test/val")
+        .expect("read should succeed");
+    assert_eq!(val, "exact_secret_value");
 
     // 2. Failure case
     let mock_op_failure = create_mock_op(&temp_dir, true);
-
-    with_env_var(
-        "LOGOS_FETCH_OP_BIN",
-        mock_op_failure.to_str().unwrap(),
-        || {
-            let reader = OpCliSecretRefReader::from_environment();
-            let err = reader
-                .read_secret_ref("op://test/val")
-                .expect_err("read should fail");
-            assert!(
-                err.to_string().contains("simulated error"),
-                "unexpected error msg: {err}"
-            );
-        },
+    let reader = OpCliSecretRefReader::new(mock_op_failure);
+    let err = reader
+        .read_secret_ref("op://test/val")
+        .expect_err("read should fail");
+    assert!(
+        err.to_string().contains("simulated error"),
+        "unexpected error msg: {err}"
     );
 }
