@@ -191,21 +191,21 @@ impl<S: LedgerStore> AppRuntime<S> {
 
     #[must_use]
     pub fn budget_variance_for(&self, budget_cents: i64, expense_account_prefix: &str) -> i64 {
-        let mut actual_expense_cents = 0_i64;
-        for stored in self.store.transactions() {
-            for posting in stored.transaction().postings() {
-                if posting
+        // ⚡ Bolt Optimization: Use iterator and `fold` for performance
+        let actual_expense_cents = self
+            .store
+            .transactions()
+            .iter()
+            .flat_map(|stored| stored.transaction().postings())
+            .filter(|posting| {
+                posting
                     .account()
                     .as_str()
                     .starts_with(expense_account_prefix)
-                {
-                    let amount = posting.amount();
-                    if amount > 0 {
-                        actual_expense_cents = actual_expense_cents.saturating_add(amount);
-                    }
-                }
-            }
-        }
+            })
+            .map(logos_core::Posting::amount)
+            .filter(|&amount| amount > 0)
+            .fold(0_i64, i64::saturating_add);
 
         project_budget_variance(budget_cents, actual_expense_cents)
     }
@@ -1307,28 +1307,21 @@ impl<S: LedgerStore> AppRuntime<S> {
     }
 
     fn expense_total_for_month(&self, month_key: &str, expense_account_prefix: &str) -> i64 {
-        let mut total = 0_i64;
-        for stored in self
-            .store
+        // ⚡ Bolt Optimization: Use iterator and `fold` for performance
+        self.store
             .transactions()
-            .into_iter()
+            .iter()
             .filter(|stored| transaction_in_month(stored, month_key))
-        {
-            for posting in stored.transaction().postings() {
-                if posting
+            .flat_map(|stored| stored.transaction().postings())
+            .filter(|posting| {
+                posting
                     .account()
                     .as_str()
                     .starts_with(expense_account_prefix)
-                {
-                    let amount = posting.amount();
-                    if amount > 0 {
-                        total = total.saturating_add(amount);
-                    }
-                }
-            }
-        }
-
-        total
+            })
+            .map(logos_core::Posting::amount)
+            .filter(|&amount| amount > 0)
+            .fold(0_i64, i64::saturating_add)
     }
 
     fn reconciliation_transaction_ids_for(

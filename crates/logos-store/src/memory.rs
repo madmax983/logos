@@ -195,15 +195,14 @@ impl MemoryStore {
         &self,
         transaction_ids: &[TransactionId],
     ) -> Vec<String> {
-        let mut ids = HashSet::new();
-        for txn_id in transaction_ids {
-            if let Some(line_ids) = self.statement_line_ids_by_txn.get(txn_id) {
-                ids.extend(line_ids.iter().cloned());
-            }
-        }
-
-        let mut line_ids: Vec<_> = ids.into_iter().collect();
+        // ⚡ Bolt Optimization: Avoid HashSet allocation and use flat_map
+        let mut line_ids: Vec<_> = transaction_ids
+            .iter()
+            .filter_map(|txn_id| self.statement_line_ids_by_txn.get(txn_id))
+            .flat_map(|line_ids| line_ids.iter().cloned())
+            .collect();
         line_ids.sort();
+        line_ids.dedup();
         line_ids
     }
 
