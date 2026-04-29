@@ -59,3 +59,4 @@ pub use domain::correction::{Correction, TransactionId};
 pub use domain::rsu::{AllocationPolicy, HaircutTierTable, forecast_value_cents};
 pub use domain::transaction::{Posting, Transaction, TransactionBuilder};
 pub use error::DomainError;
+pub mod format;

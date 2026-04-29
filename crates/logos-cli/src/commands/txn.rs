@@ -68,7 +68,7 @@ pub fn add(
         amount_cents,
         &mut runtime,
     )?;
-    let amount = crate::format::currency(amount_cents);
+    let amount = logos_core::format::currency(amount_cents);
 
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);

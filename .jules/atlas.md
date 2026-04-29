@@ -27,3 +27,6 @@
 **[Facade for logos-core]**
 **Tangle:** The `logos-core` crate exposed its internal implementation modules (`domain`, `error`, `planning`, `experimental`) publicly (`pub mod`), leaking internal details and violating encapsulation.
 **Blueprint:** Refactored `crates/logos-core/src/lib.rs` into a Facade. Changed internal modules to `pub(crate) mod` and explicitly re-exported only the necessary types using `pub use`.
+**[Extract Format Module to logos-core]**
+**Tangle:** The `logos-tui` executable crate depended directly on the `logos-cli` executable crate just to use the `format::currency` function, creating an unnecessary frontend-to-frontend dependency ("The Sprawl").
+**Blueprint:** Extracted the `format` module from `logos-cli` to `logos-core`. Updated both `logos-cli` and `logos-tui` to use `logos_core::format`, allowing `logos-tui` to drop its dependency on `logos-cli` entirely.

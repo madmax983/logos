@@ -2,7 +2,7 @@ use comfy_table::{Cell, Color, Table};
 use crossterm::style::Stylize;
 
 use crate::app::{ReconcileRunRecord, ReconcileStatementLineRecord};
-use logos_cli::format::currency;
+use logos_core::format::currency;
 
 #[must_use]
 pub fn render(
