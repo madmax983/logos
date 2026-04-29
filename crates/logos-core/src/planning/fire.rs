@@ -217,6 +217,22 @@ impl FireSimulator {
         yearly_expenses.saturating_mul(100) / i64::from(self.config.safe_withdrawal_rate_pct)
     }
 
+    /// Returns the configured monthly expenses in cents.
+    ///
+    /// This is the "burn rate" used to calculate your target FIRE number.
+    ///
+    /// # Examples
+    /// ```
+    /// use logos_core::fire::FireSimulator;
+    ///
+    /// let sim = FireSimulator::new(500_000);
+    /// assert_eq!(sim.monthly_expenses_cents(), 500_000);
+    /// ```
+    #[must_use]
+    pub const fn monthly_expenses_cents(&self) -> i64 {
+        self.monthly_expenses_cents
+    }
+
     /// Distills your total financial picture into a single, risk-adjusted "safe" net worth.
     ///
     /// It combines your cold, hard liquid reality (assets minus liabilities) with the
@@ -231,12 +247,6 @@ impl FireSimulator {
     /// sim.add_assets_liabilities(20_000_000, 5_000_000); // $150k base NW
     /// assert_eq!(sim.safe_net_worth_cents(), 15_000_000);
     /// ```
-    /// Returns the configured monthly expenses in cents.
-    #[must_use]
-    pub const fn monthly_expenses_cents(&self) -> i64 {
-        self.monthly_expenses_cents
-    }
-
     #[must_use]
     pub fn safe_net_worth_cents(&self) -> i64 {
         let base_nw = self
