@@ -1539,7 +1539,8 @@ fn date_string_from_wallclock_utc(wallclock_us: i64) -> String {
     format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}")
 }
 
-fn civil_from_days(days_since_unix_epoch: i64) -> (i64, u32, u32) {
+#[must_use]
+pub fn civil_from_days(days_since_unix_epoch: i64) -> (i64, u32, u32) {
     let z = days_since_unix_epoch + 719_468;
     let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
     let day_of_era = z - era * 146_097;
@@ -1557,4 +1558,37 @@ fn civil_from_days(days_since_unix_epoch: i64) -> (i64, u32, u32) {
     let month_u32 = u32::try_from(month).unwrap_or(1);
     let day_u32 = u32::try_from(day).unwrap_or(1);
     (year, month_u32, day_u32)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_civil_from_days_boundaries() {
+        // Known dates around month boundaries
+        // Day 0 = Jan 1, 1970
+        assert_eq!(civil_from_days(0), (1970, 1, 1));
+        assert_eq!(civil_from_days(31), (1970, 2, 1));
+        assert_eq!(civil_from_days(59), (1970, 3, 1)); // 1970 is not a leap year (28 days in feb)
+
+        // Day 146_096 = Dec 31, 2369
+        assert_eq!(civil_from_days(146_096), (2369, 12, 31));
+
+        // Day -1 = Dec 31, 1969
+        assert_eq!(civil_from_days(-1), (1969, 12, 31));
+
+        // Test logic branch `z >= 0` vs `z < 0` where z = days + 719_468.
+        // z = -1 implies days = -719_469
+        assert_eq!(civil_from_days(-719_469), (0, 2, 29));
+        // z = 0 implies days = -719_468
+        assert_eq!(civil_from_days(-719_468), (0, 3, 1));
+
+        // Leap year boundary test (2000 was leap year)
+        // 2000-02-29 is days = 10957 + 28
+        // 2000-01-01 is days = 10957
+        assert_eq!(civil_from_days(10957), (2000, 1, 1));
+        assert_eq!(civil_from_days(10957 + 31 + 28), (2000, 2, 29));
+        assert_eq!(civil_from_days(10957 + 31 + 29), (2000, 3, 1));
+    }
 }
