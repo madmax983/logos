@@ -10,6 +10,9 @@ workspace = true
 [features]
 nova = []
 
+[dependencies]
+chrono = { version = "0.4.42", default-features = true, features = ["clock"] }
+
 [dev-dependencies]
 loom = "0.7.2"
 proptest = "1.10.0"

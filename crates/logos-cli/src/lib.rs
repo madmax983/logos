@@ -1,7 +1,7 @@
 //! Logos Command Line Interface
 pub(crate) mod args;
 pub(crate) mod commands;
-pub mod format;
+
 pub(crate) mod runtime;
 
 pub use args::{

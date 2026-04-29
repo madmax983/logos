@@ -1,6 +1,6 @@
 use crate::args::CliError;
-use crate::format::us_timestamp;
 use comfy_table::{Cell, Color};
+use logos_core::format::us_timestamp;
 
 use logos_store::{StoredFetchRun, StoredFetchRunStatus};
 
@@ -117,11 +117,11 @@ fn render_show_output(run: &StoredFetchRun) -> String {
         Cell::new(run.artifact_path().unwrap_or("-")),
         run.opening_balance_cents().map_or_else(
             || Cell::new("-"),
-            |value| Cell::new(crate::format::currency(value)).fg(Color::Blue),
+            |value| Cell::new(logos_core::format::currency(value)).fg(Color::Blue),
         ),
         run.closing_balance_cents().map_or_else(
             || Cell::new("-"),
-            |value| Cell::new(crate::format::currency(value)).fg(Color::Blue),
+            |value| Cell::new(logos_core::format::currency(value)).fg(Color::Blue),
         ),
         run.error_summary()
             .map_or_else(|| Cell::new("-"), |err| Cell::new(err).fg(Color::Red)),
