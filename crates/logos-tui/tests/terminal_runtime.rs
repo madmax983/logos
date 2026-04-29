@@ -222,3 +222,66 @@ fn status_lines_surface_runtime_unavailability_for_data_views() {
     );
     assert!(status.iter().any(|line| line.to_string().contains("Mode: Normal")));
 }
+
+#[test]
+fn test_app_input_to_char_others() {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use logos_tui::key_event_to_app_char;
+    assert_eq!(
+        key_event_to_app_char(KeyEvent::new(KeyCode::Up, KeyModifiers::NONE)),
+        Some('k')
+    );
+    assert_eq!(
+        key_event_to_app_char(KeyEvent::new(KeyCode::Down, KeyModifiers::NONE)),
+        Some('j')
+    );
+    assert_eq!(
+        key_event_to_app_char(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL)),
+        Some('q')
+    );
+}
+
+#[test]
+fn test_terminal_runtime_control_c_and_modifiers() {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use logos_tui::{AppInput, key_event_to_app_input};
+    assert_eq!(
+        key_event_to_app_input(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL)),
+        Some(AppInput::Quit)
+    );
+    assert_eq!(
+        key_event_to_app_input(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::NONE)),
+        Some(AppInput::Char('c'))
+    );
+    assert_eq!(
+        key_event_to_app_input(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::SHIFT)),
+        Some(AppInput::Char('c'))
+    );
+}
+
+#[test]
+fn test_key_event_to_app_input_ignores_release() {
+    assert_eq!(
+        logos_tui::key_event_to_app_input(crossterm::event::KeyEvent {
+            code: crossterm::event::KeyCode::Char('a'),
+            modifiers: crossterm::event::KeyModifiers::NONE,
+            kind: crossterm::event::KeyEventKind::Release,
+            state: crossterm::event::KeyEventState::empty(),
+        }),
+        None
+    );
+}
+
+#[test]
+fn test_app_input_to_char() {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use logos_tui::key_event_to_app_char;
+    assert_eq!(
+        key_event_to_app_char(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE)),
+        Some('x')
+    );
+    assert_eq!(
+        key_event_to_app_char(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)),
+        None
+    );
+}

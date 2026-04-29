@@ -83,3 +83,56 @@ fn reconcile_view_selection_navigation_switches_evidence_panel() {
     assert!(second_frame.contains("PAYROLL"));
     assert!(!second_frame.contains("BOOK STORE"));
 }
+
+#[test]
+fn test_reconcile_render_runs_table_variance_reconciled() {
+    let mut app = App::new();
+    app.set_view(View::Reconcile);
+
+    let run1 = ReconcileRunRecord::new("run1", "2024-01", "checking", 0, true, 10);
+    let run2 = ReconcileRunRecord::new("run2", "2024-02", "checking", 100, false, 5);
+    let run3 = ReconcileRunRecord::new("run3", "2024-03", "checking", -100, false, 5);
+
+    let source = FakeReconcileSource {
+        runs: vec![run1, run2, run3],
+        lines_by_run: HashMap::new(),
+    };
+    app.refresh_reconcile(&source);
+
+    let content = app.render_frame();
+    assert!(content.contains("run1"));
+    assert!(content.contains("run2"));
+    assert!(content.contains("run3"));
+    assert!(content.contains("true")); // reconciled true
+    assert!(content.contains("false")); // reconciled false
+    assert!(content.contains("$0.00")); // variance == 0
+    assert!(content.contains("$1.00")); // variance == 100
+    assert!(content.contains("-$1.00")); // variance == -100
+}
+
+#[test]
+fn test_reconcile_render_runs_table_selected_row() {
+    let mut app = App::new();
+    app.set_view(View::Reconcile);
+
+    let run1 = ReconcileRunRecord::new("run1", "2024-01", "checking", 0, true, 10);
+    let run2 = ReconcileRunRecord::new("run2", "2024-02", "checking", 0, true, 5);
+
+    let source = FakeReconcileSource {
+        runs: vec![run1, run2],
+        lines_by_run: HashMap::new(),
+    };
+    app.refresh_reconcile(&source);
+
+    // Test that the selected row contains ">" and non-selected row does not
+    let content = app.render_frame();
+    // In our implementation we use comfy-table, and selection renders a > mark.
+    // The rendered string will have "> " or something similar in the first column.
+    assert!(content.contains("| > | run1")); // run1 is selected by default
+    assert!(!content.contains("| > | run2"));
+
+    app.select_next_reconcile_run();
+    let content2 = app.render_frame();
+    assert!(!content2.contains("| > | run1"));
+    assert!(content2.contains("| > | run2")); // run2 is now selected
+}
