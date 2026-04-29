@@ -102,6 +102,12 @@ where
 }
 
 impl OpCliSecretRefReader {
+    /// Configures the reader with a specific `op` binary path.
+    #[must_use]
+    pub const fn new(op_bin: PathBuf) -> Self {
+        Self { op_bin }
+    }
+
     /// Configures the reader using environment variables.
     ///
     /// It looks for the `LOGOS_FETCH_OP_BIN` environment variable to locate
