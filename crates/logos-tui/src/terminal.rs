@@ -17,7 +17,7 @@ use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
-    text::Line,
+    text::{Line, Span},
     widgets::{Block, Paragraph, Tabs, Wrap},
 };
 
@@ -159,7 +159,7 @@ pub fn render(frame: &mut Frame<'_>, app: &App, runtime_available: bool) {
     let scope_widget = Paragraph::new(scope_lines.join("\n"))
         .block(Block::bordered().title("Scope"))
         .wrap(Wrap { trim: false });
-    let status_widget = Paragraph::new(status_lines.join("\n"))
+    let status_widget = Paragraph::new(status_lines)
         .block(Block::bordered().title("Status"))
         .wrap(Wrap { trim: false });
 
@@ -365,27 +365,34 @@ fn reconcile_status_lines(app: &App) -> Vec<String> {
 }
 
 #[must_use]
-pub fn view_status_lines(app: &App, runtime_available: bool) -> Vec<String> {
+pub fn view_status_lines(app: &App, runtime_available: bool) -> Vec<Line<'static>> {
     let mode = if app.is_scope_editing() {
         "Edit Scope"
     } else {
         "Normal"
     };
-    let mut lines = vec![format!("Mode: {mode}")];
+    let mut lines = vec![Line::from(format!("Mode: {mode}"))];
     if let Some(message) = app.scope_error_message() {
-        lines.push(format!("Scope Error: {message}"));
+        lines.push(Line::from(vec![
+            Span::styled("Scope Error: ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::styled(message.to_owned(), Style::default().fg(Color::Red)),
+        ]));
     }
-    lines.extend(match app.view() {
+    let view_lines = match app.view() {
         View::Home => home_status_lines(app),
         View::Budget => budget_status_lines(app),
         View::Register => register_status_lines(app),
         View::Rsu => vec![String::from("RSU view still placeholder")],
         View::Reconcile => reconcile_status_lines(app),
-    });
+    };
+    lines.extend(view_lines.into_iter().map(Line::from));
 
     if !runtime_available {
         if let Some(message) = runtime_unavailable_message(app.view()) {
-            lines.push(message.to_owned());
+            lines.push(Line::from(Span::styled(
+                message.to_owned(),
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+            )));
         }
     }
 
