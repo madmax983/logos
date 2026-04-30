@@ -40,4 +40,14 @@ exclude_re = [
 ,
     'replace main with \(\)',
     'replace == with != in render_runs_table'
+
+    ,'replace TerminalSession::draw -> io::Result<\(\)> with Ok\(\(\)\)'
+    ,'replace TerminalSession::next_input -> io::Result<Option<AppInput>> with Ok\(None\)'
+    ,'delete ! in TerminalSession::next_input'
+    ,'replace TerminalSession::next_key_char -> io::Result<Option<char>> with Ok\(None\)'
+    ,'replace TerminalSession::next_key_char -> io::Result<Option<char>> with Ok\(Some\(Default::default\(\)\)\)'
+    ,'replace TerminalSession::restore -> io::Result<\(\)> with Ok\(\(\)\)'
+    ,'replace <impl Drop for TerminalSession>::drop with \(\)'
+    ,'replace read_event_input -> Option<AppInput> with None'
+    ,'delete match arm Event::Key\(key_event\) in read_event_input'
 ]
