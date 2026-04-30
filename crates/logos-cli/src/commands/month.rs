@@ -100,7 +100,7 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
         summary.close().closed_at().to_string(),
     ]);
 
-    format!("month.autopilot\n{table}")
+    format!("{table}")
 }
 
 #[cfg(test)]
@@ -164,7 +164,6 @@ mod tests {
         );
 
         let output = render_autopilot_output(&summary);
-        assert!(output.contains("month.autopilot"));
         assert!(output.contains("2026-04"));
         assert!(output.contains("assets:checking"));
         assert!(output.contains("recon-5"));

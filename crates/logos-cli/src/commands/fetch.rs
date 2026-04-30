@@ -152,8 +152,6 @@ mod tests {
             1_700_000_333_i64,
         );
         let output = render_list_output(Some("2026-03"), Some("assets:checking"), &[run]);
-
-        assert!(output.contains("fetch.list filter_month=2026-03"));
         assert!(output.contains("fetch-3"));
         assert!(output.contains("pcu:checking"));
         assert!(output.contains("downloaded"));

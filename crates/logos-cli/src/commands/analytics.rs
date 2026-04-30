@@ -281,10 +281,7 @@ pub fn net_worth_project(
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    println!("{table}");
 
     Ok(())
 }

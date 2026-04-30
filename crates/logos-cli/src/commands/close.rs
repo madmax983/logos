@@ -78,7 +78,7 @@ fn render_close_month_output(
         us_timestamp(close.closed_at()),
     ]);
 
-    format!("close.month\n{table}")
+    format!("{table}")
 }
 
 #[cfg(test)]
@@ -98,7 +98,6 @@ mod tests {
         );
 
         let output = render_close_month_output(&close, close.analytics_artifact_id());
-        assert!(output.contains("close.month"));
         assert!(output.contains("close-3"));
         assert!(output.contains("2026-03"));
         assert!(output.contains("assets:checking"));
