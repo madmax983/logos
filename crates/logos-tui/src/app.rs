@@ -520,7 +520,7 @@ impl RegisterDataSource for AppRuntime<logos_store_pg::PostgresStore> {
         let now_us = current_time_us();
         let transactions = self.transactions_as_of_us(now_us, now_us).ok()?;
 
-        let mut activity = Vec::new();
+        let mut activity = Vec::with_capacity(transactions.len());
         for stored in transactions {
             let effective_at_us = stored.effective_at();
             let mut timestamp_cache = None;
