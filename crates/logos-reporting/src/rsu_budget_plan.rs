@@ -38,6 +38,14 @@ pub enum ScenarioKey {
 ///
 /// let inputs = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
 /// ```
+///
+/// ## Examples
+///
+/// ```
+/// use logos_reporting::ScenarioPriceInputs;
+///
+/// let inputs = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ScenarioPriceInputs {
     bear: i64,
@@ -85,6 +93,19 @@ impl ScenarioPriceInputs {
 ///
 /// Captures how volatile income scales and dictates the automatic division of
 /// cash into required minimums versus optional surplus sweeps.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_reporting::{ScenarioKey, project_rsu_budget_plan, RsuBudgetPlanInput, ScenarioPriceInputs};
+///
+/// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
+/// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
+/// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+///
+/// let projection = plan.scenario(ScenarioKey::Base).unwrap();
+/// assert_eq!(projection.scenario(), ScenarioKey::Base);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ScenarioBudgetProjection {
     scenario: ScenarioKey,
@@ -215,6 +236,15 @@ impl ScenarioBudgetProjection {
 }
 
 /// The required parameters to project an RSU-backed monthly budget.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs};
+///
+/// let prices = ScenarioPriceInputs::new(50_00, 100_00, 150_00).unwrap();
+/// let input = RsuBudgetPlanInput::new(300, 0, prices, 5000_00, 10, 20).unwrap();
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RsuBudgetPlanInput {
     quarterly_units: u32,
@@ -278,6 +308,16 @@ impl RsuBudgetPlanInput {
 ///
 /// Establishes the safe spending baseline using the worst-case (Bear) scenario
 /// while forecasting upside behavior for standard and optimistic market conditions.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_reporting::{project_rsu_budget_plan, RsuBudgetPlanInput, ScenarioPriceInputs};
+///
+/// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
+/// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
+/// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RsuBudgetPlan {
     month_key: String,

@@ -28,3 +28,6 @@
 ## 2025-04-28 - The Private Intra-Doc Links
 **Confusion:** The root level `//!` documentation in `logos-core/src/lib.rs` attempted to use intra-doc links (`[`domain`]`) for modules that were declared as `pub(crate)` (private). This caused `cargo doc` to emit warnings about linking to private items, which failed CI checks enforcing `-D warnings`.
 **Clarification:** Replaced the intra-doc links with standard markdown backticks (`` `domain` ``) since `rustdoc` cannot resolve intra-doc links to private items without `--document-private-items`.
+## 2025-05-18 - Missing Examples for Core Entities
+**Confusion:** Several core domains such as `ScenarioPriceInputs`, `RsuBudgetPlanInput`, `RegisterEntry`, etc. lacked minimal actionable code examples. It was a chore to piece together exactly how they get initialized or what outputs look like.
+**Clarification:** Added `# Examples` blocks for `ScenarioPriceInputs`, `RsuBudgetPlanInput`, `ScenarioBudgetProjection`, `RsuBudgetPlan`, `RegisterEntry`, `RsuForecastSummary`, and fixed the formatting clippy warning in Ratatui tests.
