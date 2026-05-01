@@ -28,3 +28,6 @@
 ## 2025-04-28 - The Private Intra-Doc Links
 **Confusion:** The root level `//!` documentation in `logos-core/src/lib.rs` attempted to use intra-doc links (`[`domain`]`) for modules that were declared as `pub(crate)` (private). This caused `cargo doc` to emit warnings about linking to private items, which failed CI checks enforcing `-D warnings`.
 **Clarification:** Replaced the intra-doc links with standard markdown backticks (`` `domain` ``) since `rustdoc` cannot resolve intra-doc links to private items without `--document-private-items`.
+## 2025-05-01 - The Missing Object Examples in Reporting
+**Confusion:** The public struct definitions in the `logos-reporting` module (`RegisterEntry`, `ScenarioBudgetProjection`, `RsuBudgetPlanInput`, `RsuBudgetPlan`, and `RsuForecastSummary`) lacked executable examples on the types themselves. This violated the "Examples Section" rule where every public struct/enum must have an example, leaving users to treat them as black boxes.
+**Clarification:** Added executable doctests (`## Examples`) to all public structs in `logos-reporting` to demonstrate their initialization, validation, and property accessors directly.

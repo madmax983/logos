@@ -7,6 +7,16 @@
 ///
 /// This represents a single transaction or event that alters an account's balance
 /// by a specific amount.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_reporting::RegisterEntry;
+///
+/// // Represents a deposit of $50.00
+/// let entry = RegisterEntry::new(5000);
+/// assert_eq!(entry.delta_cents(), 5000);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RegisterEntry {
     delta_cents: i64,
@@ -29,6 +39,16 @@ impl RegisterEntry {
         Self { delta_cents }
     }
 
+    /// The change in cents associated with this entry.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_reporting::RegisterEntry;
+    ///
+    /// let entry = RegisterEntry::new(2500);
+    /// assert_eq!(entry.delta_cents(), 2500);
+    /// ```
     #[must_use]
     pub const fn delta_cents(&self) -> i64 {
         self.delta_cents

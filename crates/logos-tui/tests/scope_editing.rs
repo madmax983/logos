@@ -31,13 +31,13 @@ fn home_scope_editing_applies_drafts_on_submit() {
     assert!(
         scope_lines
             .iter()
-            .any(|line| line.to_string().contains("> Checking: assets:savings"))
+            .any(|line| line.contains("> Checking: assets:savings"))
     );
-    assert!(
-        view_status_lines(&app, true)
+    assert!(view_status_lines(&app, true).iter().any(|line| {
+        line.spans
             .iter()
-            .any(|line| line.to_string().contains("Mode: Edit Scope"))
-    );
+            .any(|s| s.content.contains("Mode: Edit Scope"))
+    }));
 
     app.handle_input(AppInput::Submit);
 
@@ -142,9 +142,11 @@ fn invalid_home_month_keeps_editor_open_and_surfaces_error() {
     assert!(app.is_scope_editing());
     assert_ne!(app.home_month_key(), "2026-13");
     assert!(
-        view_status_lines(&app, true)
+        view_status_lines(&app, true).iter().any(|line| line
+            .spans
             .iter()
-            .any(|line| line.to_string().contains("Scope Error: Month must use YYYY-MM"))
+            .any(|s| s.content.contains("Scope Error: ")
+                || s.content.contains("Month must use YYYY-MM")))
     );
 }
 
@@ -166,9 +168,10 @@ fn invalid_register_account_keeps_editor_open_and_surfaces_error() {
 
     assert!(app.is_scope_editing());
     assert_eq!(app.register_account(), original);
-    assert!(
-        view_status_lines(&app, true)
-            .iter()
-            .any(|line| line.to_string().contains("Scope Error: Account cannot contain spaces"))
-    );
+    assert!(view_status_lines(&app, true).iter().any(|line| {
+        line.spans.iter().any(|s| {
+            s.content.contains("Scope Error: ")
+                || s.content.contains("Account cannot contain spaces")
+        })
+    }));
 }
