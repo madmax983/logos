@@ -15,7 +15,7 @@ proptest! {
         let mut harvester = TaxLossHarvester::new();
         let asset = AccountId::new("assets:aapl").unwrap();
         harvester.add_lot(TaxLot {
-            asset: asset.clone(),
+            asset: asset,
             units: 100,
             cost_basis_cents: cost,
         });

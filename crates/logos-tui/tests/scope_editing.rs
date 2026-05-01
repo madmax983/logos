@@ -31,12 +31,12 @@ fn home_scope_editing_applies_drafts_on_submit() {
     assert!(
         scope_lines
             .iter()
-            .any(|line| line.to_string().contains("> Checking: assets:savings"))
+            .any(|line| line.clone().to_string().contains("> Checking: assets:savings"))
     );
     assert!(
         view_status_lines(&app, true)
             .iter()
-            .any(|line| line.to_string().contains("Mode: Edit Scope"))
+            .any(|line| line.clone().to_string().contains("Mode: Edit Scope"))
     );
 
     app.handle_input(AppInput::Submit);
@@ -144,7 +144,7 @@ fn invalid_home_month_keeps_editor_open_and_surfaces_error() {
     assert!(
         view_status_lines(&app, true)
             .iter()
-            .any(|line| line.to_string().contains("Scope Error: Month must use YYYY-MM"))
+            .any(|line| line.clone().to_string().contains("Scope Error: Month must use YYYY-MM"))
     );
 }
 
@@ -169,6 +169,6 @@ fn invalid_register_account_keeps_editor_open_and_surfaces_error() {
     assert!(
         view_status_lines(&app, true)
             .iter()
-            .any(|line| line.to_string().contains("Scope Error: Account cannot contain spaces"))
+            .any(|line| line.clone().to_string().contains("Scope Error: Account cannot contain spaces"))
     );
 }
