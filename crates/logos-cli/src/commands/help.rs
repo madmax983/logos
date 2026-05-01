@@ -17,6 +17,7 @@ Commands:
   close month                       Freeze a month scope with evidence links
   budget set                        Set a budget value
   report month                      Show the current month report
+  plan fire ...                     Simulate time to Financial Independence
 ";
 
 const TXN_HELP_TEXT: &str = "\
@@ -43,6 +44,14 @@ Subcommands:
   monte-carlo --initial-cents <i64> --monthly-contribution-cents <i64> --annual-mean-return <f64> --annual-volatility <f64>
               --months <u16> --paths <u32> [--seed <u64>]
                                      Simulate future net worth outcomes using randomized market returns
+";
+
+const PLAN_HELP_TEXT: &str = "\
+Usage: ledger plan <subcommand> [options]
+
+Subcommands:
+  fire --monthly-expenses-cents <i64> --liquid-assets-cents <i64> --monthly-savings-cents <i64>
+                                     Simulate time to Financial Independence
 ";
 
 const REPORT_HELP_TEXT: &str = "\
@@ -122,8 +131,6 @@ Subcommands:
   snapshot list                      List known analytics manifests
   snapshot show --artifact-id <id>   Show one manifest
   sankey                             Generate Mermaid Sankey diagram from current transactions
-  fire-sim --monthly-expenses-cents <i64> --liquid-assets-cents <i64> --monthly-savings-cents <i64>
-                                     Simulate time to Financial Independence
 
 Environment:
   LOGOS_ARTIFACTS_PATH               Override artifact root directory
@@ -158,6 +165,7 @@ const fn help_text(topic: HelpTopic) -> &'static str {
         HelpTopic::Txn => TXN_HELP_TEXT,
         HelpTopic::Analytics => ANALYTICS_HELP_TEXT,
         HelpTopic::Budget => BUDGET_HELP_TEXT,
+        HelpTopic::Plan => PLAN_HELP_TEXT,
         HelpTopic::Report => REPORT_HELP_TEXT,
         HelpTopic::Db => DB_HELP_TEXT,
         HelpTopic::Import => IMPORT_HELP_TEXT,
