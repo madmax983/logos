@@ -92,6 +92,7 @@ fn execute_command(command: &Command) -> Result<(), CliError> {
         Command::Close(command) => execute_close_command(command),
         Command::Budget(command) => execute_budget_command(command),
         Command::Report(command) => execute_report_command(command),
+        Command::Plan(command) => execute_plan_command(command),
     }
 }
 
@@ -135,24 +136,6 @@ fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError>
             commands::analytics::snapshot_show(artifact_id)
         }
         AnalyticsCommand::Sankey => commands::analytics::sankey(),
-        AnalyticsCommand::FireSim {
-            monthly_expenses_cents,
-            liquid_assets_cents,
-            monthly_savings_cents,
-        } => commands::analytics::fire_sim(
-            *monthly_expenses_cents,
-            *liquid_assets_cents,
-            *monthly_savings_cents,
-        ),
-        AnalyticsCommand::NetWorthProject {
-            initial_net_worth_cents,
-            monthly_savings_cents,
-            months,
-        } => commands::analytics::net_worth_project(
-            *initial_net_worth_cents,
-            *monthly_savings_cents,
-            *months,
-        ),
     }
 }
 
@@ -309,6 +292,29 @@ fn execute_budget_command(command: &BudgetCommand) -> Result<(), CliError> {
     }
 }
 
+fn execute_plan_command(command: &PlanCommand) -> Result<(), CliError> {
+    match command {
+        PlanCommand::Fire {
+            monthly_expenses_cents,
+            liquid_assets_cents,
+            monthly_savings_cents,
+        } => crate::commands::plan::fire_sim(
+            *monthly_expenses_cents,
+            *liquid_assets_cents,
+            *monthly_savings_cents,
+        ),
+        PlanCommand::NetWorth {
+            initial_net_worth_cents,
+            monthly_savings_cents,
+            months,
+        } => crate::commands::plan::net_worth_project(
+            *initial_net_worth_cents,
+            *monthly_savings_cents,
+            *months,
+        ),
+    }
+}
+
 fn execute_report_command(command: &ReportCommand) -> Result<(), CliError> {
     match command {
         ReportCommand::Month {
@@ -371,6 +377,7 @@ pub enum Command {
     Close(CloseCommand),
     Budget(BudgetCommand),
     Report(ReportCommand),
+    Plan(PlanCommand),
 }
 
 impl Command {
@@ -388,6 +395,7 @@ impl Command {
             Self::Help(HelpTopic::Reconcile) => "help.reconcile",
             Self::Help(HelpTopic::Month) => "help.month",
             Self::Help(HelpTopic::Close) => "help.close",
+            Self::Help(HelpTopic::Plan) => "help.plan",
             Self::Db(DbCommand::Migrate) => "db.migrate",
             Self::Db(DbCommand::Status) => "db.status",
             Self::Txn(TxnCommand::Add { .. }) => "txn.add",
@@ -396,8 +404,6 @@ impl Command {
             Self::Analytics(AnalyticsCommand::SnapshotList) => "analytics.snapshot.list",
             Self::Analytics(AnalyticsCommand::SnapshotShow { .. }) => "analytics.snapshot.show",
             Self::Analytics(AnalyticsCommand::Sankey) => "analytics.sankey",
-            Self::Analytics(AnalyticsCommand::FireSim { .. }) => "analytics.fire-sim",
-            Self::Analytics(AnalyticsCommand::NetWorthProject { .. }) => "analytics.net-worth",
             Self::Import(ImportCommand::Pdf { .. }) => "import.pdf",
             Self::Import(ImportCommand::Csv { .. }) => "import.csv",
             Self::Fetch(FetchCommand::ListRuns { .. }) => "fetch.list",
@@ -411,6 +417,8 @@ impl Command {
             Self::Budget(BudgetCommand::RsuPlan { .. }) => "budget.rsu-plan",
             Self::Budget(BudgetCommand::MonteCarlo { .. }) => "budget.monte-carlo",
             Self::Report(ReportCommand::Month { .. }) => "report.month",
+            Self::Plan(PlanCommand::Fire { .. }) => "plan.fire",
+            Self::Plan(PlanCommand::NetWorth { .. }) => "plan.net-worth",
         }
     }
 }
@@ -428,6 +436,7 @@ pub enum HelpTopic {
     Reconcile,
     Month,
     Close,
+    Plan,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -463,16 +472,6 @@ pub enum AnalyticsCommand {
         artifact_id: String,
     },
     Sankey,
-    FireSim {
-        monthly_expenses_cents: i64,
-        liquid_assets_cents: i64,
-        monthly_savings_cents: i64,
-    },
-    NetWorthProject {
-        initial_net_worth_cents: i64,
-        monthly_savings_cents: i64,
-        months: u16,
-    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -579,6 +578,20 @@ pub enum BudgetCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlanCommand {
+    Fire {
+        monthly_expenses_cents: i64,
+        liquid_assets_cents: i64,
+        monthly_savings_cents: i64,
+    },
+    NetWorth {
+        initial_net_worth_cents: i64,
+        monthly_savings_cents: i64,
+        months: u16,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ReportCommand {
     Month {
         checking_account: String,
@@ -616,6 +629,7 @@ where
         "close" => parse_close(&values),
         "budget" => parse_budget(&values),
         "report" => parse_report(&values),
+        "plan" => parse_plan(&values),
         _ => Err(CliError::UnknownCommand {
             command: command.clone(),
         }),
@@ -781,35 +795,6 @@ fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
         "sankey" => Ok(ParsedArgs {
             command: Command::Analytics(AnalyticsCommand::Sankey),
         }),
-        "fire-sim" => {
-            let monthly_expenses_cents =
-                parse_required_parsed_flag(&args[2..], "--monthly-expenses-cents")?;
-            let liquid_assets_cents =
-                parse_required_parsed_flag(&args[2..], "--liquid-assets-cents")?;
-            let monthly_savings_cents =
-                parse_required_parsed_flag(&args[2..], "--monthly-savings-cents")?;
-            Ok(ParsedArgs {
-                command: Command::Analytics(AnalyticsCommand::FireSim {
-                    monthly_expenses_cents,
-                    liquid_assets_cents,
-                    monthly_savings_cents,
-                }),
-            })
-        }
-        "net-worth" => {
-            let initial_net_worth_cents =
-                parse_required_parsed_flag(&args[2..], "--initial-net-worth-cents")?;
-            let monthly_savings_cents =
-                parse_required_parsed_flag(&args[2..], "--monthly-savings-cents")?;
-            let months = parse_required_parsed_flag(&args[2..], "--months")?;
-            Ok(ParsedArgs {
-                command: Command::Analytics(AnalyticsCommand::NetWorthProject {
-                    initial_net_worth_cents,
-                    monthly_savings_cents,
-                    months,
-                }),
-            })
-        }
         _ => Err(CliError::UnknownSubcommand {
             command: "analytics".to_owned(),
             subcommand: subcommand.clone(),
@@ -1315,4 +1300,55 @@ fn parse_paired_i64_flags(
 
 fn parse_amount_cents(args: &[String]) -> Result<i64, CliError> {
     parse_required_parsed_flag(args, "--amount-cents")
+}
+
+fn parse_plan(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Plan),
+        });
+    }
+
+    let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
+        command: "plan".to_owned(),
+    })?;
+
+    match subcommand.as_str() {
+        "--help" | "-h" => Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Plan),
+        }),
+        "fire" => {
+            let monthly_expenses_cents =
+                parse_required_parsed_flag(&args[2..], "--monthly-expenses-cents")?;
+            let liquid_assets_cents =
+                parse_optional_parsed_flag(&args[2..], "--liquid-assets-cents", 0)?;
+            let monthly_savings_cents =
+                parse_optional_parsed_flag(&args[2..], "--monthly-savings-cents", 0)?;
+            Ok(ParsedArgs {
+                command: Command::Plan(PlanCommand::Fire {
+                    monthly_expenses_cents,
+                    liquid_assets_cents,
+                    monthly_savings_cents,
+                }),
+            })
+        }
+        "net-worth" => {
+            let initial_net_worth_cents =
+                parse_required_parsed_flag(&args[2..], "--initial-net-worth-cents")?;
+            let monthly_savings_cents =
+                parse_required_parsed_flag(&args[2..], "--monthly-savings-cents")?;
+            let months = parse_required_parsed_flag(&args[2..], "--months")?;
+            Ok(ParsedArgs {
+                command: Command::Plan(PlanCommand::NetWorth {
+                    initial_net_worth_cents,
+                    monthly_savings_cents,
+                    months,
+                }),
+            })
+        }
+        _ => Err(CliError::UnknownSubcommand {
+            command: "plan".to_owned(),
+            subcommand: subcommand.clone(),
+        }),
+    }
 }

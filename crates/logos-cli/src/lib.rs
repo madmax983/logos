@@ -6,7 +6,7 @@ pub(crate) mod runtime;
 
 pub use args::{
     AnalyticsCommand, BudgetCommand, CliError, CloseCommand, Command, FetchCommand, ImportCommand,
-    MonthCommand, ParsedArgs, ReconcileCommand, ReportCommand, parse_args,
+    MonthCommand, ParsedArgs, PlanCommand, ReconcileCommand, ReportCommand, parse_args,
 };
 
 /// Runs the CLI using the provided process arguments.

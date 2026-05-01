@@ -19,6 +19,7 @@ Commands:
   report month                      Show the current month report
 ";
 
+const PLAN_HELP_TEXT: &str = "\nManage and project long term financial plans\n\nUsage: ledger plan <subcommand> [options]\n\nSubcommands:\n  fire --monthly-expenses-cents <i64> [--liquid-assets-cents <i64>] [--monthly-savings-cents <i64>]\n    Simulate time to achieve Financial Independence, Retire Early (FIRE)\n  \n  net-worth --initial-net-worth-cents <i64> --monthly-savings-cents <i64> --months <u16>\n    Project linear net worth growth over time\n";
 const TXN_HELP_TEXT: &str = "\
 Usage: ledger txn <subcommand> [options]
 
@@ -165,6 +166,7 @@ const fn help_text(topic: HelpTopic) -> &'static str {
         HelpTopic::Reconcile => RECONCILE_HELP_TEXT,
         HelpTopic::Month => MONTH_HELP_TEXT,
         HelpTopic::Close => CLOSE_HELP_TEXT,
+        HelpTopic::Plan => PLAN_HELP_TEXT,
     }
 }
 
