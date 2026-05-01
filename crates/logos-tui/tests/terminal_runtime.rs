@@ -147,24 +147,28 @@ fn scope_and_status_lines_reflect_home_and_register_state() {
     assert!(
         home_scope
             .iter()
-            .any(|line| line.to_string().contains("Month: 2026-02"))
+            .any(|line| line.contains("Month: 2026-02"))
     );
     assert!(
         home_scope
             .iter()
-            .any(|line| line.to_string().contains("Checking: assets:checking"))
+            .any(|line| line.contains("Checking: assets:checking"))
     );
     assert!(
         home_status
             .iter()
             .any(|line| line.to_string().contains("Cashflow: $770,488.06"))
     );
-    assert!(
-        home_status
+    assert!(home_status.iter().any(|line| {
+        line.spans
             .iter()
-            .any(|line| line.to_string().contains("Budget Target: $3,000.00"))
-    );
-    assert!(home_status.iter().any(|line| line.to_string().contains("Mode: Normal")));
+            .any(|s| s.content.contains("Budget Target: $3,000.00"))
+    }));
+    assert!(home_status.iter().any(|line| {
+        line.spans
+            .iter()
+            .any(|s| s.content.contains("Mode: Normal"))
+    }));
 
     let mut register_app = App::new();
     register_app.set_view(View::Register);
@@ -190,16 +194,16 @@ fn scope_and_status_lines_reflect_home_and_register_state() {
             .iter()
             .any(|line| line.to_string().contains("Balance: $770,488.06"))
     );
-    assert!(
-        register_status
+    assert!(register_status.iter().any(|line| {
+        line.spans
             .iter()
-            .any(|line| line.to_string().contains("Recent Rows: 2"))
-    );
-    assert!(
-        register_status
+            .any(|s| s.content.contains("Recent Rows: 2"))
+    }));
+    assert!(register_status.iter().any(|line| {
+        line.spans
             .iter()
-            .any(|line| line.to_string().contains("Mode: Normal"))
-    );
+            .any(|s| s.content.contains("Mode: Normal"))
+    }));
 }
 
 #[test]
@@ -215,12 +219,16 @@ fn status_lines_surface_runtime_unavailability_for_data_views() {
             .iter()
             .any(|line| line.to_string().contains("Budget data unavailable"))
     );
-    assert!(
-        status
+    assert!(status.iter().any(|line| {
+        line.spans
             .iter()
-            .any(|line| line.to_string().contains("unable to initialize logos runtime"))
-    );
-    assert!(status.iter().any(|line| line.to_string().contains("Mode: Normal")));
+            .any(|s| s.content.contains("unable to initialize logos runtime"))
+    }));
+    assert!(status.iter().any(|line| {
+        line.spans
+            .iter()
+            .any(|s| s.content.contains("Mode: Normal"))
+    }));
 }
 
 #[test]
