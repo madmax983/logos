@@ -44,11 +44,28 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_currency_no_leading_comma() {
+        assert_eq!(currency(10000), "$100.00");
+    }
+
+    #[test]
     fn test_currency_formatting() {
         assert_eq!(currency(150_000_000), "$1,500,000.00");
         assert_eq!(currency(-150_000_000), "-$1,500,000.00");
         assert_eq!(currency(100), "$1.00");
         assert_eq!(currency(-50), "-$0.50");
         assert_eq!(currency(0), "$0.00");
+    }
+
+    #[test]
+    fn test_us_timestamp() {
+        assert_eq!(us_timestamp(1_704_067_200_000_000), "2024-01-01 00:00:00 UTC");
+        assert_eq!(us_timestamp(i64::MAX), i64::MAX.to_string());
+    }
+
+    #[test]
+    fn test_currency_edge_cases() {
+        assert_eq!(currency(999), "$9.99");
+        assert_eq!(currency(1000), "$10.00");
     }
 }
