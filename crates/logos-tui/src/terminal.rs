@@ -374,7 +374,10 @@ pub fn view_status_lines(app: &App, runtime_available: bool) -> Vec<Line<'static
     let mut lines = vec![Line::from(format!("Mode: {mode}"))];
     if let Some(message) = app.scope_error_message() {
         lines.push(Line::from(vec![
-            Span::styled("Scope Error: ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Scope Error: ",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
             Span::styled(message.to_owned(), Style::default().fg(Color::Red)),
         ]));
     }
@@ -391,7 +394,7 @@ pub fn view_status_lines(app: &App, runtime_available: bool) -> Vec<Line<'static
         if let Some(message) = runtime_unavailable_message(app.view()) {
             lines.push(Line::from(Span::styled(
                 message.to_owned(),
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
             )));
         }
     }
