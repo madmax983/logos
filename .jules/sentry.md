@@ -16,4 +16,6 @@
 
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
-**Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+**Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.## 2026-05-02 - Testing Ratatui Lines with Spans
+**Learning:** When asserting text content against `ratatui::text::line::Line` objects in tests, avoid using `.to_string().contains(...)`. Not only does this trigger `clippy::implicit_clone` warnings if the line is just a `String`, but `Line` types often split styled text across multiple `Span`s. Asserting on a combined string that spans across multiple styled segments will cause assertions to fail under specific iteration conditions.
+**Action:** Iterate over the spans and check the content directly: `line.spans.iter().any(|s| s.content.contains("..."))`. Also ensure that the text being matched is contained within a single `Span` and not split across multiple styled spans (like prefixes).
