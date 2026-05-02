@@ -1,4 +1,7 @@
 #[cfg(feature = "nova")]
+pub mod carbon_footprint;
+
+#[cfg(feature = "nova")]
 pub mod life_energy_calculator;
 
 #[cfg(feature = "nova")]
