@@ -141,11 +141,10 @@ fn invalid_home_month_keeps_editor_open_and_surfaces_error() {
 
     assert!(app.is_scope_editing());
     assert_ne!(app.home_month_key(), "2026-13");
-    assert!(
-        view_status_lines(&app, true)
-            .iter()
-            .any(|line| line.to_string().contains("Scope Error: Month must use YYYY-MM"))
-    );
+    assert!(view_status_lines(&app, true).iter().any(|line| {
+        line.to_string()
+            .contains("Scope Error: Month must use YYYY-MM")
+    }));
 }
 
 #[test]
@@ -166,9 +165,8 @@ fn invalid_register_account_keeps_editor_open_and_surfaces_error() {
 
     assert!(app.is_scope_editing());
     assert_eq!(app.register_account(), original);
-    assert!(
-        view_status_lines(&app, true)
-            .iter()
-            .any(|line| line.to_string().contains("Scope Error: Account cannot contain spaces"))
-    );
+    assert!(view_status_lines(&app, true).iter().any(|line| {
+        line.to_string()
+            .contains("Scope Error: Account cannot contain spaces")
+    }));
 }
