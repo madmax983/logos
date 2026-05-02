@@ -31,7 +31,7 @@ fn home_scope_editing_applies_drafts_on_submit() {
     assert!(
         scope_lines
             .iter()
-            .any(|line| line.to_string().contains("> Checking: assets:savings"))
+            .any(|line| line.contains("> Checking: assets:savings"))
     );
     assert!(
         view_status_lines(&app, true)
