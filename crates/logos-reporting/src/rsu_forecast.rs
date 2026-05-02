@@ -8,6 +8,16 @@
 ///
 /// This struct aggregates the raw projected value of multiple upcoming
 /// vesting events into a single, comprehensive overview.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_reporting::{project_rsu_forecast_summary, RsuForecastSummary};
+///
+/// let summary = project_rsu_forecast_summary(&[100_00, 200_00]);
+/// assert_eq!(summary.event_count(), 2);
+/// assert_eq!(summary.projected_total_cents(), 300_00);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RsuForecastSummary {
     event_count: usize,
