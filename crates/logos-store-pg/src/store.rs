@@ -1959,7 +1959,7 @@ impl LedgerStore for PostgresStore {
     fn write_correction(&mut self, correction: Correction) -> Result<(), StoreError> {
         if !self.try_has_transaction(correction.supersedes_id())? {
             return Err(StoreError::UnknownTransaction {
-                transaction_id: correction.supersedes_id().clone(),
+                transaction_id: correction.into_supersedes_id(),
             });
         }
 

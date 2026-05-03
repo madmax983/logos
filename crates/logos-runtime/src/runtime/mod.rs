@@ -1279,7 +1279,7 @@ impl<S: LedgerStore> AppRuntime<S> {
     pub fn latest_correction_target(&self) -> Option<TransactionId> {
         self.store
             .latest_correction()
-            .map(|correction| correction.supersedes_id().clone())
+            .map(logos_core::Correction::into_supersedes_id)
     }
 
     fn post_import_record(&mut self, record: &ImportRecord) -> Result<TransactionId, RuntimeError> {
