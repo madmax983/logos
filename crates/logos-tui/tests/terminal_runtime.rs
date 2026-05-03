@@ -1,3 +1,4 @@
+#![allow(clippy::implicit_clone)]
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use logos_tui::{
     App, AppInput, BudgetDataSource, BudgetSnapshot, HomeDataSource, HomeSnapshot,
@@ -164,7 +165,11 @@ fn scope_and_status_lines_reflect_home_and_register_state() {
             .iter()
             .any(|line| line.to_string().contains("Budget Target: $3,000.00"))
     );
-    assert!(home_status.iter().any(|line| line.to_string().contains("Mode: Normal")));
+    assert!(
+        home_status
+            .iter()
+            .any(|line| line.to_string().contains("Mode: Normal"))
+    );
 
     let mut register_app = App::new();
     register_app.set_view(View::Register);
@@ -215,12 +220,15 @@ fn status_lines_surface_runtime_unavailability_for_data_views() {
             .iter()
             .any(|line| line.to_string().contains("Budget data unavailable"))
     );
+    assert!(status.iter().any(|line| {
+        line.to_string()
+            .contains("unable to initialize logos runtime")
+    }));
     assert!(
         status
             .iter()
-            .any(|line| line.to_string().contains("unable to initialize logos runtime"))
+            .any(|line| line.to_string().contains("Mode: Normal"))
     );
-    assert!(status.iter().any(|line| line.to_string().contains("Mode: Normal")));
 }
 
 #[test]
