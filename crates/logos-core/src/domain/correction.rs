@@ -154,6 +154,16 @@ impl Correction {
         &self.supersedes_id
     }
 
+    /// Consumes the correction and returns the superseded transaction id.
+    ///
+    /// Performance Optimization: By consuming `self`, we avoid cloning the inner
+    /// `TransactionId` (which wraps an `Arc<str>`) when the `Correction` itself
+    /// is no longer needed.
+    #[must_use]
+    pub fn into_supersedes_id(self) -> TransactionId {
+        self.supersedes_id
+    }
+
     /// Retrieves the mandatory reason for why the correction was made.
     ///
     /// ## Examples
