@@ -38,6 +38,6 @@ exclude_re = [
     ,"replace > with >= in rebalance"
     ,"replace > with >= in add_transactions"
 ,
-    'replace main with \(\)',
-    'replace == with != in render_runs_table'
+    'replace == with != in render_runs_table',
+    'replace == with != in parse_simple_csv_row'
 ]

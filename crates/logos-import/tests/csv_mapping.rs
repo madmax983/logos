@@ -162,3 +162,26 @@ fn test_csv_field_after_quote_non_whitespace() {
         }
     );
 }
+
+#[test]
+fn csv_row_handles_usize_max_index() {
+    let mapping = CsvMapping {
+        timestamp_idx: 0,
+        amount_idx: usize::MAX,
+        memo_idx: 2,
+        account_idx: 3,
+        category_idx: 4,
+        source_id: "test".to_string(),
+    };
+    let line = "2026-02-01T09:30:00,12345,RSU sale,assets:checking,income:rsu";
+
+    let err = parse_simple_csv_row(line, &mapping).expect_err("must fail");
+
+    assert_eq!(
+        err,
+        ImportError::MissingColumns {
+            expected: usize::MAX,
+            found: 5
+        }
+    );
+}
