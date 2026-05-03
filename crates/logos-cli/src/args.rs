@@ -81,6 +81,7 @@ impl ParsedArgs {
 
 fn execute_command(command: &Command) -> Result<(), CliError> {
     match command {
+        Command::Plan(command) => execute_plan_command(command),
         Command::Help(topic) => commands::help::show(*topic),
         Command::Db(command) => execute_db_command(*command),
         Command::Txn(command) => execute_txn_command(command),
@@ -361,6 +362,7 @@ fn parse_optional_month_flag(args: &[String], flag: &str) -> Result<Option<Strin
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     Help(HelpTopic),
+    Plan(PlanCommand),
     Db(DbCommand),
     Txn(TxnCommand),
     Analytics(AnalyticsCommand),
@@ -378,6 +380,8 @@ impl Command {
     pub const fn path(&self) -> &'static str {
         match self {
             Self::Help(HelpTopic::General) => "help",
+            Self::Plan(PlanCommand::Fire { .. }) => "plan.fire",
+            Self::Plan(PlanCommand::Project { .. }) => "plan.project",
             Self::Help(HelpTopic::Txn) => "help.txn",
             Self::Help(HelpTopic::Budget) => "help.budget",
             Self::Help(HelpTopic::Report) => "help.report",
@@ -388,6 +392,7 @@ impl Command {
             Self::Help(HelpTopic::Reconcile) => "help.reconcile",
             Self::Help(HelpTopic::Month) => "help.month",
             Self::Help(HelpTopic::Close) => "help.close",
+            Self::Help(HelpTopic::Plan) => "help.plan",
             Self::Db(DbCommand::Migrate) => "db.migrate",
             Self::Db(DbCommand::Status) => "db.status",
             Self::Txn(TxnCommand::Add { .. }) => "txn.add",
@@ -418,6 +423,7 @@ impl Command {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HelpTopic {
     General,
+    Plan,
     Txn,
     Analytics,
     Budget,
@@ -607,6 +613,7 @@ where
             command: Command::Help(parse_help_topic(&values)?),
         }),
         "db" => parse_db(&values),
+        "plan" => parse_plan(&values),
         "txn" => parse_txn(&values),
         "analytics" => parse_analytics(&values),
         "import" => parse_import(&values),
@@ -1315,4 +1322,97 @@ fn parse_paired_i64_flags(
 
 fn parse_amount_cents(args: &[String]) -> Result<i64, CliError> {
     parse_required_parsed_flag(args, "--amount-cents")
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlanCommand {
+    Project {
+        initial_net_worth_cents: i64,
+        monthly_savings_cents: i64,
+        months: u16,
+    },
+    Fire {
+        monthly_expenses_cents: i64,
+        safe_withdrawal_rate_pct: Option<u8>,
+        liquid_assets_cents: Option<i64>,
+        liabilities_cents: Option<i64>,
+    },
+}
+
+fn execute_plan_command(command: &PlanCommand) -> Result<(), CliError> {
+    match command {
+        PlanCommand::Project {
+            initial_net_worth_cents,
+            monthly_savings_cents,
+            months,
+        } => crate::commands::plan::project(
+            *initial_net_worth_cents,
+            *monthly_savings_cents,
+            *months,
+        ),
+        PlanCommand::Fire {
+            monthly_expenses_cents,
+            safe_withdrawal_rate_pct,
+            liquid_assets_cents,
+            liabilities_cents,
+        } => crate::commands::plan::fire(
+            *monthly_expenses_cents,
+            *safe_withdrawal_rate_pct,
+            *liquid_assets_cents,
+            *liabilities_cents,
+        ),
+    }
+}
+
+fn parse_plan(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Plan),
+        });
+    }
+
+    let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
+        command: "plan".to_owned(),
+    })?;
+
+    match subcommand.as_str() {
+        "--help" | "-h" => Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Plan),
+        }),
+        "project" => {
+            let initial_net_worth_cents =
+                parse_required_parsed_flag(&args[2..], "--initial-net-worth-cents")?;
+            let monthly_savings_cents =
+                parse_required_parsed_flag(&args[2..], "--monthly-savings-cents")?;
+            let months = parse_required_parsed_flag(&args[2..], "--months")?;
+            Ok(ParsedArgs {
+                command: Command::Plan(PlanCommand::Project {
+                    initial_net_worth_cents,
+                    monthly_savings_cents,
+                    months,
+                }),
+            })
+        }
+        "fire" => {
+            let monthly_expenses_cents =
+                parse_required_parsed_flag(&args[2..], "--monthly-expenses-cents")?;
+            let safe_withdrawal_rate_pct =
+                parse_optional_parsed_flag(&args[2..], "--safe-withdrawal-rate-pct", 4)?;
+            let liquid_assets_cents =
+                parse_optional_parsed_value(&args[2..], "--liquid-assets-cents")?;
+            let liabilities_cents = parse_optional_parsed_value(&args[2..], "--liabilities-cents")?;
+            Ok(ParsedArgs {
+                command: Command::Plan(PlanCommand::Fire {
+                    monthly_expenses_cents,
+                    safe_withdrawal_rate_pct: Some(safe_withdrawal_rate_pct),
+                    liquid_assets_cents,
+                    liabilities_cents,
+                }),
+            })
+        }
+        _ => Err(CliError::UnknownSubcommand {
+            command: "plan".to_owned(),
+            subcommand: subcommand.clone(),
+        }),
+    }
 }

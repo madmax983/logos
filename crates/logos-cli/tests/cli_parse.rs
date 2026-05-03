@@ -1181,3 +1181,77 @@ fn rejects_aletheia_command_after_cutover() {
 
     assert_eq!(err.to_string(), "Unknown command 'aletheia'.");
 }
+
+#[test]
+fn parses_plan_fire_with_defaults() {
+    let args = vec![
+        "ledger",
+        "plan",
+        "fire",
+        "--monthly-expenses-cents",
+        "500000",
+    ];
+    let parsed = logos_cli::parse_args(args.into_iter().map(String::from)).expect("parse");
+
+    assert_eq!(parsed.command_path(), "plan.fire");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::Command::Plan(logos_cli::PlanCommand::Fire {
+            monthly_expenses_cents: 500_000,
+            safe_withdrawal_rate_pct: Some(4),
+            liquid_assets_cents: None,
+            liabilities_cents: None,
+        })
+    ));
+}
+
+#[test]
+fn parses_plan_fire_with_explicit_flags() {
+    let args = vec![
+        "ledger",
+        "plan",
+        "fire",
+        "--monthly-expenses-cents",
+        "500000",
+        "--safe-withdrawal-rate-pct",
+        "3",
+    ];
+    let parsed = logos_cli::parse_args(args.into_iter().map(String::from)).expect("parse");
+
+    assert_eq!(parsed.command_path(), "plan.fire");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::Command::Plan(logos_cli::PlanCommand::Fire {
+            monthly_expenses_cents: 500_000,
+            safe_withdrawal_rate_pct: Some(3),
+            liquid_assets_cents: None,
+            liabilities_cents: None,
+        })
+    ));
+}
+
+#[test]
+fn parses_plan_project_with_defaults() {
+    let args = vec![
+        "ledger",
+        "plan",
+        "project",
+        "--initial-net-worth-cents",
+        "20000000",
+        "--monthly-savings-cents",
+        "200000",
+        "--months",
+        "12",
+    ];
+    let parsed = logos_cli::parse_args(args.into_iter().map(String::from)).expect("parse");
+
+    assert_eq!(parsed.command_path(), "plan.project");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::Command::Plan(logos_cli::PlanCommand::Project {
+            initial_net_worth_cents: 20_000_000,
+            monthly_savings_cents: 200_000,
+            months: 12,
+        })
+    ));
+}

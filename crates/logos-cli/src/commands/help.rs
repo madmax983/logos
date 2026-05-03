@@ -17,6 +17,7 @@ Commands:
   close month                       Freeze a month scope with evidence links
   budget set                        Set a budget value
   report month                      Show the current month report
+  plan fire                         Simulate FIRE trajectory
 ";
 
 const TXN_HELP_TEXT: &str = "\
@@ -113,6 +114,16 @@ Subcommands:
                                      Close one month scope using a reconciliation run and optional analytics artifact
 ";
 
+const PLAN_HELP_TEXT: &str = "\
+Usage: ledger plan <subcommand> [options]
+
+Subcommands:
+  fire --monthly-expenses-cents <i64> [--safe-withdrawal-rate-pct <u8>] [--liquid-assets-cents <i64>] [--liabilities-cents <i64>]
+                                     Simulate time to Financial Independence
+  project --initial-net-worth-cents <i64> --monthly-savings-cents <i64> --months <u16>
+                                     Simulate future net worth milestones
+";
+
 const ANALYTICS_HELP_TEXT: &str = "\
 Usage: ledger analytics <subcommand> [options]
 
@@ -165,6 +176,7 @@ const fn help_text(topic: HelpTopic) -> &'static str {
         HelpTopic::Reconcile => RECONCILE_HELP_TEXT,
         HelpTopic::Month => MONTH_HELP_TEXT,
         HelpTopic::Close => CLOSE_HELP_TEXT,
+        HelpTopic::Plan => PLAN_HELP_TEXT,
     }
 }
 
