@@ -28,3 +28,6 @@
 ## 2025-04-28 - The Private Intra-Doc Links
 **Confusion:** The root level `//!` documentation in `logos-core/src/lib.rs` attempted to use intra-doc links (`[`domain`]`) for modules that were declared as `pub(crate)` (private). This caused `cargo doc` to emit warnings about linking to private items, which failed CI checks enforcing `-D warnings`.
 **Clarification:** Replaced the intra-doc links with standard markdown backticks (`` `domain` ``) since `rustdoc` cannot resolve intra-doc links to private items without `--document-private-items`.
+## 2025-05-03 - The "Black Box" of TUI Views
+**Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
+**Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
