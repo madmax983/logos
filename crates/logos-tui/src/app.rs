@@ -40,16 +40,21 @@ pub enum AppInput {
     Quit,
 }
 
+/// ⚡ Bolt Optimization: Uses Cow<'a, str> to prevent multiple String allocations per UI render frame, avoiding unconditional cloning of state properties.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ScopeFieldView {
+pub struct ScopeFieldView<'a> {
     label: &'static str,
-    value: String,
+    value: std::borrow::Cow<'a, str>,
     focused: bool,
 }
 
-impl ScopeFieldView {
+impl<'a> ScopeFieldView<'a> {
     #[must_use]
-    pub fn new(label: &'static str, value: impl Into<String>, focused: bool) -> Self {
+    pub fn new(
+        label: &'static str,
+        value: impl Into<std::borrow::Cow<'a, str>>,
+        focused: bool,
+    ) -> Self {
         Self {
             label,
             value: value.into(),
@@ -774,90 +779,87 @@ impl App {
     }
 
     #[must_use]
-    fn home_scope_fields(&self) -> Vec<ScopeFieldView> {
+    fn home_scope_fields(&self) -> Vec<ScopeFieldView<'_>> {
         vec![
             ScopeFieldView::new(
                 "Month",
                 self.home.snapshot.as_ref().map_or_else(
-                    || self.home.month_key.clone(),
-                    |snapshot| snapshot.month_key().to_owned(),
+                    || self.home.month_key.as_str(),
+                    |snapshot| snapshot.month_key(),
                 ),
                 false,
             ),
             ScopeFieldView::new(
                 "Checking",
                 self.home.snapshot.as_ref().map_or_else(
-                    || self.home.checking_account.clone(),
-                    |snapshot| snapshot.checking_account().to_owned(),
+                    || self.home.checking_account.as_str(),
+                    |snapshot| snapshot.checking_account(),
                 ),
                 false,
             ),
             ScopeFieldView::new(
                 "Expenses",
                 self.home.snapshot.as_ref().map_or_else(
-                    || self.home.expense_account_prefix.clone(),
-                    |snapshot| snapshot.expense_account_prefix().to_owned(),
+                    || self.home.expense_account_prefix.as_str(),
+                    |snapshot| snapshot.expense_account_prefix(),
                 ),
                 false,
             ),
         ]
     }
 
-    fn budget_scope_fields(&self) -> Vec<ScopeFieldView> {
+    fn budget_scope_fields(&self) -> Vec<ScopeFieldView<'_>> {
         vec![
             ScopeFieldView::new(
                 "Month",
                 self.budget.snapshot.as_ref().map_or_else(
-                    || self.budget.month_key.clone(),
-                    |snapshot| snapshot.month_key().to_owned(),
+                    || self.budget.month_key.as_str(),
+                    |snapshot| snapshot.month_key(),
                 ),
                 false,
             ),
             ScopeFieldView::new(
                 "Expenses",
                 self.budget.snapshot.as_ref().map_or_else(
-                    || self.budget.expense_account_prefix.clone(),
-                    |snapshot| snapshot.expense_account_prefix().to_owned(),
+                    || self.budget.expense_account_prefix.as_str(),
+                    |snapshot| snapshot.expense_account_prefix(),
                 ),
                 false,
             ),
         ]
     }
 
-    fn register_scope_fields(&self) -> Vec<ScopeFieldView> {
+    fn register_scope_fields(&self) -> Vec<ScopeFieldView<'_>> {
         vec![ScopeFieldView::new(
             "Account",
             self.register.snapshot.as_ref().map_or_else(
-                || self.register.account.clone(),
-                |snapshot| snapshot.account().to_owned(),
+                || self.register.account.as_str(),
+                |snapshot| snapshot.account(),
             ),
             false,
         )]
     }
 
-    fn reconcile_scope_fields(&self) -> Vec<ScopeFieldView> {
+    fn reconcile_scope_fields(&self) -> Vec<ScopeFieldView<'_>> {
         vec![
             ScopeFieldView::new(
                 "Month Filter",
-                self.reconcile
-                    .filter_month_key
-                    .clone()
-                    .unwrap_or_else(|| String::from("*")),
+                self.reconcile.filter_month_key.as_deref().unwrap_or("*"),
                 false,
             ),
             ScopeFieldView::new(
                 "Account Filter",
                 self.reconcile
                     .filter_checking_account
-                    .clone()
-                    .unwrap_or_else(|| String::from("*")),
+                    .as_deref()
+                    .unwrap_or("*"),
                 false,
             ),
         ]
     }
 
     #[must_use]
-    pub fn scope_field_views(&self) -> Vec<ScopeFieldView> {
+    pub fn scope_field_views(&self) -> Vec<ScopeFieldView<'_>> {
         if let Some(editor) = &self.scope_editor {
             return editor
                 .fields
@@ -866,7 +868,7 @@ impl App {
                 .map(|(idx, field)| {
                     ScopeFieldView::new(
                         field.label,
-                        field.value.clone(),
+                        field.value.as_str(),
                         idx == editor.focused_field_idx,
                     )
                 })
