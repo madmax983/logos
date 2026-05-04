@@ -62,6 +62,19 @@ impl StoredTransaction {
     }
 }
 
+/// Represents a correction as it exists in the persistence layer.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::{Correction, TransactionId};
+/// use logos_store::StoredCorrection;
+///
+/// let old_tx = TransactionId::new("tx-123").unwrap();
+/// let correction = Correction::new(old_tx, "Typo").unwrap();
+/// let stored = StoredCorrection::new(correction);
+/// assert_eq!(stored.correction().reason(), "Typo");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredCorrection {
     correction: Correction,
@@ -79,6 +92,16 @@ impl StoredCorrection {
     }
 }
 
+/// Represents a budget target explicitly set for a specific category prefix in a given month.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredBudgetTarget;
+///
+/// let target = StoredBudgetTarget::new("2024-05", "expenses:food", 500_00);
+/// assert_eq!(target.budget_cents(), 500_00);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredBudgetTarget {
     month_key: String,
@@ -112,6 +135,19 @@ impl StoredBudgetTarget {
     }
 }
 
+/// Represents metadata for an exported analytics artifact (e.g. Parquet file).
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredAnalyticsArtifactManifest;
+///
+/// let manifest = StoredAnalyticsArtifactManifest::new(
+///     "art-123", "journal", "s3://bucket/art-123.parquet", "hash",
+///     1, 100, 1000, 1000, 1000, None, "snap-key"
+/// );
+/// assert_eq!(manifest.row_count(), 100);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredAnalyticsArtifactManifest {
     artifact_id: String,
@@ -214,6 +250,19 @@ impl StoredAnalyticsArtifactManifest {
     }
 }
 
+/// Represents metadata for a batch of statement lines imported from a financial institution.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredImportBatch;
+///
+/// let batch = StoredImportBatch::new(
+///     "batch-1", "csv", "file://statement.csv", "key-1",
+///     50, 0, false, false, 1000
+/// );
+/// assert_eq!(batch.record_count(), 50);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredImportBatch {
     batch_id: String,
@@ -300,6 +349,16 @@ impl StoredImportBatch {
     }
 }
 
+/// Represents a mapping between an imported statement line and the transaction it produced.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredImportRecord;
+///
+/// let record = StoredImportRecord::new("hash-key", "batch-1", None, 1000);
+/// assert_eq!(record.batch_id(), "batch-1");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredImportRecord {
     content_hash_key: String,
@@ -345,6 +404,16 @@ impl StoredImportRecord {
     }
 }
 
+/// A raw statement line extracted from an import source before it is stored.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::NewStatementLine;
+///
+/// let line = NewStatementLine::new("file://s.csv", "2024-05-01", "Grocery", -50_00);
+/// assert_eq!(line.amount_cents(), -50_00);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewStatementLine {
     source_uri: String,
@@ -385,6 +454,16 @@ impl NewStatementLine {
     }
 }
 
+/// A new import record linking a statement line hash to a potential transaction before it is stored.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::NewImportRecord;
+///
+/// let record = NewImportRecord::new("hash-key", None);
+/// assert_eq!(record.content_hash_key(), "hash-key");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewImportRecord {
     content_hash_key: String,
@@ -440,6 +519,18 @@ impl NewImportRecord {
     }
 }
 
+/// Represents a raw statement line stored in the database.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredStatementLine;
+///
+/// let line = StoredStatementLine::new(
+///     "line-1", "batch-1", "uri", "2024-05-01", "Grocery", -50_00, None, 1000
+/// );
+/// assert_eq!(line.amount_cents(), -50_00);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredStatementLine {
     line_id: String,
@@ -518,6 +609,18 @@ impl StoredStatementLine {
     }
 }
 
+/// Represents the result of a reconciliation run verifying ledger balances against bank statements.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredReconciliationRun;
+///
+/// let run = StoredReconciliationRun::new(
+///     "run-1", "2024-05", "assets:checking", 1000_00, -50_00, 950_00, 950_00, 0, true, 1, 1, 0, 50_00, 1000
+/// );
+/// assert!(run.reconciled());
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredReconciliationRun {
     run_id: String,
@@ -739,6 +842,18 @@ mod tests {
         assert_eq!(run.created_at(), ts);
     }
 }
+/// Represents a sealed "month close" artifact locking down the financial state for a period.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredMonthClose;
+///
+/// let close = StoredMonthClose::new(
+///     "close-1", "2024-05", "assets:checking", "run-1", None, 1000
+/// );
+/// assert_eq!(close.month_key(), "2024-05");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredMonthClose {
     close_id: String,
@@ -800,6 +915,16 @@ impl StoredMonthClose {
     }
 }
 
+/// Indicates the status of an automated bank statement fetch operation.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredFetchRunStatus;
+///
+/// let status = StoredFetchRunStatus::Downloaded;
+/// assert_eq!(status, StoredFetchRunStatus::Downloaded);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StoredFetchRunStatus {
     Downloaded,
@@ -842,6 +967,16 @@ impl StoredFetchRunStatus {
     }
 }
 
+/// Represents the underlying file format of a downloaded statement artifact.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredFetchArtifactFormat;
+///
+/// let format = StoredFetchArtifactFormat::Csv;
+/// assert_eq!(format, StoredFetchArtifactFormat::Csv);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StoredFetchArtifactFormat {
     Csv,
@@ -867,6 +1002,20 @@ impl StoredFetchArtifactFormat {
     }
 }
 
+/// Represents the result and metadata of an automated bank statement fetch run.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::{StoredFetchRun, StoredFetchRunStatus, StoredFetchArtifactFormat};
+///
+/// let run = StoredFetchRun::new(
+///     "run-1", "source-1", "inst-1", "assets:checking", "2024-05",
+///     StoredFetchRunStatus::Downloaded, Some("path.csv"),
+///     Some(StoredFetchArtifactFormat::Csv), None, None, None, 1000
+/// );
+/// assert_eq!(run.run_id(), "run-1");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredFetchRun {
     run_id: String,

@@ -317,6 +317,19 @@ struct SequenceValueRow {
     sequence_value: i64,
 }
 
+/// A `PostgreSQL`-backed implementation of the `LedgerStore` trait.
+///
+/// This store manages a connection to a Postgres database and translates
+/// `logos` domain operations into SQL queries using `diesel`. It is the
+/// primary persistence mechanism for the `logos` engine in production.
+///
+/// ## Examples
+///
+/// ```no_run
+/// use logos_store_pg::PostgresStore;
+///
+/// let store = PostgresStore::connect("postgres://user:pass@localhost/db").unwrap();
+/// ```
 pub struct PostgresStore {
     connection: RefCell<PgConnection>,
 }
@@ -705,6 +718,16 @@ impl PostgresStore {
         )
     }
 
+    /// Establishes a new connection to the `PostgreSQL` database.
+    ///
+    /// ## Examples
+    ///
+    /// ```no_run
+    /// use logos_store_pg::PostgresStore;
+    ///
+    /// let store = PostgresStore::connect("postgres://user:pass@localhost/db").unwrap();
+    /// ```
+    ///
     /// # Errors
     /// Returns `StoreError` if connection fails.
     pub fn connect(database_url: &str) -> Result<Self, StoreError> {
@@ -728,11 +751,33 @@ impl PostgresStore {
         })
     }
 
+    /// Retrieves a mutable reference to the underlying `PgConnection`.
+    ///
+    /// ## Examples
+    ///
+    /// ```no_run
+    /// use logos_store_pg::PostgresStore;
+    ///
+    /// let store = PostgresStore::connect("postgres://...").unwrap();
+    /// let mut conn = store.connection_mut();
+    /// ```
     #[must_use]
     pub fn connection_mut(&self) -> RefMut<'_, PgConnection> {
         self.connection.borrow_mut()
     }
 
+    /// Fetches the names of migrations that have not yet been applied.
+    ///
+    /// ## Examples
+    ///
+    /// ```no_run
+    /// use logos_store_pg::PostgresStore;
+    ///
+    /// let mut store = PostgresStore::connect("postgres://...").unwrap();
+    /// let pending = store.pending_migrations().unwrap();
+    /// println!("Pending migrations: {:?}", pending);
+    /// ```
+    ///
     /// # Errors
     /// Returns `StoreError` on fetch failure.
     pub fn pending_migrations(&mut self) -> Result<Vec<String>, StoreError> {
@@ -740,6 +785,17 @@ impl PostgresStore {
         pending_migration_names(&mut connection)
     }
 
+    /// Executes all pending database migrations against the connection.
+    ///
+    /// ## Examples
+    ///
+    /// ```no_run
+    /// use logos_store_pg::PostgresStore;
+    ///
+    /// let mut store = PostgresStore::connect("postgres://...").unwrap();
+    /// let applied = store.run_migrations().unwrap();
+    /// ```
+    ///
     /// # Errors
     /// Returns `StoreError` on execution failure.
     pub fn run_migrations(&mut self) -> Result<Vec<String>, StoreError> {

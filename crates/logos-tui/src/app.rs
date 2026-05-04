@@ -18,6 +18,16 @@ const DEFAULT_EXPENSE_ACCOUNT_PREFIX: &str = "expenses:";
 const DEFAULT_REGISTER_ACCOUNT: &str = "assets:checking";
 const DEFAULT_REGISTER_ENTRY_LIMIT: usize = 10;
 
+/// Represents the active screen or view in the terminal interface.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::View;
+///
+/// let view = View::Home;
+/// assert_eq!(view, View::Home);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum View {
     Home,
@@ -27,6 +37,19 @@ pub enum View {
     Reconcile,
 }
 
+/// Represents user input events dispatched to the application.
+///
+/// Abstracting raw `crossterm` key events into domain-specific actions allows
+/// the UI to remain independent of terminal-specific implementation details.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::AppInput;
+///
+/// let input = AppInput::Char('q');
+/// assert_eq!(input, AppInput::Char('q'));
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppInput {
     Char(char),
@@ -40,6 +63,20 @@ pub enum AppInput {
     Quit,
 }
 
+/// Represents a field in the application's scope view (e.g. Month or Account selection).
+///
+/// This struct dictates the presentation of the current context the user is operating within.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::ScopeFieldView;
+///
+/// let view = ScopeFieldView::new("Month", "2024-05", true);
+/// assert!(view.focused());
+/// assert_eq!(view.label(), "Month");
+/// assert_eq!(view.value(), "2024-05");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ScopeFieldView {
     label: &'static str,
@@ -73,6 +110,30 @@ impl ScopeFieldView {
     }
 }
 
+/// A localized snapshot of the application's financial state for the Home view.
+///
+/// This read-only projection provides all the scalar data needed to render the Home
+/// screen cleanly without borrowing complex domain logic in the rendering cycle.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::HomeSnapshot;
+///
+/// let snapshot = HomeSnapshot::new(
+///     "2024-05",
+///     "assets:checking",
+///     "expenses:",
+///     1000_00,
+///     5000_00,
+///     4000_00,
+///     1000_00,
+///     Some(4500_00),
+///     Some(500_00),
+/// );
+/// assert_eq!(snapshot.month_key(), "2024-05");
+/// assert_eq!(snapshot.cashflow_cents(), 1000_00);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HomeSnapshot {
     month_key: String,
@@ -159,6 +220,26 @@ impl HomeSnapshot {
     }
 }
 
+/// A localized snapshot of the application's budget state for rendering.
+///
+/// Provides the data needed to display budget tracking and variance without
+/// coupling the view layer to the underlying storage implementation.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::BudgetSnapshot;
+///
+/// let snapshot = BudgetSnapshot::new(
+///     "2024-05",
+///     "expenses:",
+///     Some(5000_00),
+///     4000_00,
+///     Some(1000_00),
+/// );
+/// assert_eq!(snapshot.month_key(), "2024-05");
+/// assert_eq!(snapshot.budget_variance_cents(), Some(1000_00));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BudgetSnapshot {
     month_key: String,
@@ -212,6 +293,23 @@ impl BudgetSnapshot {
     }
 }
 
+/// A snapshot representing a single transactional event in the register view.
+///
+/// Used to populate the data grid displaying chronological account activity.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::RegisterActivityRecord;
+///
+/// let record = RegisterActivityRecord::new(
+///     "2024-05-01 12:00:00",
+///     "Grocery Run",
+///     -100_00,
+/// );
+/// assert_eq!(record.description(), "Grocery Run");
+/// assert_eq!(record.amount_cents(), -100_00);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RegisterActivityRecord {
     timestamp: String,
@@ -245,6 +343,20 @@ impl RegisterActivityRecord {
     }
 }
 
+/// A localized snapshot of an account's transaction history for rendering.
+///
+/// Contains the aggregated list of activities to display in the register table.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::{RegisterSnapshot, RegisterActivityRecord};
+///
+/// let record = RegisterActivityRecord::new("2024-05-01", "Grocery Run", -100_00);
+/// let snapshot = RegisterSnapshot::new("assets:checking", 1000_00, vec![record]);
+/// assert_eq!(snapshot.account(), "assets:checking");
+/// assert_eq!(snapshot.activity().len(), 1);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RegisterSnapshot {
     account: String,
@@ -299,6 +411,24 @@ pub trait RegisterDataSource {
     fn fetch_register_snapshot(&self, account: &str) -> Option<RegisterSnapshot>;
 }
 
+/// A summary record of a specific reconciliation run.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::ReconcileRunRecord;
+///
+/// let record = ReconcileRunRecord::new(
+///     "run-123",
+///     "2024-05",
+///     "assets:checking",
+///     0,
+///     true,
+///     0,
+/// );
+/// assert_eq!(record.run_id(), "run-123");
+/// assert!(record.reconciled());
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReconcileRunRecord {
     run_id: String,
@@ -360,6 +490,22 @@ impl ReconcileRunRecord {
     }
 }
 
+/// A snapshot representing a single statement line imported during reconciliation.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::ReconcileStatementLineRecord;
+///
+/// let record = ReconcileStatementLineRecord::new(
+///     "line-1",
+///     "2024-05-01",
+///     "Grocery Store",
+///     -100_00,
+/// );
+/// assert_eq!(record.line_id(), "line-1");
+/// assert_eq!(record.amount_cents(), -100_00);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReconcileStatementLineRecord {
     line_id: String,
@@ -647,6 +793,19 @@ impl ScopeEditorState {
     }
 }
 
+/// The root application state orchestrating the terminal interface.
+///
+/// It holds the active state (e.g., current view, user input buffers, loaded data snapshots)
+/// and exposes methods to mutate that state based on key events.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::{App, View};
+///
+/// let app = App::default();
+/// assert_eq!(app.view(), View::Home);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
     view: View,

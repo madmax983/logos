@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-04 - Unpacking the Storage and App Structures
+**Confusion:** The `logos-store` module `model.rs` contained several undocumented `Stored*` data structures and `logos-store-pg` lacked `PostgresStore` doctests. Similarly, the `logos-tui` orchestrator app had several UI state structures undocumented, violating the standard to document all public items.
+**Clarification:** I added `## Examples` doc tests and comments describing the structural purpose of the structs in `logos-store/src/model.rs`, `logos-store-pg/src/store.rs`, `logos-store-pg/src/migrate.rs`, and `logos-tui/src/app.rs`. I used `no_run` in the `PostgresStore` tests to avoid integration failures in the automated tests, while satisfying the need for examples.
