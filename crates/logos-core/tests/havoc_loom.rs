@@ -6,7 +6,7 @@
 // This proves that `FireSimulator` does not natively recover from poison errors
 // when exposed to naive multi-threading, satisfying the chaos requirement.
 
-use logos_core::fire::FireSimulator;
+use logos_core::FireSimulator;
 use loom::sync::{Arc, Mutex};
 use loom::thread;
 

@@ -48,9 +48,12 @@ pub(crate) mod domain;
 pub(crate) mod error;
 /// Experimental features and proof-of-concepts. Use at your own risk.
 pub(crate) mod experimental;
-pub use experimental::*;
 pub(crate) mod planning;
-pub use planning::*;
+
+pub use experimental::*;
+pub use planning::fire::{FireConfig, FireSimulator, UpcomingVest};
+pub use planning::net_worth_projector::{NetWorthProjector, ProjectedMonth};
+pub use planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
 
 pub use domain::account::{AccountId, AccountType};
 pub use domain::budget::{BudgetMonth, rollover_end_balance};

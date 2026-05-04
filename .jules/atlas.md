@@ -4,3 +4,6 @@
 **[The Leaky Modules]**
 **Tangle:** In `logos-core` and `logos-fetch`, internal module implementations (`domain`, `planning`, `experimental`, `adapters`) were exposed using `pub mod`, violating the architectural principle of strict public APIs and leaking internal details.
 **Blueprint:** Updated visibility modifiers from `pub mod` to `pub(crate) mod` within these crates to correctly enforce the Facade pattern and encapsulate domain logic.
+**[The Leaky Modules]**
+**Tangle:** In `logos-core`, internal module implementations (`planning`) were exposed using `pub mod` and heavily re-exported with glob imports (`pub use planning::*;`), violating the architectural principle of strict public APIs and leaking internal details. Attempting to change `domain` and `experimental` required similar work, but the largest impact was clearly visible with `planning`.
+**Blueprint:** Updated visibility modifiers from `pub mod` to `pub(crate) mod` for the `planning` module. Replaced glob imports with explicit struct/type re-exports in `logos-core/src/lib.rs`. Updated dependent crates (`logos-cli`) and test files to use the explicit top-level imports (`logos_core::FireSimulator`) instead of internal module paths (`logos_core::fire::FireSimulator`).
