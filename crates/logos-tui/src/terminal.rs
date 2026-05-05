@@ -177,6 +177,26 @@ pub fn render(frame: &mut Frame<'_>, app: &App, runtime_available: bool) {
     frame.render_widget(footer, layout[4]);
 }
 
+/// Reads a terminal event and converts it into a semantic application input, if applicable.
+///
+/// This acts as the bridge between raw crossterm events (like a key press) and
+/// the high-level commands understood by the `App` (like navigating tabs or entering text).
+///
+/// ## Examples
+///
+/// ```rust
+/// use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers, KeyEventKind, KeyEventState};
+/// use logos_tui::{read_event_input, AppInput};
+///
+/// let key_event = KeyEvent {
+///     code: KeyCode::Left,
+///     modifiers: KeyModifiers::NONE,
+///     kind: KeyEventKind::Press,
+///     state: KeyEventState::NONE,
+/// };
+/// let input = read_event_input(&Event::Key(key_event));
+/// assert_eq!(input, Some(AppInput::PrevView));
+/// ```
 #[must_use]
 pub fn read_event_input(event: &Event) -> Option<AppInput> {
     match event {
@@ -185,6 +205,24 @@ pub fn read_event_input(event: &Event) -> Option<AppInput> {
     }
 }
 
+/// Converts a specific `KeyEvent` into a semantic application input.
+///
+/// Ignored events (such as key releases) or keys without bound actions return `None`.
+///
+/// ## Examples
+///
+/// ```rust
+/// use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, KeyEventKind, KeyEventState};
+/// use logos_tui::{key_event_to_app_input, AppInput};
+///
+/// let key_event = KeyEvent {
+///     code: KeyCode::Esc,
+///     modifiers: KeyModifiers::NONE,
+///     kind: KeyEventKind::Press,
+///     state: KeyEventState::NONE,
+/// };
+/// assert_eq!(key_event_to_app_input(key_event), Some(AppInput::Cancel));
+/// ```
 #[must_use]
 #[allow(clippy::missing_const_for_fn)]
 pub fn key_event_to_app_input(key_event: KeyEvent) -> Option<AppInput> {
@@ -208,6 +246,24 @@ pub fn key_event_to_app_input(key_event: KeyEvent) -> Option<AppInput> {
     }
 }
 
+/// Extracts a raw character from a `KeyEvent` if it corresponds to an application character input.
+///
+/// This is used internally to interpret alphanumeric inputs for text fields.
+///
+/// ## Examples
+///
+/// ```rust
+/// use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, KeyEventKind, KeyEventState};
+/// use logos_tui::key_event_to_app_char;
+///
+/// let key_event = KeyEvent {
+///     code: KeyCode::Char('x'),
+///     modifiers: KeyModifiers::NONE,
+///     kind: KeyEventKind::Press,
+///     state: KeyEventState::NONE,
+/// };
+/// assert_eq!(key_event_to_app_char(key_event), Some('x'));
+/// ```
 #[must_use]
 pub fn key_event_to_app_char(key_event: KeyEvent) -> Option<char> {
     key_event_to_app_input(key_event).and_then(app_input_to_char)
@@ -255,6 +311,19 @@ pub const fn view_title(view: View) -> &'static str {
     }
 }
 
+/// Generates the rendered lines for the Scope panel based on the application's current scope state.
+///
+/// The Scope panel displays the active filtering parameters (like Month or Account Prefix).
+///
+/// ## Examples
+///
+/// ```rust
+/// use logos_tui::{App, view_scope_lines};
+///
+/// let app = App::new();
+/// let lines = view_scope_lines(&app);
+/// assert!(!lines.is_empty());
+/// ```
 #[must_use]
 pub fn view_scope_lines(app: &App) -> Vec<String> {
     let editing = app.is_scope_editing();
@@ -364,6 +433,20 @@ fn reconcile_status_lines(app: &App) -> Vec<String> {
     ]
 }
 
+/// Generates the rendered lines for the Status panel based on the active view and runtime state.
+///
+/// The Status panel dynamically displays relevant metrics (e.g., Budget Variance, Register Balance)
+/// depending on which tab is currently selected.
+///
+/// ## Examples
+///
+/// ```rust
+/// use logos_tui::{App, view_status_lines};
+///
+/// let app = App::new();
+/// let lines = view_status_lines(&app, true);
+/// assert!(!lines.is_empty());
+/// ```
 #[must_use]
 pub fn view_status_lines(app: &App, runtime_available: bool) -> Vec<Line<'static>> {
     let mode = if app.is_scope_editing() {

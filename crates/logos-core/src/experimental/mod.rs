@@ -1,3 +1,11 @@
+//! Experimental features and playground for new financial concepts.
+//!
+//! This module houses incomplete, exploratory, or highly speculative algorithms that
+//! are not yet ready for the core domain. It acts as an incubator for ideas like
+//! Monte Carlo simulations, advanced anomaly detection, and novel visualizations.
+//! By keeping these isolated, the core ledger invariants remain stable while
+//! still allowing rapid iteration on new features.
+
 #[cfg(feature = "nova")]
 pub mod life_energy_calculator;
 

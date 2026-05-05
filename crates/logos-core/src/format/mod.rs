@@ -1,3 +1,10 @@
+//! High-performance formatting utilities for human-readable output.
+//!
+//! This module provides pure, dependency-light functions for converting domain
+//! primitives (like cents or microsecond timestamps) into localized, readable strings.
+//! Performance is critical here, as these formatters are often called inside tight
+//! rendering loops for the TUI or web exports.
+
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(
