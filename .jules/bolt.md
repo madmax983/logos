@@ -24,3 +24,6 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+**Cow String Optimization**
+**Learning:** Returning fresh `String` clones multiple times per frame for UI scopes creates unnecessary heap allocations and can be easily optimized using `Cow<'a, str>`.
+**Action:** Avoid unconditionally cloning application state strings into UI view structs. Instead, use `std::borrow::Cow<'a, str>` to borrow strings directly from the application state.
