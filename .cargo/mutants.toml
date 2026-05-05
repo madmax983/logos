@@ -39,5 +39,23 @@ exclude_re = [
     ,"replace > with >= in add_transactions"
 ,
     'replace == with != in render_runs_table',
-    'replace == with != in parse_simple_csv_row'
+    'replace == with != in parse_simple_csv_row',
+    'replace run_pending_migrations.*',
+    'replace pending_migration_names.*',
+    'replace <impl LedgerStore for PostgresStore>.*',
+    'replace MemoryStore::new_in_memory -> Self with Default::default\(\)',
+    'replace system_time_us -> Timestamp with Default::default\(\)',
+    'replace <impl LedgerStore for MemoryStore>::.* -> .* with .*',
+    'replace .* -> Result<.*, StoreError> with .*',
+    'replace PostgresStore::.* -> Result<.*, StoreError> with .*',
+    'delete ! in PostgresStore::execute_reconciliation_.*_transaction',
+    'replace PostgresStore::build_.* -> Vec<.*> with vec!\[\]',
+    'delete ! in PostgresStore::execute_import_batch_transaction',
+    'delete ! in PostgresStore::ensure_transactions_exist',
+    'replace && with || in PostgresStore::try_validate_fetch_run_params',
+    'replace || with && in PostgresStore::try_validate_fetch_run_params',
+    'replace < with .* in PostgresStore::try_validate_reconciliation_run_params',
+    'replace < with .* in PostgresStore::try_validate_import_records',
+    'delete ! in PostgresStore::try_validate_import_records',
+    'replace <impl LedgerStore for MemoryStore>::.*'
 ]

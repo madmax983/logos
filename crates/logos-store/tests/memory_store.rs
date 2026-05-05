@@ -266,3 +266,362 @@ fn memory_store_rejects_unknown_related_records() {
         logos_store::StoreError::UnknownTransaction { .. }
     ));
 }
+
+#[test]
+fn memory_store_rejects_negative_duplicate_count_in_import_batch() {
+    let mut store = MemoryStore::new();
+    let err = store
+        .write_import_batch(
+            "csv",
+            "uri",
+            "batch_key",
+            -1, // Negative duplicate count
+            false,
+            false,
+            &[],
+        )
+        .expect_err("should reject negative duplicate count");
+
+    assert!(
+        matches!(err, logos_store::StoreError::PersistFailed { message } if message.contains("duplicate_count must be non-negative"))
+    );
+}
+
+#[test]
+fn memory_store_rejects_invalid_fetch_run_status_metadata() {
+    let mut store = MemoryStore::new();
+    let err = store
+        .write_fetch_run(
+            "source-1",
+            "bank-1",
+            "assets:checking",
+            "2026-03",
+            StoredFetchRunStatus::Downloaded, // Needs metadata
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect_err("should reject missing metadata");
+
+    assert!(
+        matches!(err, logos_store::StoreError::PersistFailed { message } if message.contains("requires artifact path"))
+    );
+}
+
+#[test]
+fn memory_store_rejects_negative_reconciliation_metrics() {
+    let mut store = MemoryStore::new();
+
+    for (postings, inflow, outflow) in [(-1, 0, 0), (0, -1, 0), (0, 0, -1)] {
+        let err = store
+            .write_reconciliation_run(
+                "2026-03",
+                "assets:checking",
+                0,
+                0,
+                0,
+                0,
+                0,
+                true,
+                postings,
+                inflow,
+                outflow,
+                &[],
+            )
+            .expect_err("should reject negative metrics");
+
+        assert!(matches!(err, logos_store::StoreError::PersistFailed { .. }));
+    }
+}
+
+#[test]
+fn memory_store_rejects_negative_reconciliation_and_close_metrics() {
+    let mut store = MemoryStore::new();
+
+    for (postings, inflow, outflow) in [(-1, 0, 0), (0, -1, 0), (0, 0, -1)] {
+        let err = store
+            .write_reconciliation_run_and_month_close(
+                "2026-03",
+                "assets:checking",
+                0,
+                0,
+                0,
+                0,
+                0,
+                true,
+                postings,
+                inflow,
+                outflow,
+                &[],
+                None,
+            )
+            .expect_err("should reject negative metrics");
+
+        assert!(matches!(err, logos_store::StoreError::PersistFailed { .. }));
+    }
+}
+
+#[test]
+fn memory_store_rejects_unknown_artifact_on_close() {
+    let mut store = MemoryStore::new();
+
+    let err = store
+        .write_reconciliation_run_and_month_close(
+            "2026-03",
+            "assets:checking",
+            0,
+            0,
+            0,
+            0,
+            0,
+            true,
+            0,
+            0,
+            0,
+            &[],
+            Some("unknown_artifact"),
+        )
+        .expect_err("should reject unknown artifact");
+
+    assert!(
+        matches!(err, logos_store::StoreError::UnknownArtifact { artifact_id } if artifact_id == "unknown_artifact")
+    );
+
+    // Also test standalone month_close
+    let recon_run = store
+        .write_reconciliation_run(
+            "2026-03",
+            "assets:checking",
+            0,
+            0,
+            0,
+            0,
+            0,
+            true,
+            0,
+            0,
+            0,
+            &[],
+        )
+        .unwrap();
+
+    let err2 = store
+        .write_month_close(
+            "2026-03",
+            "assets:checking",
+            recon_run.run_id(),
+            Some("unknown_artifact_2"),
+        )
+        .expect_err("should reject unknown artifact");
+
+    assert!(
+        matches!(err2, logos_store::StoreError::UnknownArtifact { artifact_id } if artifact_id == "unknown_artifact_2")
+    );
+}
+
+#[test]
+fn memory_store_rejects_duplicate_month_close() {
+    let mut store = MemoryStore::new();
+
+    store
+        .write_reconciliation_run_and_month_close(
+            "2026-03",
+            "assets:checking",
+            0,
+            0,
+            0,
+            0,
+            0,
+            true,
+            0,
+            0,
+            0,
+            &[],
+            None,
+        )
+        .unwrap();
+
+    let err = store
+        .write_reconciliation_run_and_month_close(
+            "2026-03",
+            "assets:checking",
+            0,
+            0,
+            0,
+            0,
+            0,
+            true,
+            0,
+            0,
+            0,
+            &[],
+            None,
+        )
+        .expect_err("should reject duplicate month close");
+
+    assert!(
+        matches!(err, logos_store::StoreError::PersistFailed { message } if message.contains("is already closed"))
+    );
+
+    let recon_run = store
+        .write_reconciliation_run(
+            "2026-03",
+            "assets:checking",
+            0,
+            0,
+            0,
+            0,
+            0,
+            true,
+            0,
+            0,
+            0,
+            &[],
+        )
+        .unwrap();
+
+    let err2 = store
+        .write_month_close("2026-03", "assets:checking", recon_run.run_id(), None)
+        .expect_err("should reject duplicate month close from standalone");
+
+    assert!(
+        matches!(err2, logos_store::StoreError::PersistFailed { message } if message.contains("is already closed"))
+    );
+}
+
+#[test]
+fn memory_store_rejects_unknown_artifact_manifest_supersede() {
+    let mut store = MemoryStore::new();
+    let err = store
+        .write_analytics_artifact_manifest(
+            "report",
+            "file:///tmp/report.parquet",
+            "sha256:artifact",
+            1,
+            2,
+            1_000,
+            2_000,
+            Some("unknown_manifest"),
+        )
+        .expect_err("should reject unknown manifest");
+
+    assert!(
+        matches!(err, logos_store::StoreError::UnknownArtifact { artifact_id } if artifact_id == "unknown_manifest")
+    );
+}
+
+#[test]
+fn memory_store_rejects_reconciliation_and_close_with_unknown_transactions() {
+    let mut store = MemoryStore::new();
+    let missing_txn = TransactionId::new("txn-99").unwrap();
+    let err = store
+        .write_reconciliation_run_and_month_close(
+            "2026-03",
+            "assets:checking",
+            0,
+            0,
+            0,
+            0,
+            0,
+            true,
+            0,
+            0,
+            0,
+            std::slice::from_ref(&missing_txn),
+            None,
+        )
+        .expect_err("should reject unknown transaction");
+
+    assert!(
+        matches!(err, logos_store::StoreError::UnknownTransaction { transaction_id } if transaction_id == missing_txn)
+    );
+}
+
+#[test]
+fn memory_store_rejects_fetch_run_with_only_some_metadata() {
+    let mut store = MemoryStore::new();
+
+    // Only opening balance
+    let err = store
+        .write_fetch_run(
+            "source-1",
+            "bank-1",
+            "assets:checking",
+            "2026-03",
+            StoredFetchRunStatus::Downloaded,
+            None,
+            None,
+            Some(100),
+            None,
+            None,
+        )
+        .expect_err("should reject missing metadata parts");
+
+    assert!(
+        matches!(err, logos_store::StoreError::PersistFailed { message } if message.contains("requires artifact path"))
+    );
+
+    // Only closing balance
+    let err2 = store
+        .write_fetch_run(
+            "source-1",
+            "bank-1",
+            "assets:checking",
+            "2026-03",
+            StoredFetchRunStatus::Downloaded,
+            None,
+            None,
+            None,
+            Some(100),
+            None,
+        )
+        .expect_err("should reject missing metadata parts");
+
+    assert!(
+        matches!(err2, logos_store::StoreError::PersistFailed { message } if message.contains("requires artifact path"))
+    );
+
+    // Only artifact path
+    let err3 = store
+        .write_fetch_run(
+            "source-1",
+            "bank-1",
+            "assets:checking",
+            "2026-03",
+            StoredFetchRunStatus::Downloaded,
+            Some("/tmp"),
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect_err("should reject missing metadata parts");
+
+    assert!(
+        matches!(err3, logos_store::StoreError::PersistFailed { message } if message.contains("requires artifact path"))
+    );
+}
+
+#[test]
+
+fn memory_store_normalizes_empty_error_summary_to_none() {
+    let mut store = MemoryStore::new();
+    let run = store
+        .write_fetch_run(
+            "source-1",
+            "bank-1",
+            "assets:checking",
+            "2026-03",
+            StoredFetchRunStatus::Failed,
+            None,
+            None,
+            None,
+            None,
+            Some(""),
+        )
+        .expect("should write");
+
+    assert!(run.error_summary().is_none());
+}
