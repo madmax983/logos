@@ -267,6 +267,15 @@ pub fn net_worth_project(
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
     let (timeline, _) = projector.project_timeline(months);
 
+    let output = render_net_worth_output(&timeline);
+    println!("{output}");
+
+    Ok(())
+}
+
+fn render_net_worth_output(
+    timeline: &[logos_core::net_worth_projector::ProjectedMonth],
+) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
     table.set_header(vec!["Month", "Net Worth", "Saved Cash", "Vested Value"]);
@@ -281,12 +290,7 @@ pub fn net_worth_project(
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
-
-    Ok(())
+    table.to_string()
 }
 
 /// Handles `ledger analytics fire-sim`.
@@ -423,6 +427,34 @@ mod fire_sim_tests {
     fn test_net_worth_project_calculates_correctly() {
         let result = super::net_worth_project(10_000_000, 500_000, 12);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_net_worth_output_is_deterministic() {
+        use logos_core::net_worth_projector::ProjectedMonth;
+        let timeline = vec![
+            ProjectedMonth {
+                month_index: 1,
+                net_worth_cents: 10_000_000,
+                saved_cents: 10_000_000,
+                vested_value_cents: 0,
+            },
+            ProjectedMonth {
+                month_index: 2,
+                net_worth_cents: 10_500_000,
+                saved_cents: 10_500_000,
+                vested_value_cents: 0,
+            },
+        ];
+        let output = super::render_net_worth_output(&timeline);
+        assert!(output.contains("Month"));
+        assert!(output.contains("Net Worth"));
+        assert!(output.contains("Saved Cash"));
+        assert!(output.contains("Vested Value"));
+        assert!(output.contains("1"));
+        assert!(output.contains("$100,000.00"));
+        assert!(output.contains("2"));
+        assert!(output.contains("$105,000.00"));
     }
 
     #[test]
