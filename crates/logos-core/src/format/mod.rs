@@ -1,3 +1,41 @@
+//! UI Formatting Primitives
+//!
+//! This module provides pure functions for formatting internal domain representations
+//! (like microseconds or cents) into human-readable strings. It ensures consistency
+//! in how numbers, dates, and currencies are presented across the entire `logos` ecosystem.
+//!
+//! ## Examples
+//!
+//! ```
+//! use logos_core::format::{currency, us_timestamp};
+//!
+//! // Format monetary values consistently
+//! assert_eq!(currency(1500_50), "$1,500.50");
+//!
+//! // Format timestamps into readable UTC strings
+//! assert_eq!(us_timestamp(1672531200_000000), "2023-01-01 00:00:00 UTC");
+//! ```
+
+/// Converts a UNIX microsecond timestamp into a human-readable UTC date-time string.
+///
+/// This function is used extensively in UI views and CLI outputs where raw microsecond
+/// integers would be illegible to users. If the timestamp is wildly out of bounds and
+/// cannot be mapped to a valid `DateTime`, it safely falls back to returning the raw
+/// stringified integer rather than panicking, ensuring the application remains robust.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::format::us_timestamp;
+///
+/// // A valid timestamp for Jan 1, 2023
+/// let dt_str = us_timestamp(1672531200_000000);
+/// assert_eq!(dt_str, "2023-01-01 00:00:00 UTC");
+///
+/// // An out-of-bounds timestamp safely falls back to its string representation
+/// let bad_str = us_timestamp(i64::MAX);
+/// assert_eq!(bad_str, "9223372036854775807");
+/// ```
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(
@@ -13,6 +51,15 @@ pub fn us_timestamp(us: i64) -> String {
 /// causing O(n^2) shifts of all existing bytes per character. By pre-allocating the string capacity,
 /// iterating forward over the bytes, and using `push`, we achieve O(n) performance
 /// and eliminate intermediate allocations on the formatting hot path.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::format::currency;
+///
+/// assert_eq!(currency(150_000_000), "$1,500,000.00");
+/// assert_eq!(currency(-50), "-$0.50");
+/// ```
 #[must_use]
 pub fn currency(cents: i64) -> String {
     let sign = if cents < 0 { "-" } else { "" };
