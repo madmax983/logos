@@ -66,7 +66,14 @@ impl GoalSeeker {
         let mut best_savings: Option<i64> = None;
 
         // Perform binary search
+        // Add a safety check for infinite loops caused by mutations since this involves a heavy NetWorthProjector inside
+        let mut iter = 0;
         while low <= high {
+            iter += 1;
+            if iter > 100 {
+                break;
+            }
+
             // Prevent overflow during midpoint calculation
             let mid = low + (high - low) / 2;
 
@@ -158,6 +165,22 @@ mod tests {
             .find_required_savings(15_000_000, 10)
             .expect("should find a solution");
         assert_eq!(required, 1_000_000);
+    }
+
+    #[test]
+    fn test_goal_seeker_infinite_loop_mutants() {
+        let seeker = GoalSeeker::new(5_000_000);
+
+        let required = seeker.find_required_savings(100_000_000, 10);
+
+        assert_eq!(required, Some(9_500_000));
+
+        // This causes target_cents.saturating_sub to be i64::MAX
+        // And then saturating_add(1_000_000_000) is also i64::MAX
+        // Then it does binary search over 0..=i64::MAX
+        // It should find a solution since saturating math allows saving ~ i64::MAX / 10
+        let required_impossible = seeker.find_required_savings(i64::MAX, 10);
+        assert_eq!(required_impossible, Some(922_337_203_684_977_581));
     }
 
     #[test]
