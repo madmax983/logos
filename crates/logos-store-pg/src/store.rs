@@ -317,10 +317,12 @@ struct SequenceValueRow {
     sequence_value: i64,
 }
 
+#[allow(missing_docs)]
 pub struct PostgresStore {
     connection: RefCell<PgConnection>,
 }
 
+#[allow(missing_docs)]
 impl PostgresStore {
     #[allow(clippy::too_many_arguments)]
     const fn build_import_batch_row<'a>(
@@ -1730,6 +1732,7 @@ impl<'a> From<&MonthClosePayload<'a>> for NewMonthCloseRow<'a> {
     }
 }
 
+#[allow(missing_docs)]
 impl LedgerStore for PostgresStore {
     fn transaction_count(&self) -> usize {
         expect_read("transaction_count", self.try_transaction_count())

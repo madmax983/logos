@@ -5,6 +5,7 @@ use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 
 use logos_store::StoreError;
 
+/// Diesel migrations embedded directly into the binary to ensure schema synchronization on startup.
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 /// # Errors

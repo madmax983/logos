@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2026-05-15 - The Verbose Getters
+**Confusion:** Resolving `missing_docs` warnings on internal data layer POJOs with auto-generated noise like "Returns the value" violates the Bard persona.
+**Clarification:** Suppressed `missing_docs` directly on pure data structs and traits via `#[allow(missing_docs)]` to keep documentation meaningful and narrative-driven.

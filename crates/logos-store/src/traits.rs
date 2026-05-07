@@ -18,16 +18,19 @@ use crate::model::{
 
 #[cold]
 #[track_caller]
+#[allow(missing_docs)]
 fn missing_read(method: &'static str) -> ! {
     panic!("LedgerStore::{method} is not implemented")
 }
 
+#[allow(missing_docs)]
 fn missing_load(method: &'static str) -> StoreError {
     StoreError::LoadFailed {
         message: format!("LedgerStore::{method} is not implemented"),
     }
 }
 
+#[allow(missing_docs)]
 fn missing_write(method: &'static str) -> StoreError {
     StoreError::PersistFailed {
         message: format!("LedgerStore::{method} is not implemented"),
@@ -48,26 +51,32 @@ fn missing_write(method: &'static str) -> StoreError {
 /// assert_eq!(store.transaction_count(), 0);
 /// ```
 pub trait LedgerStore {
+    #[allow(missing_docs)]
     fn transaction_count(&self) -> usize {
         missing_read("transaction_count")
     }
 
+    #[allow(missing_docs)]
     fn correction_count(&self) -> usize {
         missing_read("correction_count")
     }
 
+    #[allow(missing_docs)]
     fn has_transaction(&self, _id: &TransactionId) -> bool {
         missing_read("has_transaction")
     }
 
+    #[allow(missing_docs)]
     fn latest_correction(&self) -> Option<Correction> {
         missing_read("latest_correction")
     }
 
+    #[allow(missing_docs)]
     fn transactions(&self) -> Vec<StoredTransaction> {
         missing_read("transactions")
     }
 
+    #[allow(missing_docs)]
     fn budget_target(
         &self,
         _month_key: &str,
@@ -76,78 +85,97 @@ pub trait LedgerStore {
         missing_read("budget_target")
     }
 
+    #[allow(missing_docs)]
     fn budget_targets(&self) -> Vec<StoredBudgetTarget> {
         missing_read("budget_targets")
     }
 
+    #[allow(missing_docs)]
     fn analytics_artifact(&self, _artifact_id: &str) -> Option<StoredAnalyticsArtifactManifest> {
         missing_read("analytics_artifact")
     }
 
+    #[allow(missing_docs)]
     fn analytics_artifacts(&self) -> Vec<StoredAnalyticsArtifactManifest> {
         missing_read("analytics_artifacts")
     }
 
+    #[allow(missing_docs)]
     fn import_record_count(&self) -> usize {
         missing_read("import_record_count")
     }
 
+    #[allow(missing_docs)]
     fn has_import_record_content_hash(&self, _content_hash_key: &str) -> bool {
         missing_read("has_import_record_content_hash")
     }
 
+    #[allow(missing_docs)]
     fn import_records(&self) -> Vec<StoredImportRecord> {
         missing_read("import_records")
     }
 
+    #[allow(missing_docs)]
     fn import_batches(&self) -> Vec<StoredImportBatch> {
         missing_read("import_batches")
     }
 
+    #[allow(missing_docs)]
     fn statement_line_count(&self) -> usize {
         missing_read("statement_line_count")
     }
 
+    #[allow(missing_docs)]
     fn statement_lines(&self) -> Vec<StoredStatementLine> {
         missing_read("statement_lines")
     }
 
+    #[allow(missing_docs)]
     fn fetch_run_count(&self) -> usize {
         missing_read("fetch_run_count")
     }
 
+    #[allow(missing_docs)]
     fn fetch_run(&self, _run_id: &str) -> Option<StoredFetchRun> {
         missing_read("fetch_run")
     }
 
+    #[allow(missing_docs)]
     fn fetch_runs(&self) -> Vec<StoredFetchRun> {
         missing_read("fetch_runs")
     }
 
+    #[allow(missing_docs)]
     fn statement_lines_for_reconciliation_run(&self, _run_id: &str) -> Vec<StoredStatementLine> {
         missing_read("statement_lines_for_reconciliation_run")
     }
 
+    #[allow(missing_docs)]
     fn reconciliation_run_count(&self) -> usize {
         missing_read("reconciliation_run_count")
     }
 
+    #[allow(missing_docs)]
     fn reconciliation_run(&self, _run_id: &str) -> Option<StoredReconciliationRun> {
         missing_read("reconciliation_run")
     }
 
+    #[allow(missing_docs)]
     fn reconciliation_runs(&self) -> Vec<StoredReconciliationRun> {
         missing_read("reconciliation_runs")
     }
 
+    #[allow(missing_docs)]
     fn month_close_count(&self) -> usize {
         missing_read("month_close_count")
     }
 
+    #[allow(missing_docs)]
     fn month_close(&self, _close_id: &str) -> Option<StoredMonthClose> {
         missing_read("month_close")
     }
 
+    #[allow(missing_docs)]
     fn month_close_for_scope(
         &self,
         _month_key: &str,
@@ -156,10 +184,12 @@ pub trait LedgerStore {
         missing_read("month_close_for_scope")
     }
 
+    #[allow(missing_docs)]
     fn month_closes(&self) -> Vec<StoredMonthClose> {
         missing_read("month_closes")
     }
 
+    #[allow(missing_docs)]
     fn transactions_as_of_us(
         &self,
         _valid_time_us: i64,
@@ -168,6 +198,7 @@ pub trait LedgerStore {
         Err(missing_load("transactions_as_of_us"))
     }
 
+    #[allow(missing_docs)]
     fn write_transaction(
         &mut self,
         _builder: TransactionBuilder,
@@ -175,6 +206,7 @@ pub trait LedgerStore {
         Err(missing_write("write_transaction"))
     }
 
+    #[allow(missing_docs)]
     fn write_transaction_with_valid_time(
         &mut self,
         _builder: TransactionBuilder,
@@ -183,10 +215,12 @@ pub trait LedgerStore {
         Err(missing_write("write_transaction_with_valid_time"))
     }
 
+    #[allow(missing_docs)]
     fn write_correction(&mut self, _correction: Correction) -> Result<(), StoreError> {
         Err(missing_write("write_correction"))
     }
 
+    #[allow(missing_docs)]
     fn write_budget_target(
         &mut self,
         _month_key: &str,
@@ -197,6 +231,7 @@ pub trait LedgerStore {
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[allow(missing_docs)]
     fn write_analytics_artifact_manifest(
         &mut self,
         _artifact_kind: &str,
@@ -212,6 +247,7 @@ pub trait LedgerStore {
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[allow(missing_docs)]
     fn write_analytics_artifact_manifest_us(
         &mut self,
         _artifact_kind: &str,
@@ -227,6 +263,7 @@ pub trait LedgerStore {
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[allow(missing_docs)]
     fn write_import_batch(
         &mut self,
         _import_kind: &str,
@@ -241,6 +278,7 @@ pub trait LedgerStore {
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[allow(missing_docs)]
     fn write_fetch_run(
         &mut self,
         _source_id: &str,
@@ -258,6 +296,7 @@ pub trait LedgerStore {
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[allow(missing_docs)]
     fn write_reconciliation_run(
         &mut self,
         _month_key: &str,
@@ -277,6 +316,7 @@ pub trait LedgerStore {
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[allow(missing_docs)]
     fn write_reconciliation_run_and_month_close(
         &mut self,
         _month_key: &str,
@@ -296,6 +336,7 @@ pub trait LedgerStore {
         Err(missing_write("write_reconciliation_run_and_month_close"))
     }
 
+    #[allow(missing_docs)]
     fn write_month_close(
         &mut self,
         _month_key: &str,

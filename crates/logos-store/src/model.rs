@@ -4,7 +4,9 @@
 
 use logos_core::{Correction, Transaction, TransactionId};
 
+#[allow(missing_docs)]
 pub type Timestamp = i64;
+#[allow(missing_docs)]
 pub type BudgetTargetKey = (String, String);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,6 +34,7 @@ pub struct StoredTransaction {
     effective_at: Timestamp,
 }
 
+#[allow(missing_docs)]
 impl StoredTransaction {
     #[must_use]
     pub const fn with_effective_at(
@@ -63,10 +66,12 @@ impl StoredTransaction {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct StoredCorrection {
     correction: Correction,
 }
 
+#[allow(missing_docs)]
 impl StoredCorrection {
     #[must_use]
     pub const fn new(correction: Correction) -> Self {
@@ -80,12 +85,14 @@ impl StoredCorrection {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct StoredBudgetTarget {
     month_key: String,
     expense_account_prefix: String,
     budget_cents: i64,
 }
 
+#[allow(missing_docs)]
 impl StoredBudgetTarget {
     #[must_use]
     pub fn new(month_key: &str, expense_account_prefix: &str, budget_cents: i64) -> Self {
@@ -113,6 +120,7 @@ impl StoredBudgetTarget {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct StoredAnalyticsArtifactManifest {
     artifact_id: String,
     artifact_kind: String,
@@ -127,6 +135,7 @@ pub struct StoredAnalyticsArtifactManifest {
     snapshot_key: String,
 }
 
+#[allow(missing_docs)]
 impl StoredAnalyticsArtifactManifest {
     #[allow(clippy::too_many_arguments)]
     #[must_use]
@@ -215,6 +224,7 @@ impl StoredAnalyticsArtifactManifest {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct StoredImportBatch {
     batch_id: String,
     import_kind: String,
@@ -227,6 +237,7 @@ pub struct StoredImportBatch {
     imported_at: Timestamp,
 }
 
+#[allow(missing_docs)]
 impl StoredImportBatch {
     #[allow(clippy::too_many_arguments)]
     #[must_use]
@@ -301,6 +312,7 @@ impl StoredImportBatch {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct StoredImportRecord {
     content_hash_key: String,
     batch_id: String,
@@ -308,6 +320,7 @@ pub struct StoredImportRecord {
     imported_at: Timestamp,
 }
 
+#[allow(missing_docs)]
 impl StoredImportRecord {
     #[must_use]
     pub fn new(
@@ -346,6 +359,7 @@ impl StoredImportRecord {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct NewStatementLine {
     source_uri: String,
     statement_timestamp: String,
@@ -353,6 +367,7 @@ pub struct NewStatementLine {
     amount_cents: i64,
 }
 
+#[allow(missing_docs)]
 impl NewStatementLine {
     #[must_use]
     pub fn new(source_uri: &str, statement_timestamp: &str, memo: &str, amount_cents: i64) -> Self {
@@ -386,12 +401,14 @@ impl NewStatementLine {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct NewImportRecord {
     content_hash_key: String,
     imported_txn_id: Option<TransactionId>,
     statement_line: Option<NewStatementLine>,
 }
 
+#[allow(missing_docs)]
 impl NewImportRecord {
     #[must_use]
     pub fn new(content_hash_key: &str, imported_txn_id: Option<&TransactionId>) -> Self {
@@ -441,6 +458,7 @@ impl NewImportRecord {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct StoredStatementLine {
     line_id: String,
     batch_id: String,
@@ -452,6 +470,7 @@ pub struct StoredStatementLine {
     imported_at: Timestamp,
 }
 
+#[allow(missing_docs)]
 impl StoredStatementLine {
     #[allow(clippy::too_many_arguments)]
     #[must_use]
@@ -519,6 +538,7 @@ impl StoredStatementLine {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct StoredReconciliationRun {
     run_id: String,
     month_key: String,
@@ -536,6 +556,7 @@ pub struct StoredReconciliationRun {
     created_at: Timestamp,
 }
 
+#[allow(missing_docs)]
 impl StoredReconciliationRun {
     #[allow(clippy::too_many_arguments)]
     #[must_use]
@@ -740,6 +761,7 @@ mod tests {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct StoredMonthClose {
     close_id: String,
     month_key: String,
@@ -749,6 +771,7 @@ pub struct StoredMonthClose {
     closed_at: Timestamp,
 }
 
+#[allow(missing_docs)]
 impl StoredMonthClose {
     #[must_use]
     pub fn new(
@@ -801,6 +824,7 @@ impl StoredMonthClose {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub enum StoredFetchRunStatus {
     Downloaded,
     Imported,
@@ -809,6 +833,7 @@ pub enum StoredFetchRunStatus {
     Failed,
 }
 
+#[allow(missing_docs)]
 impl StoredFetchRunStatus {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
@@ -843,11 +868,13 @@ impl StoredFetchRunStatus {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub enum StoredFetchArtifactFormat {
     Csv,
     Pdf,
 }
 
+#[allow(missing_docs)]
 impl StoredFetchArtifactFormat {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
@@ -868,6 +895,7 @@ impl StoredFetchArtifactFormat {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub struct StoredFetchRun {
     run_id: String,
     source_id: String,
@@ -883,6 +911,7 @@ pub struct StoredFetchRun {
     created_at: Timestamp,
 }
 
+#[allow(missing_docs)]
 impl StoredFetchRun {
     #[allow(clippy::too_many_arguments)]
     #[must_use]

@@ -67,6 +67,7 @@ struct CorrectionEntry {
     recorded_at_us: Timestamp,
 }
 
+#[allow(missing_docs)]
 impl Default for MemoryStore {
     fn default() -> Self {
         Self {
@@ -95,6 +96,7 @@ impl Default for MemoryStore {
     }
 }
 
+#[allow(missing_docs)]
 impl MemoryStore {
     #[must_use]
     pub fn new() -> Self {
@@ -223,6 +225,7 @@ impl MemoryStore {
     }
 }
 
+#[allow(missing_docs)]
 impl LedgerStore for MemoryStore {
     fn transaction_count(&self) -> usize {
         self.transactions.len()
