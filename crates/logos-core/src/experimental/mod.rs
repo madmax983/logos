@@ -51,4 +51,6 @@ pub mod lifestyle_creep;
 #[cfg(feature = "nova")]
 pub mod runway_simulator;
 #[cfg(feature = "nova")]
+pub mod stress_tester;
+#[cfg(feature = "nova")]
 pub mod subscription_fatigue;
