@@ -37,14 +37,15 @@ impl AnomalyDetector {
     /// Scans a list of transactions and identifies anomalies.
     #[must_use]
     pub fn detect(&self, transactions: &[Transaction]) -> Vec<Anomaly> {
-        // Group amounts by account
+        let mut account_amounts = Self::group_amounts_by_account(transactions);
+        let bounds = self.calculate_iqr_bounds(&mut account_amounts);
+        Self::find_anomalies(transactions, &bounds)
+    }
+
+    fn group_amounts_by_account(transactions: &[Transaction]) -> HashMap<&str, Vec<i64>> {
         let mut account_amounts: HashMap<&str, Vec<i64>> = HashMap::new();
-
         for tx in transactions {
-            let postings = tx.postings();
-
-            // For simplicity, consider debit postings (positive amounts) as expenses.
-            for posting in postings {
+            for posting in tx.postings() {
                 if posting.amount() > 0 {
                     account_amounts
                         .entry(posting.account().as_str())
@@ -53,49 +54,44 @@ impl AnomalyDetector {
                 }
             }
         }
+        account_amounts
+    }
 
-        // Calculate IQR bounds for each account
+    fn calculate_iqr_bounds<'a>(
+        &self,
+        account_amounts: &mut HashMap<&'a str, Vec<i64>>,
+    ) -> HashMap<&'a str, f64> {
         let mut bounds: HashMap<&str, f64> = HashMap::new();
-
-        for (account, amounts) in &mut account_amounts {
+        for (account, amounts) in account_amounts {
             if amounts.len() < 4 {
-                continue; // Not enough data points to reliably calculate IQR
+                continue;
             }
-
             amounts.sort_unstable();
-
             let n = amounts.len();
             let mid = n / 2;
-
             let (lower_half, upper_half) = if n % 2 == 0 {
                 (&amounts[0..mid], &amounts[mid..n])
             } else {
                 (&amounts[0..mid], &amounts[(mid + 1)..n])
             };
-
             let q1 = median(lower_half);
             let q3 = median(upper_half);
-
             let iqr = q3 - q1;
             let upper_bound = self.multiplier.mul_add(iqr, q3);
-
             bounds.insert(account, upper_bound);
         }
+        bounds
+    }
 
-        // Find anomalies
+    fn find_anomalies(transactions: &[Transaction], bounds: &HashMap<&str, f64>) -> Vec<Anomaly> {
         let mut anomalies = Vec::new();
-
         for tx in transactions {
-            let postings = tx.postings();
-
-            for posting in postings {
+            for posting in tx.postings() {
                 if posting.amount() > 0 {
                     let account_str = posting.account().as_str();
-
                     if let Some(&upper_bound) = bounds.get(account_str) {
                         #[allow(clippy::cast_precision_loss)]
                         let amount_f64 = posting.amount() as f64;
-
                         if amount_f64 > upper_bound {
                             anomalies.push(Anomaly {
                                 description: tx.description().to_string(),
@@ -107,7 +103,6 @@ impl AnomalyDetector {
                 }
             }
         }
-
         anomalies
     }
 }
