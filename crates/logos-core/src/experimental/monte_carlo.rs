@@ -90,7 +90,9 @@ impl MonteCarloProjector {
     /// Runs the Monte Carlo simulation for a given number of months and paths.
     #[must_use]
     pub fn run(&self, months: u16, paths: u32) -> MonteCarloResult {
-        if paths == 0 {
+        let safe_paths = paths.min(1_000_000);
+
+        if safe_paths == 0 {
             return MonteCarloResult {
                 p5_cents: self.initial_cents,
                 median_cents: self.initial_cents,
@@ -102,9 +104,9 @@ impl MonteCarloProjector {
         let monthly_volatility = self.annual_volatility / 12.0f64.sqrt();
         let mut lcg = Lcg::new(self.seed);
 
-        let mut final_outcomes: Vec<i64> = Vec::with_capacity(paths as usize);
+        let mut final_outcomes: Vec<i64> = Vec::with_capacity(safe_paths as usize);
 
-        for _ in 0..paths {
+        for _ in 0..safe_paths {
             let mut current_cents = self.initial_cents;
 
             for _ in 0..months {
@@ -132,18 +134,18 @@ impl MonteCarloProjector {
 
         // Calculate percentiles
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let lower_bound_idx = (f64::from(paths) * 0.05).floor() as usize;
+        let lower_bound_idx = (f64::from(safe_paths) * 0.05).floor() as usize;
 
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let median_idx = (f64::from(paths) * 0.50).floor() as usize;
+        let median_idx = (f64::from(safe_paths) * 0.50).floor() as usize;
 
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let upper_bound_idx = (f64::from(paths) * 0.95).floor() as usize;
+        let upper_bound_idx = (f64::from(safe_paths) * 0.95).floor() as usize;
 
         // Ensure indices are within bounds (for very small path counts)
-        let safe_lower_bound_idx = lower_bound_idx.clamp(0, paths.saturating_sub(1) as usize);
-        let safe_median_idx = median_idx.clamp(0, paths.saturating_sub(1) as usize);
-        let safe_upper_bound_idx = upper_bound_idx.clamp(0, paths.saturating_sub(1) as usize);
+        let safe_lower_bound_idx = lower_bound_idx.clamp(0, safe_paths.saturating_sub(1) as usize);
+        let safe_median_idx = median_idx.clamp(0, safe_paths.saturating_sub(1) as usize);
+        let safe_upper_bound_idx = upper_bound_idx.clamp(0, safe_paths.saturating_sub(1) as usize);
 
         MonteCarloResult {
             p5_cents: final_outcomes[safe_lower_bound_idx],

@@ -16,4 +16,6 @@
 
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
-**Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+**Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.## 2024-05-08 - Capacity overflow and arithmetic panics in projections
+**Learning:** Uncapped `paths` in Monte Carlo simulations can attempt to allocate gigabytes of memory and trigger SIGABRT capacity overflows. Similarly, `u16` multiplication for days conversions will easily overflow if projection windows stretch past ~182 years.
+**Action:** Always clamp external inputs that drive allocations (e.g., `paths.min(1_000_000)`) and cast to a larger type (e.g., `u32::from()`) before performing multiplications on time variables that might accumulate.
