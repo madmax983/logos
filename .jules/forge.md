@@ -12,3 +12,7 @@
 **Idiomatic Closures for `needless_pass_by_value` in mapped iterators**
 **Learning:** When resolving Clippy's `needless_pass_by_value` on functions that map over an iterator (especially ones optimized with `.into_iter()` to consume the collection), blindly changing the iterator to `.iter()` breaks the performance optimization. Using the `From` trait is the most idiomatic fix (`impl From<Row> for StoredObject`), but if you must pass a reference, use `.into_iter().map(|r| func(&r))` to keep the consumption while passing the reference.
 **Action:** When updating function signatures from value to reference due to clippy, review the call sites. If mapping over an iterator, ensure you maintain the original `.into_iter()` (if it exists for optimization) by passing references inside the closure, or prefer implementing `From`/`Into`.
+
+**Refactoring God Modules like `args.rs`**
+**Learning:** `crates/logos-cli/src/args.rs` was a massive 1300+ line file holding enums, models, business logic for command routing, and pure string parsing functions.
+**Action:** Splitting `args.rs` into `args/mod.rs`, `args/model.rs`, and `args/parser.rs` correctly decoupled parsing implementation details from the domain definitions for CLI args.

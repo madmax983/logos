@@ -1,6 +1,6 @@
-⚒️ Forge: Refactored tests to fix clippy warnings
+⚒️ Forge: Refactor args.rs into args module
 
-🚮 Smell: `clippy::redundant_clone` and `clippy::implicit_clone` warnings in tests.
-✨ Solution: Applied #[allow(clippy::implicit_clone)] to top of files where strings were matched via `.contains()` to keep exact formatting, and removed `.clone()` where it was dropped unneeded.
-🧼 Benefit: Cleaner codebase, passing clippy check with strict rules.
-🛡️ Verification: Tests passed. No logic changed.
+🚮 Smell: `logos-cli/src/args.rs` was a massive ~1300 line God Module mixing CLI models, routing logic, and string parsing.
+✨ Solution: Split `args.rs` into `args/model.rs` and `args/parser.rs` and re-exported items through `args/mod.rs` to maintain public APIs.
+🧼 Benefit: Significantly flattens the file and separates models from logic, dropping cognitive complexity and line counts.
+🛡️ Verification: Cargo clippy strict lints and all workspace tests passed with no logic changes.
