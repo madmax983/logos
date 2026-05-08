@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-15 - The "Missing" Object Examples in logos-fetch
+**Confusion:** The public struct and enum definitions in the `logos-fetch` crate lacked executable examples on the types themselves. This violated the "Examples Section" rule where every public struct/enum must have an example, leading to a "Black Box" experience for users trying to instantiate or understand the core data types.
+**Clarification:** Added executable doctests (`## Examples`) directly to the type definitions for `OutputFormat`, `StatementSource`, `FetchRunStatus`, `FetchedStatementArtifact`, `FetchRequest`, `FetchResult`, `FakeStatementAdapter`, `ProvidentAdapter`, `StatementSourceConfig`, `FetchError`, `SecretBundle`, `OnePasswordCliSecretResolver`, and `OpCliSecretRefReader` in the `logos-fetch` crate.
