@@ -8,11 +8,11 @@ use crate::domain::transaction::Transaction;
 /// This provides a visual representation of cashflow, showing how money moves
 /// from credit accounts (sources) to debit accounts (destinations).
 #[derive(Debug, Default)]
-pub struct MermaidSankeyExporter {
-    transactions: Vec<Transaction>,
+pub struct MermaidSankeyExporter<'a> {
+    transactions: Vec<&'a Transaction>,
 }
 
-impl MermaidSankeyExporter {
+impl<'a> MermaidSankeyExporter<'a> {
     /// Creates a new, empty `MermaidSankeyExporter`.
     #[must_use]
     pub fn new() -> Self {
@@ -20,7 +20,7 @@ impl MermaidSankeyExporter {
     }
 
     /// Adds a transaction to the exporter.
-    pub fn add_transaction(&mut self, transaction: Transaction) {
+    pub fn add_transaction(&mut self, transaction: &'a Transaction) {
         self.transactions.push(transaction);
     }
 
@@ -107,7 +107,7 @@ mod tests {
             .build()
             .unwrap();
 
-        exporter.add_transaction(tx);
+        exporter.add_transaction(&tx);
 
         let expected = "\
 ```mermaid
@@ -129,7 +129,7 @@ income:salary,assets:checking,5000.00
             .build()
             .unwrap();
 
-        exporter.add_transaction(tx);
+        exporter.add_transaction(&tx);
 
         let expected = "\
 ```mermaid
@@ -152,7 +152,7 @@ income:salary,assets:savings,300.00
             .build()
             .unwrap();
 
-        exporter.add_transaction(tx);
+        exporter.add_transaction(&tx);
 
         let expected = "\
 ```mermaid
@@ -178,7 +178,7 @@ assets:savings,expenses:rent,400.00
             .build()
             .unwrap();
 
-        exporter.add_transaction(tx);
+        exporter.add_transaction(&tx);
 
         let expected = "\
 ```mermaid
@@ -208,8 +208,8 @@ assets:savings,expenses:fun,20.00
             .build()
             .unwrap();
 
-        exporter.add_transaction(tx1);
-        exporter.add_transaction(tx2);
+        exporter.add_transaction(&tx1);
+        exporter.add_transaction(&tx2);
 
         let expected = "\
 ```mermaid
