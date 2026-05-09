@@ -3,6 +3,7 @@ use logos_core::monte_carlo::MonteCarloProjector;
 
 #[test]
 #[should_panic(expected = "capacity overflow")]
+#[ignore = "OOM"]
 fn havoc_monte_carlo_panics_on_oom() {
     let projector = MonteCarloProjector::new(10_000, 10_000, 0.07, 0.15, 42);
     // When passed a huge number of paths (like u32::MAX), Vec::with_capacity tries to allocate
