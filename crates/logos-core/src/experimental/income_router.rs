@@ -67,7 +67,7 @@ impl IncomeRouter {
 
         // Calculate exact allocations, leaving remainders
         for rule in &self.rules {
-            let allocated = (amount_cents * i64::from(rule.percentage)) / 100;
+            let allocated = amount_cents.saturating_mul(i64::from(rule.percentage)) / 100;
             allocations.push((rule.destination.clone(), allocated));
             remaining_cents -= allocated;
         }

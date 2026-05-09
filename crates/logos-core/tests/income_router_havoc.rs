@@ -7,7 +7,6 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    #[should_panic(expected = "attempt to multiply with overflow")]
     fn income_router_panics_on_overflow(
         amount in (i64::MAX / 100 + 1)..=i64::MAX,
     ) {
@@ -30,6 +29,7 @@ proptest! {
         )
         .unwrap();
 
-        let _ = router.route_income("Paycheck", amount);
+        let tx = router.route_income("Paycheck", amount).unwrap();
+        assert!(!tx.postings().is_empty());
     }
 }

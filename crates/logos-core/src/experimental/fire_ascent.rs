@@ -89,7 +89,7 @@ impl FireAscentSimulator {
 
         let camp1 = fire_number / 4;
         let camp2 = fire_number / 2;
-        let camp3 = (fire_number * 3) / 4;
+        let camp3 = fire_number.saturating_mul(3) / 4;
         let summit = fire_number;
 
         ascent_projector.add_milestone_cents(camp1);
