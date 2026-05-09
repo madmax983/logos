@@ -6,3 +6,8 @@
 **The Trigger:** Input math bounded by percentages is prone to integer overflow if `vest` values are unconstrained (e.g. `i64::MAX`).
 **The Crash:** `attempt to multiply with overflow` panics.
 **Action:** Havoc doesn't fix bugs, but proving the bounds missing through Proptests keeps the team on their toes.
+
+## 2024-05-18 - Attempt to negate with overflow in currency formatter
+**Mutant:** `logos_core::format::currency` formatting `i64::MIN` panics.
+**Diagnosis:** The function takes the absolute value (`cents.abs()`), but two's complement cannot represent the positive equivalent of `i64::MIN`.
+**Kill Shot:** A targeted proptest ensuring that `std::i64::MIN` hits this specific boundary explicitly without relying on chance, ensuring the system predictably breaks under `Havoc` criteria.
