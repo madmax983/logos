@@ -122,8 +122,8 @@ pub fn sankey() -> Result<(), CliError> {
         })?;
 
     let mut exporter = MermaidSankeyExporter::new();
-    for stored_tx in transactions {
-        exporter.add_transaction(stored_tx.transaction().clone());
+    for stored_tx in &transactions {
+        exporter.add_transaction(stored_tx.transaction());
     }
 
     println!("{}", render_sankey_output(&exporter.export_sankey()));
