@@ -49,7 +49,7 @@ pub(crate) mod error;
 /// Experimental features and proof-of-concepts. Use at your own risk.
 pub(crate) mod experimental;
 pub use experimental::*;
-pub(crate) mod planning;
+pub mod planning;
 pub use planning::*;
 
 pub use domain::account::{AccountId, AccountType};
