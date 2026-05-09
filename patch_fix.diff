@@ -1,0 +1,11 @@
+--- crates/logos-cli/src/commands/analytics.rs
++++ crates/logos-cli/src/commands/analytics.rs
+@@ -427,7 +427,7 @@
+     years: u8,
+ ) -> Result<(), CliError> {
+     use chrono::Utc;
+-    use logos_core::experimental::subscription_fatigue::SubscriptionFatigueAnalyzer;
++    use logos_core::subscription_fatigue::SubscriptionFatigueAnalyzer;
+
+     let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+         command: "analytics.sub-fatigue".to_owned(),

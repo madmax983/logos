@@ -153,6 +153,11 @@ fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError>
             *monthly_savings_cents,
             *months,
         ),
+        AnalyticsCommand::SubFatigue {
+            min_occurrences,
+            annual_return_pct,
+            years,
+        } => commands::analytics::sub_fatigue(*min_occurrences, *annual_return_pct, *years),
     }
 }
 
@@ -398,6 +403,7 @@ impl Command {
             Self::Analytics(AnalyticsCommand::Sankey) => "analytics.sankey",
             Self::Analytics(AnalyticsCommand::FireSim { .. }) => "analytics.fire-sim",
             Self::Analytics(AnalyticsCommand::NetWorthProject { .. }) => "analytics.net-worth",
+            Self::Analytics(AnalyticsCommand::SubFatigue { .. }) => "analytics.sub-fatigue",
             Self::Import(ImportCommand::Pdf { .. }) => "import.pdf",
             Self::Import(ImportCommand::Csv { .. }) => "import.csv",
             Self::Fetch(FetchCommand::ListRuns { .. }) => "fetch.list",
@@ -450,7 +456,7 @@ pub enum TxnCommand {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AnalyticsCommand {
     SnapshotCreate {
         as_of_valid_time_us: Option<i64>,
@@ -472,6 +478,11 @@ pub enum AnalyticsCommand {
         initial_net_worth_cents: i64,
         monthly_savings_cents: i64,
         months: u16,
+    },
+    SubFatigue {
+        min_occurrences: usize,
+        annual_return_pct: f64,
+        years: u8,
     },
 }
 
@@ -807,6 +818,18 @@ fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
                     initial_net_worth_cents,
                     monthly_savings_cents,
                     months,
+                }),
+            })
+        }
+        "sub-fatigue" => {
+            let min_occurrences = parse_required_parsed_flag(&args[2..], "--min-occurrences")?;
+            let annual_return_pct = parse_required_parsed_flag(&args[2..], "--annual-return-pct")?;
+            let years = parse_required_parsed_flag(&args[2..], "--years")?;
+            Ok(ParsedArgs {
+                command: Command::Analytics(AnalyticsCommand::SubFatigue {
+                    min_occurrences,
+                    annual_return_pct,
+                    years,
                 }),
             })
         }

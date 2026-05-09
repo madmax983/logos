@@ -124,6 +124,8 @@ Subcommands:
   sankey                             Generate Mermaid Sankey diagram from current transactions
   fire-sim --monthly-expenses-cents <i64> --liquid-assets-cents <i64> --monthly-savings-cents <i64>
                                      Simulate time to Financial Independence
+  sub-fatigue --min-occurrences <usize> --annual-return-pct <f64> --years <u8>
+                                     Analyze recurring subscription costs and their long-term opportunity cost
 
 Environment:
   LOGOS_ARTIFACTS_PATH               Override artifact root directory

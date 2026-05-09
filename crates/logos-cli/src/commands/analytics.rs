@@ -415,6 +415,80 @@ fn render_fire_sim_output(
     format!("{table}\n\n{journey_table}")
 }
 
+/// Handles `ledger analytics sub-fatigue`.
+///
+/// # Errors
+///
+/// Returns an error when runtime initialization fails.
+#[allow(clippy::unnecessary_wraps)]
+pub fn sub_fatigue(
+    min_occurrences: usize,
+    annual_return_pct: f64,
+    years: u8,
+) -> Result<(), CliError> {
+    use chrono::Utc;
+    use logos_core::subscription_fatigue::SubscriptionFatigueAnalyzer;
+
+    let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
+        command: "analytics.sub-fatigue".to_owned(),
+        message: format!("{err}"),
+    })?;
+
+    let now_us = Utc::now().timestamp_micros();
+    let transactions = runtime
+        .transactions_as_of_us(now_us, now_us)
+        .map_err(|err| CliError::CommandRuntimeFailed {
+            command: "analytics.sub-fatigue".to_owned(),
+            message: format!("failed to retrieve transactions: {err}"),
+        })?;
+
+    let mut txs = Vec::new();
+    for stored_tx in transactions {
+        txs.push(stored_tx.transaction().clone());
+    }
+
+    let analyzer = SubscriptionFatigueAnalyzer::new(min_occurrences, annual_return_pct, years);
+    let report = analyzer.analyze(&txs);
+
+    let mut table = comfy_table::Table::new();
+    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.set_header(vec!["Subscription", "Monthly Cost", "Opportunity Cost"]);
+
+    for item in &report.items {
+        table.add_row(vec![
+            comfy_table::Cell::new(&item.description),
+            comfy_table::Cell::new(logos_core::format::currency(item.monthly_cost_cents))
+                .fg(comfy_table::Color::Red),
+            comfy_table::Cell::new(logos_core::format::currency(item.future_value_cents))
+                .fg(comfy_table::Color::Yellow),
+        ]);
+    }
+
+    let mut total_table = comfy_table::Table::new();
+    total_table.load_preset(comfy_table::presets::UTF8_FULL);
+    total_table.add_row(vec![
+        comfy_table::Cell::new("Total Monthly").add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new(logos_core::format::currency(
+            report.total_monthly_cost_cents,
+        ))
+        .fg(comfy_table::Color::Red)
+        .add_attribute(comfy_table::Attribute::Bold),
+    ]);
+    total_table.add_row(vec![
+        comfy_table::Cell::new("Total Opportunity Cost")
+            .add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new(logos_core::format::currency(
+            report.total_opportunity_cost_cents,
+        ))
+        .fg(comfy_table::Color::Yellow)
+        .add_attribute(comfy_table::Attribute::Bold),
+    ]);
+
+    println!("analytics.sub-fatigue\n{table}\n\n{total_table}");
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod fire_sim_tests {
     use super::*;
