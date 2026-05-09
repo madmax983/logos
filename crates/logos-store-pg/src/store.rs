@@ -523,6 +523,61 @@ impl PostgresStore {
         Ok(())
     }
 
+    fn try_validate_month_close_params(
+        &self,
+        month_key: &str,
+        checking_account: &str,
+        reconciliation_run_id: &str,
+        analytics_artifact_id: Option<&str>,
+    ) -> Result<(), StoreError> {
+        if month_key.is_empty() {
+            return Err(persist_failure("month_key must not be empty".to_owned()));
+        }
+        if checking_account.is_empty() {
+            return Err(persist_failure(
+                "checking_account must not be empty".to_owned(),
+            ));
+        }
+        if reconciliation_run_id.is_empty() {
+            return Err(persist_failure(
+                "reconciliation_run_id must not be empty".to_owned(),
+            ));
+        }
+        let run = self
+            .try_reconciliation_run(reconciliation_run_id)?
+            .ok_or_else(|| {
+                persist_failure(format!(
+                    "unknown reconciliation run '{reconciliation_run_id}'"
+                ))
+            })?;
+        if run.month_key() != month_key {
+            return Err(persist_failure(format!(
+                "month close month '{month_key}' does not match reconciliation run month '{}'",
+                run.month_key()
+            )));
+        }
+        if run.checking_account() != checking_account {
+            return Err(persist_failure(format!(
+                "month close checking_account '{checking_account}' does not match reconciliation run account '{}'",
+                run.checking_account()
+            )));
+        }
+        if let Some(artifact_id) = analytics_artifact_id {
+            if self.try_analytics_artifact(artifact_id)?.is_none() {
+                return Err(StoreError::UnknownArtifact {
+                    artifact_id: artifact_id.to_owned(),
+                });
+            }
+        }
+        if let Some(existing_close) = self.try_month_close_for_scope(month_key, checking_account)? {
+            return Err(persist_failure(format!(
+                "month '{month_key}' for account '{checking_account}' is already closed by '{}'",
+                existing_close.close_id()
+            )));
+        }
+        Ok(())
+    }
+
     fn build_import_record_rows<'a>(
         records: &'a [NewImportRecord],
         batch_id: &'a str,
@@ -2397,51 +2452,12 @@ impl LedgerStore for PostgresStore {
         reconciliation_run_id: &str,
         analytics_artifact_id: Option<&str>,
     ) -> Result<StoredMonthClose, StoreError> {
-        if month_key.is_empty() {
-            return Err(persist_failure("month_key must not be empty".to_owned()));
-        }
-        if checking_account.is_empty() {
-            return Err(persist_failure(
-                "checking_account must not be empty".to_owned(),
-            ));
-        }
-        if reconciliation_run_id.is_empty() {
-            return Err(persist_failure(
-                "reconciliation_run_id must not be empty".to_owned(),
-            ));
-        }
-        let run = self
-            .try_reconciliation_run(reconciliation_run_id)?
-            .ok_or_else(|| {
-                persist_failure(format!(
-                    "unknown reconciliation run '{reconciliation_run_id}'"
-                ))
-            })?;
-        if run.month_key() != month_key {
-            return Err(persist_failure(format!(
-                "month close month '{month_key}' does not match reconciliation run month '{}'",
-                run.month_key()
-            )));
-        }
-        if run.checking_account() != checking_account {
-            return Err(persist_failure(format!(
-                "month close checking_account '{checking_account}' does not match reconciliation run account '{}'",
-                run.checking_account()
-            )));
-        }
-        if let Some(artifact_id) = analytics_artifact_id {
-            if self.try_analytics_artifact(artifact_id)?.is_none() {
-                return Err(StoreError::UnknownArtifact {
-                    artifact_id: artifact_id.to_owned(),
-                });
-            }
-        }
-        if let Some(existing_close) = self.try_month_close_for_scope(month_key, checking_account)? {
-            return Err(persist_failure(format!(
-                "month '{month_key}' for account '{checking_account}' is already closed by '{}'",
-                existing_close.close_id()
-            )));
-        }
+        self.try_validate_month_close_params(
+            month_key,
+            checking_account,
+            reconciliation_run_id,
+            analytics_artifact_id,
+        )?;
 
         let closed_at_us = now_timestamp_us()?;
         let mut connection = self.connection.borrow_mut();
