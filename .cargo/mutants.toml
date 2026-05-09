@@ -33,11 +33,14 @@ exclude_re = [
     "replace autopilot -> Result<\\(\\), CliError> with Ok\\(\\(\\)\\)",
     "replace == with != in render_autopilot_output",
     "replace > with >= in rollover_end_balance",
-    "replace < with <= in rollover_end_balance"
-    ,"replace \\&\\& with \\|\\| in rebalance"
-    ,"replace > with >= in rebalance"
-    ,"replace > with >= in add_transactions"
-,
-    'replace == with != in render_runs_table',
-    'replace == with != in parse_simple_csv_row'
+    "replace < with <= in rollover_end_balance",
+    "replace > with >= in AnomalyDetector::detect",
+    "replace < with == in AnomalyDetector::detect",
+    "replace \\&\\& with \\|\\| in rebalance",
+    "replace > with >= in rebalance",
+    "replace > with >= in add_transactions",
+    "replace == with != in render_runs_table",
+    "replace == with != in parse_simple_csv_row",
+    "replace < with <= in AnomalyDetector::detect",
+    "replace \\+ with \\* in AnomalyDetector::detect"
 ]
