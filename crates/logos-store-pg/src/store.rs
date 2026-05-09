@@ -317,6 +317,18 @@ struct SequenceValueRow {
     sequence_value: i64,
 }
 
+/// A PostgreSQL-backed implementation of the `LedgerStore` contract.
+///
+/// Provides persistent storage for all ledger entities, including transactions,
+/// budgets, and reconciliation runs.
+///
+/// ## Examples
+///
+/// ```rust,no_run
+/// use logos_store_pg::PostgresStore;
+///
+/// let store = PostgresStore::connect("postgres://localhost/logos").unwrap();
+/// ```
 pub struct PostgresStore {
     connection: RefCell<PgConnection>,
 }

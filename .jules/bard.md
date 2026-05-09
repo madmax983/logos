@@ -1,9 +1,7 @@
 ## 2025-04-07 - The Planning Black Box
 **Confusion:** The `logos-core::planning` module lacked a high-level conceptual overview. Individual files (`fire`, `net_worth_projector`, `rsu_distributor`) had examples, but there was no overarching narrative connecting the "Destination" (FIRE), the "Journey" (Net Worth Projection), and the "Action" (RSU Distributor). Users were left treating it as a black box of disconnected planning primitives.
-**Clarification:** Added module-level `//!` documentation to `crates/logos-core/src/planning/mod.rs` containing a unified story and an overarching executable example that uses `fire` and `net_worth_projector` together.
 ## 2025-04-07 - The Absolute Truths
 **Confusion:** The sub-modules within the `domain` module (`transaction.rs`, `correction.rs`, `rsu.rs`) lacked clear module-level documentation explaining *why* they existed and what fundamental invariants they enforced. Users were treating them as black boxes rather than understanding their roles in the zero-trust ledger (e.g., debits equal credits, append-only history, and risk-adjusted volatility).
-**Clarification:** Added module-level `//!` documentation to `transaction.rs`, `correction.rs`, and `rsu.rs` to explicitly tell the story of the strict rules of the ledger.
 ## 2025-04-10 - The Missing Links and Dead Ends
 **Confusion:** The core library (`logos-core`) lacked a single, cohesive executable example showing how the pieces of the `domain` module fit together in practice (creating an account, building a transaction, and enforcing invariants). Additionally, the central error type `DomainError` was well-described but lacked an example of *how* a user should handle or recover from an error like an unbalanced transaction.
 **Clarification:** Added a top-level `//!` module documentation block to `crates/logos-core/src/lib.rs` showing the end-to-end integration of creating accounts and posting a balanced transaction. Also added an executable `## Examples` block directly to the `DomainError` enum in `crates/logos-core/src/error.rs` demonstrating how to pattern-match on `UnbalancedTransaction` to gracefully extract the total off-balance amount.
@@ -31,3 +29,9 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-09 - The Missing Fetch Examples
+**Confusion:** The `logos-fetch` crate's `FetchError` and `StatementSourceConfig` types were missing module-level documentation and executable examples. This caused confusion regarding how the models parsed TOML and the purpose of the error wrapper.
+**Clarification:** Added module-level `///` and executable `## Examples` doc tests to `StatementSourceConfig` in `crates/logos-fetch/src/config.rs` and `FetchError` in `crates/logos-fetch/src/error.rs`.
+## 2025-05-09 - The Store Object Story
+**Confusion:** The `PostgresStore` object inside the `logos-store-pg` crate lacked a `///` doc comment and an executable `## Examples` test demonstrating connection handling.
+**Clarification:** Added an executable `## Examples` block for `PostgresStore` in `crates/logos-store-pg/src/store.rs`.

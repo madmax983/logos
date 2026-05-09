@@ -1,5 +1,18 @@
 use core::fmt;
 
+/// Represents an error that occurs during a statement fetch operation.
+///
+/// This error type encapsulates failures such as network timeouts,
+/// missing credentials, or invalid fetch configurations.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_fetch::FetchError;
+///
+/// let error = FetchError::new("network timeout during statement download");
+/// assert_eq!(error.to_string(), "network timeout during statement download");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchError {
     message: String,
