@@ -131,9 +131,11 @@ impl RsuAutoDistributor {
         gross_vest_cents: i64,
         policy: &AllocationPolicy,
     ) -> Result<Transaction, DomainError> {
-        let smoothing_cents = (gross_vest_cents * i64::from(policy.smoothing_buffer_pct())) / 100;
-        let goals_cents = (gross_vest_cents * i64::from(policy.goals_pct())) / 100;
-        let discretionary_cents = (gross_vest_cents * i64::from(policy.discretionary_pct())) / 100;
+        let smoothing_cents =
+            gross_vest_cents.saturating_mul(i64::from(policy.smoothing_buffer_pct())) / 100;
+        let goals_cents = gross_vest_cents.saturating_mul(i64::from(policy.goals_pct())) / 100;
+        let discretionary_cents =
+            gross_vest_cents.saturating_mul(i64::from(policy.discretionary_pct())) / 100;
 
         // The remaining amount goes to the tax reserve to ensure perfectly balanced transaction
         let tax_cents = gross_vest_cents - smoothing_cents - goals_cents - discretionary_cents;

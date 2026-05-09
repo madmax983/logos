@@ -7,7 +7,6 @@ use std::collections::HashMap;
 
 proptest! {
     #[test]
-    #[should_panic]
     fn portfolio_rebalancer_panics_on_overflow(
         val1 in (i64::MAX / 2) + 1..=i64::MAX,
         val2 in (i64::MAX / 2) + 1..=i64::MAX
@@ -23,6 +22,9 @@ proptest! {
         balances.insert(aapl, val1);
         balances.insert(tsla, val2);
 
-        let _ = rebalancer.rebalance("Rebalance", &balances);
+        let result = rebalancer.rebalance("Rebalance", &balances);
+        // The transaction may fail to build due to remainder sweeps on i64::MAX boundary,
+        // but it should definitely not panic with an arithmetic overflow.
+        assert!(result.is_ok() || matches!(result.unwrap_err(), logos_core::DomainError::UnbalancedTransaction { .. }));
     }
 }

@@ -214,7 +214,9 @@ impl FireSimulator {
             return i64::MAX;
         }
         let yearly_expenses = self.monthly_expenses_cents.saturating_mul(12);
-        yearly_expenses.saturating_mul(100) / i64::from(self.config.safe_withdrawal_rate_pct)
+        yearly_expenses
+            .saturating_mul(100)
+            .saturating_div(i64::from(self.config.safe_withdrawal_rate_pct))
     }
 
     /// Returns the configured monthly expenses in cents.

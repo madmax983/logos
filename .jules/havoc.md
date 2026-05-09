@@ -6,3 +6,5 @@
 **The Trigger:** Input math bounded by percentages is prone to integer overflow if `vest` values are unconstrained (e.g. `i64::MAX`).
 **The Crash:** `attempt to multiply with overflow` panics.
 **Action:** Havoc doesn't fix bugs, but proving the bounds missing through Proptests keeps the team on their toes.
+## Overflow Boundaries & Unbalanced Transactions
+When using saturating arithmetic to prevent overflows at extreme boundaries (like `i64::MAX`) in double-entry transaction builders (e.g., portfolio rebalancers), remainder sweeps may fail due to precision loss during percentage divisions. Update chaos tests to accept `DomainError::UnbalancedTransaction` as a valid safe boundary behavior rather than expecting an unconditional success or a panic.

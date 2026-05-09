@@ -5,7 +5,6 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    #[should_panic(expected = "attempt to multiply with overflow")]
     fn havoc_rsu_distribute_overflow(
         vest in (i64::MAX / 2 + 1)..=i64::MAX,
     ) {
@@ -20,6 +19,7 @@ proptest! {
         let distributor = RsuAutoDistributor::new(config);
         let policy = AllocationPolicy::new(40, 20, 30, 10).unwrap();
 
-        let _ = distributor.distribute_rsu_vest("Vest 1", vest, &policy);
+        let tx = distributor.distribute_rsu_vest("Vest 1", vest, &policy).unwrap();
+        assert!(!tx.postings().is_empty());
     }
 }

@@ -58,7 +58,7 @@ impl PortfolioRebalancer {
 
         for target in &self.targets {
             let balance = current_balances.get(&target.asset).copied().unwrap_or(0);
-            total_value += balance;
+            total_value = total_value.saturating_add(balance);
         }
 
         if total_value <= 0 {
@@ -68,7 +68,7 @@ impl PortfolioRebalancer {
 
         let mut remaining_value = total_value;
         for target in &self.targets {
-            let allocated = (total_value * i64::from(target.percentage)) / 100;
+            let allocated = total_value.saturating_mul(i64::from(target.percentage)) / 100;
             target_values.push((target.asset.clone(), allocated));
             remaining_value -= allocated;
         }
