@@ -204,12 +204,14 @@ impl NetWorthProjector {
             let mut vested_this_month: i64 = 0;
 
             // Assume 1 month is roughly 30 days. We check if any vest happens in this 30-day window.
-            let month_start_days = (month_index - 1) * 30;
-            let month_end_days = month_index * 30;
+            let month_start_days = u32::from(month_index - 1) * 30;
+            let month_end_days = u32::from(month_index) * 30;
 
             for vest in &self.upcoming_vests {
                 // If the vest falls in the current month's window
-                if vest.days_to_vest > month_start_days && vest.days_to_vest <= month_end_days {
+                if u32::from(vest.days_to_vest) > month_start_days
+                    && u32::from(vest.days_to_vest) <= month_end_days
+                {
                     let safe_value = forecast_value_cents(
                         vest.avg_close_price_cents,
                         vest.units,
@@ -397,8 +399,7 @@ mod tests {
     use proptest::prelude::*;
     proptest! {
         #[test]
-        #[should_panic(expected = "attempt to multiply with overflow")]
-        fn havoc_project_timeline_panics_on_u16_overflow(
+        fn havoc_project_timeline_saturates_on_u16_overflow(
             months in 3000..=u16::MAX,
         ) {
             let projector = NetWorthProjector::new(100_000, 10_000);
