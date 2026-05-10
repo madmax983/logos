@@ -12,3 +12,7 @@
 **Idiomatic Closures for `needless_pass_by_value` in mapped iterators**
 **Learning:** When resolving Clippy's `needless_pass_by_value` on functions that map over an iterator (especially ones optimized with `.into_iter()` to consume the collection), blindly changing the iterator to `.iter()` breaks the performance optimization. Using the `From` trait is the most idiomatic fix (`impl From<Row> for StoredObject`), but if you must pass a reference, use `.into_iter().map(|r| func(&r))` to keep the consumption while passing the reference.
 **Action:** When updating function signatures from value to reference due to clippy, review the call sites. If mapping over an iterator, ensure you maintain the original `.into_iter()` (if it exists for optimization) by passing references inside the closure, or prefer implementing `From`/`Into`.
+
+**Refactoring Simulation Loops and Math Functions**
+**Learning:** Simulation methods like `run` in `trinity_simulator.rs` and `monte_carlo.rs` or `ascend` in `fire_ascent.rs` often combine initialization, tight loop iteration logic (or edge-case short circuits), and final metric calculation, leading to functions approaching 80+ lines.
+**Action:** Extract the inner path generation loop into a `simulate_path` helper method. Extract milestone assembly or percentile logic into dedicated helper functions. This drastically cuts down `run` method sizes, flattening pyramid-of-doom structures without changing mathematical outcomes.
