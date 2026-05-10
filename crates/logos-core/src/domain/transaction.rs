@@ -277,7 +277,11 @@ impl TransactionBuilder {
     pub fn new(description: &str) -> Self {
         Self {
             description: description.to_owned(),
-            postings: Vec::new(),
+            // ⚡ Bolt Optimization:
+            // Double-entry accounting guarantees a balanced transaction will almost always
+            // contain at least 2 postings (one debit, one credit). Pre-allocating capacity
+            // for 2 avoids reallocation for the vast majority of transactions.
+            postings: Vec::with_capacity(2),
         }
     }
 
