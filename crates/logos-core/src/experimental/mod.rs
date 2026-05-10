@@ -25,6 +25,8 @@ pub mod goal_fund_projector;
 #[cfg(feature = "nova")]
 pub mod goal_seeker;
 #[cfg(feature = "nova")]
+pub mod health_score;
+#[cfg(feature = "nova")]
 pub mod inflation;
 /// Visualizing cashflows using Mermaid Sankey diagrams.
 pub mod mermaid_exporter;
