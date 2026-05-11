@@ -40,6 +40,24 @@ impl RunwaySimulator {
         }
     }
 
+    /// Returns the liquid assets in cents.
+    #[must_use]
+    pub const fn liquid_assets_cents(&self) -> i64 {
+        self.liquid_assets_cents
+    }
+
+    /// Returns the current monthly burn rate in cents.
+    #[must_use]
+    pub const fn monthly_burn_cents(&self) -> i64 {
+        self.monthly_burn_cents
+    }
+
+    /// Returns the expected annual inflation percentage.
+    #[must_use]
+    pub const fn annual_inflation_pct(&self) -> f64 {
+        self.annual_inflation_pct
+    }
+
     /// Simulates the runway until assets are depleted.
     #[must_use]
     pub fn calculate_runway(&self) -> RunwayResult {
