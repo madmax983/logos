@@ -24,3 +24,6 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+## 2024-05-19 - Pre-allocate TransactionBuilder Postings
+**Learning:** Double-entry accounting transactions mathematically require at least two postings (one debit, one credit) to be balanced. By initializing the `postings` vector in `TransactionBuilder::new` with `Vec::new()`, we were forcing 1-2 unnecessary heap reallocations per transaction built.
+**Action:** Replace `Vec::new()` with `Vec::with_capacity(2)` when initializing collections with a known mathematical minimum, preventing immediate heap reallocations upon population.

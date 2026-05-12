@@ -277,7 +277,9 @@ impl TransactionBuilder {
     pub fn new(description: &str) -> Self {
         Self {
             description: description.to_owned(),
-            postings: Vec::new(),
+            // ⚡ Bolt: A valid double-entry transaction mathematically requires at least 2 postings.
+            // Pre-allocating capacity avoids immediate heap re-allocations upon population.
+            postings: Vec::with_capacity(2),
         }
     }
 
