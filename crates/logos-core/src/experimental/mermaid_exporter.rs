@@ -1,3 +1,6 @@
+//! Mermaid Sankey Diagram Exporter
+//!
+//! Exports a collection of transactions into a Mermaid-compatible Sankey diagram, visually representing the flow of money between different accounts.
 use std::collections::HashMap;
 use std::fmt::Write;
 

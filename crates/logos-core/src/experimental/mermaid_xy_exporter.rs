@@ -1,3 +1,6 @@
+//! Mermaid XY Chart Exporter
+//!
+//! Exports financial projection timelines into Mermaid-compatible XY Charts for visual rendering of net worth growth over time.
 use crate::planning::net_worth_projector::ProjectedMonth;
 use std::fmt::Write;
 

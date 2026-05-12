@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-15 - Experimental Modules "Black Box"
+**Confusion:** The `experimental` module in `logos-core` contains many undocumented simulation features. Modules like `fire_ascent`, `subscription_fatigue`, `recurrence_detector`, `mermaid_exporter`, `mermaid_xy_exporter`, `category_trends`, and `benford_law` lacked `//!` module-level documentation. This made it difficult for developers to understand the high-level intent behind these tools.
+**Clarification:** Added module-level `//!` documentation to the aforementioned `experimental` modules to clarify their individual purposes and usage within the context of the larger application.

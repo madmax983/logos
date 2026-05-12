@@ -1,3 +1,6 @@
+//! FIRE Ascent Simulator
+//!
+//! Simulates the journey to Financial Independence, Retire Early (FIRE) by modeling it as a mountain ascent, complete with milestones (camps) leading up to the summit.
 use crate::planning::fire::FireSimulator;
 use crate::planning::net_worth_projector::NetWorthProjector;
 

@@ -1,3 +1,6 @@
+//! Benford's Law Analyzer
+//!
+//! Applies Benford's Law to transaction amounts to detect statistical anomalies which may indicate fraudulent or anomalous accounting activity.
 use crate::domain::transaction::Transaction;
 use std::collections::HashMap;
 

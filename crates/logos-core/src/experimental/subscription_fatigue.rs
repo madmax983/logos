@@ -1,3 +1,6 @@
+//! Subscription Fatigue Analyzer
+//!
+//! Calculates the long-term opportunity cost of recurring subscriptions to help identify "subscription fatigue" and potential areas for savings.
 use crate::domain::transaction::Transaction;
 use crate::experimental::opportunity_cost::{OpportunityCostAnalyzer, OpportunityCostResult};
 use crate::experimental::recurrence_detector::RecurrenceDetector;

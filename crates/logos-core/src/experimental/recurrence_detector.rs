@@ -1,3 +1,6 @@
+//! Recurrence Detector
+//!
+//! Scans a ledger of transactions to identify recurring payments (like subscriptions or bills), generating templates that can be used for forecasting.
 use crate::domain::transaction::Transaction;
 use crate::experimental::cashflow_projector::RecurringTemplate;
 use std::collections::HashMap;

@@ -1,3 +1,6 @@
+//! Category Trend Analyzer
+//!
+//! Analyzes transaction histories to compute aggregate spending trends grouped by user-defined category groups.
 use std::collections::HashMap;
 
 use crate::domain::account::AccountId;
