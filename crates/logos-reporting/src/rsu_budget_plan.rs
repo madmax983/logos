@@ -606,8 +606,12 @@ fn scenario_projection(
     let surplus_cents = monthly_income_cents
         .saturating_sub(conservative_budget_cents)
         .max(0);
-    let reserve_sweep_cents = surplus_cents.saturating_mul(i64::from(reserve_sweep_pct)) / 100;
-    let investing_sweep_cents = surplus_cents.saturating_mul(i64::from(investing_sweep_pct)) / 100;
+    let reserve_sweep_cents = (i128::from(surplus_cents) * i128::from(reserve_sweep_pct) / 100)
+        .try_into()
+        .unwrap_or(i64::MAX);
+    let investing_sweep_cents = (i128::from(surplus_cents) * i128::from(investing_sweep_pct) / 100)
+        .try_into()
+        .unwrap_or(i64::MAX);
     let available_after_sweeps_cents = monthly_income_cents
         .saturating_sub(reserve_sweep_cents)
         .saturating_sub(investing_sweep_cents);
@@ -788,5 +792,14 @@ mod tests {
 
         let plan = project_rsu_budget_plan("2024-01", &input).expect("should succeed");
         assert_eq!(plan.baseline_remaining_cents(), 0);
+    }
+
+    #[test]
+    fn test_scenario_projection_sweeps_saturates_on_overflow() {
+        let proj = scenario_projection(ScenarioKey::Base, i64::MAX, 0, 10, 20);
+        // i64::MAX * 10 / 100 will wrap around without saturating math.
+        assert_eq!(proj.surplus_cents(), i64::MAX);
+        assert_eq!(proj.reserve_sweep_cents(), i64::MAX / 10);
+        assert_eq!(proj.investing_sweep_cents(), i64::MAX / 5);
     }
 }

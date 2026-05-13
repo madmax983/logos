@@ -32,5 +32,8 @@ mod tests {
     fn should_saturate_on_overflow() {
         let variance = project_net_worth(i64::MIN, 1);
         assert_eq!(variance, i64::MIN);
+
+        let variance = project_net_worth(i64::MAX, -1);
+        assert_eq!(variance, i64::MAX);
     }
 }

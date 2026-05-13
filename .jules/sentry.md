@@ -17,3 +17,7 @@
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
 **Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+
+## 2026-05-24 - Project Budget Variance/Cashflow/Net Worth Panic
+**Learning:** Found several basic calculation methods (`project_budget_variance`, `project_cashflow`, `project_net_worth` and scenario projection in `rsu_budget_plan`) returning `i64::MIN` or `i64::MAX` without explicitly documented panic boundaries through tests. The operations were `saturating_sub` but lacked tests ensuring that maximum positive/negative variants are verified and wouldn't panic inside mathematical formulas for large net-worths/RSUs. Also found `rsu_budget_plan::scenario_projection` multiplying with potentially large percentage figures that caused overflows when multiplied, requiring expanding to `i128` during percentage scaling.
+**Action:** Added explicit max/min boundary tests to these domains and transitioned to `i128` expanding in `scenario_projection` to calculate percentages accurately across massive surpluses without failing.
