@@ -1,3 +1,6 @@
+## 2025-05-13 - The Private Planning Re-export
+**Confusion:** The examples in `docs/financial-planning.md` and external scripts were failing to compile because they attempted to import from `logos_core::planning::*`, which is a private (`pub(crate)`) module. Users were getting "module is private" errors.
+**Clarification:** Updated the documentation to instruct users to import from the root-level re-exports (e.g., `logos_core::fire::FireSimulator`) instead of the internal `planning` module, in accordance with the Facade pattern.
 ## 2025-04-07 - The Planning Black Box
 **Confusion:** The `logos-core::planning` module lacked a high-level conceptual overview. Individual files (`fire`, `net_worth_projector`, `rsu_distributor`) had examples, but there was no overarching narrative connecting the "Destination" (FIRE), the "Journey" (Net Worth Projection), and the "Action" (RSU Distributor). Users were left treating it as a black box of disconnected planning primitives.
 **Clarification:** Added module-level `//!` documentation to `crates/logos-core/src/planning/mod.rs` containing a unified story and an overarching executable example that uses `fire` and `net_worth_projector` together.
