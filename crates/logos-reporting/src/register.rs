@@ -7,6 +7,15 @@
 ///
 /// This represents a single transaction or event that alters an account's balance
 /// by a specific amount.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_reporting::RegisterEntry;
+///
+/// let entry = RegisterEntry::new(5000);
+/// assert_eq!(entry.delta_cents(), 5000);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RegisterEntry {
     delta_cents: i64,
