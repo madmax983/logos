@@ -138,10 +138,10 @@ fn import_batches_fetch_runs_and_statement_lines_round_trip() {
             false,
             false,
             &[
-                NewImportRecord::new("hash-1", Some(&txn1)),
+                NewImportRecord::new("hash-1", Some(txn1)),
                 NewImportRecord::with_statement_line(
                     "hash-2",
-                    Some(&txn2),
+                    Some(txn2.clone()),
                     "s3://bucket/import.csv",
                     "2026-03-01T00:00:00",
                     "coffee",
@@ -242,7 +242,7 @@ fn reconciliation_run_and_month_close_round_trip() {
             &[
                 NewImportRecord::with_statement_line(
                     "hash-1",
-                    Some(&txn1),
+                    Some(txn1.clone()),
                     "s3://bucket/import.csv",
                     "2026-03-01T00:00:00",
                     "coffee",
@@ -250,7 +250,7 @@ fn reconciliation_run_and_month_close_round_trip() {
                 ),
                 NewImportRecord::with_statement_line(
                     "hash-2",
-                    Some(&txn2),
+                    Some(txn2.clone()),
                     "s3://bucket/import.csv",
                     "2026-03-02T00:00:00",
                     "groceries",

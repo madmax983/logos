@@ -24,3 +24,15 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+
+**[Placebo Optimization: `.collect()` and `ExactSizeIterator`]**
+**Learning:** Calling `.collect::<Vec<_>>()` on iterators that implement `ExactSizeIterator` (such as `HashMap::values()`) automatically utilizes `size_hint()` to pre-allocate the exact capacity required.
+**Action:** Do not attempt to replace this idiomatic pattern with manual `Vec::with_capacity(n)` and `.extend()` calls, as it provides zero performance benefit and only degrades code readability.
+
+**[Placebo Optimization: Database Row Iteration]**
+**Learning:** When loading rows using an ORM like Diesel (e.g., via `.load::<Row>()`), the query execution inherently allocates a `Vec` for the results.
+**Action:** Attempting to eliminate intermediate array allocations by wrapping `.into_iter().map().collect()` chains inside a nested `Result::map()` block does not prevent the initial memory allocation and only makes error handling unnecessarily verbose.
+
+**[Owned Option Values for Constructors]**
+**Learning:** For optional parameters in constructors, using `Option<T>` and letting the caller `clone()` when necessary is more efficient than forcing an internal allocation with `Option<&T>` and `.cloned()` inside the constructor.
+**Action:** Use `Option<T>` for constructor parameters to support callers who already own the data.

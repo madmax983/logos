@@ -83,7 +83,7 @@ fn memory_store_allocates_deterministic_ids_and_tracks_related_records() {
             false,
             &[NewImportRecord::with_statement_line(
                 "sha256:import-1",
-                Some(&txn_1),
+                Some(txn_1.clone()),
                 "inline:statement",
                 "2026-02-01T00:00:00",
                 "coffee shop",
@@ -237,7 +237,10 @@ fn memory_store_rejects_unknown_related_records() {
             0,
             false,
             false,
-            &[NewImportRecord::new("sha256:import-1", Some(&missing_txn))],
+            &[NewImportRecord::new(
+                "sha256:import-1",
+                Some(missing_txn.clone()),
+            )],
         )
         .expect_err("missing imported txn");
     assert!(matches!(

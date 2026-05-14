@@ -394,10 +394,10 @@ pub struct NewImportRecord {
 
 impl NewImportRecord {
     #[must_use]
-    pub fn new(content_hash_key: &str, imported_txn_id: Option<&TransactionId>) -> Self {
+    pub fn new(content_hash_key: &str, imported_txn_id: Option<TransactionId>) -> Self {
         Self {
             content_hash_key: content_hash_key.to_owned(),
-            imported_txn_id: imported_txn_id.cloned(),
+            imported_txn_id,
             statement_line: None,
         }
     }
@@ -406,7 +406,7 @@ impl NewImportRecord {
     #[allow(clippy::too_many_arguments)]
     pub fn with_statement_line(
         content_hash_key: &str,
-        imported_txn_id: Option<&TransactionId>,
+        imported_txn_id: Option<TransactionId>,
         source_uri: &str,
         statement_timestamp: &str,
         memo: &str,
@@ -414,7 +414,7 @@ impl NewImportRecord {
     ) -> Self {
         Self {
             content_hash_key: content_hash_key.to_owned(),
-            imported_txn_id: imported_txn_id.cloned(),
+            imported_txn_id,
             statement_line: Some(NewStatementLine::new(
                 source_uri,
                 statement_timestamp,

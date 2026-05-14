@@ -1062,7 +1062,7 @@ impl<S: LedgerStore> AppRuntime<S> {
             let txn_id = self.post_import_record(&record)?;
             imported_records.push(NewImportRecord::with_statement_line(
                 &content_hash_key,
-                Some(&txn_id),
+                Some(txn_id),
                 &source_uri,
                 record.timestamp(),
                 record.memo(),
@@ -1141,7 +1141,7 @@ impl<S: LedgerStore> AppRuntime<S> {
             let txn_id = self.post_import_record(&record)?;
             imported_records.push(NewImportRecord::with_statement_line(
                 &content_hash_key,
-                Some(&txn_id),
+                Some(txn_id),
                 &source_uri,
                 record.timestamp(),
                 record.memo(),
