@@ -266,6 +266,10 @@ pub struct TransactionBuilder {
 impl TransactionBuilder {
     /// Initiates a new transaction builder with the given description.
     ///
+    /// ⚡ Bolt Optimization: Pre-allocates capacity of 2.
+    /// Since a balanced double-entry transaction strictly requires a minimum of 2 postings
+    /// (a debit and a credit), this eliminates the initial `Vec` reallocation penalty.
+    ///
     /// ## Examples
     ///
     /// ```
@@ -277,7 +281,7 @@ impl TransactionBuilder {
     pub fn new(description: &str) -> Self {
         Self {
             description: description.to_owned(),
-            postings: Vec::new(),
+            postings: Vec::with_capacity(2),
         }
     }
 
