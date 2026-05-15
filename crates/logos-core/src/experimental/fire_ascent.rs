@@ -85,22 +85,23 @@ impl FireAscentSimulator {
             };
         }
 
+        self.simulate_ascent(fire_number)
+    }
+
+    fn simulate_ascent(&self, summit: i64) -> AscentResult {
         let mut ascent_projector = self.projector.clone();
 
-        let camp1 = fire_number / 4;
-        let camp2 = fire_number / 2;
-        let camp3 = fire_number.saturating_mul(3) / 4;
-        let summit = fire_number;
+        let camp1 = summit / 4;
+        let camp2 = summit / 2;
+        let camp3 = summit.saturating_mul(3) / 4;
 
         ascent_projector.add_milestone_cents(camp1);
         ascent_projector.add_milestone_cents(camp2);
         ascent_projector.add_milestone_cents(camp3);
         ascent_projector.add_milestone_cents(summit);
 
-        let (timeline, crossed_milestones) = ascent_projector.project_timeline(self.max_months);
-
-        let mut sorted_milestones = crossed_milestones;
-        sorted_milestones.sort_by_key(|&(_, month)| month);
+        let (timeline, mut crossed_milestones) = ascent_projector.project_timeline(self.max_months);
+        crossed_milestones.sort_by_key(|&(_, month)| month);
 
         let milestone_names = [
             (camp1, "⛺ Camp 1 (25%)"),
@@ -109,11 +110,11 @@ impl FireAscentSimulator {
             (summit, "🚩 SUMMIT (100%)"),
         ];
 
-        let mut milestones = Vec::new();
+        let mut milestones = Vec::with_capacity(4);
         let mut success = false;
 
         for (target_cents, target_name) in milestone_names {
-            let month_reached = sorted_milestones
+            let month_reached = crossed_milestones
                 .iter()
                 .find(|&&(c, _)| c == target_cents)
                 .map(|&(_, m)| m);
