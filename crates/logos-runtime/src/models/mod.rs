@@ -23,6 +23,19 @@ pub struct MonthReport {
     cashflow: i64,
 }
 
+/// A summary of a reconciliation operation for a specific month.
+///
+/// It holds the calculated variance between expected ledger balances and actual statement balances.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::MonthReconciliation;
+///
+/// let recon = MonthReconciliation::new(100_00, 200_00, 200_00, 0, true, 10, 50_00, -50_00);
+/// assert!(recon.is_reconciled());
+/// assert_eq!(recon.variance_cents(), 0);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MonthReconciliation {
     ledger_delta_cents: i64,
@@ -55,6 +68,21 @@ pub struct ImportSummary {
     dry_run: bool,
 }
 
+/// A request payload for running the month autopilot operation.
+///
+/// It contains configuration such as the month key, checking account, and options for OCR or variance allowances.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::MonthAutopilotRequest;
+///
+/// let request = MonthAutopilotRequest::new("2024-05", "assets:checking")
+///     .with_ocr(true)
+///     .with_allow_variance(false);
+/// assert_eq!(request.month_key(), "2024-05");
+/// assert!(request.enable_ocr());
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthAutopilotRequest {
     month_key: String,
@@ -68,6 +96,29 @@ pub struct MonthAutopilotRequest {
     confirm_close: bool,
 }
 
+/// A comprehensive summary of a completed month autopilot operation.
+///
+/// It aggregates the results of fetching, importing, reconciling, and closing the month.
+///
+/// ## Examples
+///
+/// ```no_run
+/// use logos_runtime::{MonthAutopilotSummary, MonthReport};
+/// use logos_store::{StoredReconciliationRun, StoredMonthClose};
+///
+/// # fn get_summary() -> MonthAutopilotSummary { unimplemented!() }
+/// #
+/// let summary = get_summary();
+///
+/// assert_eq!(summary.month_key(), "2024-05");
+/// assert_eq!(summary.checking_account(), "assets:checking");
+/// assert_eq!(summary.imported_count(), 10);
+/// assert_eq!(summary.duplicate_count(), 2);
+///
+/// // Access nested artifacts
+/// let report = summary.report();
+/// let recon = summary.reconciliation_run();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthAutopilotSummary {
     month_key: String,
