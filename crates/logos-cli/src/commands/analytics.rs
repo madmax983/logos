@@ -262,6 +262,7 @@ pub fn net_worth_project(
     monthly_savings_cents: i64,
     months: u16,
 ) -> Result<(), CliError> {
+    use crossterm::style::Stylize;
     use logos_core::net_worth_projector::NetWorthProjector;
 
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
@@ -273,7 +274,8 @@ pub fn net_worth_project(
 
     for month in timeline {
         table.add_row(vec![
-            comfy_table::Cell::new(month.month_index.to_string()),
+            comfy_table::Cell::new(month.month_index.to_string())
+                .fg(comfy_table::Color::DarkGrey),
             comfy_table::Cell::new(logos_core::format::currency(month.net_worth_cents))
                 .fg(comfy_table::Color::Green),
             comfy_table::Cell::new(logos_core::format::currency(month.saved_cents)),
@@ -281,10 +283,8 @@ pub fn net_worth_project(
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    let header = "📈 Net Worth Projection".green().bold();
+    println!("\n{header}\n{table}\n");
 
     Ok(())
 }
