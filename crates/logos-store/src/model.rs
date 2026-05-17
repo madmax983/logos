@@ -62,6 +62,17 @@ impl StoredTransaction {
     }
 }
 
+/// Represents a previously valid ledger transaction correction as it exists in the persistence layer.
+///
+/// ## Examples
+///
+/// ```no_run
+/// use logos_store::StoredCorrection;
+/// # fn get_correction() -> logos_core::Correction { unimplemented!() }
+///
+/// let correction = get_correction();
+/// let stored = StoredCorrection::new(correction);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredCorrection {
     correction: Correction,
@@ -79,6 +90,16 @@ impl StoredCorrection {
     }
 }
 
+/// Represents a persisted budget target for a specific month and expense category.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredBudgetTarget;
+///
+/// let target = StoredBudgetTarget::new("2024-05", "expenses:food", 500_00);
+/// assert_eq!(target.budget_cents(), 500_00);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredBudgetTarget {
     month_key: String,
@@ -112,6 +133,17 @@ impl StoredBudgetTarget {
     }
 }
 
+/// A manifest describing a persisted analytics artifact (e.g., an exported file).
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredAnalyticsArtifactManifest;
+///
+/// let manifest = StoredAnalyticsArtifactManifest::new(
+///     "art-1", "csv", "s3://bucket/art-1.csv", "hash", 1, 100, 1672531200000000, 1672531200000000, 1672531200000000, None, "snap-1"
+/// );
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredAnalyticsArtifactManifest {
     artifact_id: String,

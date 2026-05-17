@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-17 - The Missing Examples
+**Confusion:** The `logos-store::model` module had missing documentation for its public structs, violating the rule that every public item must have a doctest.
+**Clarification:** Added `///` comments with `## Examples` to `StoredCorrection`, `StoredBudgetTarget`, and `StoredAnalyticsArtifactManifest` to explicitly show how to use them.
