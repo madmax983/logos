@@ -103,11 +103,11 @@ impl ScenarioBudgetProjection {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan, ScenarioKey};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
-    /// assert_eq!(plan.base().unwrap().scenario(), ScenarioKey::Base);
+    /// assert_eq!(plan.base().expect("should succeed").scenario(), ScenarioKey::Base);
     /// ```
     #[must_use]
     pub const fn scenario(&self) -> ScenarioKey {
@@ -122,11 +122,11 @@ impl ScenarioBudgetProjection {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
-    /// assert_eq!(plan.base().unwrap().monthly_income_cents(), 11250_00);
+    /// assert_eq!(plan.base().expect("should succeed").monthly_income_cents(), 11250_00);
     /// ```
     #[must_use]
     pub const fn monthly_income_cents(&self) -> i64 {
@@ -141,12 +141,12 @@ impl ScenarioBudgetProjection {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
     /// // Base income ($11,250) - Bear baseline ($7,500) = $3,750
-    /// assert_eq!(plan.base().unwrap().surplus_cents(), 3750_00);
+    /// assert_eq!(plan.base().expect("should succeed").surplus_cents(), 3750_00);
     /// ```
     #[must_use]
     pub const fn surplus_cents(&self) -> i64 {
@@ -161,12 +161,12 @@ impl ScenarioBudgetProjection {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
     /// // 10% reserve sweep of a $3,750 surplus
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
-    /// assert_eq!(plan.base().unwrap().reserve_sweep_cents(), 375_00);
+    /// assert_eq!(plan.base().expect("should succeed").reserve_sweep_cents(), 375_00);
     /// ```
     #[must_use]
     pub const fn reserve_sweep_cents(&self) -> i64 {
@@ -181,12 +181,12 @@ impl ScenarioBudgetProjection {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
     /// // 20% investing sweep of a $3,750 surplus
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
-    /// assert_eq!(plan.base().unwrap().investing_sweep_cents(), 750_00);
+    /// assert_eq!(plan.base().expect("should succeed").investing_sweep_cents(), 750_00);
     /// ```
     #[must_use]
     pub const fn investing_sweep_cents(&self) -> i64 {
@@ -201,12 +201,12 @@ impl ScenarioBudgetProjection {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
     /// // Base income $11,250 - (Reserve $375 + Investing $750) = $10,125
-    /// assert_eq!(plan.base().unwrap().available_after_sweeps_cents(), 10125_00);
+    /// assert_eq!(plan.base().expect("should succeed").available_after_sweeps_cents(), 10125_00);
     /// ```
     #[must_use]
     pub const fn available_after_sweeps_cents(&self) -> i64 {
@@ -298,9 +298,9 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
     /// assert_eq!(plan.month_key(), "2024-05");
     /// ```
@@ -317,9 +317,9 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
     /// assert_eq!(plan.conservative_budget_cents(), 7500_00);
     /// ```
@@ -336,9 +336,9 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
     /// assert_eq!(plan.fixed_commitments_cents(), 8000_00);
     /// ```
@@ -355,9 +355,9 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 5000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 5000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
     /// // Conservative budget ($7,500) - Fixed Commitments ($5,000) = $2,500
     /// assert_eq!(plan.baseline_remaining_cents(), 2500_00);
@@ -374,9 +374,9 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
     /// assert_eq!(plan.reserve_sweep_pct(), 10);
     /// ```
@@ -392,9 +392,9 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
     /// assert_eq!(plan.investing_sweep_pct(), 20);
     /// ```
@@ -410,9 +410,9 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan, ScenarioKey};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
     /// assert!(plan.scenario(ScenarioKey::Base).is_some());
     /// ```
@@ -431,11 +431,11 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
-    /// assert_eq!(plan.bear().unwrap().surplus_cents(), 0); // Bear never has surplus by definition
+    /// assert_eq!(plan.bear().expect("should succeed").surplus_cents(), 0); // Bear never has surplus by definition
     /// ```
     #[must_use]
     pub fn bear(&self) -> Option<&ScenarioBudgetProjection> {
@@ -449,11 +449,11 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
-    /// assert_eq!(plan.base().unwrap().monthly_income_cents(), 11250_00);
+    /// assert_eq!(plan.base().expect("should succeed").monthly_income_cents(), 11250_00);
     /// ```
     #[must_use]
     pub fn base(&self) -> Option<&ScenarioBudgetProjection> {
@@ -468,11 +468,11 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
-    /// assert_eq!(plan.bull().unwrap().monthly_income_cents(), 15000_00);
+    /// assert_eq!(plan.bull().expect("should succeed").monthly_income_cents(), 15000_00);
     /// ```
     #[must_use]
     pub fn bull(&self) -> Option<&ScenarioBudgetProjection> {
@@ -486,9 +486,9 @@ impl RsuBudgetPlan {
     /// ```
     /// use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
     ///
-    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
-    /// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+    /// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+    /// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
+    /// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
     ///
     /// assert_eq!(plan.scenarios().len(), 3);
     /// ```
@@ -509,17 +509,17 @@ impl RsuBudgetPlan {
 /// ```
 /// use logos_reporting::{project_rsu_budget_plan, RsuBudgetPlanInput, ScenarioPriceInputs};
 ///
-/// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).unwrap();
-/// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).unwrap();
+/// let prices = ScenarioPriceInputs::new(100_00, 150_00, 200_00).expect("should succeed");
+/// let input = RsuBudgetPlanInput::new(300, 0, prices, 8000_00, 10, 20).expect("should succeed");
 ///
-/// let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
+/// let plan = project_rsu_budget_plan("2024-05", &input).expect("should succeed");
 ///
 /// // Note: Real calculation includes haircut/tax withholding (often ~25-40%).
 /// // With the default ~25% haircut, $30,000 gross -> $22,500 net -> $7,500/mo.
 /// assert_eq!(plan.conservative_budget_cents(), 7500_00);
 ///
 /// // Base case price: $150.00 * 300 units = $45,000 gross. With 25% haircut = $33,750 net = $11,250/mo.
-/// let base_scenario = plan.base().unwrap();
+/// let base_scenario = plan.base().expect("should succeed");
 /// assert_eq!(base_scenario.monthly_income_cents(), 11250_00);
 ///
 /// // Surplus = $11,250 (Base) - $7,500 (Conservative) = $3,750
@@ -788,5 +788,14 @@ mod tests {
 
         let plan = project_rsu_budget_plan("2024-01", &input).expect("should succeed");
         assert_eq!(plan.baseline_remaining_cents(), 0);
+    }
+    #[test]
+    fn test_project_rsu_budget_plan_empty_month_key() {
+        let prices = ScenarioPriceInputs::new(100, 200, 300).expect("should succeed");
+        let input = RsuBudgetPlanInput::new(300, 0, prices, 5000, 10, 20).expect("should succeed");
+        assert_eq!(
+            project_rsu_budget_plan("", &input).unwrap_err(),
+            "month_key must not be empty"
+        );
     }
 }
