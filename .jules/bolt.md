@@ -24,3 +24,6 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+**[Pre-allocate Domain Constraints]**
+**Learning:** When initializing collections for domain objects that have known minimum mathematical constraints (e.g., minimum of 2 entries for double-entry balancing transactions), always pre-allocate the capacity using `Vec::with_capacity(N)` instead of `Vec::new()` to avoid immediate heap reallocations upon population.
+**Action:** Use `Vec::with_capacity(2)` for transaction builder postings.
