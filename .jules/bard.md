@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-19 - The Experimental Blindspots
+**Confusion:** Many structs and methods within the `logos-core::experimental` module (such as `MonteCarloProjector`, `CoastFireSimulator`, `CategoryTrendAnalyzer`, and `IncomeRouter`) lacked `## Examples` doctests, acting as Black Boxes. Users couldn't tell how to initialize or compose them.
+**Clarification:** Added executable `## Examples` doctests to `MonteCarloProjector`, `MonteCarloResult`, `CoastFireSimulator`, `CoastFireResult`, `CategoryTrendAnalyzer`, and `IncomeRouter`.

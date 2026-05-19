@@ -8,6 +8,19 @@
 use crate::planning::fire::FireSimulator;
 
 /// Represents the result of a Coast FIRE calculation.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::experimental::coast_fire::CoastFireResult;
+///
+/// let result = CoastFireResult {
+///     fire_target_cents: 1_200_000_00,
+///     coast_fire_cents: 310_000_00,
+///     is_coasting: true,
+/// };
+/// assert!(result.is_coasting);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CoastFireResult {
     /// The actual target FIRE number we are aiming for.
@@ -28,6 +41,16 @@ pub struct CoastFireSimulator {
 
 impl CoastFireSimulator {
     /// Creates a new `CoastFireSimulator`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::planning::fire::FireSimulator;
+    /// use logos_core::experimental::coast_fire::CoastFireSimulator;
+    ///
+    /// let fire_sim = FireSimulator::new(400_000); // $4k/month expenses
+    /// let sim = CoastFireSimulator::new(fire_sim, 7.0, 20);
+    /// ```
     ///
     /// # Arguments
     /// * `fire_sim` - The base FIRE simulator that defines your expenses and target.

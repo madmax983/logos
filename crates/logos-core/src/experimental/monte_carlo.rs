@@ -48,6 +48,19 @@ impl Lcg {
 }
 
 /// The result of a Monte Carlo simulation.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::monte_carlo::MonteCarloResult;
+///
+/// let result = MonteCarloResult {
+///     p5_cents: 80_000,
+///     median_cents: 110_000,
+///     p95_cents: 150_000,
+/// };
+/// assert_eq!(result.median_cents, 110_000);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonteCarloResult {
     /// 5th percentile outcome in cents.
@@ -70,6 +83,15 @@ pub struct MonteCarloProjector {
 
 impl MonteCarloProjector {
     /// Creates a new `MonteCarloProjector`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::monte_carlo::MonteCarloProjector;
+    ///
+    /// // Starting with $100k, saving $1k/month, 7% mean return, 15% volatility.
+    /// let projector = MonteCarloProjector::new(10_000_000, 100_000, 0.07, 0.15, 42);
+    /// ```
     #[must_use]
     pub const fn new(
         initial_cents: i64,

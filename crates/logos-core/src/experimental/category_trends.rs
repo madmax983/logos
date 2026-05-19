@@ -15,6 +15,14 @@ pub struct CategoryTrendAnalyzer {
 
 impl CategoryTrendAnalyzer {
     /// Creates a new analyzer with an empty category mapping.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::experimental::category_trends::CategoryTrendAnalyzer;
+    ///
+    /// let analyzer = CategoryTrendAnalyzer::new();
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -32,6 +40,21 @@ impl CategoryTrendAnalyzer {
     ///
     /// Only debits (positive amounts) to mapped accounts are included in the totals.
     /// Credits are ignored in this simple expenditure analyzer.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::experimental::category_trends::CategoryTrendAnalyzer;
+    /// use logos_core::{AccountId, CategoryGroupId};
+    ///
+    /// let mut analyzer = CategoryTrendAnalyzer::new();
+    /// let rent_acc = AccountId::new("expenses:rent").unwrap();
+    /// let housing = CategoryGroupId::from_name("Housing").unwrap();
+    /// analyzer.map_account(rent_acc, housing);
+    ///
+    /// let trends = analyzer.compute_spending_by_category(&[]);
+    /// assert!(trends.is_empty());
+    /// ```
     #[must_use]
     pub fn compute_spending_by_category(
         &self,

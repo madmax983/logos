@@ -27,6 +27,17 @@ pub struct IncomeRouter {
 impl IncomeRouter {
     /// Creates a new `IncomeRouter`.
     ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::AccountId;
+    /// use logos_core::experimental::income_router::{IncomeRouter, RouteRule};
+    ///
+    /// let source = AccountId::new("income:salary").unwrap();
+    /// let dest = AccountId::new("assets:checking").unwrap();
+    /// let router = IncomeRouter::new(source, vec![RouteRule { destination: dest, percentage: 100 }]).unwrap();
+    /// ```
+    ///
     /// # Errors
     /// Returns a `DomainError::InvalidAllocationTotal` if the percentages do not sum exactly to 100.
     pub fn new(source_account: AccountId, rules: Vec<RouteRule>) -> Result<Self, DomainError> {
@@ -44,6 +55,21 @@ impl IncomeRouter {
 
     /// Routes the income amount, creating a perfectly balanced transaction.
     /// Any fractional cents are swept into the first rule's destination.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::AccountId;
+    /// use logos_core::experimental::income_router::{IncomeRouter, RouteRule};
+    ///
+    /// let source = AccountId::new("income:salary").unwrap();
+    /// let dest = AccountId::new("assets:checking").unwrap();
+    /// let router = IncomeRouter::new(source, vec![RouteRule { destination: dest, percentage: 100 }]).unwrap();
+    ///
+    /// let tx = router.route_income("Paycheck", 1000).unwrap();
+    /// // Postings are: 1 credit to salary, 1 debit to checking
+    /// assert_eq!(tx.postings().len(), 2);
+    /// ```
     ///
     /// # Errors
     /// Returns a `DomainError::InvalidCreditAmount` if the `amount_cents` is zero or negative.
