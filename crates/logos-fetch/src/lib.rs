@@ -23,7 +23,9 @@ pub use adapter::{FakeStatementAdapter, FetchRequest, FetchResult, StatementAdap
 pub use adapters::ProvidentAdapter;
 pub use config::StatementSourceConfig;
 pub use error::FetchError;
-pub use model::{FetchRunStatus, FetchedStatementArtifact, OutputFormat, StatementSource};
+pub use model::{
+    FetchRunStatus, FetchedStatementArtifact, OutputFormat, StatementSource, is_valid_month_key,
+};
 pub use resolver::{
     OnePasswordCliSecretResolver, OpCliSecretRefReader, SecretRefReader, SecretResolver,
 };

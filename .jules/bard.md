@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-19 - The Missing Module Stories
+**Confusion:** Several modules and functions were missing their story and explicit documentation. `logos-core::experimental`, `logos-core::format`, and `logos-tui::lib` lacked module-level `//!` documentation. Furthermore, `PostgresStore` in `logos-store-pg` and `is_valid_month_key` in `logos-fetch` were missing `///` documentation entirely. This broke the rule that if it isn't documented, it doesn't exist.
+**Clarification:** Added module-level `//!` comments to explain the high-level concepts for those modules. Added `///` docs with `## Examples` to `PostgresStore` and `is_valid_month_key`.

@@ -1,3 +1,6 @@
+//! Terminal User Interface for Logos
+//!
+//! This crate provides the interactive terminal frontend for exploring ledgers, budgets, and analytical models.
 pub(crate) mod app;
 pub use app::civil_from_days;
 pub(crate) mod terminal;

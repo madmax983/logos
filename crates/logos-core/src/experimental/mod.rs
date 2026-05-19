@@ -1,3 +1,6 @@
+//! Experimental features, simulators, and analytics.
+//!
+//! These modules are under active development and are currently behind the `nova` feature flag.
 #[cfg(feature = "nova")]
 pub mod life_energy_calculator;
 

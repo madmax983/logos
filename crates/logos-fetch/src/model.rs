@@ -319,6 +319,15 @@ impl FetchedStatementArtifact {
     }
 }
 
+/// Checks if a string is a valid month key in the format `YYYY-MM`.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_fetch::is_valid_month_key;
+/// assert!(is_valid_month_key("2026-03"));
+/// assert!(!is_valid_month_key("2026-13"));
+/// ```
 pub fn is_valid_month_key(value: &str) -> bool {
     let bytes = value.as_bytes();
     if bytes.len() != 7 || bytes[4] != b'-' {

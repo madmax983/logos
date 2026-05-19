@@ -1,3 +1,4 @@
+//! Formatting utilities for displaying currency and timestamps.
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(

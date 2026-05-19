@@ -1,0 +1,373 @@
+crates/logos-core/src/experimental/goal_seeker.rs:14 missing Examples for: pub struct GoalSeeker {
+crates/logos-core/src/experimental/goal_seeker.rs:32 missing Examples for: pub fn add_upcoming_vest(&mut self, vest: UpcomingVest) {
+crates/logos-core/src/experimental/goal_seeker.rs:48 missing Examples for: pub fn find_required_savings(&self, target_cents: i64, target_months: u16) -> Option<i64> {
+crates/logos-core/src/experimental/fire_ascent.rs:6 missing Examples for: pub struct AscentMilestone {
+crates/logos-core/src/experimental/fire_ascent.rs:17 missing Examples for: pub struct AscentResult {
+crates/logos-core/src/experimental/fire_ascent.rs:39 missing Examples for: pub struct FireAscentSimulator {
+crates/logos-core/src/experimental/fire_ascent.rs:62 missing Examples for: pub fn ascend(&self) -> AscentResult {
+crates/logos-core/src/experimental/trinity_simulator.rs:51 missing Examples for: pub struct TrinityResult {
+crates/logos-core/src/experimental/trinity_simulator.rs:58 missing Examples for: pub struct TrinitySimulator {
+crates/logos-core/src/experimental/trinity_simulator.rs:94 missing Examples for: pub fn run(&self, years: u16, paths: u32) -> TrinityResult {
+crates/logos-core/src/experimental/subscription_fatigue.rs:7 missing Examples for: pub struct SubscriptionFatigueReport {
+crates/logos-core/src/experimental/subscription_fatigue.rs:21 missing Examples for: pub struct SubscriptionFatigueAnalyzer {
+crates/logos-core/src/experimental/subscription_fatigue.rs:43 missing Examples for: pub fn analyze(&self, transactions: &[Transaction]) -> SubscriptionFatigueReport {
+crates/logos-core/src/experimental/opportunity_cost.rs:11 missing Examples for: pub struct OpportunityCostResult {
+crates/logos-core/src/experimental/opportunity_cost.rs:22 missing Examples for: pub struct OpportunityCostAnalyzer {
+crates/logos-core/src/experimental/opportunity_cost.rs:46 missing Examples for: pub fn analyze(&self, template: &RecurringTemplate) -> OpportunityCostResult {
+crates/logos-core/src/experimental/income_router.rs:13 missing Examples for: pub struct RouteRule {
+crates/logos-core/src/experimental/income_router.rs:22 missing Examples for: pub struct IncomeRouter {
+crates/logos-core/src/experimental/income_router.rs:32 missing Examples for: pub fn new(source_account: AccountId, rules: Vec<RouteRule>) -> Result<Self, DomainError> {
+crates/logos-core/src/experimental/income_router.rs:51 missing Examples for: pub fn route_income(
+crates/logos-core/src/experimental/recurrence_detector.rs:12 missing Examples for: pub struct RecurrenceDetector {
+crates/logos-core/src/experimental/recurrence_detector.rs:29 missing Examples for: pub fn detect(&self, transactions: &[Transaction]) -> Vec<RecurringTemplate> {
+crates/logos-core/src/experimental/predictive_ledger.rs:18 missing Examples for: pub struct PredictiveLedger {
+crates/logos-core/src/experimental/tax_loss_harvester.rs:12 missing Examples for: pub struct TaxLot {
+crates/logos-core/src/experimental/tax_loss_harvester.rs:23 missing Examples for: pub struct HarvestingOpportunity {
+crates/logos-core/src/experimental/tax_loss_harvester.rs:34 missing Examples for: pub struct TaxLossHarvester {
+crates/logos-core/src/experimental/tax_loss_harvester.rs:41 missing Examples for: pub fn new() -> Self {
+crates/logos-core/src/experimental/tax_loss_harvester.rs:46 missing Examples for: pub fn add_lot(&mut self, lot: TaxLot) {
+crates/logos-core/src/experimental/tax_loss_harvester.rs:57 missing Examples for: pub fn find_opportunities<F>(&self, current_prices: F) -> Vec<HarvestingOpportunity>
+crates/logos-core/src/experimental/mermaid_xy_exporter.rs:8 missing Examples for: pub struct MermaidXyExporter {}
+crates/logos-core/src/experimental/mermaid_xy_exporter.rs:12 missing Examples for: pub fn new() -> Self {
+crates/logos-core/src/experimental/mermaid_xy_exporter.rs:18 missing Examples for: pub fn export_net_worth_xy(&self, timeline: &[ProjectedMonth]) -> String {
+crates/logos-core/src/experimental/debt_optimizer.rs:9 missing Examples for: pub enum PayoffStrategy {
+crates/logos-core/src/experimental/debt_optimizer.rs:18 missing Examples for: pub struct Debt {
+crates/logos-core/src/experimental/debt_optimizer.rs:31 missing Examples for: pub struct PayoffResult {
+crates/logos-core/src/experimental/debt_optimizer.rs:40 missing Examples for: pub struct DebtOptimizer {
+crates/logos-core/src/experimental/debt_optimizer.rs:56 missing Examples for: pub fn add_debt(&mut self, debt: Debt) {
+crates/logos-core/src/experimental/debt_optimizer.rs:62 missing Examples for: pub fn simulate(&self, strategy: PayoffStrategy) -> PayoffResult {
+crates/logos-core/src/experimental/runway_simulator.rs:8 missing Examples for: pub struct RunwayResult {
+crates/logos-core/src/experimental/runway_simulator.rs:17 missing Examples for: pub struct RunwaySimulator {
+crates/logos-core/src/experimental/runway_simulator.rs:45 missing Examples for: pub fn calculate_runway(&self) -> RunwayResult {
+crates/logos-core/src/experimental/mermaid_exporter.rs:11 missing Examples for: pub struct MermaidSankeyExporter<'a> {
+crates/logos-core/src/experimental/mermaid_exporter.rs:18 missing Examples for: pub fn new() -> Self {
+crates/logos-core/src/experimental/mermaid_exporter.rs:23 missing Examples for: pub fn add_transaction(&mut self, transaction: &'a Transaction) {
+crates/logos-core/src/experimental/mermaid_exporter.rs:35 missing Examples for: pub fn export_sankey(&self) -> String {
+crates/logos-core/src/experimental/fire_goal_seeker.rs:14 missing Examples for: pub enum ConfidenceLevel {
+crates/logos-core/src/experimental/fire_goal_seeker.rs:25 missing Examples for: pub struct FireGoalSeeker {
+crates/logos-core/src/experimental/fire_goal_seeker.rs:57 missing Examples for: pub fn seek_monthly_contribution(
+crates/logos-core/src/experimental/asset_depreciation.rs:8 missing Examples for: pub enum DepreciationSchedule {
+crates/logos-core/src/experimental/asset_depreciation.rs:22 missing Examples for: pub struct AssetDepreciationSimulator {
+crates/logos-core/src/experimental/asset_depreciation.rs:38 missing Examples for: pub fn value_after_years(&self, years: u16) -> i64 {
+crates/logos-core/src/experimental/life_energy_calculator.rs:16 missing Examples for: pub struct TrueWageCalculator {
+crates/logos-core/src/experimental/life_energy_calculator.rs:43 missing Examples for: pub fn true_hourly_wage_cents(&self) -> i64 {
+crates/logos-core/src/experimental/life_energy_calculator.rs:59 missing Examples for: pub fn evaluate_expense(&self, expense_cents: i64) -> f64 {
+crates/logos-core/src/experimental/life_energy_calculator.rs:71 missing Examples for: pub struct LifeEnergySubscriptionReport {
+crates/logos-core/src/experimental/life_energy_calculator.rs:81 missing Examples for: pub struct LifeEnergySubscriptionEvaluator {
+crates/logos-core/src/experimental/life_energy_calculator.rs:100 missing Examples for: pub fn evaluate_subscription(
+crates/logos-core/src/experimental/anomaly_detector.rs:12 missing Examples for: pub struct Anomaly {
+crates/logos-core/src/experimental/anomaly_detector.rs:23 missing Examples for: pub struct AnomalyDetector {
+crates/logos-core/src/experimental/anomaly_detector.rs:39 missing Examples for: pub fn detect(&self, transactions: &[Transaction]) -> Vec<Anomaly> {
+crates/logos-core/src/experimental/lifestyle_creep.rs:12 missing Examples for: pub struct CreepResult {
+crates/logos-core/src/experimental/lifestyle_creep.rs:25 missing Examples for: pub struct LifestyleCreepSimulator {
+crates/logos-core/src/experimental/lifestyle_creep.rs:128 missing Examples for: pub fn calculate(&self) -> CreepResult {
+crates/logos-core/src/experimental/inflation.rs:10 missing Examples for: pub struct InflationProjector {
+crates/logos-core/src/experimental/category_trends.rs:12 missing Examples for: pub struct CategoryTrendAnalyzer {
+crates/logos-core/src/experimental/category_trends.rs:19 missing Examples for: pub fn new() -> Self {
+crates/logos-core/src/experimental/category_trends.rs:27 missing Examples for: pub fn map_account(&mut self, account: AccountId, category_group: CategoryGroupId) {
+crates/logos-core/src/experimental/category_trends.rs:36 missing Examples for: pub fn compute_spending_by_category(
+crates/logos-core/src/experimental/coast_fire.rs:12 missing Examples for: pub struct CoastFireResult {
+crates/logos-core/src/experimental/coast_fire.rs:23 missing Examples for: pub struct CoastFireSimulator {
+crates/logos-core/src/experimental/coast_fire.rs:51 missing Examples for: pub fn calculate(&self) -> CoastFireResult {
+crates/logos-core/src/experimental/monte_carlo.rs:52 missing Examples for: pub struct MonteCarloResult {
+crates/logos-core/src/experimental/monte_carlo.rs:63 missing Examples for: pub struct MonteCarloProjector {
+crates/logos-core/src/experimental/monte_carlo.rs:92 missing Examples for: pub fn run(&self, months: u16, paths: u32) -> MonteCarloResult {
+crates/logos-core/src/experimental/portfolio_rebalancer.rs:15 missing Examples for: pub struct TargetAllocation {
+crates/logos-core/src/experimental/portfolio_rebalancer.rs:24 missing Examples for: pub struct PortfolioRebalancer {
+crates/logos-core/src/experimental/portfolio_rebalancer.rs:33 missing Examples for: pub fn new(targets: Vec<TargetAllocation>) -> Result<Self, DomainError> {
+crates/logos-core/src/experimental/portfolio_rebalancer.rs:51 missing Examples for: pub fn rebalance(
+crates/logos-core/src/experimental/benford_law.rs:10 missing Examples for: pub struct BenfordLawAnalyzer {
+crates/logos-core/src/experimental/benford_law.rs:17 missing Examples for: pub fn new() -> Self {
+crates/logos-core/src/experimental/benford_law.rs:22 missing Examples for: pub fn add_transactions(&mut self, transactions: &[Transaction]) {
+crates/logos-core/src/experimental/benford_law.rs:49 missing Examples for: pub fn observed_distribution(&self) -> HashMap<u8, f64> {
+crates/logos-core/src/experimental/benford_law.rs:66 missing Examples for: pub fn expected_distribution() -> HashMap<u8, f64> {
+crates/logos-core/src/experimental/goal_fund_projector.rs:13 missing Examples for: pub struct ProjectedFundMonth {
+crates/logos-core/src/experimental/goal_fund_projector.rs:26 missing Examples for: pub struct GoalFundProjector {
+crates/logos-core/src/experimental/goal_fund_projector.rs:38 missing Examples for: pub fn new(
+crates/logos-core/src/experimental/goal_fund_projector.rs:55 missing Examples for: pub fn add_upcoming_vest(&mut self, vest: UpcomingVest) {
+crates/logos-core/src/experimental/goal_fund_projector.rs:68 missing Examples for: pub fn project_timeline(
+crates/logos-core/src/format/mod.rs:2 missing Examples for: pub fn us_timestamp(us: i64) -> String {
+crates/logos-core/src/format/mod.rs:17 missing Examples for: pub fn currency(cents: i64) -> String {
+crates/logos-core/src/domain/correction.rs:163 missing Examples for: pub fn into_supersedes_id(self) -> TransactionId {
+crates/logos-reporting/src/rsu_budget_plan.rs:89 missing Examples for: pub struct ScenarioBudgetProjection {
+crates/logos-reporting/src/rsu_budget_plan.rs:219 missing Examples for: pub struct RsuBudgetPlanInput {
+crates/logos-reporting/src/rsu_budget_plan.rs:282 missing Examples for: pub struct RsuBudgetPlan {
+crates/logos-reporting/src/rsu_forecast.rs:12 missing Examples for: pub struct RsuForecastSummary {
+crates/logos-reporting/src/register.rs:11 missing Examples for: pub struct RegisterEntry {
+crates/logos-store-pg/src/store.rs:320 missing Examples for: pub struct PostgresStore {
+crates/logos-store-pg/src/store.rs:710 missing Examples for: pub fn connect(database_url: &str) -> Result<Self, StoreError> {
+crates/logos-store-pg/src/store.rs:732 missing Examples for: pub fn connection_mut(&self) -> RefMut<'_, PgConnection> {
+crates/logos-store-pg/src/store.rs:738 missing Examples for: pub fn pending_migrations(&mut self) -> Result<Vec<String>, StoreError> {
+crates/logos-store-pg/src/store.rs:745 missing Examples for: pub fn run_migrations(&mut self) -> Result<Vec<String>, StoreError> {
+crates/logos-store-pg/src/migrate.rs:12 missing Examples for: pub fn run_pending_migrations(conn: &mut PgConnection) -> Result<Vec<String>, StoreError> {
+crates/logos-store-pg/src/migrate.rs:27 missing Examples for: pub fn pending_migration_names(conn: &mut PgConnection) -> Result<Vec<String>, StoreError> {
+crates/logos-import/src/csv.rs:5 missing Examples for: pub enum ImportError {
+crates/logos-import/src/csv.rs:42 missing Examples for: pub struct CsvMapping {
+crates/logos-import/src/csv.rs:65 missing Examples for: pub struct ImportRecord {
+crates/logos-import/src/csv.rs:76 missing Examples for: pub fn new(
+crates/logos-import/src/csv.rs:95 missing Examples for: pub fn source_id(&self) -> &str {
+crates/logos-import/src/csv.rs:100 missing Examples for: pub fn timestamp(&self) -> &str {
+crates/logos-import/src/csv.rs:110 missing Examples for: pub fn memo(&self) -> &str {
+crates/logos-import/src/csv.rs:115 missing Examples for: pub fn account(&self) -> &str {
+crates/logos-import/src/csv.rs:120 missing Examples for: pub fn category(&self) -> &str {
+crates/logos-import/src/csv.rs:201 missing Examples for: pub fn parse_simple_csv_row(row: &str, mapping: &CsvMapping) -> Result<ImportRecord, ImportError> {
+crates/logos-import/src/pdf.rs:18 missing Examples for: pub fn parse_pdf_statement_file(
+crates/logos-import/src/fingerprint.rs:17 missing Examples for: pub fn deterministic_fingerprint(record: &ImportRecord) -> String {
+crates/logos-import/src/fingerprint.rs:33 missing Examples for: pub fn deterministic_fingerprint_legacy_v1(record: &ImportRecord) -> u64 {
+crates/logos-store/src/model.rs:66 missing Examples for: pub struct StoredCorrection {
+crates/logos-store/src/model.rs:83 missing Examples for: pub struct StoredBudgetTarget {
+crates/logos-store/src/model.rs:91 missing Examples for: pub fn new(month_key: &str, expense_account_prefix: &str, budget_cents: i64) -> Self {
+crates/logos-store/src/model.rs:100 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-store/src/model.rs:105 missing Examples for: pub fn expense_account_prefix(&self) -> &str {
+crates/logos-store/src/model.rs:116 missing Examples for: pub struct StoredAnalyticsArtifactManifest {
+crates/logos-store/src/model.rs:133 missing Examples for: pub fn new(
+crates/logos-store/src/model.rs:162 missing Examples for: pub fn artifact_id(&self) -> &str {
+crates/logos-store/src/model.rs:167 missing Examples for: pub fn artifact_kind(&self) -> &str {
+crates/logos-store/src/model.rs:172 missing Examples for: pub fn artifact_uri(&self) -> &str {
+crates/logos-store/src/model.rs:177 missing Examples for: pub fn content_hash(&self) -> &str {
+crates/logos-store/src/model.rs:207 missing Examples for: pub fn supersedes_artifact_id(&self) -> Option<&str> {
+crates/logos-store/src/model.rs:212 missing Examples for: pub fn snapshot_key(&self) -> &str {
+crates/logos-store/src/model.rs:218 missing Examples for: pub struct StoredImportBatch {
+crates/logos-store/src/model.rs:233 missing Examples for: pub fn new(
+crates/logos-store/src/model.rs:258 missing Examples for: pub fn batch_id(&self) -> &str {
+crates/logos-store/src/model.rs:263 missing Examples for: pub fn import_kind(&self) -> &str {
+crates/logos-store/src/model.rs:268 missing Examples for: pub fn source_uri(&self) -> &str {
+crates/logos-store/src/model.rs:273 missing Examples for: pub fn batch_key(&self) -> &str {
+crates/logos-store/src/model.rs:304 missing Examples for: pub struct StoredImportRecord {
+crates/logos-store/src/model.rs:313 missing Examples for: pub fn new(
+crates/logos-store/src/model.rs:328 missing Examples for: pub fn content_hash_key(&self) -> &str {
+crates/logos-store/src/model.rs:333 missing Examples for: pub fn batch_id(&self) -> &str {
+crates/logos-store/src/model.rs:349 missing Examples for: pub struct NewStatementLine {
+crates/logos-store/src/model.rs:358 missing Examples for: pub fn new(source_uri: &str, statement_timestamp: &str, memo: &str, amount_cents: i64) -> Self {
+crates/logos-store/src/model.rs:368 missing Examples for: pub fn source_uri(&self) -> &str {
+crates/logos-store/src/model.rs:373 missing Examples for: pub fn statement_timestamp(&self) -> &str {
+crates/logos-store/src/model.rs:378 missing Examples for: pub fn memo(&self) -> &str {
+crates/logos-store/src/model.rs:389 missing Examples for: pub struct NewImportRecord {
+crates/logos-store/src/model.rs:397 missing Examples for: pub fn new(content_hash_key: &str, imported_txn_id: Option<&TransactionId>) -> Self {
+crates/logos-store/src/model.rs:407 missing Examples for: pub fn with_statement_line(
+crates/logos-store/src/model.rs:428 missing Examples for: pub fn content_hash_key(&self) -> &str {
+crates/logos-store/src/model.rs:444 missing Examples for: pub struct StoredStatementLine {
+crates/logos-store/src/model.rs:458 missing Examples for: pub fn new(
+crates/logos-store/src/model.rs:481 missing Examples for: pub fn line_id(&self) -> &str {
+crates/logos-store/src/model.rs:486 missing Examples for: pub fn batch_id(&self) -> &str {
+crates/logos-store/src/model.rs:491 missing Examples for: pub fn source_uri(&self) -> &str {
+crates/logos-store/src/model.rs:496 missing Examples for: pub fn statement_timestamp(&self) -> &str {
+crates/logos-store/src/model.rs:501 missing Examples for: pub fn memo(&self) -> &str {
+crates/logos-store/src/model.rs:522 missing Examples for: pub struct StoredReconciliationRun {
+crates/logos-store/src/model.rs:542 missing Examples for: pub fn new(
+crates/logos-store/src/model.rs:577 missing Examples for: pub fn run_id(&self) -> &str {
+crates/logos-store/src/model.rs:582 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-store/src/model.rs:587 missing Examples for: pub fn checking_account(&self) -> &str {
+crates/logos-store/src/model.rs:743 missing Examples for: pub struct StoredMonthClose {
+crates/logos-store/src/model.rs:754 missing Examples for: pub fn new(
+crates/logos-store/src/model.rs:773 missing Examples for: pub fn close_id(&self) -> &str {
+crates/logos-store/src/model.rs:778 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-store/src/model.rs:783 missing Examples for: pub fn checking_account(&self) -> &str {
+crates/logos-store/src/model.rs:788 missing Examples for: pub fn reconciliation_run_id(&self) -> &str {
+crates/logos-store/src/model.rs:793 missing Examples for: pub fn analytics_artifact_id(&self) -> Option<&str> {
+crates/logos-store/src/model.rs:804 missing Examples for: pub enum StoredFetchRunStatus {
+crates/logos-store/src/model.rs:825 missing Examples for: pub fn parse(value: &str) -> Option<Self> {
+crates/logos-store/src/model.rs:846 missing Examples for: pub enum StoredFetchArtifactFormat {
+crates/logos-store/src/model.rs:861 missing Examples for: pub fn parse(value: &str) -> Option<Self> {
+crates/logos-store/src/model.rs:871 missing Examples for: pub struct StoredFetchRun {
+crates/logos-store/src/model.rs:889 missing Examples for: pub fn new(
+crates/logos-store/src/model.rs:920 missing Examples for: pub fn run_id(&self) -> &str {
+crates/logos-store/src/model.rs:925 missing Examples for: pub fn source_id(&self) -> &str {
+crates/logos-store/src/model.rs:930 missing Examples for: pub fn institution_id(&self) -> &str {
+crates/logos-store/src/model.rs:935 missing Examples for: pub fn ledger_account(&self) -> &str {
+crates/logos-store/src/model.rs:940 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-store/src/model.rs:950 missing Examples for: pub fn artifact_path(&self) -> Option<&str> {
+crates/logos-store/src/model.rs:970 missing Examples for: pub fn error_summary(&self) -> Option<&str> {
+crates/logos-store/src/memory.rs:100 missing Examples for: pub fn new() -> Self {
+crates/logos-store/src/memory.rs:105 missing Examples for: pub fn new_in_memory() -> Self {
+crates/logos-cli/src/runtime.rs:13 missing Examples for: pub fn init_runtime() -> Result<AppRuntime<PostgresStore>, CliError> {
+crates/logos-cli/src/args.rs:11 missing Examples for: pub enum CliError {
+crates/logos-cli/src/args.rs:57 missing Examples for: pub struct ParsedArgs {
+crates/logos-cli/src/args.rs:77 missing Examples for: pub fn execute(&self) -> Result<(), CliError> {
+crates/logos-cli/src/args.rs:362 missing Examples for: pub enum Command {
+crates/logos-cli/src/args.rs:419 missing Examples for: pub enum HelpTopic {
+crates/logos-cli/src/args.rs:434 missing Examples for: pub enum DbCommand {
+crates/logos-cli/src/args.rs:440 missing Examples for: pub enum TxnCommand {
+crates/logos-cli/src/args.rs:454 missing Examples for: pub enum AnalyticsCommand {
+crates/logos-cli/src/args.rs:479 missing Examples for: pub enum ImportCommand {
+crates/logos-cli/src/args.rs:500 missing Examples for: pub enum FetchCommand {
+crates/logos-cli/src/args.rs:511 missing Examples for: pub enum ReconcileCommand {
+crates/logos-cli/src/args.rs:528 missing Examples for: pub enum MonthCommand {
+crates/logos-cli/src/args.rs:543 missing Examples for: pub enum CloseCommand {
+crates/logos-cli/src/args.rs:553 missing Examples for: pub enum BudgetCommand {
+crates/logos-cli/src/args.rs:582 missing Examples for: pub enum ReportCommand {
+crates/logos-cli/src/args.rs:594 missing Examples for: pub fn parse_args<I, S>(argv: I) -> Result<ParsedArgs, CliError>
+crates/logos-cli/src/lib.rs:17 missing Examples for: pub fn run<I, S>(argv: I) -> Result<(), CliError>
+crates/logos-cli/src/commands/db.rs:13 missing Examples for: pub fn migrate() -> Result<(), CliError> {
+crates/logos-cli/src/commands/db.rs:54 missing Examples for: pub fn status() -> Result<(), CliError> {
+crates/logos-cli/src/commands/reconcile.rs:12 missing Examples for: pub fn month(
+crates/logos-cli/src/commands/reconcile.rs:53 missing Examples for: pub fn list(month_key: Option<&str>, checking_account: Option<&str>) -> Result<(), CliError> {
+crates/logos-cli/src/commands/reconcile.rs:68 missing Examples for: pub fn show(run_id: &str) -> Result<(), CliError> {
+crates/logos-cli/src/commands/help.rs:149 missing Examples for: pub fn show(topic: HelpTopic) -> Result<(), CliError> {
+crates/logos-cli/src/commands/fetch.rs:12 missing Examples for: pub fn list_runs(month_key: Option<&str>, checking_account: Option<&str>) -> Result<(), CliError> {
+crates/logos-cli/src/commands/fetch.rs:27 missing Examples for: pub fn show_run(run_id: &str) -> Result<(), CliError> {
+crates/logos-cli/src/commands/analytics.rs:10 missing Examples for: pub fn snapshot_create(
+crates/logos-cli/src/commands/analytics.rs:42 missing Examples for: pub fn snapshot_list() -> Result<(), CliError> {
+crates/logos-cli/src/commands/analytics.rs:86 missing Examples for: pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
+crates/logos-cli/src/commands/analytics.rs:107 missing Examples for: pub fn sankey() -> Result<(), CliError> {
+crates/logos-cli/src/commands/analytics.rs:260 missing Examples for: pub fn net_worth_project(
+crates/logos-cli/src/commands/analytics.rs:298 missing Examples for: pub fn fire_sim(
+crates/logos-cli/src/commands/import.rs:11 missing Examples for: pub fn pdf(file_path: &str, account: &str, dry_run: bool, ocr: bool) -> Result<(), CliError> {
+crates/logos-cli/src/commands/import.rs:44 missing Examples for: pub fn csv(
+crates/logos-cli/src/commands/month.rs:11 missing Examples for: pub fn autopilot(
+crates/logos-cli/src/commands/report.rs:19 missing Examples for: pub fn month(checking_account: &str, month_key: Option<&str>) -> Result<(), CliError> {
+crates/logos-cli/src/commands/budget.rs:31 missing Examples for: pub fn set(
+crates/logos-cli/src/commands/budget.rs:67 missing Examples for: pub fn rsu_plan(
+crates/logos-cli/src/commands/budget.rs:113 missing Examples for: pub fn monte_carlo(
+crates/logos-cli/src/commands/txn.rs:53 missing Examples for: pub fn add(
+crates/logos-cli/src/commands/txn.rs:104 missing Examples for: pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
+crates/logos-cli/src/commands/close.rs:11 missing Examples for: pub fn month(
+crates/logos-fetch/src/resolver.rs:37 missing Examples for: pub struct OnePasswordCliSecretResolver<R = OpCliSecretRefReader> {
+crates/logos-fetch/src/resolver.rs:43 missing Examples for: pub struct OpCliSecretRefReader {
+crates/logos-fetch/src/model.rs:14 missing Examples for: pub enum OutputFormat {
+crates/logos-fetch/src/model.rs:23 missing Examples for: pub struct StatementSource {
+crates/logos-fetch/src/model.rs:42 missing Examples for: pub enum FetchRunStatus {
+crates/logos-fetch/src/model.rs:57 missing Examples for: pub struct FetchedStatementArtifact {
+crates/logos-fetch/src/model.rs:126 missing Examples for: pub fn source_id(&self) -> &str {
+crates/logos-fetch/src/model.rs:131 missing Examples for: pub fn institution_id(&self) -> &str {
+crates/logos-fetch/src/model.rs:136 missing Examples for: pub fn ledger_account(&self) -> &str {
+crates/logos-fetch/src/model.rs:141 missing Examples for: pub fn format_preference(&self) -> &[OutputFormat] {
+crates/logos-fetch/src/model.rs:146 missing Examples for: pub fn preferred_format(&self) -> Option<OutputFormat> {
+crates/logos-fetch/src/model.rs:187 missing Examples for: pub fn username_secret_ref(&self) -> &str {
+crates/logos-fetch/src/model.rs:192 missing Examples for: pub fn password_secret_ref(&self) -> &str {
+crates/logos-fetch/src/model.rs:197 missing Examples for: pub fn totp_secret_ref(&self) -> Option<&str> {
+crates/logos-fetch/src/model.rs:287 missing Examples for: pub fn source_id(&self) -> &str {
+crates/logos-fetch/src/model.rs:292 missing Examples for: pub fn ledger_account(&self) -> &str {
+crates/logos-fetch/src/model.rs:302 missing Examples for: pub fn artifact_path(&self) -> &str {
+crates/logos-fetch/src/model.rs:307 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-fetch/src/model.rs:322 missing Examples for: pub fn is_valid_month_key(value: &str) -> bool {
+crates/logos-fetch/src/adapter.rs:18 missing Examples for: pub struct FetchRequest {
+crates/logos-fetch/src/adapter.rs:25 missing Examples for: pub struct FetchResult {
+crates/logos-fetch/src/adapter.rs:43 missing Examples for: pub struct FakeStatementAdapter {
+crates/logos-fetch/src/adapter.rs:87 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-fetch/src/adapter.rs:140 missing Examples for: pub fn error_summary(&self) -> Option<&str> {
+crates/logos-fetch/src/adapter.rs:150 missing Examples for: pub fn download_fixture_statement() -> Self {
+crates/logos-fetch/src/adapter.rs:165 missing Examples for: pub fn needs_attention(error_summary: &str) -> Self {
+crates/logos-fetch/src/config.rs:12 missing Examples for: pub struct StatementSourceConfig {
+crates/logos-fetch/src/config.rs:88 missing Examples for: pub fn sources(&self) -> &[StatementSource] {
+crates/logos-fetch/src/error.rs:4 missing Examples for: pub struct FetchError {
+crates/logos-fetch/src/error.rs:10 missing Examples for: pub fn new(message: impl Into<String>) -> Self {
+crates/logos-fetch/src/secrets.rs:11 missing Examples for: pub struct SecretBundle {
+crates/logos-fetch/src/secrets.rs:54 missing Examples for: pub fn username(&self) -> &str {
+crates/logos-fetch/src/secrets.rs:59 missing Examples for: pub fn password(&self) -> &str {
+crates/logos-fetch/src/secrets.rs:64 missing Examples for: pub fn totp_code(&self) -> Option<&str> {
+crates/logos-fetch/src/adapters/provident.rs:19 missing Examples for: pub struct ProvidentAdapter {
+crates/logos-fetch/src/adapters/provident.rs:47 missing Examples for: pub fn fixture_runner_output() -> Self {
+crates/logos-tui/src/app.rs:22 missing Examples for: pub enum View {
+crates/logos-tui/src/app.rs:31 missing Examples for: pub enum AppInput {
+crates/logos-tui/src/app.rs:46 missing Examples for: pub struct ScopeFieldView<'a> {
+crates/logos-tui/src/app.rs:54 missing Examples for: pub fn new(label: &'static str, value: impl Into<Cow<'a, str>>, focused: bool) -> Self {
+crates/logos-tui/src/app.rs:68 missing Examples for: pub fn value(&self) -> &str {
+crates/logos-tui/src/app.rs:79 missing Examples for: pub struct HomeSnapshot {
+crates/logos-tui/src/app.rs:94 missing Examples for: pub fn new(
+crates/logos-tui/src/app.rs:119 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-tui/src/app.rs:124 missing Examples for: pub fn checking_account(&self) -> &str {
+crates/logos-tui/src/app.rs:129 missing Examples for: pub fn expense_account_prefix(&self) -> &str {
+crates/logos-tui/src/app.rs:165 missing Examples for: pub struct BudgetSnapshot {
+crates/logos-tui/src/app.rs:175 missing Examples for: pub fn new(
+crates/logos-tui/src/app.rs:192 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-tui/src/app.rs:197 missing Examples for: pub fn expense_account_prefix(&self) -> &str {
+crates/logos-tui/src/app.rs:218 missing Examples for: pub struct RegisterActivityRecord {
+crates/logos-tui/src/app.rs:226 missing Examples for: pub fn new(timestamp: &str, description: &str, amount_cents: i64) -> Self {
+crates/logos-tui/src/app.rs:235 missing Examples for: pub fn timestamp(&self) -> &str {
+crates/logos-tui/src/app.rs:240 missing Examples for: pub fn description(&self) -> &str {
+crates/logos-tui/src/app.rs:251 missing Examples for: pub struct RegisterSnapshot {
+crates/logos-tui/src/app.rs:259 missing Examples for: pub fn new(account: &str, balance_cents: i64, activity: Vec<RegisterActivityRecord>) -> Self {
+crates/logos-tui/src/app.rs:268 missing Examples for: pub fn account(&self) -> &str {
+crates/logos-tui/src/app.rs:278 missing Examples for: pub fn activity(&self) -> &[RegisterActivityRecord] {
+crates/logos-tui/src/app.rs:305 missing Examples for: pub struct ReconcileRunRecord {
+crates/logos-tui/src/app.rs:316 missing Examples for: pub fn new(
+crates/logos-tui/src/app.rs:335 missing Examples for: pub fn run_id(&self) -> &str {
+crates/logos-tui/src/app.rs:340 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-tui/src/app.rs:345 missing Examples for: pub fn checking_account(&self) -> &str {
+crates/logos-tui/src/app.rs:366 missing Examples for: pub struct ReconcileStatementLineRecord {
+crates/logos-tui/src/app.rs:375 missing Examples for: pub fn new(line_id: &str, statement_timestamp: &str, memo: &str, amount_cents: i64) -> Self {
+crates/logos-tui/src/app.rs:385 missing Examples for: pub fn line_id(&self) -> &str {
+crates/logos-tui/src/app.rs:390 missing Examples for: pub fn statement_timestamp(&self) -> &str {
+crates/logos-tui/src/app.rs:395 missing Examples for: pub fn memo(&self) -> &str {
+crates/logos-tui/src/app.rs:653 missing Examples for: pub struct App {
+crates/logos-tui/src/app.rs:695 missing Examples for: pub fn new() -> Self {
+crates/logos-tui/src/app.rs:714 missing Examples for: pub fn home_month_key(&self) -> &str {
+crates/logos-tui/src/app.rs:719 missing Examples for: pub fn home_checking_account(&self) -> &str {
+crates/logos-tui/src/app.rs:724 missing Examples for: pub fn home_expense_account_prefix(&self) -> &str {
+crates/logos-tui/src/app.rs:734 missing Examples for: pub fn budget_month_key(&self) -> &str {
+crates/logos-tui/src/app.rs:739 missing Examples for: pub fn budget_expense_account_prefix(&self) -> &str {
+crates/logos-tui/src/app.rs:749 missing Examples for: pub fn register_account(&self) -> &str {
+crates/logos-tui/src/app.rs:759 missing Examples for: pub fn reconcile_filter_month_key(&self) -> Option<&str> {
+crates/logos-tui/src/app.rs:764 missing Examples for: pub fn reconcile_filter_checking_account(&self) -> Option<&str> {
+crates/logos-tui/src/app.rs:774 missing Examples for: pub fn scope_error_message(&self) -> Option<&str> {
+crates/logos-tui/src/app.rs:862 missing Examples for: pub fn scope_field_views(&self) -> Vec<ScopeFieldView<'_>> {
+crates/logos-tui/src/app.rs:1193 missing Examples for: pub fn render_frame(&self) -> String {
+crates/logos-tui/src/app.rs:1221 missing Examples for: pub fn selected_reconcile_run(&self) -> Option<&ReconcileRunRecord> {
+crates/logos-tui/src/app.rs:1228 missing Examples for: pub fn selected_reconcile_statement_lines(&self) -> &[ReconcileStatementLineRecord] {
+crates/logos-tui/src/app.rs:1549 missing Examples for: pub fn civil_from_days(days_since_unix_epoch: i64) -> (i64, u32, u32) {
+crates/logos-tui/src/terminal.rs:52 missing Examples for: pub fn enter() -> io::Result<Self> {
+crates/logos-tui/src/terminal.rs:66 missing Examples for: pub fn draw(&mut self, app: &App, runtime_available: bool) -> io::Result<()> {
+crates/logos-tui/src/terminal.rs:77 missing Examples for: pub fn next_input(&mut self) -> io::Result<Option<AppInput>> {
+crates/logos-tui/src/terminal.rs:91 missing Examples for: pub fn next_key_char(&mut self) -> io::Result<Option<char>> {
+crates/logos-tui/src/terminal.rs:181 missing Examples for: pub fn read_event_input(event: &Event) -> Option<AppInput> {
+crates/logos-tui/src/terminal.rs:190 missing Examples for: pub fn key_event_to_app_input(key_event: KeyEvent) -> Option<AppInput> {
+crates/logos-tui/src/terminal.rs:212 missing Examples for: pub fn key_event_to_app_char(key_event: KeyEvent) -> Option<char> {
+crates/logos-tui/src/terminal.rs:259 missing Examples for: pub fn view_scope_lines(app: &App) -> Vec<String> {
+crates/logos-tui/src/terminal.rs:368 missing Examples for: pub fn view_status_lines(app: &App, runtime_available: bool) -> Vec<Line<'static>> {
+crates/logos-tui/src/ui/reconcile.rs:8 missing Examples for: pub fn render(
+crates/logos-tui/src/ui/home.rs:7 missing Examples for: pub fn render(
+crates/logos-tui/src/ui/rsu.rs:2 missing Examples for: pub fn render() -> String {
+crates/logos-tui/src/ui/register.rs:7 missing Examples for: pub fn render(account: &str, snapshot: Option<&RegisterSnapshot>) -> String {
+crates/logos-tui/src/ui/budget.rs:7 missing Examples for: pub fn render(
+crates/logos-runtime/src/error/mod.rs:7 missing Examples for: pub enum RuntimeError {
+crates/logos-runtime/src/models/mod.rs:27 missing Examples for: pub struct MonthReconciliation {
+crates/logos-runtime/src/models/mod.rs:59 missing Examples for: pub struct MonthAutopilotRequest {
+crates/logos-runtime/src/models/mod.rs:72 missing Examples for: pub struct MonthAutopilotSummary {
+crates/logos-runtime/src/models/mod.rs:114 missing Examples for: pub fn new(month_key: &str, checking_account: &str) -> Self {
+crates/logos-runtime/src/models/mod.rs:129 missing Examples for: pub fn with_statement_pdf(mut self, path: impl AsRef<Path>) -> Self {
+crates/logos-runtime/src/models/mod.rs:158 missing Examples for: pub fn with_analytics_artifact_id(mut self, artifact_id: &str) -> Self {
+crates/logos-runtime/src/models/mod.rs:170 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-runtime/src/models/mod.rs:175 missing Examples for: pub fn checking_account(&self) -> &str {
+crates/logos-runtime/src/models/mod.rs:205 missing Examples for: pub fn analytics_artifact_id(&self) -> Option<&str> {
+crates/logos-runtime/src/models/mod.rs:218 missing Examples for: pub fn new(
+crates/logos-runtime/src/models/mod.rs:241 missing Examples for: pub fn month_key(&self) -> &str {
+crates/logos-runtime/src/models/mod.rs:246 missing Examples for: pub fn checking_account(&self) -> &str {
+crates/logos-runtime/src/models/mod.rs:261 missing Examples for: pub fn fetch_runs(&self) -> &[StoredFetchRun] {
+crates/logos-runtime/src/runtime/mod.rs:60 missing Examples for: pub struct AppRuntime<S> {
+crates/logos-runtime/src/runtime/mod.rs:87 missing Examples for: pub fn new_in_memory() -> Self {
+crates/logos-runtime/src/runtime/mod.rs:99 missing Examples for: pub fn current_month_key_local() -> String {
+crates/logos-runtime/src/runtime/mod.rs:103 missing Examples for: pub fn current_month_key_utc() -> String {
+crates/logos-runtime/src/runtime/mod.rs:149 missing Examples for: pub fn post_double_entry(
+crates/logos-runtime/src/runtime/mod.rs:161 missing Examples for: pub fn transaction_exists(&self, id: &TransactionId) -> bool {
+crates/logos-runtime/src/runtime/mod.rs:170 missing Examples for: pub fn transactions_as_of_us(
+crates/logos-runtime/src/runtime/mod.rs:181 missing Examples for: pub fn register_balance_for(&self, account: &str) -> i64 {
+crates/logos-runtime/src/runtime/mod.rs:193 missing Examples for: pub fn budget_variance_for(&self, budget_cents: i64, expense_account_prefix: &str) -> i64 {
+crates/logos-runtime/src/runtime/mod.rs:218 missing Examples for: pub fn set_budget_target_for_month(
+crates/logos-runtime/src/runtime/mod.rs:230 missing Examples for: pub fn budget_target_for_month(
+crates/logos-runtime/src/runtime/mod.rs:241 missing Examples for: pub fn budget_variance_for_month(
+crates/logos-runtime/src/runtime/mod.rs:257 missing Examples for: pub fn month_report_for(&self, checking_account: &str, month_key: &str) -> MonthReport {
+crates/logos-runtime/src/runtime/mod.rs:295 missing Examples for: pub fn reconcile_month_for(
+crates/logos-runtime/src/runtime/mod.rs:351 missing Examples for: pub fn reconcile_and_persist_month_for(
+crates/logos-runtime/src/runtime/mod.rs:386 missing Examples for: pub fn reconciliation_run_count(&self) -> usize {
+crates/logos-runtime/src/runtime/mod.rs:391 missing Examples for: pub fn reconciliation_run(&self, run_id: &str) -> Option<StoredReconciliationRun> {
+crates/logos-runtime/src/runtime/mod.rs:396 missing Examples for: pub fn list_reconciliation_runs(
+crates/logos-runtime/src/runtime/mod.rs:418 missing Examples for: pub fn fetch_run(&self, run_id: &str) -> Option<StoredFetchRun> {
+crates/logos-runtime/src/runtime/mod.rs:423 missing Examples for: pub fn list_fetch_runs(
+crates/logos-runtime/src/runtime/mod.rs:449 missing Examples for: pub fn close_month(
+crates/logos-runtime/src/runtime/mod.rs:467 missing Examples for: pub fn month_close_for_scope(
+crates/logos-runtime/src/runtime/mod.rs:477 missing Examples for: pub fn stage_fetched_statement_artifact(&mut self, artifact: FetchedStatementArtifact) {
+crates/logos-runtime/src/runtime/mod.rs:499 missing Examples for: pub fn run_month_autopilot(
+crates/logos-runtime/src/runtime/mod.rs:935 missing Examples for: pub fn plan_rsu_budget_for_month(
+crates/logos-runtime/src/runtime/mod.rs:970 missing Examples for: pub fn import_csv_row(
+crates/logos-runtime/src/runtime/mod.rs:1012 missing Examples for: pub fn import_csv_statement(
+crates/logos-runtime/src/runtime/mod.rs:1104 missing Examples for: pub fn import_pdf_statement(
+crates/logos-runtime/src/runtime/mod.rs:1187 missing Examples for: pub fn statement_lines_for_reconciliation_run(&self, run_id: &str) -> Vec<StoredStatementLine> {
+crates/logos-runtime/src/runtime/mod.rs:1196 missing Examples for: pub fn create_analytics_snapshot(
+crates/logos-runtime/src/runtime/mod.rs:1244 missing Examples for: pub fn list_analytics_snapshots(&self) -> Vec<StoredAnalyticsArtifactManifest> {
+crates/logos-runtime/src/runtime/mod.rs:1256 missing Examples for: pub fn get_analytics_snapshot(
+crates/logos-runtime/src/runtime/mod.rs:1268 missing Examples for: pub fn apply_correction(
+crates/logos-runtime/src/runtime/mod.rs:1279 missing Examples for: pub fn latest_correction_target(&self) -> Option<TransactionId> {
+crates/logos-runtime/src/runtime/mod.rs:1393 missing Examples for: pub fn default_artifacts_root(state_root: &Path) -> PathBuf {
+crates/logos-runtime/src/runtime/mod.rs:1402 missing Examples for: pub fn default_fetch_config_path(state_root: &Path) -> PathBuf {
+crates/logos-runtime/src/runtime/mod.rs:1411 missing Examples for: pub fn default_state_root() -> PathBuf {

@@ -317,6 +317,16 @@ struct SequenceValueRow {
     sequence_value: i64,
 }
 
+/// Concrete `PostgreSQL` storage implementation.
+///
+/// Handles connecting to the database and executing queries to implement the `LedgerStore` trait.
+///
+/// ## Examples
+///
+/// ```rust,ignore
+/// use logos_store_pg::PostgresStore;
+/// let store = PostgresStore::connect("postgres://logos:logos@127.0.0.1/logos").unwrap();
+/// ```
 pub struct PostgresStore {
     connection: RefCell<PgConnection>,
 }
