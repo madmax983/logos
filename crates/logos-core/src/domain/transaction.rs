@@ -266,6 +266,10 @@ pub struct TransactionBuilder {
 impl TransactionBuilder {
     /// Initiates a new transaction builder with the given description.
     ///
+    /// ⚡ Bolt Optimization: Pre-allocates vector capacity of 2 for postings,
+    /// as a valid double-entry transaction requires at least two postings to balance,
+    /// avoiding immediate heap reallocations.
+    ///
     /// ## Examples
     ///
     /// ```
@@ -277,7 +281,7 @@ impl TransactionBuilder {
     pub fn new(description: &str) -> Self {
         Self {
             description: description.to_owned(),
-            postings: Vec::new(),
+            postings: Vec::with_capacity(2),
         }
     }
 
@@ -433,6 +437,12 @@ mod tests {
             .posting(Posting::credit(AccountId::new("income:salary").unwrap(), 100).unwrap())
             .build();
         assert_eq!(result, Err(DomainError::EmptyTransactionDescription));
+    }
+
+    #[test]
+    fn should_preallocate_capacity_for_postings() {
+        let builder = TransactionBuilder::new("Groceries");
+        assert!(builder.postings.capacity() >= 2);
     }
 
     #[test]
