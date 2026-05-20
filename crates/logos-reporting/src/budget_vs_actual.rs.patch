@@ -1,0 +1,19 @@
+<<<<<<< SEARCH
+    #[test]
+    fn should_saturate_on_overflow() {
+        let variance = project_budget_variance(i64::MIN, 1);
+        assert_eq!(variance, i64::MIN);
+    }
+=======
+    #[test]
+    fn project_budget_variance_saturates_on_underflow() {
+        let variance = project_budget_variance(i64::MIN, 1);
+        assert_eq!(variance, i64::MIN);
+    }
+
+    #[test]
+    fn project_budget_variance_saturates_on_overflow() {
+        let variance = project_budget_variance(i64::MAX, -1);
+        assert_eq!(variance, i64::MAX);
+    }
+>>>>>>> REPLACE

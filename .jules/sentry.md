@@ -17,3 +17,6 @@
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
 **Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+## 2024-05-18 - Sentry fixes for missing tests in logos-reporting
+**Learning:** Found several missing boundary checks for mathematical overflow (`project_cashflow`, `project_budget_variance`, `project_net_worth`, `project_register_balance_iter`, `project_rsu_forecast_summary`) where tests covered max/min but didn't verify opposite bounds on subtraction (causing saturating underflow behavior checks to be absent).
+**Action:** Always test both `MAX` and `MIN` limits when dealing with `saturating_add` and `saturating_sub` across reporting functions to ensure bounds aren't silently clipped.

@@ -85,7 +85,10 @@ mod tests {
         let events = [i64::MAX, 1];
         let summary = project_rsu_forecast_summary(&events);
         assert_eq!(summary.projected_total_cents(), i64::MAX);
+    }
 
+    #[test]
+    fn project_rsu_forecast_summary_saturates_on_underflow() {
         let events_under = [i64::MIN, -1];
         let summary_under = project_rsu_forecast_summary(&events_under);
         assert_eq!(summary_under.projected_total_cents(), i64::MIN);

@@ -31,8 +31,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn should_saturate_on_overflow() {
+    fn project_cashflow_saturates_on_underflow() {
         let variance = project_cashflow(i64::MIN, 1);
         assert_eq!(variance, i64::MIN);
+    }
+
+    #[test]
+    fn project_cashflow_saturates_on_overflow() {
+        let variance = project_cashflow(i64::MAX, -1);
+        assert_eq!(variance, i64::MAX);
     }
 }
