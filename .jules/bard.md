@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-10 - The Integration Primitives
+**Confusion:** Core structural types in the external integration crates (`logos-import` and `logos-fetch`) such as `ImportError`, `CsvMapping`, `FetchRequest`, and `FetchError` lacked executable examples. This created a "Ghost" scenario where users couldn't see how these boundaries are constructed or handled.
+**Clarification:** Added explicit `/// ## Examples` blocks to `ImportError`, `CsvMapping`, `FetchRequest`, and `FetchError` demonstrating instantiation and basic usage.

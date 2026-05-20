@@ -1,6 +1,16 @@
 //! CSV Import Handling
 use core::fmt;
 
+/// Errors that can occur during the import process.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_import::ImportError;
+///
+/// let err = ImportError::MissingColumns { expected: 5, found: 3 };
+/// assert_eq!(err.to_string(), "missing columns: expected 5, found 3");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ImportError {
     MissingColumns { expected: usize, found: usize },
@@ -38,6 +48,23 @@ impl fmt::Display for ImportError {
 
 impl std::error::Error for ImportError {}
 
+/// Represents a configuration for mapping CSV columns to import fields.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_import::CsvMapping;
+///
+/// let mapping = CsvMapping {
+///     source_id: "chase".to_string(),
+///     timestamp_idx: 0,
+///     amount_idx: 1,
+///     memo_idx: 2,
+///     account_idx: 3,
+///     category_idx: 4,
+/// };
+/// assert_eq!(mapping.source_id, "chase");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CsvMapping {
     pub source_id: String,

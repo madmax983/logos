@@ -14,6 +14,21 @@ use crate::{
 };
 
 /// A request to fetch a statement from a source for a specific month.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_fetch::{FetchRequest, StatementSource, OutputFormat};
+///
+/// let source = StatementSource::new(
+///     "chase_checking",
+///     "chase",
+///     "Assets:Checking",
+///     vec![OutputFormat::Csv]
+/// ).unwrap();
+///
+/// let req = FetchRequest::new(&source, "2024-05").unwrap();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchRequest {
     source: StatementSource,

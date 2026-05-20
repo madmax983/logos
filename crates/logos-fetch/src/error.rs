@@ -1,5 +1,15 @@
 use core::fmt;
 
+/// An error that occurs during statement fetching operations.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_fetch::FetchError;
+///
+/// let err = FetchError::new("network timeout");
+/// assert_eq!(err.to_string(), "network timeout");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchError {
     message: String,
