@@ -9,10 +9,12 @@ use std::collections::HashMap;
 /// credit account, debit account, and amount) occurs at least `min_occurrences`
 /// times, it generates a `RecurringTemplate`.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct RecurrenceDetector {
     min_occurrences: usize,
 }
 
+#[allow(dead_code)]
 impl RecurrenceDetector {
     /// Creates a new `RecurrenceDetector` with the specified threshold.
     #[must_use]

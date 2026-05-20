@@ -8,9 +8,15 @@
 //! meaning that invalid financial states (like unbalanced transactions or negative equity forecasts)
 //! are structurally impossible to create.
 
-pub mod account;
-pub mod budget;
-pub mod category;
-pub mod correction;
-pub mod rsu;
-pub mod transaction;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod account;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod budget;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod category;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod correction;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod rsu;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod transaction;

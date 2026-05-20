@@ -1,12 +1,23 @@
 //! CLI Command Implementations
-pub mod analytics;
-pub mod budget;
-pub mod close;
-pub mod db;
-pub mod fetch;
-pub mod help;
-pub mod import;
-pub mod month;
-pub mod reconcile;
-pub mod report;
-pub mod txn;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod analytics;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod budget;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod close;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod db;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod fetch;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod help;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod import;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod month;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod reconcile;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod report;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod txn;

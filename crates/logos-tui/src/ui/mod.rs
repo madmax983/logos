@@ -41,8 +41,13 @@
 //! assert!(output.contains("2026-03"));
 //! ```
 
-pub mod budget;
-pub mod home;
-pub mod reconcile;
-pub mod register;
-pub mod rsu;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod budget;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod home;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod reconcile;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod register;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod rsu;

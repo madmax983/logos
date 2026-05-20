@@ -4,6 +4,7 @@
 //! different external tools or APIs to fetch financial statements.
 
 /// The Provident wrapper adapter.
-pub mod provident;
+#[allow(clippy::redundant_pub_crate)]
+pub(crate) mod provident;
 
 pub use provident::ProvidentAdapter;
