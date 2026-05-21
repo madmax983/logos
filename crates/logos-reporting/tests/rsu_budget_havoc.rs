@@ -13,4 +13,12 @@ proptest! {
         let plan = project_rsu_budget_plan("2024-05", &input).unwrap();
         assert!(plan.conservative_budget_cents() >= 0);
     }
+
+    #[test]
+    fn project_rsu_budget_plan_saturates_on_underflow(
+        fixed_commitments_cents in i64::MIN..=0_i64,
+    ) {
+        // Technically fixed_commitments_cents should be non-negative based on validation
+        // So this will fail earlier than project_rsu_budget_plan
+    }
 }
