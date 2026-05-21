@@ -246,11 +246,6 @@ mod tests {
     }
 }
 
-/// Handles `ledger analytics fire-sim`.
-///
-/// # Errors
-///
-/// Returns an error when runtime initialization fails.
 /// Handles `ledger analytics net-worth`.
 ///
 /// # Errors
@@ -262,6 +257,7 @@ pub fn net_worth_project(
     monthly_savings_cents: i64,
     months: u16,
 ) -> Result<(), CliError> {
+    use crossterm::style::Stylize;
     use logos_core::net_worth_projector::NetWorthProjector;
 
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
@@ -269,7 +265,20 @@ pub fn net_worth_project(
 
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec!["Month", "Net Worth", "Saved Cash", "Vested Value"]);
+    table.set_header(vec![
+        comfy_table::Cell::new("Month")
+            .fg(comfy_table::Color::Cyan)
+            .add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Net Worth")
+            .fg(comfy_table::Color::Cyan)
+            .add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Saved Cash")
+            .fg(comfy_table::Color::Cyan)
+            .add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Vested Value")
+            .fg(comfy_table::Color::Cyan)
+            .add_attribute(comfy_table::Attribute::Bold),
+    ]);
 
     for month in timeline {
         table.add_row(vec![
@@ -281,10 +290,8 @@ pub fn net_worth_project(
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    let title = "📈 Net Worth Projection".green().bold();
+    println!("\n{title}\n{table}\n");
 
     Ok(())
 }
