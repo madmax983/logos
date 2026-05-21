@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-18 - The Hidden UI Example
+**Confusion:** The UI views were documented to be completely detached from terminal setup, but the `logos-tui/src/ui/mod.rs` was marked as `pub(crate) mod ui;`. The doctests failed to execute because the test environment did not pick up the module correctly.
+**Clarification:** Modified `pub(crate) mod ui;` to `pub mod ui;` in `crates/logos-tui/src/lib.rs` to ensure the module is fully public and the doctests can be executed correctly.

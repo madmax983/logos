@@ -35,6 +35,30 @@ pub struct MonthReconciliation {
     outflow_cents: i64,
 }
 
+/// Summary of a CSV statement import run.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::{CsvImportSummary, ImportSummary};
+///
+/// let summary: CsvImportSummary = ImportSummary::new(10, 2, false);
+/// assert_eq!(summary.imported_count(), 10);
+/// ```
+pub type CsvImportSummary = ImportSummary;
+
+/// Summary of a PDF statement import run.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::{PdfImportSummary, ImportSummary};
+///
+/// let summary: PdfImportSummary = ImportSummary::new(10, 2, false);
+/// assert_eq!(summary.duplicate_count(), 2);
+/// ```
+pub type PdfImportSummary = ImportSummary;
+
 /// A summary of an import operation.
 ///
 /// Tracks how many records were successfully imported and how many were skipped as duplicates.
@@ -79,9 +103,6 @@ pub struct MonthAutopilotSummary {
     report: MonthReport,
     close: StoredMonthClose,
 }
-
-pub type PdfImportSummary = ImportSummary;
-pub type CsvImportSummary = ImportSummary;
 
 impl ImportSummary {
     #[must_use]

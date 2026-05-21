@@ -18,7 +18,8 @@
 //!
 //! ```ignore
 //! use logos_tui::ui::home::render;
-//! use logos_tui::HomeSnapshot;
+//! use logos_tui::{HomeSnapshot, BudgetSnapshot, RegisterSnapshot};
+
 //!
 //! // 1. Create a snapshot of the data (normally provided by the App runtime)
 //! let snapshot = HomeSnapshot::new(

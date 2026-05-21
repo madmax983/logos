@@ -32,12 +32,12 @@
 //! assert_eq!(total_net_worth, 10000_00);
 //! ```
 
-pub(crate) mod budget_vs_actual;
-pub(crate) mod cashflow;
-pub(crate) mod net_worth;
-pub(crate) mod register;
-pub(crate) mod rsu_budget_plan;
-pub(crate) mod rsu_forecast;
+pub mod budget_vs_actual;
+pub mod cashflow;
+pub mod net_worth;
+pub mod register;
+pub mod rsu_budget_plan;
+pub mod rsu_forecast;
 
 pub use budget_vs_actual::project_budget_variance;
 pub use cashflow::project_cashflow;

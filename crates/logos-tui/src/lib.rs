@@ -1,7 +1,7 @@
 pub(crate) mod app;
 pub use app::civil_from_days;
 pub(crate) mod terminal;
-pub(crate) mod ui;
+pub mod ui;
 
 pub use app::{
     App, AppInput, BudgetDataSource, BudgetSnapshot, HomeDataSource, HomeSnapshot,

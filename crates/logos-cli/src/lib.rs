@@ -1,8 +1,8 @@
 //! Logos Command Line Interface
-pub(crate) mod args;
-pub(crate) mod commands;
+pub mod args;
+pub mod commands;
 
-pub(crate) mod runtime;
+pub mod runtime;
 
 pub use args::{
     AnalyticsCommand, BudgetCommand, CliError, CloseCommand, Command, FetchCommand, ImportCommand,
