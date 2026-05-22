@@ -284,4 +284,47 @@ mod tests {
         assert!(report.contains("assets:checking: $1500.00"));
         assert!(report.contains("income:salary: $-500.00"));
     }
+
+    #[test]
+    fn test_cashflow_projection_skips_invalid_templates() {
+        let mut projector = CashflowProjector::new();
+        projector.set_initial_balance("assets:checking", 100_000);
+
+        // Invalid credit account name
+        projector.add_recurring_template(RecurringTemplate {
+            description: "Invalid Credit".to_string(),
+            amount_cents: 50_000,
+            credit_account: "invalid account".to_string(),
+            debit_account: "assets:checking".to_string(),
+        });
+
+        // Invalid debit account name
+        projector.add_recurring_template(RecurringTemplate {
+            description: "Invalid Debit".to_string(),
+            amount_cents: 50_000,
+            credit_account: "assets:checking".to_string(),
+            debit_account: "invalid account".to_string(),
+        });
+
+        // Negative amount (invalid credit/debit amount)
+        projector.add_recurring_template(RecurringTemplate {
+            description: "Negative Amount".to_string(),
+            amount_cents: -50_000,
+            credit_account: "assets:checking".to_string(),
+            debit_account: "expenses:rent".to_string(),
+        });
+
+        // Zero amount (invalid credit/debit amount)
+        projector.add_recurring_template(RecurringTemplate {
+            description: "Zero Amount".to_string(),
+            amount_cents: 0,
+            credit_account: "assets:checking".to_string(),
+            debit_account: "expenses:rent".to_string(),
+        });
+
+        let balances = projector.project_balances(1);
+
+        // Balance should remain unchanged since all templates were invalid
+        assert_eq!(*balances.get("assets:checking").unwrap(), 100_000);
+    }
 }

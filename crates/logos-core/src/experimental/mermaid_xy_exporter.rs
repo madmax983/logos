@@ -74,6 +74,36 @@ mod tests {
     }
 
     #[test]
+    fn test_export_negative_net_worth_timeline() {
+        let exporter = MermaidXyExporter::new();
+        let timeline = vec![
+            ProjectedMonth {
+                month_index: 1,
+                net_worth_cents: -100_000,
+                vested_value_cents: 0,
+                saved_cents: 0,
+            },
+            ProjectedMonth {
+                month_index: 2,
+                net_worth_cents: -50_000,
+                vested_value_cents: 0,
+                saved_cents: 0,
+            },
+        ];
+
+        let expected = "\
+```mermaid
+xychart-beta
+    title \"Net Worth Projection\"
+    x-axis \"Month\" [1, 2]
+    y-axis \"Net Worth ($)\" -1000 --> 0
+    line [-1000, -500]
+```
+";
+        assert_eq!(exporter.export_net_worth_xy(&timeline), expected);
+    }
+
+    #[test]
     fn test_export_net_worth_timeline() {
         let exporter = MermaidXyExporter::new();
         let timeline = vec![

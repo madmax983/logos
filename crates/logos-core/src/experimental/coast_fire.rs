@@ -112,6 +112,19 @@ mod tests {
     }
 
     #[test]
+    fn test_negative_compound_factor() {
+        let fire_sim = FireSimulator::new(400_000); // 1.2M target
+        // -100% growth factor results in 0.0 compound factor
+        let sim = CoastFireSimulator::new(fire_sim, -100.0, 20);
+        let result = sim.calculate();
+
+        assert_eq!(result.fire_target_cents, 120_000_000);
+        // Coast fire target should fall back to fire target
+        assert_eq!(result.coast_fire_cents, 120_000_000);
+        assert!(!result.is_coasting);
+    }
+
+    #[test]
     fn test_already_coasting() {
         let mut fire_sim = FireSimulator::new(400_000); // $4k/mo expenses
         fire_sim.add_assets_liabilities(40_000_000, 0); // $400k current

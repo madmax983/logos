@@ -44,6 +44,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_us_timestamp_out_of_bounds() {
+        // Provide extreme values that will map_or_else into the fallback string conversion
+        assert_eq!(us_timestamp(i64::MAX), i64::MAX.to_string());
+        assert_eq!(us_timestamp(i64::MIN), i64::MIN.to_string());
+    }
+
+    #[test]
     fn test_currency_formatting() {
         assert_eq!(currency(150_000_000), "$1,500,000.00");
         assert_eq!(currency(-150_000_000), "-$1,500,000.00");

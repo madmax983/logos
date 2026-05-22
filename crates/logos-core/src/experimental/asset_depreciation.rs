@@ -47,11 +47,6 @@ impl AssetDepreciationSimulator {
 
                 let total_depreciable =
                     self.initial_value_cents.saturating_sub(salvage_value_cents);
-                // Avoid division by zero if useful_life_years is 0 somehow
-                if useful_life_years == 0 {
-                    return salvage_value_cents;
-                }
-
                 let yearly_depreciation = total_depreciable / i64::from(useful_life_years);
                 let total_depreciated = yearly_depreciation.saturating_mul(i64::from(years));
 

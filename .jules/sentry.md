@@ -16,4 +16,6 @@
 
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
-**Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+**Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.## 2026-05-22 - Remove dead code and untested branches
+**Learning:** Found an unnecessary `if useful_life_years == 0` check in `asset_depreciation.rs` because the variable `years` is a `u16`, and prior logic handles `years >= useful_life_years`, making it mathematically impossible to reach that check if `useful_life_years` is zero. In `cashflow_projector.rs`, silent continues were missing tests for failures in creating `AccountId` and `Posting` instances.
+**Action:** Removed dead code to clean up `asset_depreciation.rs` and added explicitly failing boundary condition templates in `cashflow_projector.rs` tests to cover all `continue` fallbacks. Added boundary checks for Mermaid exporters with negative amounts.
