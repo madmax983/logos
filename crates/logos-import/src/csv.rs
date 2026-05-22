@@ -129,67 +129,93 @@ enum CsvFieldState {
     AfterQuote,
 }
 
-fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
-    let mut columns = Vec::new();
-    let mut field = String::new();
-    let mut state = CsvFieldState::Unquoted;
-    let mut chars = row.chars().peekable();
+struct CsvRowParser<'a> {
+    columns: Vec<String>,
+    field: String,
+    state: CsvFieldState,
+    chars: std::iter::Peekable<std::str::Chars<'a>>,
+}
 
-    while let Some(ch) = chars.next() {
-        match state {
-            CsvFieldState::Unquoted => match ch {
-                ',' => {
-                    columns.push(field);
-                    field = String::new();
-                }
-                '"' => {
-                    if field.trim().is_empty() {
-                        field.clear();
-                        state = CsvFieldState::Quoted;
-                    } else {
-                        return Err(ImportError::InvalidCsvRow {
-                            message: "unexpected quote in unquoted field".to_string(),
-                        });
-                    }
-                }
-                _ => field.push(ch),
-            },
-            CsvFieldState::Quoted => {
-                if ch == '"' {
-                    if matches!(chars.peek(), Some('"')) {
-                        let _ = chars.next();
-                        field.push('"');
-                    } else {
-                        state = CsvFieldState::AfterQuote;
-                    }
-                } else {
-                    field.push(ch);
-                }
-            }
-            CsvFieldState::AfterQuote => match ch {
-                ',' => {
-                    columns.push(field);
-                    field = String::new();
-                    state = CsvFieldState::Unquoted;
-                }
-                _ if ch.is_whitespace() => {}
-                _ => {
-                    return Err(ImportError::InvalidCsvRow {
-                        message: "unexpected characters after closing quote".to_string(),
-                    });
-                }
-            },
+impl<'a> CsvRowParser<'a> {
+    fn new(row: &'a str) -> Self {
+        Self {
+            columns: Vec::new(),
+            field: String::new(),
+            state: CsvFieldState::Unquoted,
+            chars: row.chars().peekable(),
         }
     }
 
-    if state == CsvFieldState::Quoted {
-        return Err(ImportError::InvalidCsvRow {
-            message: "unterminated quoted field".to_string(),
-        });
+    fn parse(mut self) -> Result<Vec<String>, ImportError> {
+        while let Some(ch) = self.chars.next() {
+            match self.state {
+                CsvFieldState::Unquoted => self.handle_unquoted(ch)?,
+                CsvFieldState::Quoted => self.handle_quoted(ch),
+                CsvFieldState::AfterQuote => self.handle_after_quote(ch)?,
+            }
+        }
+
+        if self.state == CsvFieldState::Quoted {
+            return Err(ImportError::InvalidCsvRow {
+                message: "unterminated quoted field".to_string(),
+            });
+        }
+
+        self.columns.push(self.field);
+        Ok(self.columns)
     }
 
-    columns.push(field);
-    Ok(columns)
+    fn handle_unquoted(&mut self, ch: char) -> Result<(), ImportError> {
+        match ch {
+            ',' => {
+                self.columns.push(std::mem::take(&mut self.field));
+            }
+            '"' => {
+                if !self.field.trim().is_empty() {
+                    return Err(ImportError::InvalidCsvRow {
+                        message: "unexpected quote in unquoted field".to_string(),
+                    });
+                }
+                self.field.clear();
+                self.state = CsvFieldState::Quoted;
+            }
+            _ => self.field.push(ch),
+        }
+        Ok(())
+    }
+
+    fn handle_quoted(&mut self, ch: char) {
+        if ch == '"' {
+            if matches!(self.chars.peek(), Some('"')) {
+                let _ = self.chars.next();
+                self.field.push('"');
+            } else {
+                self.state = CsvFieldState::AfterQuote;
+            }
+        } else {
+            self.field.push(ch);
+        }
+    }
+
+    fn handle_after_quote(&mut self, ch: char) -> Result<(), ImportError> {
+        match ch {
+            ',' => {
+                self.columns.push(std::mem::take(&mut self.field));
+                self.state = CsvFieldState::Unquoted;
+            }
+            _ if ch.is_whitespace() => {}
+            _ => {
+                return Err(ImportError::InvalidCsvRow {
+                    message: "unexpected characters after closing quote".to_string(),
+                });
+            }
+        }
+        Ok(())
+    }
+}
+
+fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
+    CsvRowParser::new(row).parse()
 }
 
 /// Parses a single CSV row into an import record with deterministic field mapping.
