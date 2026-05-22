@@ -130,7 +130,9 @@ enum CsvFieldState {
 }
 
 fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
-    let mut columns = Vec::new();
+    let commas = row.as_bytes().iter().fold(0_usize, |acc, &b| if b == b',' { acc + 1 } else { acc });
+    // ⚡ Bolt Optimization: Pre-allocate columns based on comma count to avoid reallocation
+    let mut columns = Vec::with_capacity(commas + 1);
     let mut field = String::new();
     let mut state = CsvFieldState::Unquoted;
     let mut chars = row.chars().peekable();
