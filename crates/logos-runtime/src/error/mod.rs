@@ -44,3 +44,53 @@ impl From<logos_core::DomainError> for RuntimeError {
         Self::Domain(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_display_store_error() {
+        let err = RuntimeError::Store(StoreError::ConnectionFailed {
+            message: "timeout".to_string(),
+        });
+        assert_eq!(err.to_string(), "timeout");
+    }
+
+    #[test]
+    fn should_display_domain_error() {
+        let domain_err = logos_core::DomainError::EmptyAccountId;
+        let expected = format!("domain error: {domain_err}");
+        let err = RuntimeError::Domain(domain_err);
+        assert_eq!(err.to_string(), expected);
+    }
+
+    #[test]
+    fn should_display_analytics_error() {
+        let err = RuntimeError::Analytics {
+            message: "no data".to_string(),
+        };
+        assert_eq!(err.to_string(), "no data");
+    }
+
+    #[test]
+    fn should_display_initialization_error() {
+        let err = RuntimeError::Initialization {
+            message: "config missing".to_string(),
+        };
+        assert_eq!(err.to_string(), "config missing");
+    }
+
+    #[test]
+    fn should_convert_into_runtime_error() {
+        let store_err = StoreError::ConnectionFailed {
+            message: "timeout".to_string(),
+        };
+        let err: RuntimeError = store_err.into();
+        assert!(matches!(err, RuntimeError::Store(_)));
+
+        let domain_err = logos_core::DomainError::EmptyAccountId;
+        let err: RuntimeError = domain_err.into();
+        assert!(matches!(err, RuntimeError::Domain(_)));
+    }
+}

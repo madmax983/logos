@@ -16,4 +16,6 @@
 
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
-**Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+**Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.## 2025-02-27 - [Test Display formatting and Error conversions for Runtime and Store APIs]
+**Learning:** Adding unit tests for custom error `fmt::Display` and `From` trait implementations ensures coverage is high, prevents regression for error-based diagnostics, and provides explicit API examples to verify error propagation maps properly.
+**Action:** Always test `std::fmt::Display` outputs and implicit conversions via `std::convert::From` for Error variants when building core traits and runtime facades.

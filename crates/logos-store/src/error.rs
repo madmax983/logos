@@ -96,3 +96,78 @@ impl From<DomainError> for StoreError {
         Self::Domain(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use logos_core::DomainError;
+
+    #[test]
+    fn should_display_domain_error() {
+        let domain_err = DomainError::EmptyAccountId;
+        let domain_err_msg = domain_err.to_string();
+        let err = StoreError::Domain(domain_err);
+        assert_eq!(err.to_string(), domain_err_msg);
+    }
+
+    #[test]
+    fn should_display_unknown_transaction() {
+        let err = StoreError::UnknownTransaction {
+            transaction_id: TransactionId::new("tx-123").unwrap(),
+        };
+        assert_eq!(
+            err.to_string(),
+            "cannot apply correction: unknown transaction 'tx-123'"
+        );
+    }
+
+    #[test]
+    fn should_display_unknown_artifact() {
+        let err = StoreError::UnknownArtifact {
+            artifact_id: "art-1".to_string(),
+        };
+        assert_eq!(
+            err.to_string(),
+            "cannot link analytics artifact: unknown artifact 'art-1'"
+        );
+    }
+
+    #[test]
+    fn should_display_load_failed() {
+        let err = StoreError::LoadFailed {
+            message: "db down".to_string(),
+        };
+        assert_eq!(err.to_string(), "failed to load store: db down");
+    }
+
+    #[test]
+    fn should_display_persist_failed() {
+        let err = StoreError::PersistFailed {
+            message: "disk full".to_string(),
+        };
+        assert_eq!(err.to_string(), "failed to persist store: disk full");
+    }
+
+    #[test]
+    fn should_display_connection_failed() {
+        let err = StoreError::ConnectionFailed {
+            message: "timeout".to_string(),
+        };
+        assert_eq!(err.to_string(), "timeout");
+    }
+
+    #[test]
+    fn should_display_migration_failed() {
+        let err = StoreError::MigrationFailed {
+            message: "bad sql".to_string(),
+        };
+        assert_eq!(err.to_string(), "store migration failed: bad sql");
+    }
+
+    #[test]
+    fn should_convert_domain_error() {
+        let domain_err = DomainError::EmptyAccountId;
+        let err: StoreError = domain_err.into();
+        assert_eq!(err, StoreError::Domain(DomainError::EmptyAccountId));
+    }
+}
