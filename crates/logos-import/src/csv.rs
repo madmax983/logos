@@ -129,9 +129,15 @@ enum CsvFieldState {
     AfterQuote,
 }
 
+/// ⚡ Bolt Optimization: Pre-allocate `Vec` and `String` capacities based on comma count
+/// to avoid repeated heap allocations and copying during CSV row parsing.
 fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
-    let mut columns = Vec::new();
-    let mut field = String::new();
+    let estimated_columns = row
+        .as_bytes()
+        .iter()
+        .fold(1, |acc, &b| if b == b',' { acc + 1 } else { acc });
+    let mut columns = Vec::with_capacity(estimated_columns);
+    let mut field = String::with_capacity(64);
     let mut state = CsvFieldState::Unquoted;
     let mut chars = row.chars().peekable();
 
@@ -140,7 +146,7 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
             CsvFieldState::Unquoted => match ch {
                 ',' => {
                     columns.push(field);
-                    field = String::new();
+                    field = String::with_capacity(64);
                 }
                 '"' => {
                     if field.trim().is_empty() {
@@ -169,7 +175,7 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
             CsvFieldState::AfterQuote => match ch {
                 ',' => {
                     columns.push(field);
-                    field = String::new();
+                    field = String::with_capacity(64);
                     state = CsvFieldState::Unquoted;
                 }
                 _ if ch.is_whitespace() => {}
