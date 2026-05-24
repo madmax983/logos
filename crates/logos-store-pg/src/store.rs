@@ -1568,7 +1568,9 @@ impl PostgresStore {
             )));
         }
 
-        let mut seen_keys = HashSet::new();
+        // ⚡ Bolt Optimization: Pre-allocate capacity and use `&str` instead of `String`
+        // to avoid a heap allocation (cloning the key) for every record processed.
+        let mut seen_keys = HashSet::with_capacity(records.len());
         for record in records {
             let key = record.content_hash_key();
             if key.is_empty() {
@@ -1576,7 +1578,7 @@ impl PostgresStore {
                     "import record content_hash_key must not be empty".to_owned(),
                 ));
             }
-            if !seen_keys.insert(key.to_owned()) {
+            if !seen_keys.insert(key) {
                 return Err(persist_failure(format!(
                     "duplicate import record content_hash_key '{key}' in write payload"
                 )));

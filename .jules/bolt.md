@@ -24,3 +24,7 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+
+**[HashSet with &str avoids string allocation on hot paths]
+**Learning:** When validating large numbers of records (e.g., in a loop processing CSV rows), checking for duplicates using a `HashSet<String>` requires cloning the key (`key.to_owned()`) on every insertion. Since the `HashSet` is only used locally for duplicate detection within the loop and is dropped immediately after, its lifetime doesn't need to exceed the scope of the function.
+**Action:** Change the set type to `HashSet<&str>` and insert the borrowed slice directly (`seen_keys.insert(key)`). This completely eliminates the heap allocation required for `String::clone()`, resulting in a measurable performance improvement on hot paths.
