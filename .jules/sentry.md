@@ -17,3 +17,6 @@
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
 **Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+## 2026-05-24 - AppRuntime aggregator bounds checking
+**Learning:** Found potential overflow in runtime aggregators: `register_balance_for`, `reconcile_month_for`, and `budget_variance_for_month`. These aggregators sum up multiple transaction lines which could potentially overflow `i64::MAX`.
+**Action:** Wrote proptests targeting these specific aggregator bounds under extreme transaction values (`i64::MAX / 2 + 1 .. i64::MAX`) and validated they do not panic using `saturating_add`/`saturating_sub`.
