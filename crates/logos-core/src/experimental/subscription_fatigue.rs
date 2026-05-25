@@ -43,7 +43,10 @@ impl SubscriptionFatigueAnalyzer {
     pub fn analyze(&self, transactions: &[Transaction]) -> SubscriptionFatigueReport {
         let recurring_templates = self.recurrence_detector.detect(transactions);
 
-        let mut items = Vec::new();
+        // ⚡ Bolt Optimization:
+        // Pre-allocates the `items` vector based on the known number of `recurring_templates`.
+        // This eliminates unnecessary heap allocations and data copies when populating the report.
+        let mut items = Vec::with_capacity(recurring_templates.len());
         let mut total_monthly = 0;
         let mut total_opportunity = 0;
 

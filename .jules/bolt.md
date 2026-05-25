@@ -24,3 +24,6 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+## YYYY-MM-DD - Doc comments inside function bodies
+**Learning:** Attaching doc comments (`///`) to local statements or variables (like `let` bindings) inside functions triggers the `unused_doc_comments` compiler/clippy warning, because rustdoc does not generate documentation for statements.
+**Action:** Always use plain comments (`//`) to document internal function logic and variables.
