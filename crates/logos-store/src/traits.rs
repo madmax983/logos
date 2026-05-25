@@ -306,3 +306,5 @@ pub trait LedgerStore {
         Err(missing_write("write_month_close"))
     }
 }
+#[cfg(test)]
+mod tests;

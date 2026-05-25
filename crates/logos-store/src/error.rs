@@ -96,3 +96,60 @@ impl From<DomainError> for StoreError {
         Self::Domain(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_store_error_display() {
+        assert_eq!(
+            StoreError::UnknownTransaction {
+                transaction_id: TransactionId::new("tx-1").unwrap()
+            }
+            .to_string(),
+            "cannot apply correction: unknown transaction 'tx-1'"
+        );
+        assert_eq!(
+            StoreError::UnknownArtifact {
+                artifact_id: "art-1".into()
+            }
+            .to_string(),
+            "cannot link analytics artifact: unknown artifact 'art-1'"
+        );
+        assert_eq!(
+            StoreError::LoadFailed {
+                message: "db down".into()
+            }
+            .to_string(),
+            "failed to load store: db down"
+        );
+        assert_eq!(
+            StoreError::PersistFailed {
+                message: "disk full".into()
+            }
+            .to_string(),
+            "failed to persist store: disk full"
+        );
+        assert_eq!(
+            StoreError::ConnectionFailed {
+                message: "timeout".into()
+            }
+            .to_string(),
+            "timeout"
+        );
+        assert_eq!(
+            StoreError::MigrationFailed {
+                message: "bad schema".into()
+            }
+            .to_string(),
+            "store migration failed: bad schema"
+        );
+    }
+
+    #[test]
+    fn test_store_error_conversion() {
+        let err: StoreError = DomainError::EmptyAccountId.into();
+        assert!(matches!(err, StoreError::Domain(_)));
+    }
+}
