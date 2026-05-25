@@ -366,6 +366,19 @@ fn render_fire_sim_output(
             .fg(comfy_table::Color::Green),
     ]);
 
+    let progress_pct = if fire_number == 0 {
+        100.0
+    } else {
+        #[allow(clippy::cast_precision_loss)]
+        let pct = (current_net_worth as f64 / fire_number as f64) * 100.0;
+        pct.clamp(0.0, 100.0)
+    };
+
+    table.add_row(vec![
+        comfy_table::Cell::new("Progress %"),
+        comfy_table::Cell::new(format!("{progress_pct:.2}%")).fg(comfy_table::Color::Blue),
+    ]);
+
     let mut journey_table = comfy_table::Table::new();
     journey_table.load_preset(comfy_table::presets::UTF8_FULL);
     journey_table.set_header(vec!["Milestone", "Target", "Status"]);

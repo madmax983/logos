@@ -85,6 +85,7 @@ fn execute_command(command: &Command) -> Result<(), CliError> {
         Command::Db(command) => execute_db_command(*command),
         Command::Txn(command) => execute_txn_command(command),
         Command::Analytics(command) => execute_analytics_command(command),
+        Command::Plan(command) => execute_plan_command(command),
         Command::Import(command) => execute_import_command(command),
         Command::Fetch(command) => execute_fetch_command(command),
         Command::Reconcile(command) => execute_reconcile_command(command),
@@ -135,15 +136,6 @@ fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError>
             commands::analytics::snapshot_show(artifact_id)
         }
         AnalyticsCommand::Sankey => commands::analytics::sankey(),
-        AnalyticsCommand::FireSim {
-            monthly_expenses_cents,
-            liquid_assets_cents,
-            monthly_savings_cents,
-        } => commands::analytics::fire_sim(
-            *monthly_expenses_cents,
-            *liquid_assets_cents,
-            *monthly_savings_cents,
-        ),
         AnalyticsCommand::NetWorthProject {
             initial_net_worth_cents,
             monthly_savings_cents,
@@ -152,6 +144,20 @@ fn execute_analytics_command(command: &AnalyticsCommand) -> Result<(), CliError>
             *initial_net_worth_cents,
             *monthly_savings_cents,
             *months,
+        ),
+    }
+}
+
+fn execute_plan_command(command: &PlanCommand) -> Result<(), CliError> {
+    match command {
+        PlanCommand::Fire {
+            monthly_expenses_cents,
+            liquid_assets_cents,
+            monthly_savings_cents,
+        } => commands::analytics::fire_sim(
+            *monthly_expenses_cents,
+            liquid_assets_cents.unwrap_or(0),
+            monthly_savings_cents.unwrap_or(0),
         ),
     }
 }
@@ -358,12 +364,22 @@ fn parse_optional_month_flag(args: &[String], flag: &str) -> Result<Option<Strin
     Ok(Some(parse_month_key(flag, value)?))
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlanCommand {
+    Fire {
+        monthly_expenses_cents: i64,
+        liquid_assets_cents: Option<i64>,
+        monthly_savings_cents: Option<i64>,
+    },
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     Help(HelpTopic),
     Db(DbCommand),
     Txn(TxnCommand),
     Analytics(AnalyticsCommand),
+    Plan(PlanCommand),
     Import(ImportCommand),
     Fetch(FetchCommand),
     Reconcile(ReconcileCommand),
@@ -386,6 +402,7 @@ impl Command {
             Self::Help(HelpTopic::Import) => "help.import",
             Self::Help(HelpTopic::Fetch) => "help.fetch",
             Self::Help(HelpTopic::Reconcile) => "help.reconcile",
+            Self::Help(HelpTopic::Plan) => "help.plan",
             Self::Help(HelpTopic::Month) => "help.month",
             Self::Help(HelpTopic::Close) => "help.close",
             Self::Db(DbCommand::Migrate) => "db.migrate",
@@ -396,7 +413,7 @@ impl Command {
             Self::Analytics(AnalyticsCommand::SnapshotList) => "analytics.snapshot.list",
             Self::Analytics(AnalyticsCommand::SnapshotShow { .. }) => "analytics.snapshot.show",
             Self::Analytics(AnalyticsCommand::Sankey) => "analytics.sankey",
-            Self::Analytics(AnalyticsCommand::FireSim { .. }) => "analytics.fire-sim",
+            Self::Plan(PlanCommand::Fire { .. }) => "plan.fire",
             Self::Analytics(AnalyticsCommand::NetWorthProject { .. }) => "analytics.net-worth",
             Self::Import(ImportCommand::Pdf { .. }) => "import.pdf",
             Self::Import(ImportCommand::Csv { .. }) => "import.csv",
@@ -426,6 +443,7 @@ pub enum HelpTopic {
     Import,
     Fetch,
     Reconcile,
+    Plan,
     Month,
     Close,
 }
@@ -463,11 +481,6 @@ pub enum AnalyticsCommand {
         artifact_id: String,
     },
     Sankey,
-    FireSim {
-        monthly_expenses_cents: i64,
-        liquid_assets_cents: i64,
-        monthly_savings_cents: i64,
-    },
     NetWorthProject {
         initial_net_worth_cents: i64,
         monthly_savings_cents: i64,
@@ -609,6 +622,7 @@ where
         "db" => parse_db(&values),
         "txn" => parse_txn(&values),
         "analytics" => parse_analytics(&values),
+        "plan" => parse_plan(&values),
         "import" => parse_import(&values),
         "fetch" => parse_fetch(&values),
         "reconcile" => parse_reconcile(&values),
@@ -618,6 +632,43 @@ where
         "report" => parse_report(&values),
         _ => Err(CliError::UnknownCommand {
             command: command.clone(),
+        }),
+    }
+}
+
+fn parse_plan(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Plan),
+        });
+    }
+
+    let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
+        command: "plan".to_owned(),
+    })?;
+
+    match subcommand.as_str() {
+        "--help" | "-h" => Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Plan),
+        }),
+        "fire" => {
+            let monthly_expenses_cents =
+                parse_required_parsed_flag(&args[1..], "--monthly-expenses-cents")?;
+            let liquid_assets_cents =
+                parse_optional_parsed_value(&args[1..], "--liquid-assets-cents")?;
+            let monthly_savings_cents =
+                parse_optional_parsed_value(&args[1..], "--monthly-savings-cents")?;
+            Ok(ParsedArgs {
+                command: Command::Plan(PlanCommand::Fire {
+                    monthly_expenses_cents,
+                    liquid_assets_cents,
+                    monthly_savings_cents,
+                }),
+            })
+        }
+        _ => Err(CliError::UnknownSubcommand {
+            command: "plan".to_owned(),
+            subcommand: subcommand.clone(),
         }),
     }
 }
@@ -781,21 +832,6 @@ fn parse_analytics(args: &[String]) -> Result<ParsedArgs, CliError> {
         "sankey" => Ok(ParsedArgs {
             command: Command::Analytics(AnalyticsCommand::Sankey),
         }),
-        "fire-sim" => {
-            let monthly_expenses_cents =
-                parse_required_parsed_flag(&args[2..], "--monthly-expenses-cents")?;
-            let liquid_assets_cents =
-                parse_required_parsed_flag(&args[2..], "--liquid-assets-cents")?;
-            let monthly_savings_cents =
-                parse_required_parsed_flag(&args[2..], "--monthly-savings-cents")?;
-            Ok(ParsedArgs {
-                command: Command::Analytics(AnalyticsCommand::FireSim {
-                    monthly_expenses_cents,
-                    liquid_assets_cents,
-                    monthly_savings_cents,
-                }),
-            })
-        }
         "net-worth" => {
             let initial_net_worth_cents =
                 parse_required_parsed_flag(&args[2..], "--initial-net-worth-cents")?;
@@ -1193,6 +1229,7 @@ fn parse_help_topic(args: &[String]) -> Result<HelpTopic, CliError> {
         Some("import") => Ok(HelpTopic::Import),
         Some("fetch") => Ok(HelpTopic::Fetch),
         Some("reconcile") => Ok(HelpTopic::Reconcile),
+        Some("plan") => Ok(HelpTopic::Plan),
         Some("month") => Ok(HelpTopic::Month),
         Some("close") => Ok(HelpTopic::Close),
         Some(subcommand) => Err(CliError::UnknownSubcommand {
@@ -1315,4 +1352,33 @@ fn parse_paired_i64_flags(
 
 fn parse_amount_cents(args: &[String]) -> Result<i64, CliError> {
     parse_required_parsed_flag(args, "--amount-cents")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_plan_fire_with_required_and_optional_flags() {
+        let args = vec![
+            "logos-cli".to_owned(),
+            "plan".to_owned(),
+            "fire".to_owned(),
+            "--monthly-expenses-cents".to_owned(),
+            "500000".to_owned(),
+            "--liquid-assets-cents".to_owned(),
+            "1000000".to_owned(),
+            "--monthly-savings-cents".to_owned(),
+            "200000".to_owned(),
+        ];
+        let parsed = parse_args(args).unwrap();
+        assert_eq!(
+            *parsed.command(),
+            Command::Plan(PlanCommand::Fire {
+                monthly_expenses_cents: 500_000,
+                liquid_assets_cents: Some(1_000_000),
+                monthly_savings_cents: Some(200_000),
+            })
+        );
+    }
 }

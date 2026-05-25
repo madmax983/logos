@@ -1,0 +1,6 @@
+{
+  "title": "🎨 Mosaic: UI Polish for FIRE Simulator CLI",
+  "description": "🖌️ **Before:** The FIRE simulation was buried under `analytics fire-sim`, required all arguments (making exploration tedious), and lacked a clear visual indicator of overall progress toward the FIRE number.\n\n✨ **After:** Promoted the simulator to a top-level `plan fire` command. The CLI now accepts optional parameters for liquid assets and savings, defaulting to $0 to enable quick \"what-if\" expense checks. Added a clamped `Progress %` indicator to the output table.\n\n🖼️ **Visuals:** The terminal output now features a clean, unified table for input parameters alongside the new `Progress %` metric, followed by the simulation milestones table showing explicit times and months to each camp/summit.",
+  "branch_name": "mosaic-cli-polish-fire",
+  "commit_message": "🎨 Mosaic: UI Polish for FIRE Simulator CLI"
+}
