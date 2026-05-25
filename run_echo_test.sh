@@ -1,6 +1,6 @@
 cat << 'INNER_EOF' > src/main.rs
-use logos_core::planning::fire::{FireSimulator, UpcomingVest};
-use logos_core::planning::net_worth_projector::NetWorthProjector;
+use logos_core::fire::{FireSimulator, UpcomingVest};
+use logos_core::net_worth_projector::NetWorthProjector;
 
 fn main() {
     // 1. Set the Destination: $5,000/month expenses = $1.5M FIRE number @ 4% SWR
