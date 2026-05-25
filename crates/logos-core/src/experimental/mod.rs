@@ -43,6 +43,8 @@ pub mod trinity_simulator;
 #[cfg(feature = "nova")]
 pub mod anomaly_detector;
 #[cfg(feature = "nova")]
+pub mod arbitrage_simulator;
+#[cfg(feature = "nova")]
 pub mod category_trends;
 #[cfg(feature = "nova")]
 pub mod income_router;
