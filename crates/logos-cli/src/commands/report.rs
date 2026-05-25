@@ -5,7 +5,7 @@ trait ReportRuntime {
     fn month_report_for(&self, checking_account: &str, month_key: &str) -> MonthReport;
 }
 
-impl ReportRuntime for AppRuntime<logos_store_pg::PostgresStore> {
+impl<S: logos_store::LedgerStore> ReportRuntime for AppRuntime<S> {
     fn month_report_for(&self, checking_account: &str, month_key: &str) -> MonthReport {
         Self::month_report_for(self, checking_account, month_key)
     }

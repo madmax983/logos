@@ -412,7 +412,7 @@ pub trait ReconcileDataSource {
     fn fetch_statement_lines_for_run(&self, run_id: &str) -> Vec<ReconcileStatementLineRecord>;
 }
 
-impl ReconcileDataSource for AppRuntime<logos_store_pg::PostgresStore> {
+impl<S: logos_store::LedgerStore> ReconcileDataSource for AppRuntime<S> {
     fn fetch_reconciliation_runs(
         &self,
         month_key: Option<&str>,
@@ -448,7 +448,7 @@ impl ReconcileDataSource for AppRuntime<logos_store_pg::PostgresStore> {
     }
 }
 
-impl HomeDataSource for AppRuntime<logos_store_pg::PostgresStore> {
+impl<S: logos_store::LedgerStore> HomeDataSource for AppRuntime<S> {
     fn fetch_home_snapshot(
         &self,
         month_key: &str,
@@ -475,7 +475,7 @@ impl HomeDataSource for AppRuntime<logos_store_pg::PostgresStore> {
     }
 }
 
-impl BudgetDataSource for AppRuntime<logos_store_pg::PostgresStore> {
+impl<S: logos_store::LedgerStore> BudgetDataSource for AppRuntime<S> {
     fn fetch_budget_snapshot(
         &self,
         month_key: &str,
@@ -517,7 +517,7 @@ impl BudgetDataSource for AppRuntime<logos_store_pg::PostgresStore> {
     }
 }
 
-impl RegisterDataSource for AppRuntime<logos_store_pg::PostgresStore> {
+impl<S: logos_store::LedgerStore> RegisterDataSource for AppRuntime<S> {
     fn fetch_register_snapshot(&self, account: &str) -> Option<RegisterSnapshot> {
         let now_us = current_time_us();
         let transactions = self.transactions_as_of_us(now_us, now_us).ok()?;
@@ -664,7 +664,7 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         let current_month_key =
-            logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local();
+            logos_runtime::AppRuntime::<logos_store::MemoryStore>::current_month_key_local();
         Self {
             view: View::Home,
             exit_requested: false,

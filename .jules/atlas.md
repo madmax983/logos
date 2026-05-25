@@ -4,3 +4,6 @@
 **[The Leaky Modules]**
 **Tangle:** In `logos-core` and `logos-fetch`, internal module implementations (`domain`, `planning`, `experimental`, `adapters`) were exposed using `pub mod`, violating the architectural principle of strict public APIs and leaking internal details.
 **Blueprint:** Updated visibility modifiers from `pub mod` to `pub(crate) mod` within these crates to correctly enforce the Facade pattern and encapsulate domain logic.
+**[Trait Dependency Inversion across CLI and TUI]**
+**Tangle:** The `logos-tui` and `logos-cli` crates explicitly depended on `logos_store_pg::PostgresStore` instead of depending on the generic trait `logos_store::LedgerStore` through `logos_runtime::AppRuntime<S>`. This created tight coupling to the Postgres database adapter in presentation-layer crates.
+**Blueprint:** Refactored `logos-cli` and `logos-tui` components (like `AppRuntime` trait implementations for reporting, budget, transactions, and UI view data sources) to use `impl<S: logos_store::LedgerStore> AppRuntime<S>` instead of hard-coding `AppRuntime<logos_store_pg::PostgresStore>`. Added `logos-store` as a dependency to `logos-tui` to access the trait. The only explicit dependency on `logos-store-pg` remaining is at the entrypoints (`main.rs` and `runtime.rs`) for dependency injection.

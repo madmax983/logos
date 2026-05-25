@@ -12,7 +12,7 @@ trait BudgetRuntime {
     ) -> i64;
 }
 
-impl BudgetRuntime for AppRuntime<logos_store_pg::PostgresStore> {
+impl<S: logos_store::LedgerStore> BudgetRuntime for AppRuntime<S> {
     fn budget_variance_for_month(
         &self,
         month_key: &str,
