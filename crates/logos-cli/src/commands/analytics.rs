@@ -57,7 +57,7 @@ fn render_snapshot_manifest_list(
     }
 
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::UTF8_FULL_CONDENSED);
     table.set_header(vec![
         "Artifact ID",
         "Kind",
@@ -143,7 +143,7 @@ fn render_sankey_output(raw_mermaid: &str) -> String {
 
 fn render_snapshot_manifest(manifest: &logos_store::StoredAnalyticsArtifactManifest) -> String {
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::UTF8_FULL_CONDENSED);
     table.set_header(vec![
         "Artifact ID",
         "Kind",
@@ -268,7 +268,7 @@ pub fn net_worth_project(
     let (timeline, _) = projector.project_timeline(months);
 
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::UTF8_FULL_CONDENSED);
     table.set_header(vec!["Month", "Net Worth", "Saved Cash", "Vested Value"]);
 
     for month in timeline {
@@ -336,7 +336,7 @@ fn render_fire_sim_output(
     ascent_result: &logos_core::fire_ascent::AscentResult,
 ) -> String {
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::UTF8_FULL_CONDENSED);
     table.set_header(vec!["Metric", "Value"]);
 
     table.add_row(vec![
@@ -367,7 +367,7 @@ fn render_fire_sim_output(
     ]);
 
     let mut journey_table = comfy_table::Table::new();
-    journey_table.load_preset(comfy_table::presets::UTF8_FULL);
+    journey_table.load_preset(comfy_table::presets::UTF8_FULL_CONDENSED);
     journey_table.set_header(vec!["Milestone", "Target", "Status"]);
 
     if ascent_result.impossible {
@@ -394,7 +394,16 @@ fn render_fire_sim_output(
                 let years = month / 12;
                 let extra_months = month % 12;
                 journey_table.add_row(vec![
-                    comfy_table::Cell::new(milestone.name).fg(comfy_table::Color::Green),
+                    comfy_table::Cell::new(format!(
+                        "{} {}",
+                        if milestone.name.contains("SUMMIT") {
+                            "🚩"
+                        } else {
+                            "⛺"
+                        },
+                        milestone.name
+                    ))
+                    .fg(comfy_table::Color::Green),
                     comfy_table::Cell::new(target_dollars).fg(comfy_table::Color::Green),
                     comfy_table::Cell::new(format!(
                         "Reached in {years}y {extra_months}m (Month {month})"
@@ -404,9 +413,18 @@ fn render_fire_sim_output(
                 ]);
             } else {
                 journey_table.add_row(vec![
-                    comfy_table::Cell::new(milestone.name).fg(comfy_table::Color::Red),
-                    comfy_table::Cell::new(target_dollars).fg(comfy_table::Color::Red),
-                    comfy_table::Cell::new("Pending").fg(comfy_table::Color::Red),
+                    comfy_table::Cell::new(format!(
+                        "{} {}",
+                        if milestone.name.contains("SUMMIT") {
+                            "🚩"
+                        } else {
+                            "⛺"
+                        },
+                        milestone.name
+                    ))
+                    .fg(comfy_table::Color::DarkGrey),
+                    comfy_table::Cell::new(target_dollars).fg(comfy_table::Color::DarkGrey),
+                    comfy_table::Cell::new("Pending").fg(comfy_table::Color::DarkGrey),
                 ]);
             }
         }
