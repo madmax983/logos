@@ -5,7 +5,7 @@ trait ReportRuntime {
     fn month_report_for(&self, checking_account: &str, month_key: &str) -> MonthReport;
 }
 
-impl ReportRuntime for AppRuntime<logos_store_pg::PostgresStore> {
+impl<S: logos_store::LedgerStore> ReportRuntime for AppRuntime<S> {
     fn month_report_for(&self, checking_account: &str, month_key: &str) -> MonthReport {
         Self::month_report_for(self, checking_account, month_key)
     }
@@ -22,7 +22,7 @@ pub fn month(checking_account: &str, month_key: Option<&str>) -> Result<(), CliE
         message: format!("{err}"),
     })?;
     let resolved_month_key = month_key.map_or_else(
-        AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local,
+        logos_runtime::AppRuntime::<logos_store::MemoryStore>::current_month_key_local,
         str::to_owned,
     );
     let output = render_month_output(&runtime, checking_account, &resolved_month_key);

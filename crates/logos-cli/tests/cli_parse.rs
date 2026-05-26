@@ -262,7 +262,7 @@ fn parses_analytics_snapshot_create_with_defaults() {
             supersedes_artifact_id
         }) if as_of_valid_time_us.is_none()
             && as_of_tx_time_us.is_none()
-            && *schema_version == logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::default_analytics_schema_version()
+            && *schema_version == logos_runtime::AppRuntime::<logos_store::MemoryStore>::default_analytics_schema_version()
             && supersedes_artifact_id.is_none()
     ));
 }

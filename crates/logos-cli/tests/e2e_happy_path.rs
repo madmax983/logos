@@ -158,8 +158,7 @@ fn e2e_runtime_reopen_restores_persisted_transactions() {
 #[test]
 fn e2e_runtime_month_report_and_budget_variance_use_posted_transactions() {
     let mut runtime = AppRuntime::new_in_memory();
-    let month_key =
-        logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_utc();
+    let month_key = logos_runtime::AppRuntime::<logos_store::MemoryStore>::current_month_key_utc();
 
     runtime
         .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
@@ -188,8 +187,7 @@ fn e2e_runtime_month_report_and_budget_variance_use_posted_transactions() {
 #[test]
 fn e2e_runtime_rsu_budget_plan_returns_conservative_baseline() {
     let runtime = AppRuntime::new_in_memory();
-    let month_key =
-        logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_utc();
+    let month_key = logos_runtime::AppRuntime::<logos_store::MemoryStore>::current_month_key_utc();
 
     let plan = runtime
         .plan_rsu_budget_for_month(&month_key, 300, 45, 10_000, 12_000, 16_000, 250_000, 60, 30)
@@ -207,8 +205,7 @@ fn e2e_runtime_rsu_budget_plan_returns_conservative_baseline() {
 #[test]
 fn e2e_runtime_reconcile_month_computes_match_and_variance() {
     let mut runtime = AppRuntime::new_in_memory();
-    let month_key =
-        logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_utc();
+    let month_key = logos_runtime::AppRuntime::<logos_store::MemoryStore>::current_month_key_utc();
 
     runtime
         .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
@@ -233,8 +230,7 @@ fn e2e_runtime_reconcile_month_computes_match_and_variance() {
 #[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_reconciliation_run_persists_and_run_ids_continue_after_reopen() {
     let context = postgres_test_context("reconcile-reopen");
-    let month_key =
-        logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_utc();
+    let month_key = logos_runtime::AppRuntime::<logos_store::MemoryStore>::current_month_key_utc();
 
     {
         let mut runtime = open_postgres_runtime(&context);
@@ -292,7 +288,7 @@ fn e2e_runtime_reconcile_list_filters_and_sorts_latest_first() {
     {
         let mut runtime = open_postgres_runtime(&context);
         let month_key =
-            logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_utc();
+            logos_runtime::AppRuntime::<logos_store::MemoryStore>::current_month_key_utc();
         runtime
             .post_double_entry("paycheck", "assets:checking", "income:salary", 10_000)
             .expect("post");
@@ -322,8 +318,7 @@ fn e2e_runtime_reconcile_list_filters_and_sorts_latest_first() {
 #[ignore = "requires Docker (testcontainers)"]
 fn e2e_runtime_month_close_persists_and_blocks_duplicate_scope_close() {
     let context = postgres_test_context("month-close");
-    let month_key =
-        logos_runtime::AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_utc();
+    let month_key = logos_runtime::AppRuntime::<logos_store::MemoryStore>::current_month_key_utc();
     let run_id;
 
     {

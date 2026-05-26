@@ -12,7 +12,7 @@ trait BudgetRuntime {
     ) -> i64;
 }
 
-impl BudgetRuntime for AppRuntime<logos_store_pg::PostgresStore> {
+impl<S: logos_store::LedgerStore> BudgetRuntime for AppRuntime<S> {
     fn budget_variance_for_month(
         &self,
         month_key: &str,
@@ -39,7 +39,7 @@ pub fn set(
             message: format!("{err}"),
         })?;
     let resolved_month_key = month_key.map_or_else(
-        AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local,
+        logos_runtime::AppRuntime::<logos_store::MemoryStore>::current_month_key_local,
         str::to_owned,
     );
     runtime
@@ -80,7 +80,7 @@ pub fn rsu_plan(
         message: format!("{err}"),
     })?;
     let resolved_month_key = month_key.map_or_else(
-        AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local,
+        logos_runtime::AppRuntime::<logos_store::MemoryStore>::current_month_key_local,
         str::to_owned,
     );
     let plan = runtime
