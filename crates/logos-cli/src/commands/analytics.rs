@@ -215,6 +215,18 @@ mod tests {
             "valid:1800000000000000|tx:1800000001000000",
         )];
         let output = render_snapshot_manifest_list(&manifests);
+
+        assert!(output.contains("Artifact ID"));
+        assert!(output.contains("Kind"));
+        assert!(output.contains("Schema"));
+        assert!(output.contains("Rows"));
+        assert!(output.contains("Hash"));
+        assert!(output.contains("URI"));
+        assert!(output.contains("Valid US"));
+        assert!(output.contains("Tx US"));
+        assert!(output.contains("Created US"));
+        assert!(output.contains("Supersedes"));
+
         assert!(output.contains("artifact-8"));
         assert!(output.contains("parquet"));
         assert!(output.contains("cafebabe"));
@@ -238,6 +250,18 @@ mod tests {
             "valid:1700000000000000|tx:1700000001000000",
         );
         let output = render_snapshot_manifest(&manifest);
+
+        assert!(output.contains("Artifact ID"));
+        assert!(output.contains("Kind"));
+        assert!(output.contains("Schema"));
+        assert!(output.contains("Rows"));
+        assert!(output.contains("Hash"));
+        assert!(output.contains("URI"));
+        assert!(output.contains("Valid US"));
+        assert!(output.contains("Tx US"));
+        assert!(output.contains("Created US"));
+        assert!(output.contains("Supersedes"));
+
         assert!(output.contains("artifact-7"));
         assert!(output.contains("parquet"));
         assert!(output.contains("deadbeef"));
@@ -430,5 +454,47 @@ mod fire_sim_tests {
         // Just checking execution completes without error
         let result = fire_sim(500_000, 1_000_000, 200_000);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn render_fire_sim_output_is_deterministic() {
+        let ascent_result = logos_core::fire_ascent::AscentResult {
+            summit_cents: 10_000_000,
+            max_months: 120,
+            final_net_worth_cents: 2_000_000,
+            success: false,
+            impossible: false,
+            instant_summit: false,
+            milestones: vec![
+                logos_core::fire_ascent::AscentMilestone {
+                    name: "Base Camp",
+                    target_cents: 5_000_000,
+                    month_reached: Some(25),
+                },
+                logos_core::fire_ascent::AscentMilestone {
+                    name: "Summit",
+                    target_cents: 10_000_000,
+                    month_reached: None,
+                },
+            ],
+        };
+
+        let output =
+            render_fire_sim_output(500_000, 10_000_000, 2_000_000, 300_000, &ascent_result);
+
+        assert!(output.contains("Monthly Expenses"));
+        assert!(output.contains("Target FIRE Number"));
+        assert!(output.contains("Current Safe Net Worth"));
+        assert!(output.contains("Monthly Savings"));
+
+        assert!(output.contains("Milestone"));
+        assert!(output.contains("Target"));
+        assert!(output.contains("Status"));
+
+        assert!(output.contains("Base Camp"));
+        assert!(output.contains("Reached in 2y 1m (Month 25)"));
+
+        assert!(output.contains("Summit"));
+        assert!(output.contains("Pending"));
     }
 }

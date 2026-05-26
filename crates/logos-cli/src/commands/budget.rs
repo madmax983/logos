@@ -341,6 +341,10 @@ mod tests {
     fn render_budget_set_output_is_deterministic_zero_variance() {
         let runtime = FakeBudgetRuntime { variance_cents: 0 };
         let output = render_budget_set_output(&runtime, "2026-04", 5_000, "expenses:");
+        assert!(output.contains("Month"));
+        assert!(output.contains("Budget"));
+        assert!(output.contains("Actual Prefix"));
+        assert!(output.contains("Variance"));
         assert!(output.contains("$0.00"));
     }
 
@@ -350,6 +354,10 @@ mod tests {
             variance_cents: 1_250,
         };
         let output = render_budget_set_output(&runtime, "2026-05", 5_000, "expenses:");
+        assert!(output.contains("Month"));
+        assert!(output.contains("Budget"));
+        assert!(output.contains("Actual Prefix"));
+        assert!(output.contains("Variance"));
         assert!(output.contains("$12.50"));
     }
 

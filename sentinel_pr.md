@@ -1,10 +1,27 @@
-🤖 Sentinel: Closed test gaps in TUI terminal interactions and UI state
+## 🤖 Sentinel: Killed mutants with deterministic output tests
 
-**🧬 Mutants Found:** Dozens of survivors across `logos-tui` related to date parsing, terminal key sequences, and view state conditional formatting. Excluded one `== 0` vs `!= 0` mutant because `ratatui`/`comfy_table` drops ANSI colors in our headless test contexts making them logically equivalent for test output checks.
-**🎯 Tests Added/Strengthened:**
-- In `crates/logos-tui/tests/terminal_runtime.rs`, strengthened assertions to kill control-key mappings, ignored inputs on release, and navigation character conversions.
-- In `crates/logos-tui/tests/reconcile_screen.rs`, added properties and content checks for the Reconcile views specifically asserting stateful boolean representation (`true`/`false`), `$0.00` variance rendering vs non-zero variance `$1.00`, and precise selected `> ` row pointers.
-- Exported and aggressively tested `civil_from_days` logic to close multiple mathematical mutants.
-**⚠️ Suspected Bugs:** None.
-**📊 Kill Rate:** 100% kill rate (or equivalent exclusion) on targeted files (`crates/logos-tui/src/app.rs`, `crates/logos-tui/src/terminal.rs`, `crates/logos-tui/src/ui/reconcile.rs`).
-**🔗 Havoc Interaction:** None, UI layer.
+### 🧬 Mutants Found
+- Found 12 missed mutants in `crates/logos-cli/src/commands/analytics.rs`
+- Found 7 missed mutants in `crates/logos-cli/src/commands/budget.rs`
+- Found 1 missed mutant in `crates/logos-cli/src/commands/report.rs`
+- Found 1 missed mutant in `crates/logos-cli/src/commands/reconcile.rs`
+- Found 6 missed mutants in `crates/logos-store-pg/src/migrate.rs`
+- Found 37 missed mutants in `crates/logos-store/src/memory.rs`
+
+### 🎯 Tests Added/Strengthened
+- Strengthened `render_month_output_is_deterministic`, `render_show_output_is_deterministic`, `render_budget_set_output_is_deterministic_zero_variance`, `render_budget_set_output_is_deterministic_positive_variance`, `render_snapshot_manifest_list_is_deterministic`, and `render_snapshot_manifest_is_deterministic` to assert the presence of expected header strings because mutants that deleted table headers (`table.set_header(...)`) were surviving.
+- Added `render_fire_sim_output_is_deterministic` to cover `render_fire_sim_output` because none of the metrics/table values being rendered were actually tested.
+
+### ⚠️ Suspected Bugs
+None.
+
+### 📊 Kill Rate
+- The mutations tests are failing on `logos-tui` and `logos-store-pg` due to 60s timeout limits, so these aren't currently tested.
+- `logos-cli` mutations tests dropped from 12 to 6 uncaught for `analytics.rs`.
+- `logos-cli` mutations tests dropped from 7 to 6 uncaught for `budget.rs`
+- `crates/logos-cli/src/commands/report.rs` mutants fully killed.
+- `crates/logos-cli/src/commands/reconcile.rs` mutants fully killed.
+
+### 🔗 Havoc Interaction
+- None of the surviving mutants appear to cross paths with Havoc's tests (mostly deterministic table rendering logic or `Ok(())` wrapper returns on CLI runners).
+

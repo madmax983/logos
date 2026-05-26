@@ -278,6 +278,21 @@ mod tests {
         );
         let output = render_show_output(&run);
 
+        assert!(output.contains("Run ID"));
+        assert!(output.contains("Month"));
+        assert!(output.contains("Account"));
+        assert!(output.contains("Opening"));
+        assert!(output.contains("Ledger Δ"));
+        assert!(output.contains("Expected Closing"));
+        assert!(output.contains("Statement Closing"));
+        assert!(output.contains("Variance"));
+        assert!(output.contains("Reconciled"));
+        assert!(output.contains("Matched Postings"));
+        assert!(output.contains("Matched Txns"));
+        assert!(output.contains("Inflow"));
+        assert!(output.contains("Outflow"));
+        assert!(output.contains("Created At"));
+
         assert!(output.contains("recon-8"));
         assert!(output.contains("$2,000.00"));
         assert!(output.contains("$120.00"));
