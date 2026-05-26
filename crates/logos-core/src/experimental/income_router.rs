@@ -68,7 +68,9 @@ impl IncomeRouter {
         // Calculate exact allocations, leaving remainders
         for rule in &self.rules {
             let allocated = amount_cents.saturating_mul(i64::from(rule.percentage)) / 100;
-            allocations.push((rule.destination.clone(), allocated));
+            // ⚡ Bolt Optimization: We push a reference `&rule.destination` instead of cloning it.
+            // This defers the heap allocation until we are certain the allocated amount is > 0 below.
+            allocations.push((&rule.destination, allocated));
             remaining_cents -= allocated;
         }
 
@@ -79,7 +81,7 @@ impl IncomeRouter {
 
         for (dest, amount) in allocations {
             if amount > 0 {
-                builder = builder.posting(Posting::debit(dest, amount)?);
+                builder = builder.posting(Posting::debit(dest.clone(), amount)?);
             }
         }
 
