@@ -29,8 +29,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn should_saturate_on_overflow() {
+    fn should_saturate_on_underflow() {
         let variance = project_net_worth(i64::MIN, 1);
         assert_eq!(variance, i64::MIN);
+    }
+
+    #[test]
+    fn should_saturate_on_overflow() {
+        let variance = project_net_worth(i64::MAX, -1);
+        assert_eq!(variance, i64::MAX);
     }
 }
