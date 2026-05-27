@@ -59,7 +59,7 @@ fn render_close_month_output(
     analytics_artifact_id: Option<&str>,
 ) -> String {
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::UTF8_FULL_CONDENSED);
     table.set_header(vec![
         "Close ID",
         "Month",
