@@ -234,3 +234,32 @@ fn normalize_statement_month(value: &str) -> Result<String, FetchError> {
         "provident runner output month '{trimmed}' must be YYYY-MM or YYYY-MM-DD"
     )))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_return_error_when_provident_runner_output_path_is_empty() {
+        let err = ProvidentAdapter::from_runner_output_path("").unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "provident runner output path must not be empty"
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_normalizing_invalid_month_key() {
+        let err = normalize_statement_month("invalid-date").unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "provident runner output month 'invalid-date' must be YYYY-MM or YYYY-MM-DD"
+        );
+    }
+
+    #[test]
+    fn should_normalize_valid_yyyy_mm_dd_to_yyyy_mm() {
+        let month = normalize_statement_month("2024-05-15").unwrap();
+        assert_eq!(month, "2024-05");
+    }
+}
