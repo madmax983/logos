@@ -57,6 +57,49 @@ impl DebtOptimizer {
         self.debts.push(debt);
     }
 
+    fn apply_interest(debts: &mut [Debt]) -> i64 {
+        let mut total_interest = 0;
+        for debt in debts {
+            if debt.balance_cents > 0 {
+                let monthly_interest =
+                    (debt.balance_cents * i64::from(debt.interest_rate_pct)) / 100 / 12;
+                total_interest += monthly_interest;
+                debt.balance_cents += monthly_interest;
+            }
+        }
+        total_interest
+    }
+
+    fn pay_minimums(debts: &mut [Debt], mut remaining_cash: i64) -> i64 {
+        for debt in debts {
+            if debt.balance_cents > 0 {
+                let payment = std::cmp::min(debt.balance_cents, debt.min_payment_cents);
+                let actual_payment = std::cmp::min(payment, remaining_cash);
+
+                debt.balance_cents -= actual_payment;
+                remaining_cash -= actual_payment;
+            }
+        }
+        remaining_cash
+    }
+
+    fn pay_extra(debts: &mut [Debt], strategy: PayoffStrategy, mut remaining_cash: i64) {
+        match strategy {
+            PayoffStrategy::Snowball => debts.sort_by_key(|d| d.balance_cents),
+            PayoffStrategy::Avalanche => {
+                debts.sort_by(|a, b| b.interest_rate_pct.cmp(&a.interest_rate_pct));
+            }
+        }
+
+        for debt in debts {
+            if debt.balance_cents > 0 && remaining_cash > 0 {
+                let extra_payment = std::cmp::min(debt.balance_cents, remaining_cash);
+                debt.balance_cents -= extra_payment;
+                remaining_cash -= extra_payment;
+            }
+        }
+    }
+
     /// Simulates the payoff using the chosen strategy.
     #[must_use]
     pub fn simulate(&self, strategy: PayoffStrategy) -> PayoffResult {
@@ -66,58 +109,15 @@ impl DebtOptimizer {
 
         while current_debts.iter().any(|d| d.balance_cents > 0) {
             total_months += 1;
-
-            // Safety to prevent infinite loops (e.g., if monthly payment cannot cover interest)
             if total_months > 1200 {
                 break;
             }
 
-            // Apply interest to all debts first
-            for debt in &mut current_debts {
-                if debt.balance_cents > 0 {
-                    // Simple monthly interest: (balance * rate / 100) / 12
-                    let monthly_interest =
-                        (debt.balance_cents * i64::from(debt.interest_rate_pct)) / 100 / 12;
-                    total_interest_paid_cents += monthly_interest;
-                    debt.balance_cents += monthly_interest;
-                }
-            }
+            total_interest_paid_cents += Self::apply_interest(&mut current_debts);
+            let remaining_cash = Self::pay_minimums(&mut current_debts, self.monthly_payment_cents);
 
-            // Pay minimums on all debts
-            let mut remaining_cash = self.monthly_payment_cents;
-
-            for debt in &mut current_debts {
-                if debt.balance_cents > 0 {
-                    let payment = std::cmp::min(debt.balance_cents, debt.min_payment_cents);
-                    let actual_payment = std::cmp::min(payment, remaining_cash);
-
-                    debt.balance_cents -= actual_payment;
-                    remaining_cash -= actual_payment;
-                }
-            }
-
-            if remaining_cash <= 0 {
-                continue;
-            }
-
-            // Allocate remaining cash according to strategy
-            match strategy {
-                PayoffStrategy::Snowball => {
-                    // Smallest balance first
-                    current_debts.sort_by_key(|d| d.balance_cents);
-                }
-                PayoffStrategy::Avalanche => {
-                    // Highest interest rate first (reverse sort)
-                    current_debts.sort_by(|a, b| b.interest_rate_pct.cmp(&a.interest_rate_pct));
-                }
-            }
-
-            for debt in &mut current_debts {
-                if debt.balance_cents > 0 && remaining_cash > 0 {
-                    let extra_payment = std::cmp::min(debt.balance_cents, remaining_cash);
-                    debt.balance_cents -= extra_payment;
-                    remaining_cash -= extra_payment;
-                }
+            if remaining_cash > 0 {
+                Self::pay_extra(&mut current_debts, strategy, remaining_cash);
             }
         }
 
