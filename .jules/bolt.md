@@ -24,3 +24,7 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+
+## 2024-05-27 - Tracking previous iterations instead of `collect()`
+**Learning:** Found an intermediate `Vec` allocation in `select_amount_index` on `logos-import` where `.collect::<Vec<_>>()` was being used just to check the last two matched values.
+**Action:** When filtering an iterator and we only care about the last two items, track `last` and `previous` variables iteratively instead of collecting all matching indices into an intermediate vector, avoiding a hot path allocation for every line parsed.

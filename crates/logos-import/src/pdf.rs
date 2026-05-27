@@ -115,21 +115,26 @@ fn parse_statement_line(line: &str, source_id: &str, account: &str) -> Option<Im
     ))
 }
 
+/// Selects the index of the token that represents the transaction amount.
+/// Avoids heap allocations by tracking only the last two matching indices
+/// iteratively rather than collecting them into an intermediate vector.
 fn select_amount_index(tokens: &[&str], date_index: usize) -> Option<usize> {
-    let amount_indices: Vec<usize> = tokens
-        .iter()
-        .enumerate()
-        .skip(date_index + 1)
-        .filter_map(|(index, token)| parse_amount_cents_token(token).map(|_| index))
-        .collect();
-    let mut amount_index = *amount_indices.last()?;
+    let mut last = None;
+    let mut previous = None;
+
+    for (index, token) in tokens.iter().enumerate().skip(date_index + 1) {
+        if parse_amount_cents_token(token).is_some() {
+            previous = last;
+            last = Some(index);
+        }
+    }
+
+    let mut amount_index = last?;
 
     // Common statements encode "... <txn amount> <running balance>" as adjacent columns.
-    if amount_indices.len() >= 2 {
-        let last = amount_indices[amount_indices.len() - 1];
-        let previous = amount_indices[amount_indices.len() - 2];
-        if last == previous + 1 && is_unsigned_amount_token(tokens[last]) {
-            amount_index = previous;
+    if let (Some(l), Some(p)) = (last, previous) {
+        if l == p + 1 && is_unsigned_amount_token(tokens[l]) {
+            amount_index = p;
         }
     }
 
