@@ -17,3 +17,7 @@
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
 **Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+
+## 2024-05-24 - Testing Trait Default Panic Implementations
+**Learning:** When testing default trait implementations that are designed to panic (e.g., `LedgerStore` default methods returning `unimplemented!`), avoid using `std::panic::catch_unwind` within a single test to execute multiple assertions. This can mask failures, cause closure borrow/ownership issues, and trigger clippy warnings.
+**Action:** Isolate each panic test in its own function annotated with `#[should_panic(expected = "...")]`.
