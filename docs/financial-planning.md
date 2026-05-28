@@ -29,7 +29,7 @@ Example:
 ```rust
 use logos_core::domain::account::AccountId;
 use logos_core::domain::rsu::AllocationPolicy;
-use logos_core::planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
+use logos_core::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
 
 let policy = AllocationPolicy::new(40, 20, 30, 10).expect("valid 100% allocation");
 let config = RsuDistributorConfig {
@@ -81,7 +81,7 @@ Model details:
 Example:
 
 ```rust
-use logos_core::planning::fire::{FireSimulator, UpcomingVest};
+use logos_core::fire::{FireSimulator, UpcomingVest};
 
 let mut sim = FireSimulator::new(500_000); // $5,000/month
 sim.add_assets_liabilities(20_000_000, 5_000_000); // 200k assets, 50k liabilities
@@ -125,8 +125,8 @@ Model details:
 Example:
 
 ```rust
-use logos_core::planning::net_worth_projector::NetWorthProjector;
-use logos_core::planning::fire::UpcomingVest;
+use logos_core::net_worth_projector::NetWorthProjector;
+use logos_core::fire::UpcomingVest;
 
 let mut projector = NetWorthProjector::new(10_000_000, 500_000); // $100k net worth, $5k/mo savings
 projector.add_milestone_cents(15_000_000); // target $150k
@@ -137,7 +137,7 @@ projector.add_upcoming_vest(UpcomingVest {
     days_to_vest: 45, // Medium tier haircut (40% discount) = 60% safe value = $30k
 });
 
-let (timeline, milestones) = projector.project_timeline(3);
+let (timeline, _milestones) = projector.project_timeline(3);
 
 assert_eq!(timeline.len(), 3);
 assert_eq!(timeline[1].net_worth_cents, 14_000_000); // Month 2: 100k + 10k(savings) + 30k(vest) = 140k
