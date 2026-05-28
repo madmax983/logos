@@ -21,7 +21,7 @@ pub fn month(
             message: format!("{err}"),
         })?;
     let resolved_month_key = month_key.map_or_else(
-        AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local,
+        AppRuntime::<logos_store::MemoryStore>::current_month_key_local,
         str::to_owned,
     );
     let run = runtime

@@ -8,6 +8,7 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
+logos-store = { path = "../logos-store" }
 logos-store-pg = { path = "../logos-store-pg" }
 logos-core = { path = "../logos-core" }
 logos-runtime = { path = "../logos-runtime" }
