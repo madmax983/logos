@@ -596,10 +596,9 @@ where
     I: IntoIterator<Item = S>,
     S: Into<String>,
 {
-    let mut values: Vec<String> = argv.into_iter().map(Into::into).collect();
-    if !values.is_empty() {
-        values.remove(0);
-    }
+    // ⚡ Bolt Optimization: Using `.skip(1)` avoids collecting the first element and immediately calling `Vec::remove(0)`,
+    // which is an O(n) operation that shifts all remaining elements down by one.
+    let values: Vec<String> = argv.into_iter().skip(1).map(Into::into).collect();
 
     let command = values.first().ok_or(CliError::MissingCommand)?;
     match command.as_str() {
