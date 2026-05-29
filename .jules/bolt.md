@@ -24,3 +24,7 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+
+## 2026-04-28 - CSV Parsing Optimization
+**Learning:** Building collections field-by-field dynamically in tight loops (like iterating over chars in a CSV row) causes significant reallocation overhead. Initializing arrays/vectors and strings with their typical expected capacity using `with_capacity()` prevents O(log N) dynamic expansions, making processing measurable more efficient.
+**Action:** When parsing formats dynamically, pre-allocate expected dimensions (e.g., `Vec::with_capacity(8)` for columns and `String::with_capacity(32)` for fields) based on average structural sizes.
