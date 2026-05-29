@@ -4,3 +4,6 @@
 **[The Leaky Modules]**
 **Tangle:** In `logos-core` and `logos-fetch`, internal module implementations (`domain`, `planning`, `experimental`, `adapters`) were exposed using `pub mod`, violating the architectural principle of strict public APIs and leaking internal details.
 **Blueprint:** Updated visibility modifiers from `pub mod` to `pub(crate) mod` within these crates to correctly enforce the Facade pattern and encapsulate domain logic.
+**[Decoupling presentation from concrete DB store]**
+**Tangle:** The `logos-cli` and `logos-tui` presentation crates tightly coupled their internal logic, static methods, and data source trait implementations directly to `logos_store_pg::PostgresStore`. This violated dependency inversion principles and unnecessarily tied presentation logic to a specific database backend when they should be generic over `LedgerStore`.
+**Blueprint:** Updated trait implementations (e.g., `BudgetRuntime`, `HomeDataSource`) to be generic over `AppRuntime<S>` where `S: logos_store::LedgerStore`. Replaced concrete PostgresStore static method calls (`current_month_key_local`, `default_analytics_schema_version`) with the lightweight `MemoryStore` generic argument to sever the dependency where a store instance is not required.

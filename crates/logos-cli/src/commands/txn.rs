@@ -19,7 +19,7 @@ trait TxnPoster {
     ) -> Result<(), RuntimeError>;
 }
 
-impl TxnPoster for AppRuntime<logos_store_pg::PostgresStore> {
+impl<S: logos_store::LedgerStore> TxnPoster for AppRuntime<S> {
     fn post_double_entry(
         &mut self,
         description: &str,

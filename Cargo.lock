@@ -1588,6 +1588,7 @@ dependencies = [
  "crossterm 0.29.0",
  "logos-core",
  "logos-runtime",
+ "logos-store",
  "logos-store-pg",
  "ratatui",
 ]
