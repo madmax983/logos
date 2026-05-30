@@ -119,6 +119,8 @@ mod tests {
         let sim = CoastFireSimulator::new(fire_sim, 7.0, 20);
         let result = sim.calculate();
 
+        assert_eq!(result.fire_target_cents, 120_000_000);
+        assert_eq!(result.coast_fire_cents, 31_010_280);
         assert!(result.is_coasting);
     }
 
@@ -131,5 +133,47 @@ mod tests {
         assert_eq!(result.fire_target_cents, 0);
         assert_eq!(result.coast_fire_cents, 0);
         assert!(result.is_coasting);
+    }
+
+    #[test]
+    fn test_max_fire_target() {
+        let mut fire_sim = FireSimulator::new(i64::MAX / 300);
+        fire_sim.set_safe_withdrawal_rate(0.0); // Will cause max target
+        let sim = CoastFireSimulator::new(fire_sim, 7.0, 20);
+        let result = sim.calculate();
+
+        assert_eq!(result.fire_target_cents, i64::MAX);
+        assert_eq!(result.coast_fire_cents, i64::MAX);
+        assert!(!result.is_coasting);
+    }
+
+    #[test]
+    fn test_boundary_coasting() {
+        let mut fire_sim = FireSimulator::new(400_000); // target 1.2M
+        fire_sim.add_assets_liabilities(31_010_280, 0);
+
+        let sim = CoastFireSimulator::new(fire_sim, 7.0, 20);
+        let result = sim.calculate();
+
+        assert_eq!(result.fire_target_cents, 120_000_000);
+        assert_eq!(result.coast_fire_cents, 31_010_280);
+        assert!(result.is_coasting); // exactly on boundary should be true
+    }
+
+    #[test]
+    fn test_negative_compound_factor() {
+        let fire_sim = FireSimulator::new(400_000);
+        // Growth of -150% means compound_factor will be negative or 0.0 depending on exponent
+        // Let's use -100% (growth_factor = 0.0). For 1 year, compound_factor = 0.0
+        let sim = CoastFireSimulator::new(fire_sim.clone(), -100.0, 1);
+        let result = sim.calculate();
+        assert_eq!(result.fire_target_cents, 120_000_000);
+        assert_eq!(result.coast_fire_cents, 120_000_000);
+        assert!(!result.is_coasting);
+
+        // Growth factor -2.0, odd years -> negative compound factor
+        let sim_neg = CoastFireSimulator::new(fire_sim, -300.0, 1);
+        let result_neg = sim_neg.calculate();
+        assert_eq!(result_neg.coast_fire_cents, 120_000_000);
     }
 }
