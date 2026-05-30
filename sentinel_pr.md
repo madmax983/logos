@@ -1,10 +1,6 @@
-🤖 Sentinel: Closed test gaps in TUI terminal interactions and UI state
+🛡️ Sentry: [test coverage improvement]
 
-**🧬 Mutants Found:** Dozens of survivors across `logos-tui` related to date parsing, terminal key sequences, and view state conditional formatting. Excluded one `== 0` vs `!= 0` mutant because `ratatui`/`comfy_table` drops ANSI colors in our headless test contexts making them logically equivalent for test output checks.
-**🎯 Tests Added/Strengthened:**
-- In `crates/logos-tui/tests/terminal_runtime.rs`, strengthened assertions to kill control-key mappings, ignored inputs on release, and navigation character conversions.
-- In `crates/logos-tui/tests/reconcile_screen.rs`, added properties and content checks for the Reconcile views specifically asserting stateful boolean representation (`true`/`false`), `$0.00` variance rendering vs non-zero variance `$1.00`, and precise selected `> ` row pointers.
-- Exported and aggressively tested `civil_from_days` logic to close multiple mathematical mutants.
-**⚠️ Suspected Bugs:** None.
-**📊 Kill Rate:** 100% kill rate (or equivalent exclusion) on targeted files (`crates/logos-tui/src/app.rs`, `crates/logos-tui/src/terminal.rs`, `crates/logos-tui/src/ui/reconcile.rs`).
-**🔗 Havoc Interaction:** None, UI layer.
+🎯 Target: `logos-core` (multiple modules including `domain::correction`, `experimental::cashflow_projector`, `experimental::fire_ascent`, `experimental::mermaid_exporter`, `planning::fire`, and `planning::rsu_distributor`)
+💣 Risk: Prevent logic bugs or panics from missed branches such as division-by-zero on empty inputs (`mermaid_exporter`), incorrect loops/skips (`cashflow_projector`), unhandled bounds (`fire_ascent` with `i64::MAX`), missed constructor errors (`rsu_distributor` empty description), and uncovered getters.
+🧪 Strategy: Added specific unit tests to trigger the unexercised failure modes (invalid accounts, unbalanced transactions) to verify they fail closed/continue cleanly instead of panicking.
+🔬 Verification: `cargo test -p logos-core`

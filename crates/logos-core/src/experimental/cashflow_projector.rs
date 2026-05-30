@@ -239,6 +239,46 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_cashflow_projector_invalid_account_ids_continue_loop() {
+        let template_invalid_credit = RecurringTemplate {
+            description: "Invalid Credit".to_string(),
+            amount_cents: 1000,
+            credit_account: "   ".to_string(), // Invalid AccountId
+            debit_account: "assets:checking".to_string(),
+        };
+
+        let template_invalid_debit = RecurringTemplate {
+            description: "Invalid Debit".to_string(),
+            amount_cents: 1000,
+            credit_account: "assets:checking".to_string(),
+            debit_account: "   ".to_string(), // Invalid AccountId
+        };
+
+        let template_invalid_amounts = RecurringTemplate {
+            description: "Invalid Amount".to_string(),
+            amount_cents: -50, // < 0 is invalid for Posting
+            credit_account: "assets:checking".to_string(),
+            debit_account: "expenses:food".to_string(),
+        };
+
+        let template_unbalanced = RecurringTemplate {
+            description: "   ".to_string(), // Invalid description makes tx fail
+            amount_cents: 1000,
+            credit_account: "assets:checking".to_string(),
+            debit_account: "expenses:food".to_string(),
+        };
+
+        let mut projector = CashflowProjector::new();
+        projector.add_recurring_template(template_invalid_credit);
+        projector.add_recurring_template(template_invalid_debit);
+        projector.add_recurring_template(template_invalid_amounts);
+        projector.add_recurring_template(template_unbalanced);
+
+        let balances = projector.project_balances(1);
+        assert!(balances.is_empty());
+    }
+
+    #[test]
     fn test_cashflow_projection_balances() {
         let mut projector = CashflowProjector::new();
         projector.set_initial_balance("assets:checking", 100_000); // $1000

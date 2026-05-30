@@ -289,4 +289,11 @@ mod tests {
             Err(DomainError::CorrectionCannotSupersedeSelf)
         );
     }
+
+    #[test]
+    fn should_return_into_supersedes_id() {
+        let old_tx = TransactionId::new("tx-123").unwrap();
+        let correction = Correction::new(old_tx.clone(), "Typo").unwrap();
+        assert_eq!(correction.into_supersedes_id(), old_tx);
+    }
 }

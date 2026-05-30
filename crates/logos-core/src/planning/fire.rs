@@ -303,6 +303,22 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_fire_simulator_config_getter() {
+        let mut sim = FireSimulator::new(500_000);
+        sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 3,
+        });
+        let config = sim.config();
+        assert_eq!(config.safe_withdrawal_rate_pct, 3);
+    }
+
+    #[test]
+    fn test_fire_simulator_monthly_expenses_getter() {
+        let sim = FireSimulator::new(500_000);
+        assert_eq!(sim.monthly_expenses_cents(), 500_000);
+    }
+
+    #[test]
     fn test_fire_number_calculation() {
         // $5000/month expenses = $60,000/year. At 4% SWR, FIRE number is $1,500,000.
         let mut sim = FireSimulator::new(500_000);

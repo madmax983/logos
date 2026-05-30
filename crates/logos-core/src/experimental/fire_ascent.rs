@@ -180,6 +180,22 @@ mod tests {
     }
 
     #[test]
+    fn test_fire_ascent_fire_number_max() {
+        let nw_projector = NetWorthProjector::new(100_000_000, 10_000);
+        let mut fire_sim = FireSimulator::new(500_000);
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 0,
+        });
+
+        let simulator = FireAscentSimulator::new(fire_sim, nw_projector, 12);
+        let result = simulator.ascend();
+
+        assert!(result.impossible);
+        assert!(!result.success);
+        assert_eq!(result.summit_cents, i64::MAX);
+    }
+
+    #[test]
     fn test_failed_ascent() {
         let mut fire_sim = FireSimulator::new(500_000); // 5k/mo expenses = 60k/yr
         fire_sim.set_config(FireConfig {

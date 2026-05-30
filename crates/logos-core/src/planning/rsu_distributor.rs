@@ -436,4 +436,25 @@ mod tests {
         let postings = tx.postings();
         assert_eq!(postings.len(), 2);
     }
+
+    #[test]
+    fn test_rsu_distributor_rejects_empty_description() {
+        use crate::DomainError;
+        let config = RsuDistributorConfig {
+            rsu_asset: AccountId::new("assets:rsu").unwrap(),
+            tax_reserve: AccountId::new("assets:tax").unwrap(),
+            smoothing_buffer: AccountId::new("assets:buffer").unwrap(),
+            goals: AccountId::new("assets:goals").unwrap(),
+            discretionary: AccountId::new("assets:checking").unwrap(),
+        };
+
+        let distributor = RsuAutoDistributor::new(config);
+        let policy = AllocationPolicy::new(50, 10, 40, 0).unwrap();
+
+        let result = distributor.distribute_rsu_vest("   ", 1000, &policy);
+        assert_eq!(
+            result.unwrap_err(),
+            DomainError::EmptyTransactionDescription
+        );
+    }
 }

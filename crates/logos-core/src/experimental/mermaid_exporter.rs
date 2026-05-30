@@ -193,6 +193,13 @@ assets:savings,expenses:fun,20.00
     }
 
     #[test]
+    fn test_mermaid_exporter_empty() {
+        let exporter = MermaidSankeyExporter::new();
+        let result = exporter.export_sankey();
+        assert!(result.contains("sankey-beta"));
+    }
+
+    #[test]
     fn test_aggregate_multiple_transactions() {
         let mut exporter = MermaidSankeyExporter::new();
 
