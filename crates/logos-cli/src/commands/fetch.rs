@@ -64,7 +64,7 @@ fn render_list_output(
     }
 
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::UTF8_FULL_CONDENSED);
     table.set_header(vec![
         "Run ID",
         "Month",
@@ -93,7 +93,7 @@ fn render_list_output(
 
 fn render_show_output(run: &StoredFetchRun) -> String {
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::UTF8_FULL_CONDENSED);
     table.set_header(vec![
         "Run ID",
         "Source",
