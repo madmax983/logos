@@ -1345,8 +1345,8 @@ impl<S: LedgerStore> AppRuntime<S> {
             })
             .map(|stored| stored.id().clone())
             .collect();
-        ids.sort_by(|left, right| left.as_str().cmp(right.as_str()));
-        ids.dedup_by(|left, right| left.as_str() == right.as_str());
+        ids.sort();
+        ids.dedup();
         ids
     }
 }

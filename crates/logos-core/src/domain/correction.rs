@@ -29,7 +29,7 @@ use crate::error::DomainError;
 /// let id = TransactionId::new("tx-123").unwrap();
 /// assert_eq!(id.as_str(), "tx-123");
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TransactionId(std::sync::Arc<str>);
 
 impl TransactionId {
