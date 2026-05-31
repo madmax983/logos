@@ -1424,9 +1424,9 @@ impl PostgresStore {
             .map_err(|err| load_failure(format!("loading month closes failed: {err}")))
     }
 
-    fn ensure_transactions_exist(
+    fn ensure_transactions_exist<'a>(
         connection: &mut PgConnection,
-        transaction_ids: &[TransactionId],
+        transaction_ids: impl Iterator<Item = &'a TransactionId>,
     ) -> Result<(), StoreError> {
         for transaction_id in transaction_ids {
             let exists = select(exists(
@@ -1448,14 +1448,14 @@ impl PostgresStore {
         Ok(())
     }
 
-    fn statement_line_ids_for_transaction_ids(
+    fn statement_line_ids_for_transaction_ids<'a>(
         connection: &mut PgConnection,
-        transaction_ids: &[TransactionId],
+        transaction_ids: impl Iterator<Item = &'a TransactionId>,
     ) -> Result<Vec<String>, StoreError> {
-        if transaction_ids.is_empty() {
+        let ids: Vec<&str> = transaction_ids.map(TransactionId::as_str).collect();
+        if ids.is_empty() {
             return Ok(Vec::new());
         }
-        let ids: Vec<&str> = transaction_ids.iter().map(TransactionId::as_str).collect();
         statement_lines::table
             .filter(statement_lines::imported_txn_id.eq_any(ids))
             .select(statement_lines::line_id)
@@ -2104,14 +2104,13 @@ impl LedgerStore for PostgresStore {
             records,
         )?;
 
-        let imported_txn_ids: Vec<TransactionId> = records
+        let imported_txn_ids_iter = records
             .iter()
-            .filter_map(|record| record.imported_txn_id().cloned())
-            .collect();
+            .filter_map(|record| record.imported_txn_id());
         let imported_at_us = now_timestamp_us()?;
         let record_count = i64::try_from(records.len()).unwrap_or(i64::MAX);
         let mut connection = self.connection.borrow_mut();
-        Self::ensure_transactions_exist(&mut connection, &imported_txn_ids)?;
+        Self::ensure_transactions_exist(&mut connection, imported_txn_ids_iter)?;
 
         let batch_id = Self::next_import_batch_id(&mut connection)?;
         let batch_row = Self::build_import_batch_row(
@@ -2247,9 +2246,9 @@ impl LedgerStore for PostgresStore {
         let created_at_us = now_timestamp_us()?;
         let matched_transaction_count = i64::try_from(reconciled_txn_ids.len()).unwrap_or(i64::MAX);
         let mut connection = self.connection.borrow_mut();
-        Self::ensure_transactions_exist(&mut connection, reconciled_txn_ids)?;
+        Self::ensure_transactions_exist(&mut connection, reconciled_txn_ids.iter())?;
         let statement_line_ids =
-            Self::statement_line_ids_for_transaction_ids(&mut connection, reconciled_txn_ids)?;
+            Self::statement_line_ids_for_transaction_ids(&mut connection, reconciled_txn_ids.iter())?;
         let run_id = Self::next_reconciliation_run_id(&mut connection)?;
         let run_row = Self::build_reconciliation_run_row(
             &run_id,
@@ -2326,9 +2325,9 @@ impl LedgerStore for PostgresStore {
         let closed_at_us = now_timestamp_us()?;
         let matched_transaction_count = i64::try_from(reconciled_txn_ids.len()).unwrap_or(i64::MAX);
         let mut connection = self.connection.borrow_mut();
-        Self::ensure_transactions_exist(&mut connection, reconciled_txn_ids)?;
+        Self::ensure_transactions_exist(&mut connection, reconciled_txn_ids.iter())?;
         let statement_line_ids =
-            Self::statement_line_ids_for_transaction_ids(&mut connection, reconciled_txn_ids)?;
+            Self::statement_line_ids_for_transaction_ids(&mut connection, reconciled_txn_ids.iter())?;
         let run_id = Self::next_reconciliation_run_id(&mut connection)?;
         let close_id = Self::next_month_close_id(&mut connection)?;
 
