@@ -17,3 +17,22 @@
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
 **Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+
+## 2026-05-02 - CLI Presentation and Arithmetic Mutants
+**Learning:** Mutants replacing CLI command bodies with `Ok(())` or altering arithmetic divisions (`/ 3`, `/ 100`) often survive if tests only verify partial outputs or lack strict numerical bounds.
+**Action:** Consolidate tests into a single `mod tests` block, verify full table structures including headers, and add strict arithmetic bounds tests.
+## 2026-05-02 - `budget.rs` testing and tables logic
+**Learning:** Missed mutants on `comfy_table` render functions and variance calculations are because CLI string formatting operations might not be tested directly.
+**Action:** Adding deterministic output validation tests checking not just the exact numeric strings but the table headers and visual bounds helps significantly improve the test suites, preventing regression in terminal presentations.
+
+## 2026-05-02 - CLI Command Mutants
+**Learning:** Mutants replacing the entire body of a CLI command with `Ok(())` frequently survive because the integration test suite (if any) is either not run by cargo mutants or doesn't actually assert the CLI output side-effects (`println!`). Testing these commands via unit tests is hard without a proper output sink dependency injected.
+**Action:** Ignore UI/CLI side-effect commands (`set`, `rsu_plan`, `monte_carlo`) for strict mutation coverage unless refactoring presentation logic to return the strings instead of printing them natively.
+
+## 2026-05-02 - CLI Presentation Mutations limits
+**Learning:** `cargo mutants` often misses on presentation code where the specific presentation (like TTY colorization conditional branches using `>=`) is not evaluated by integration logic, and we shouldn't necessarily make our unit tests brittle asserting on ANSI codes just to hit coverage. `logos-cli` commands returning `Ok(())` natively represent side effects which are tricky to mock out perfectly.
+**Action:** Let's stop at CLI presentation for now and consider `logos-cli` presentation tests mostly adequate since unit tests cover the core calculation logic behind them. We have strengthened the table header outputs.
+
+## 2026-05-02 - Missing Arithmetic Coverage in Budget Planning
+**Learning:** `monthly_income_cents`, `reserve_sweep_cents` calculation divisions (`/ 3`, `/ 100`) survive replacement with `%` and `*` due to weak numeric assertions.
+**Action:** Covered arithmetic divisions natively.

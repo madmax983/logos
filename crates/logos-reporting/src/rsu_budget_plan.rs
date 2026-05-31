@@ -789,4 +789,44 @@ mod tests {
         let plan = project_rsu_budget_plan("2024-01", &input).expect("should succeed");
         assert_eq!(plan.baseline_remaining_cents(), 0);
     }
+
+    #[test]
+    fn test_monthly_income_divide_by_three() {
+        let tiers = HaircutTierTable::default();
+        let val = monthly_income(1000, 300, 0, tiers);
+        // With default 25% haircut: 1000 cents * 300 units = 300000 cents.
+        // Haircut 25% leaves 225000 cents.
+        // / 3 months = 75000 cents.
+        assert_eq!(val, 75000);
+
+        // Ensure that replacing `/ 3` with `% 3` or `* 3` fails the test.
+        // * 3 = 675000
+        // % 3 = 0
+        // This assertion naturally covers it.
+    }
+
+    #[test]
+    fn test_scenario_projection_sweeps_math() {
+        let proj = scenario_projection(
+            ScenarioKey::Base,
+            10000, // monthly_income_cents
+            5000,  // conservative_budget_cents
+            10,    // reserve_sweep_pct
+            20,    // investing_sweep_pct
+        );
+
+        // Surplus = 10000 - 5000 = 5000
+        assert_eq!(proj.surplus_cents, 5000);
+
+        // Reserve sweep = 5000 * 10 / 100 = 500
+        assert_eq!(proj.reserve_sweep_cents, 500);
+
+        // Investing sweep = 5000 * 20 / 100 = 1000
+        assert_eq!(proj.investing_sweep_cents, 1000);
+
+        // Available after sweeps = 10000 - 500 - 1000 = 8500
+        assert_eq!(proj.available_after_sweeps_cents, 8500);
+
+        // The assertions naturally kill `/ 100` -> `% 100` mutants.
+    }
 }

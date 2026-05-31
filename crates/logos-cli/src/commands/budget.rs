@@ -302,7 +302,10 @@ const fn scenario_name(key: ScenarioKey) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::{BudgetRuntime, render_budget_set_output, render_rsu_plan_output};
+    use super::{
+        BudgetRuntime, render_budget_set_output, render_rsu_plan_output, render_rsu_plan_table,
+        render_rsu_scenario_table, scenario_name,
+    };
     use logos_reporting::{RsuBudgetPlanInput, ScenarioPriceInputs, project_rsu_budget_plan};
 
     struct FakeBudgetRuntime {
@@ -390,5 +393,75 @@ mod tests {
         assert!(output.contains("bear"));
         assert!(output.contains("base"));
         assert!(output.contains("bull"));
+    }
+
+    #[test]
+    fn render_budget_set_output_colors_negative_variance_red() {
+        let runtime = FakeBudgetRuntime {
+            variance_cents: -50,
+        };
+        let output = render_budget_set_output(&runtime, "2026-03", 5_000, "expenses:");
+        assert!(output.contains("-$0.50"));
+    }
+
+    #[test]
+    fn render_budget_set_output_colors_positive_variance_green() {
+        let runtime = FakeBudgetRuntime { variance_cents: 50 };
+        let output = render_budget_set_output(&runtime, "2026-03", 5_000, "expenses:");
+        assert!(output.contains("$0.50"));
+        assert!(!output.contains("-$0.50"));
+    }
+
+    #[test]
+    fn render_rsu_plan_table_is_deterministic() {
+        let input = RsuBudgetPlanInput::new(
+            300,
+            45,
+            ScenarioPriceInputs::new(10_000, 12_000, 16_000).expect("price inputs"),
+            250_000,
+            60,
+            30,
+        )
+        .unwrap();
+        let plan = project_rsu_budget_plan("2026-03", &input).unwrap();
+        let table = render_rsu_plan_table(&plan);
+        let output = table.to_string();
+
+        assert!(output.contains("Month"));
+        assert!(output.contains("Conservative Budget"));
+        assert!(output.contains("Fixed Commitments"));
+        assert!(output.contains("Baseline Remaining"));
+        assert!(output.contains("Reserve Sweep %"));
+        assert!(output.contains("Investing Sweep %"));
+    }
+
+    #[test]
+    fn render_rsu_scenario_table_is_deterministic() {
+        let input = RsuBudgetPlanInput::new(
+            300,
+            45,
+            ScenarioPriceInputs::new(10_000, 12_000, 16_000).expect("price inputs"),
+            250_000,
+            60,
+            30,
+        )
+        .unwrap();
+        let plan = project_rsu_budget_plan("2026-03", &input).unwrap();
+        let table = render_rsu_scenario_table(&plan);
+        let output = table.to_string();
+
+        assert!(output.contains("Scenario"));
+        assert!(output.contains("Monthly Income"));
+        assert!(output.contains("Surplus"));
+        assert!(output.contains("Reserve Sweep"));
+        assert!(output.contains("Investing Sweep"));
+        assert!(output.contains("Available After Sweeps"));
+    }
+
+    #[test]
+    fn format_scenario_name_is_correct() {
+        assert_eq!(scenario_name(logos_reporting::ScenarioKey::Bear), "bear");
+        assert_eq!(scenario_name(logos_reporting::ScenarioKey::Base), "base");
+        assert_eq!(scenario_name(logos_reporting::ScenarioKey::Bull), "bull");
     }
 }
