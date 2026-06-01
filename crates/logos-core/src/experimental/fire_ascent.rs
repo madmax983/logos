@@ -109,7 +109,7 @@ impl FireAscentSimulator {
             (summit, "🚩 SUMMIT (100%)"),
         ];
 
-        let mut milestones = Vec::new();
+        let mut milestones = Vec::with_capacity(milestone_names.len());
         let mut success = false;
 
         for (target_cents, target_name) in milestone_names {

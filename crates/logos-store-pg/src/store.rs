@@ -1424,9 +1424,9 @@ impl PostgresStore {
             .map_err(|err| load_failure(format!("loading month closes failed: {err}")))
     }
 
-    fn ensure_transactions_exist(
+    fn ensure_transactions_exist<'a>(
         connection: &mut PgConnection,
-        transaction_ids: &[TransactionId],
+        transaction_ids: impl IntoIterator<Item = &'a TransactionId>,
     ) -> Result<(), StoreError> {
         for transaction_id in transaction_ids {
             let exists = select(exists(
@@ -2104,14 +2104,13 @@ impl LedgerStore for PostgresStore {
             records,
         )?;
 
-        let imported_txn_ids: Vec<TransactionId> = records
-            .iter()
-            .filter_map(|record| record.imported_txn_id().cloned())
-            .collect();
         let imported_at_us = now_timestamp_us()?;
         let record_count = i64::try_from(records.len()).unwrap_or(i64::MAX);
         let mut connection = self.connection.borrow_mut();
-        Self::ensure_transactions_exist(&mut connection, &imported_txn_ids)?;
+        Self::ensure_transactions_exist(
+            &mut connection,
+            records.iter().filter_map(|record| record.imported_txn_id()),
+        )?;
 
         let batch_id = Self::next_import_batch_id(&mut connection)?;
         let batch_row = Self::build_import_batch_row(

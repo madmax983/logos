@@ -43,7 +43,7 @@ impl SubscriptionFatigueAnalyzer {
     pub fn analyze(&self, transactions: &[Transaction]) -> SubscriptionFatigueReport {
         let recurring_templates = self.recurrence_detector.detect(transactions);
 
-        let mut items = Vec::new();
+        let mut items = Vec::with_capacity(recurring_templates.len());
         let mut total_monthly = 0;
         let mut total_opportunity = 0;
 

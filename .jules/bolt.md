@@ -24,3 +24,7 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+
+## YYYY-MM-DD - Reduce Intermediate Vector Allocations for Iterators
+**Learning:** Functions that accept `&[T]` and immediately convert it to a collection (like `Vec<&T>`) force callers to allocate intermediate vectors just to pass data. Changing the function signature to accept `impl IntoIterator<Item = &'a T>` allows callers to pass chained `.filter_map()` or `.iter()` directly, avoiding the intermediate allocation entirely.
+**Action:** When a function requires iterating over items without mutating the slice, use `impl IntoIterator` instead of `&[T]` to allow zero-cost iterator passing.
