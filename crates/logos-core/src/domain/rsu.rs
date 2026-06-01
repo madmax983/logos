@@ -111,7 +111,7 @@ impl HaircutTierTable {
         Self::default()
     }
 
-    /// Returns the haircut percentage for a given number of days to vest.
+    /// Calculates the risk-adjusted markdown (haircut) percentage applied to unvested shares based on the time remaining until they vest.
     ///
     /// ## Examples
     ///
@@ -197,7 +197,7 @@ impl AllocationPolicy {
         })
     }
 
-    /// Returns the percentage of the vest allocated to the tax reserve.
+    /// Retrieves the percentage of the vest allocated to the tax reserve, ensuring enough liquidity is preserved to cover estimated income taxes.
     ///
     /// ## Examples
     ///
@@ -211,7 +211,7 @@ impl AllocationPolicy {
         self.tax_reserve
     }
 
-    /// Returns the percentage of the vest allocated to the income smoothing buffer.
+    /// Retrieves the percentage of the vest allocated to the income smoothing buffer, used to bridge the gap between base salary and target compensation.
     ///
     /// ## Examples
     ///
@@ -225,7 +225,7 @@ impl AllocationPolicy {
         self.smoothing_buffer
     }
 
-    /// Returns the percentage of the vest allocated to specific financial goals.
+    /// Retrieves the percentage of the vest allocated to specific financial goals, directing wealth towards long-term objectives rather than immediate consumption.
     ///
     /// ## Examples
     ///
@@ -239,7 +239,7 @@ impl AllocationPolicy {
         self.goals
     }
 
-    /// Returns the percentage of the vest allocated to discretionary spending.
+    /// Retrieves the percentage of the vest allocated to discretionary spending, representing the portion of the vest available for immediate, unplanned use.
     ///
     /// ## Examples
     ///

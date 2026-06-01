@@ -146,7 +146,7 @@ impl FireSimulator {
         self.config = config;
     }
 
-    /// Returns the current configuration.
+    /// Retrieves the current FIRE configuration parameters, which define the fundamental assumptions for the simulation (e.g., safe withdrawal rate, monthly expenses).
     #[must_use]
     pub const fn config(&self) -> FireConfig {
         self.config
@@ -219,7 +219,7 @@ impl FireSimulator {
             .saturating_div(i64::from(self.config.safe_withdrawal_rate_pct))
     }
 
-    /// Returns the configured monthly expenses in cents.
+    /// Retrieves the configured monthly expenses in cents, which acts as the "burn rate" necessary to calculate the target FIRE number.
     ///
     /// This is the "burn rate" used to calculate your target FIRE number.
     ///
@@ -269,7 +269,7 @@ impl FireSimulator {
         base_nw.saturating_add(rsu_value)
     }
 
-    /// Returns the progress towards the FIRE number as an integer percentage from 0 to 100.
+    /// Calculates the progress towards the FIRE target number as an integer percentage (0 to 100), providing a high-level metric for tracking journey completion.
     ///
     /// # Examples
     /// ```

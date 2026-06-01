@@ -98,7 +98,7 @@ pub enum AccountType {
 }
 
 impl AccountType {
-    /// Returns the "normal balance" sign for the account type.
+    /// Determines the "normal balance" sign for the account type, establishing whether debits or credits increase the account's value according to standard double-entry bookkeeping rules.
     ///
     /// In double-entry bookkeeping, the normal balance is the type of entry
     /// (debit or credit) that increases the account's balance. In `logos`:

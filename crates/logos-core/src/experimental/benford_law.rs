@@ -61,7 +61,7 @@ impl BenfordLawAnalyzer {
         dist
     }
 
-    /// Returns the theoretical expected distribution according to Benford's Law.
+    /// Computes the theoretical expected probability distribution for leading digits (1-9) according to Benford's Law, providing a baseline for anomaly detection.
     #[must_use]
     pub fn expected_distribution() -> HashMap<u8, f64> {
         let mut dist = HashMap::new();

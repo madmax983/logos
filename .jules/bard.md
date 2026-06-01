@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-15 - The Trivial Returns
+**Confusion:** The codebase had many doc comments starting with "Returns the..." which were trivial and did not explain *why* a function exists or what it actually computes, violating Bard's rule against simply repeating the function signature.
+**Clarification:** Replaced the trivial "Returns the..." comments in `crates/logos-core/src/domain/account.rs`, `crates/logos-core/src/domain/rsu.rs`, `crates/logos-core/src/experimental/benford_law.rs`, and `crates/logos-core/src/planning/fire.rs` with more descriptive comments that explain the purpose, computation, or business logic behind the return values.
