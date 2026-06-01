@@ -110,7 +110,7 @@ fn render_pdf_output(
     duplicate_count: usize,
 ) -> String {
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::UTF8_FULL_CONDENSED);
     table.set_header(vec![
         "File",
         "Account",
@@ -146,7 +146,7 @@ fn render_csv_output(
     duplicate_count: usize,
 ) -> String {
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::UTF8_FULL_CONDENSED);
     table.set_header(vec![
         "File",
         "Source ID",
