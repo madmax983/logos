@@ -24,3 +24,6 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+## Avoid intermediate Vec allocations for Diesel queries
+**Learning:** When passing dynamically generated lists of keys to Diesel's `.eq_any()`, collecting an iterator into an intermediate `Vec` is unnecessary. However, you cannot pass a reference to an iterator (e.g., `&transaction_ids.iter().map(...)`) as it will fail to compile.
+**Action:** Pass the mapped iterator by value directly to `.eq_any(items.iter().map(...))` instead of eagerly `.collect()`-ing it into a vector.

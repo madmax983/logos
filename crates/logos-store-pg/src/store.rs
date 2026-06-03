@@ -1455,7 +1455,7 @@ impl PostgresStore {
         if transaction_ids.is_empty() {
             return Ok(Vec::new());
         }
-        let ids: Vec<&str> = transaction_ids.iter().map(TransactionId::as_str).collect();
+        let ids = transaction_ids.iter().map(TransactionId::as_str);
         statement_lines::table
             .filter(statement_lines::imported_txn_id.eq_any(ids))
             .select(statement_lines::line_id)

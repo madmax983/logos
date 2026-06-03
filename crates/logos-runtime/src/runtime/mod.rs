@@ -1370,7 +1370,7 @@ fn import_batch_key(
     ocr_enabled: bool,
     imported_keys: &[String],
 ) -> String {
-    let mut sorted_keys: Vec<&str> = imported_keys.iter().map(String::as_str).collect();
+    let mut sorted_keys: Vec<&String> = imported_keys.iter().collect();
     sorted_keys.sort_unstable();
 
     let mut hasher = Hasher::new();
