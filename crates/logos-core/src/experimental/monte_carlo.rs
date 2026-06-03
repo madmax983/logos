@@ -98,6 +98,13 @@ impl MonteCarloProjector {
             };
         }
 
+        let mut final_outcomes = self.generate_paths(months, paths);
+        final_outcomes.sort_unstable();
+
+        Self::calculate_percentiles(&final_outcomes)
+    }
+
+    fn generate_paths(&self, months: u16, paths: u32) -> Vec<i64> {
         let monthly_mean = self.annual_mean_return / 12.0;
         let monthly_volatility = self.annual_volatility / 12.0f64.sqrt();
         let mut lcg = Lcg::new(self.seed);
@@ -128,16 +135,33 @@ impl MonteCarloProjector {
             final_outcomes.push(current_cents);
         }
 
-        final_outcomes.sort_unstable();
+        final_outcomes
+    }
+
+    fn calculate_percentiles(sorted_outcomes: &[i64]) -> MonteCarloResult {
+        #[allow(clippy::cast_possible_truncation)]
+        let paths = sorted_outcomes.len() as u32;
 
         // Calculate percentiles
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            clippy::cast_precision_loss
+        )]
         let lower_bound_idx = (f64::from(paths) * 0.05).floor() as usize;
 
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            clippy::cast_precision_loss
+        )]
         let median_idx = (f64::from(paths) * 0.50).floor() as usize;
 
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            clippy::cast_precision_loss
+        )]
         let upper_bound_idx = (f64::from(paths) * 0.95).floor() as usize;
 
         // Ensure indices are within bounds (for very small path counts)
@@ -146,9 +170,9 @@ impl MonteCarloProjector {
         let safe_upper_bound_idx = upper_bound_idx.clamp(0, paths.saturating_sub(1) as usize);
 
         MonteCarloResult {
-            p5_cents: final_outcomes[safe_lower_bound_idx],
-            median_cents: final_outcomes[safe_median_idx],
-            p95_cents: final_outcomes[safe_upper_bound_idx],
+            p5_cents: sorted_outcomes[safe_lower_bound_idx],
+            median_cents: sorted_outcomes[safe_median_idx],
+            p95_cents: sorted_outcomes[safe_upper_bound_idx],
         }
     }
 }
