@@ -157,3 +157,25 @@ impl SecretRefReader for OpCliSecretRefReader {
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_op_cli_secret_ref_reader_success() {
+        let reader = OpCliSecretRefReader::new(PathBuf::from("echo"));
+        let secret = reader.read_secret_ref("op://vault/item/password").unwrap();
+        assert!(secret.contains("read op://vault/item/password"));
+    }
+
+    #[test]
+    fn test_op_cli_secret_ref_reader_failure() {
+        let reader = OpCliSecretRefReader::new(PathBuf::from("non_existent_op_binary_123456789"));
+        let err = reader
+            .read_secret_ref("op://vault/item/password")
+            .unwrap_err();
+        assert!(err.to_string().contains("failed to execute 1Password CLI"));
+    }
+}

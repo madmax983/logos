@@ -17,3 +17,7 @@
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
 **Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+
+## 2024-06-03 - Mocking external CLI execution in Rust
+**Learning:** When writing unit tests for Rust components that wrap external CLI executions via `std::process::Command`, mocking can be difficult without heavy libraries.
+**Action:** Prefer injecting a dummy binary path like `PathBuf::from("echo")` to simulate success (it returns arguments cleanly) or a non-existent path to simulate a failure execution. This cleanly tests command construction without relying on the actual binary.
