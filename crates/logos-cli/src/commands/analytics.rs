@@ -431,4 +431,40 @@ mod fire_sim_tests {
         let result = fire_sim(500_000, 1_000_000, 200_000);
         assert!(result.is_ok());
     }
+
+    #[test]
+    fn test_render_fire_sim_output() {
+        let ascent_result = logos_core::fire_ascent::AscentResult {
+            summit_cents: 10_000_000,
+            max_months: 1200,
+            final_net_worth_cents: 10_000_000,
+            success: true,
+            instant_summit: false,
+            impossible: false,
+            milestones: vec![
+                logos_core::fire_ascent::AscentMilestone {
+                    name: "Coast FIRE",
+                    target_cents: 5_000_000,
+                    month_reached: Some(15),
+                },
+                logos_core::fire_ascent::AscentMilestone {
+                    name: "Fat FIRE",
+                    target_cents: 15_000_000,
+                    month_reached: None,
+                },
+            ],
+        };
+        let output =
+            render_fire_sim_output(500_000, 1_000_000_000, 200_000_000, 100_000, &ascent_result);
+
+        assert!(output.contains("Metric"));
+        assert!(output.contains("Value"));
+        assert!(output.contains("Monthly Expenses"));
+        assert!(output.contains("$5,000.00"));
+
+        // Month breakdown for month 15: 15 / 12 = 1y, 15 % 12 = 3m
+        assert!(output.contains("Reached in 1y 3m (Month 15)"));
+
+        assert!(output.contains("Pending"));
+    }
 }

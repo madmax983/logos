@@ -247,6 +247,12 @@ mod tests {
         );
         let output = render_month_output("assets:checking", "2026-03", 100_000, &run);
 
+        assert!(output.contains("Run ID"));
+        assert!(output.contains("Month"));
+        assert!(output.contains("Account"));
+        assert!(output.contains("Opening"));
+        assert!(output.contains("Ledger Δ"));
+        assert!(output.contains("Expected Closing"));
         assert!(output.contains("recon-7"));
         assert!(output.contains("$1,000.00"));
         assert!(output.contains("$75.00"));
@@ -278,6 +284,10 @@ mod tests {
         );
         let output = render_show_output(&run);
 
+        assert!(output.contains("Run ID"));
+        assert!(output.contains("Month"));
+        assert!(output.contains("Account"));
+        assert!(output.contains("Expected Closing"));
         assert!(output.contains("recon-8"));
         assert!(output.contains("$2,000.00"));
         assert!(output.contains("$120.00"));
@@ -328,6 +338,10 @@ mod tests {
 
         let output = render_list_output(Some("2026-05"), Some("assets:checking"), &runs);
 
+        assert!(output.contains("Run ID"));
+        assert!(output.contains("Month"));
+        assert!(output.contains("Account"));
+        assert!(output.contains("Matched Txns"));
         assert!(output.contains("recon-9"));
         assert!(output.contains("recon-9"));
         assert!(output.contains("$0.00"));
