@@ -1,16 +1,30 @@
-Title: "👺 Havoc: `FireAscentSimulator` Panics on Arithmetic Overflow"
+👺 Havoc: `civil_from_days` Date Overflow Panic
 
 🧨 **The Trigger:**
-Setting an extremely large `monthly_expenses` (e.g., `i64::MAX / 20`) combined with a conservative `safe_withdrawal_rate_pct` (e.g., `2`) generates a `fire_number` that, when multiplied by 3 during the `camp3` calculation `(fire_number * 3) / 4`, causes an unhandled integer overflow and panics the simulation.
+When passing extreme positive inputs near the bounds of `i64::MAX` to the `civil_from_days` logic inside `logos-tui`, the initial assignment `let z = days_since_unix_epoch + 719_468;` attempts to add the unix offset to a highly positive value without bounds checking. Due to the lack of checked or saturating addition, this directly causes an arithmetic overflow panic in debug mode, and silently wraps memory in release mode. While `civil_from_days` currently receives bounded inputs scaled down from Unix timestamps in practice, as a utility function parsing any raw day count, it is highly fragile to boundary inputs.
 
 📉 **The Stack Trace:**
 ```
-thread 'test_fire_ascent_panics_on_overflow' panicked at crates/logos-core/src/experimental/fire_ascent.rs:77:24:
-attempt to multiply with overflow
+thread 'app::havoc_tests::test_civil_from_days_panic' panicked at crates/logos-tui/src/app.rs:1550:13:
+attempt to add with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 ```
 
 🧪 **Reproduction:**
-Run `cargo test -p logos-core --test fire_ascent_havoc`
+Run the following test inside `crates/logos-tui/src/app.rs`:
+```rust
+#[cfg(test)]
+mod havoc_tests {
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    fn test_civil_from_days_panic() {
+        let _ = civil_from_days(i64::MAX);
+    }
+}
+```
+Run `cargo test -p logos-tui` and witness the test pass successfully due to the expected arithmetic panic.
 
 😈 **Comment:**
-"You assumed no one would ever have a FIRE number large enough to break 64-bit multiplication when charting their ascent. You were wrong."
+You assumed time would never reach the end of the universe plus 719,468 days. You were wrong.

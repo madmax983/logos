@@ -1598,3 +1598,14 @@ mod tests {
         assert_eq!(civil_from_days(10957 + 31 + 29), (2000, 3, 1));
     }
 }
+
+#[cfg(test)]
+mod havoc_tests {
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    fn test_civil_from_days_panic() {
+        let _ = civil_from_days(i64::MAX);
+    }
+}
