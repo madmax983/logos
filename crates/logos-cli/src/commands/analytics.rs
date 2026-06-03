@@ -432,3 +432,85 @@ mod fire_sim_tests {
         assert!(result.is_ok());
     }
 }
+
+#[cfg(test)]
+mod output_tests {
+    use super::*;
+    use logos_core::fire_ascent::{AscentMilestone, AscentResult};
+
+    #[test]
+    fn test_render_fire_sim_output_format() {
+        let mut ascent_result = AscentResult {
+            summit_cents: 100_000_000,
+            max_months: 120,
+            final_net_worth_cents: 100_000_000,
+            success: true,
+            impossible: false,
+            instant_summit: false,
+            milestones: vec![],
+        };
+        ascent_result.milestones.push(AscentMilestone {
+            name: "Test",
+            target_cents: 1000,
+            month_reached: Some(25),
+        });
+
+        let output = render_fire_sim_output(100, 1000, 50, 10, &ascent_result);
+        assert!(output.contains("Reached in 2y 1m (Month 25)"));
+        assert!(output.contains("Test"));
+        assert!(output.contains("$1.00")); // Expenses
+        assert!(output.contains("$10.00")); // FIRE Number
+        assert!(output.contains("$0.50")); // Net worth
+        assert!(output.contains("$0.10")); // Savings
+    }
+
+    #[test]
+    fn test_render_fire_sim_output_impossible() {
+        let ascent_result = AscentResult {
+            summit_cents: 100_000_000,
+            max_months: 120,
+            final_net_worth_cents: 100_000_000,
+            success: false,
+            impossible: true,
+            instant_summit: false,
+            milestones: vec![],
+        };
+        let output = render_fire_sim_output(100, 1000, 50, 10, &ascent_result);
+        assert!(output.contains("Impossible"));
+    }
+
+    #[test]
+    fn test_render_fire_sim_output_instant_summit() {
+        let ascent_result = AscentResult {
+            summit_cents: 100_000_000,
+            max_months: 120,
+            final_net_worth_cents: 100_000_000,
+            success: true,
+            impossible: false,
+            instant_summit: true,
+            milestones: vec![],
+        };
+        let output = render_fire_sim_output(100, 1000, 50, 10, &ascent_result);
+        assert!(output.contains("Instant Summit!"));
+    }
+
+    #[test]
+    fn test_render_fire_sim_output_pending() {
+        let mut ascent_result = AscentResult {
+            summit_cents: 100_000_000,
+            max_months: 120,
+            final_net_worth_cents: 100_000_000,
+            success: false,
+            impossible: false,
+            instant_summit: false,
+            milestones: vec![],
+        };
+        ascent_result.milestones.push(AscentMilestone {
+            name: "Test",
+            target_cents: 1000,
+            month_reached: None,
+        });
+        let output = render_fire_sim_output(100, 1000, 50, 10, &ascent_result);
+        assert!(output.contains("Pending"));
+    }
+}
