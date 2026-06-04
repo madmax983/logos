@@ -2500,4 +2500,28 @@ mod tests {
             .expect("empty DATABASE_URL must fail");
         assert!(matches!(err, StoreError::ConnectionFailed { .. }));
     }
+
+    #[test]
+    fn try_validate_reconciliation_run_params_returns_error_for_invalid_input() {
+        assert!(matches!(
+            PostgresStore::try_validate_reconciliation_run_params("", "checking", 0, 0, 0),
+            Err(StoreError::PersistFailed { .. })
+        ));
+        assert!(matches!(
+            PostgresStore::try_validate_reconciliation_run_params("2026-03", "", 0, 0, 0),
+            Err(StoreError::PersistFailed { .. })
+        ));
+        assert!(matches!(
+            PostgresStore::try_validate_reconciliation_run_params("2026-03", "checking", -1, 0, 0),
+            Err(StoreError::PersistFailed { .. })
+        ));
+        assert!(matches!(
+            PostgresStore::try_validate_reconciliation_run_params("2026-03", "checking", 0, -1, 0),
+            Err(StoreError::PersistFailed { .. })
+        ));
+        assert!(matches!(
+            PostgresStore::try_validate_reconciliation_run_params("2026-03", "checking", 0, 0, -1),
+            Err(StoreError::PersistFailed { .. })
+        ));
+    }
 }
