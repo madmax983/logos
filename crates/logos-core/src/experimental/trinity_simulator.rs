@@ -85,6 +85,41 @@ impl TrinitySimulator {
         }
     }
 
+    fn simulate_year(&self, mut current_portfolio: i64, year: u16, lcg: &mut Lcg) -> Option<i64> {
+        // Determine this year's withdrawal adjusted for inflation.
+        // The inflation projector formula is FV = PV * (1 + r)^n
+        let withdrawal = self
+            .inflation_projector
+            .future_nominal_cost_cents(self.initial_annual_withdrawal_cents, year);
+
+        current_portfolio = current_portfolio.saturating_sub(withdrawal);
+
+        if current_portfolio <= 0 {
+            return None;
+        }
+
+        // Apply market return for the remaining portfolio
+        let random_norm = lcg.next_normal();
+        #[allow(clippy::suboptimal_flops)]
+        let annual_return = self.annual_mean_return + self.annual_volatility * random_norm;
+
+        #[allow(clippy::cast_precision_loss)]
+        let current_f64 = current_portfolio as f64;
+
+        let gain = current_f64 * annual_return;
+
+        #[allow(clippy::cast_possible_truncation)]
+        let gain_cents = gain.round() as i64;
+
+        current_portfolio = current_portfolio.saturating_add(gain_cents);
+
+        if current_portfolio <= 0 {
+            return None;
+        }
+
+        Some(current_portfolio)
+    }
+
     /// Runs the Trinity Monte Carlo simulation for a given retirement duration.
     ///
     /// The simulation runs `paths` independent trials. Each trial spans `years`.
@@ -112,35 +147,9 @@ impl TrinitySimulator {
             let mut survived = true;
 
             for year in 0..years {
-                // Determine this year's withdrawal adjusted for inflation.
-                // The inflation projector formula is FV = PV * (1 + r)^n
-                let withdrawal = self
-                    .inflation_projector
-                    .future_nominal_cost_cents(self.initial_annual_withdrawal_cents, year);
-
-                current_portfolio = current_portfolio.saturating_sub(withdrawal);
-
-                if current_portfolio <= 0 {
-                    survived = false;
-                    break;
-                }
-
-                // Apply market return for the remaining portfolio
-                let random_norm = lcg.next_normal();
-                #[allow(clippy::suboptimal_flops)]
-                let annual_return = self.annual_mean_return + self.annual_volatility * random_norm;
-
-                #[allow(clippy::cast_precision_loss)]
-                let current_f64 = current_portfolio as f64;
-
-                let gain = current_f64 * annual_return;
-
-                #[allow(clippy::cast_possible_truncation)]
-                let gain_cents = gain.round() as i64;
-
-                current_portfolio = current_portfolio.saturating_add(gain_cents);
-
-                if current_portfolio <= 0 {
+                if let Some(new_portfolio) = self.simulate_year(current_portfolio, year, &mut lcg) {
+                    current_portfolio = new_portfolio;
+                } else {
                     survived = false;
                     break;
                 }

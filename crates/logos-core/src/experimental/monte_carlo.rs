@@ -87,6 +87,30 @@ impl MonteCarloProjector {
         }
     }
 
+    fn simulate_month(
+        &self,
+        current_cents: i64,
+        monthly_mean: f64,
+        monthly_volatility: f64,
+        lcg: &mut Lcg,
+    ) -> i64 {
+        let random_norm = lcg.next_normal();
+        #[allow(clippy::suboptimal_flops)]
+        let monthly_return = monthly_mean + monthly_volatility * random_norm;
+
+        #[allow(clippy::cast_precision_loss)]
+        let current_f64 = current_cents as f64;
+
+        let gain = current_f64 * monthly_return;
+
+        #[allow(clippy::cast_possible_truncation)]
+        let gain_cents = gain.round() as i64;
+
+        current_cents
+            .saturating_add(gain_cents)
+            .saturating_add(self.monthly_contribution_cents)
+    }
+
     /// Runs the Monte Carlo simulation for a given number of months and paths.
     #[must_use]
     pub fn run(&self, months: u16, paths: u32) -> MonteCarloResult {
@@ -108,21 +132,8 @@ impl MonteCarloProjector {
             let mut current_cents = self.initial_cents;
 
             for _ in 0..months {
-                let random_norm = lcg.next_normal();
-                #[allow(clippy::suboptimal_flops)]
-                let monthly_return = monthly_mean + monthly_volatility * random_norm;
-
-                #[allow(clippy::cast_precision_loss)]
-                let current_f64 = current_cents as f64;
-
-                let gain = current_f64 * monthly_return;
-
-                #[allow(clippy::cast_possible_truncation)]
-                let gain_cents = gain.round() as i64;
-
-                current_cents = current_cents
-                    .saturating_add(gain_cents)
-                    .saturating_add(self.monthly_contribution_cents);
+                current_cents =
+                    self.simulate_month(current_cents, monthly_mean, monthly_volatility, &mut lcg);
             }
 
             final_outcomes.push(current_cents);
