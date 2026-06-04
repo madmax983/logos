@@ -1,22 +1,24 @@
 # 🔭 Vantage: Spec for FIRE CLI Commands
 
 ## 👤 User Story
-As a planner aiming for Financial Independence, Retire Early (FIRE),
-I want to be able to project my progress toward my FIRE number using CLI commands,
-so that I can understand how my current net worth, burn rate, and unvested RSUs contribute to my goal.
+As a user planning for early retirement, I want to simulate my FIRE (Financial Independence, Retire Early) trajectory via the CLI so that I can understand my safe net worth and progress without writing custom code.
 
-## 💼 Business Problem
-Users currently lack a way to leverage the existing `FireSimulator` and `NetWorthProjector` domain logic from `logos-core` directly in the CLI. Providing a first-class CLI experience unlocks the value of these core planning primitives, shifting them from theoretical libraries to actionable financial tools that answer the question "When can I stop working?".
+## 🤔 So What? (Business Problem)
+The core financial planning logic for FIRE already exists in the backend library, but it's completely inaccessible to the average user. This means our core audience cannot actually benefit from the complex projection math we've built. Exposing it via the CLI bridges this gap and transforms a backend library into a user-facing product feature.
+
+## 📈 Metric Definition
+- Success = Users can run `logos-cli plan fire` and receive an immediate projection summary.
+- Usage Metric = Number of FIRE projections run locally.
+
+## 🔍 Gap Analysis
+Existing tools like Personal Capital or generic spreadsheets are either privacy-invasive, inflexible, or lack integration with our strict double-entry ledger. Our core library has the capability, but we lack the 'Human Interface'.
 
 ## ✅ Acceptance Criteria
-- A new `logos-cli` subcommand under `plan fire` (or similar) must exist to invoke the `FireSimulator`.
-- The command must accept inputs for `monthly-expenses` and `safe-withdrawal-rate-pct`.
-- The command must output the computed FIRE number, safe net worth, and progress percentage.
-- (Optional) A `plan project` command should simulate future net worth milestones.
-- The output format should be human-readable, ideally leveraging standard UI tables/formatting for clarity.
-- All amounts must be formatted clearly (e.g., dollars/cents).
+- Must expose a `plan fire` command in the CLI.
+- Must accept inputs for `monthly-expenses` (and optionally assets, liabilities, and upcoming vests).
+- Must output a clear, readable summary including "FIRE Number", "Safe Net Worth", and "Progress %".
+- Must use existing core simulation logic.
 
 ## 🚫 Out of Scope
-- Integration with external broker APIs for live RSU/stock prices (must use manual or pre-fetched values).
-- TUI integration (this spec is strictly for the CLI subcommands).
-- Modifying the underlying `FireSimulator` domain logic or risk haircut tiers.
+- Interactive TUI screens for FIRE (Phase 2).
+- Automatic pulling of assets/liabilities from the ledger (V1 will require manual input; V2 will integrate with store).
