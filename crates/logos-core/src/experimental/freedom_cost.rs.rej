@@ -1,0 +1,13 @@
+--- freedom_cost.rs
++++ freedom_cost.rs
+@@ -93,7 +93,7 @@
+         let baseline_months = self.simulate(0, 0);
+         let purchase_months = self.simulate(purchase.upfront_cost_cents, purchase.ongoing_monthly_cost_cents);
+
+-        let months_delayed = if purchase_months > baseline_months && purchase_months < 1200 {
++        let months_delayed = if purchase_months == u32::MAX || purchase_months == 1200 {
++            u32::MAX
++        } else if purchase_months > baseline_months {
+             purchase_months - baseline_months
+-        } else if purchase_months == 1200 {
+-            u32::MAX

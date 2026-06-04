@@ -1,0 +1,204 @@
+#![cfg(feature = "nova")]
+
+//! Freedom Cost Analyzer
+//!
+//! Calculates the true cost of a purchase in terms of delayed Financial Independence.
+
+use crate::planning::fire::{FireConfig, FireSimulator};
+
+/// Represents a hypothetical purchase being evaluated.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HypotheticalPurchase {
+    /// The name/description of the purchase.
+    pub name: String,
+    /// The upfront cost in cents.
+    pub upfront_cost_cents: i64,
+    /// Any ongoing monthly maintenance/subscription costs in cents.
+    pub ongoing_monthly_cost_cents: i64,
+}
+
+/// The result of evaluating a freedom cost.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FreedomCostResult {
+    /// Months to reach FIRE target without the purchase.
+    pub baseline_months: u32,
+    /// Months to reach FIRE target with the purchase.
+    pub purchase_months: u32,
+    /// Additional months required to reach FIRE due to the purchase.
+    pub months_delayed: u32,
+}
+
+/// Analyzes how much a hypothetical purchase delays your FIRE date.
+#[derive(Debug, Clone)]
+pub struct FreedomCostAnalyzer {
+    fire_sim: FireSimulator,
+    initial_net_worth_cents: i64,
+    monthly_income_cents: i64,
+    annual_return_pct: f64,
+}
+
+impl FreedomCostAnalyzer {
+    /// Creates a new `FreedomCostAnalyzer`.
+    ///
+    /// # Arguments
+    /// * `fire_sim` - The base FIRE simulator defining current expenses and safe withdrawal rate.
+    /// * `initial_net_worth_cents` - Starting net worth.
+    /// * `monthly_income_cents` - Current monthly income after taxes.
+    /// * `annual_return_pct` - Expected annual return on investments (e.g., 7.0).
+    #[must_use]
+    pub const fn new(
+        fire_sim: FireSimulator,
+        initial_net_worth_cents: i64,
+        monthly_income_cents: i64,
+        annual_return_pct: f64,
+    ) -> Self {
+        Self {
+            fire_sim,
+            initial_net_worth_cents,
+            monthly_income_cents,
+            annual_return_pct,
+        }
+    }
+
+    /// Simulates the time to reach FIRE given upfront and ongoing costs.
+    #[must_use]
+    fn simulate(&self, upfront_cost: i64, ongoing_monthly_cost: i64) -> u32 {
+        let mut net_worth = self.initial_net_worth_cents - upfront_cost;
+        let monthly_expenses = self.fire_sim.monthly_expenses_cents() + ongoing_monthly_cost;
+        #[allow(clippy::cast_precision_loss)]
+        let monthly_income = self.monthly_income_cents as f64;
+        let mut months = 0;
+
+        let monthly_return_rate = if self.annual_return_pct > 0.0 {
+            (1.0 + self.annual_return_pct / 100.0).powf(1.0 / 12.0) - 1.0
+        } else {
+            0.0
+        };
+
+        // If expenses exceed income from start and net worth drops to 0, it's impossible.
+        if monthly_expenses >= self.monthly_income_cents && net_worth <= 0 {
+            return u32::MAX;
+        }
+
+        while months < 1200 {
+            let mut current_fire_sim = FireSimulator::new(monthly_expenses);
+            current_fire_sim.set_config(self.fire_sim.config());
+            let target = current_fire_sim.fire_number_cents();
+
+            if net_worth >= target {
+                return months;
+            }
+
+            // Apply investment returns
+            if net_worth > 0 {
+                #[allow(clippy::cast_precision_loss)]
+                let returns = (net_worth as f64) * monthly_return_rate;
+                #[allow(clippy::cast_possible_truncation)]
+                let returns_cents = returns.round() as i64;
+                net_worth += returns_cents;
+            }
+
+            // Apply savings
+            #[allow(clippy::cast_possible_truncation)]
+            let income_cents = monthly_income.round() as i64;
+            let savings = income_cents - monthly_expenses;
+            net_worth += savings;
+
+            months += 1;
+        }
+        1200
+    }
+
+    /// Evaluates the delay in FIRE caused by a hypothetical purchase.
+    #[must_use]
+    pub fn evaluate(&self, purchase: &HypotheticalPurchase) -> FreedomCostResult {
+        let baseline_months = self.simulate(0, 0);
+        let purchase_months = self.simulate(
+            purchase.upfront_cost_cents,
+            purchase.ongoing_monthly_cost_cents,
+        );
+
+        let months_delayed = if purchase_months > baseline_months && purchase_months < 1200 {
+            purchase_months - baseline_months
+        } else if purchase_months == 1200 {
+            u32::MAX
+        } else {
+            0
+        };
+
+        FreedomCostResult {
+            baseline_months,
+            purchase_months,
+            months_delayed,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_zero_cost_purchase() {
+        let mut fire_sim = FireSimulator::new(400_000); // $4k expenses
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 4,
+        });
+        let sim = FreedomCostAnalyzer::new(
+            fire_sim, 0,       // 0 net worth
+            800_000, // $8k income
+            7.0,     // 7% return
+        );
+
+        let purchase = HypotheticalPurchase {
+            name: "Free air".to_string(),
+            upfront_cost_cents: 0,
+            ongoing_monthly_cost_cents: 0,
+        };
+
+        let result = sim.evaluate(&purchase);
+        assert_eq!(result.baseline_months, result.purchase_months);
+        assert_eq!(result.months_delayed, 0);
+    }
+
+    #[test]
+    fn test_expensive_car_purchase() {
+        let mut fire_sim = FireSimulator::new(400_000); // $4k expenses
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 4,
+        });
+        let sim = FreedomCostAnalyzer::new(fire_sim, 0, 800_000, 7.0);
+
+        let purchase = HypotheticalPurchase {
+            name: "Sports Car".to_string(),
+            upfront_cost_cents: 10_000_000,     // $100k upfront
+            ongoing_monthly_cost_cents: 50_000, // $500/mo insurance/maintenance
+        };
+
+        let result = sim.evaluate(&purchase);
+        assert!(result.purchase_months > result.baseline_months);
+        assert!(result.months_delayed > 0);
+    }
+
+    #[test]
+    fn test_impossible_purchase() {
+        let mut fire_sim = FireSimulator::new(400_000); // $4k expenses
+        fire_sim.set_config(FireConfig {
+            safe_withdrawal_rate_pct: 4,
+        });
+        let sim = FreedomCostAnalyzer::new(
+            fire_sim, 0,       // 0 net worth
+            500_000, // $5k income
+            7.0,
+        );
+
+        let purchase = HypotheticalPurchase {
+            name: "Yacht".to_string(),
+            upfront_cost_cents: 0,
+            ongoing_monthly_cost_cents: 200_000, // $2k/mo -> total expenses $6k, exceeds income
+        };
+
+        let result = sim.evaluate(&purchase);
+        assert_eq!(result.purchase_months, u32::MAX);
+    }
+}
