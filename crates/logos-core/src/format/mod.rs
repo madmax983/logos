@@ -1,3 +1,14 @@
+/// Formats a UNIX timestamp (in microseconds) into a human-readable UTC string.
+///
+/// Falls back to the raw microsecond integer as a string if the timestamp is out of range.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::format::us_timestamp;
+///
+/// assert_eq!(us_timestamp(0), "1970-01-01 00:00:00 UTC");
+/// ```
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(
@@ -13,6 +24,15 @@ pub fn us_timestamp(us: i64) -> String {
 /// causing O(n^2) shifts of all existing bytes per character. By pre-allocating the string capacity,
 /// iterating forward over the bytes, and using `push`, we achieve O(n) performance
 /// and eliminate intermediate allocations on the formatting hot path.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::format::currency;
+///
+/// assert_eq!(currency(15000000), "$150,000.00");
+/// assert_eq!(currency(-5000), "-$50.00");
+/// ```
 #[must_use]
 pub fn currency(cents: i64) -> String {
     let sign = if cents < 0 { "-" } else { "" };
