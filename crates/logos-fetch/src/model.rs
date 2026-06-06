@@ -319,6 +319,24 @@ impl FetchedStatementArtifact {
     }
 }
 
+/// Checks if a given string is a valid month key in the format `YYYY-MM`.
+///
+/// This is used extensively to validate month-based partitioning and reporting keys
+/// before passing them down to the ledger.
+///
+/// ## Examples
+///
+/// ```rust,ignore
+/// use logos_fetch::model::is_valid_month_key;
+///
+/// assert!(is_valid_month_key("2024-05"));
+/// assert!(is_valid_month_key("1999-12"));
+///
+/// // Invalid formats
+/// assert!(!is_valid_month_key("2024-13")); // Month out of range
+/// assert!(!is_valid_month_key("24-05")); // Year too short
+/// assert!(!is_valid_month_key("2024/05")); // Wrong separator
+/// ```
 pub fn is_valid_month_key(value: &str) -> bool {
     let bytes = value.as_bytes();
     if bytes.len() != 7 || bytes[4] != b'-' {

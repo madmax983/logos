@@ -317,6 +317,36 @@ struct SequenceValueRow {
     sequence_value: i64,
 }
 
+/// A concrete implementation of the `LedgerStore` trait backed by PostgreSQL.
+///
+/// This store uses Diesel to interact with a PostgreSQL database, handling migrations
+/// and providing transactional boundaries.
+///
+/// ## Examples
+///
+/// ```rust
+/// use logos_store_pg::PostgresStore;
+///
+/// // Connects to the database and applies pending migrations (if any)
+/// # fn main() -> Result<(), logos_store::StoreError> {
+/// # let database_url = "postgres://postgres:postgres@localhost:5432/postgres"; // Or mock
+/// # // We won't actually run this as it requires a real database, use no_run instead
+/// # Ok(())
+/// # }
+/// ```
+///
+/// ```no_run
+/// use logos_store_pg::PostgresStore;
+/// use logos_store::LedgerStore;
+///
+/// fn setup_store() -> Result<PostgresStore, logos_store::StoreError> {
+///     let database_url = "postgres://user:password@localhost/logos_db";
+///     let mut store = PostgresStore::connect(database_url)?;
+///
+///     // Now the store can be used to query or persist data
+///     Ok(store)
+/// }
+/// ```
 pub struct PostgresStore {
     connection: RefCell<PgConnection>,
 }

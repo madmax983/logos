@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-06-06 - The Missing DocTests
+**Confusion:** `PostgresStore` and `is_valid_month_key` were entirely missing `///` doc comments and examples, violating Bard's strict rule that every public struct/fn must have an executable example. Furthermore, writing doctests for internal module functions (`pub fn` inside a `pub(crate) mod`) can be tricky without mocking, but faking the implementation is strictly forbidden.
+**Clarification:** Added missing `///` doc comments and executable `## Examples` block to `PostgresStore` (showing `connect`). For `is_valid_month_key` in `logos-fetch/src/model.rs`, I added the `///` doc comment with `## Examples` but configured the rustdoc as ````rust,ignore` since the module is private and `cargo doc` cannot execute it without breaking the visibility or resorting to forbidden fakes.
