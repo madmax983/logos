@@ -17,3 +17,6 @@
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
 **Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+## 2026-06-06 - Testcoverage gaps in apply_correction
+**Learning:** The mutant replacing `apply_correction` on `AppRuntime<PostgresStore>` with `Ok(())` is essentially unviable in a local unit-test suite because it requires a live PostgreSQL instance. Instantiating `AppRuntime<PostgresStore>` safely without UB triggers a failure due to rate-limiting in testcontainers.
+**Action:** Do not attempt to force testing of Postgres-bound implementations using raw structs or mocks when Docker is constrained. Accept integration test constraints.

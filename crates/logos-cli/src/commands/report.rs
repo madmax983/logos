@@ -104,4 +104,25 @@ mod tests {
         assert!(output.contains("$25.00"));
         assert!(output.contains("$75.00"));
     }
+
+    #[test]
+    fn render_month_output_is_deterministic_negative_variance() {
+        let runtime = FakeReportRuntime {
+            report: MonthReport::new(7_500, 2_500, 10_000, -7_500),
+        };
+
+        // Note: we do not use `std::env::set_var` as doing so is unsafe in a multithreaded test
+        // environment and introduces undefined behavior (UB).
+        let output = render_month_output(&runtime, "assets:checking", "2026-03");
+
+        assert!(output.contains("2026-03"));
+        assert!(output.contains("assets:checking"));
+        assert!(output.contains("$75.00"));
+        assert!(output.contains("$25.00"));
+        assert!(output.contains("$100.00"));
+
+        // This implicitly asserts the if-branch for negative cashflow was entered because it formats
+        // as negative dollars. We don't check ANSI escapes as they are dropped by default in tests.
+        assert!(output.contains("-$75.00"));
+    }
 }
