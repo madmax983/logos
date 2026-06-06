@@ -267,24 +267,33 @@ pub fn net_worth_project(
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
     let (timeline, _) = projector.project_timeline(months);
 
+    use crossterm::style::Stylize;
+
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec!["Month", "Net Worth", "Saved Cash", "Vested Value"]);
+    table.set_header(vec![
+        comfy_table::Cell::new("Month").set_alignment(comfy_table::CellAlignment::Right),
+        comfy_table::Cell::new("Net Worth").set_alignment(comfy_table::CellAlignment::Right),
+        comfy_table::Cell::new("Saved Cash").set_alignment(comfy_table::CellAlignment::Right),
+        comfy_table::Cell::new("Vested Value").set_alignment(comfy_table::CellAlignment::Right),
+    ]);
 
     for month in timeline {
         table.add_row(vec![
-            comfy_table::Cell::new(month.month_index.to_string()),
+            comfy_table::Cell::new(month.month_index.to_string())
+                .set_alignment(comfy_table::CellAlignment::Right),
             comfy_table::Cell::new(logos_core::format::currency(month.net_worth_cents))
-                .fg(comfy_table::Color::Green),
-            comfy_table::Cell::new(logos_core::format::currency(month.saved_cents)),
-            comfy_table::Cell::new(logos_core::format::currency(month.vested_value_cents)),
+                .fg(comfy_table::Color::Green)
+                .set_alignment(comfy_table::CellAlignment::Right),
+            comfy_table::Cell::new(logos_core::format::currency(month.saved_cents))
+                .set_alignment(comfy_table::CellAlignment::Right),
+            comfy_table::Cell::new(logos_core::format::currency(month.vested_value_cents))
+                .set_alignment(comfy_table::CellAlignment::Right),
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    let header = "📈 Net Worth Projection".green().bold();
+    println!("\n{header}\n\n{table}");
 
     Ok(())
 }
@@ -337,12 +346,16 @@ fn render_fire_sim_output(
 ) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec!["Metric", "Value"]);
+    table.set_header(vec![
+        comfy_table::Cell::new("Metric"),
+        comfy_table::Cell::new("Value").set_alignment(comfy_table::CellAlignment::Right),
+    ]);
 
     table.add_row(vec![
         comfy_table::Cell::new("Monthly Expenses"),
         comfy_table::Cell::new(logos_core::format::currency(monthly_expenses_cents))
-            .fg(comfy_table::Color::Red),
+            .fg(comfy_table::Color::Red)
+            .set_alignment(comfy_table::CellAlignment::Right),
     ]);
 
     table.add_row(vec![
@@ -351,24 +364,31 @@ fn render_fire_sim_output(
             .add_attribute(comfy_table::Attribute::Bold),
         comfy_table::Cell::new(logos_core::format::currency(fire_number))
             .fg(comfy_table::Color::Green)
-            .add_attribute(comfy_table::Attribute::Bold),
+            .add_attribute(comfy_table::Attribute::Bold)
+            .set_alignment(comfy_table::CellAlignment::Right),
     ]);
 
     table.add_row(vec![
         comfy_table::Cell::new("Current Safe Net Worth"),
         comfy_table::Cell::new(logos_core::format::currency(current_net_worth))
-            .fg(comfy_table::Color::Blue),
+            .fg(comfy_table::Color::Blue)
+            .set_alignment(comfy_table::CellAlignment::Right),
     ]);
 
     table.add_row(vec![
         comfy_table::Cell::new("Monthly Savings"),
         comfy_table::Cell::new(logos_core::format::currency(monthly_savings_cents))
-            .fg(comfy_table::Color::Green),
+            .fg(comfy_table::Color::Green)
+            .set_alignment(comfy_table::CellAlignment::Right),
     ]);
 
     let mut journey_table = comfy_table::Table::new();
     journey_table.load_preset(comfy_table::presets::UTF8_FULL);
-    journey_table.set_header(vec!["Milestone", "Target", "Status"]);
+    journey_table.set_header(vec![
+        comfy_table::Cell::new("Milestone"),
+        comfy_table::Cell::new("Target").set_alignment(comfy_table::CellAlignment::Right),
+        comfy_table::Cell::new("Status"),
+    ]);
 
     if ascent_result.impossible {
         journey_table.add_row(vec![
