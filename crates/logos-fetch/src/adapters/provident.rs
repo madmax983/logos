@@ -234,3 +234,67 @@ fn normalize_statement_month(value: &str) -> Result<String, FetchError> {
         "provident runner output month '{trimmed}' must be YYYY-MM or YYYY-MM-DD"
     )))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_return_error_when_provident_runner_output_path_empty() {
+        let err = ProvidentAdapter::from_runner_output_path("").unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "provident runner output path must not be empty"
+        );
+    }
+
+    #[test]
+    fn should_return_fixture_adapter() {
+        let adapter = ProvidentAdapter::fixture_runner_output();
+        assert!(
+            adapter
+                .runner_output_path
+                .to_string_lossy()
+                .contains("provident_statement_metadata.json")
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_required_field_missing() {
+        let err = required_field(None, "artifact_path").unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "provident runner output missing 'artifact_path'"
+        );
+    }
+
+    #[test]
+    fn should_return_error_when_required_field_empty() {
+        let err = required_field(Some("   "), "artifact_path").unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "provident runner output field 'artifact_path' must not be empty"
+        );
+    }
+
+    #[test]
+    fn should_return_value_when_required_field_present() {
+        let val = required_field(Some(" path/to/file.pdf "), "artifact_path").unwrap();
+        assert_eq!(val, "path/to/file.pdf");
+    }
+
+    #[test]
+    fn should_return_error_when_required_i64_missing() {
+        let err = required_i64(None, "opening_balance_cents").unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "provident runner output missing 'opening_balance_cents'"
+        );
+    }
+
+    #[test]
+    fn should_return_value_when_required_i64_present() {
+        let val = required_i64(Some(12345), "opening_balance_cents").unwrap();
+        assert_eq!(val, 12345);
+    }
+}
