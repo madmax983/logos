@@ -13,7 +13,7 @@ const DATABASE_URL_ENV: &str = "DATABASE_URL";
 pub fn init_runtime() -> Result<AppRuntime<PostgresStore>, CliError> {
     let database_url = env::var(DATABASE_URL_ENV).map_err(|_| CliError::CommandRuntimeFailed {
         command: "init".to_owned(),
-        message: format!("{DATABASE_URL_ENV} is not set"),
+        message: format!("{DATABASE_URL_ENV} is not set. Tip: Run `docker compose up -d db` and set DATABASE_URL (e.g. export DATABASE_URL=\"postgres://logos:logos@127.0.0.1:5432/logos\")"),
     })?;
     let mut store =
         PostgresStore::connect(&database_url).map_err(|err| CliError::CommandRuntimeFailed {
@@ -31,7 +31,7 @@ pub fn init_runtime() -> Result<AppRuntime<PostgresStore>, CliError> {
         return Err(CliError::CommandRuntimeFailed {
             command: "init".to_owned(),
             message: format!(
-                "pending database migrations detected ({joined}); run `ledger db migrate`"
+                "Pending database migrations detected ({joined}). Tip: Run `ledger db migrate` to apply them."
             ),
         });
     }

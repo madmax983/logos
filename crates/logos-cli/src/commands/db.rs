@@ -95,7 +95,7 @@ fn connect_store_with_env(
 ) -> Result<PostgresStore, CliError> {
     let database_url = env_var.ok_or_else(|| CliError::CommandRuntimeFailed {
         command: command.to_owned(),
-        message: "DATABASE_URL is not set".to_owned(),
+        message: "DATABASE_URL is not set. Tip: Run `docker compose up -d db` and set DATABASE_URL (e.g. export DATABASE_URL=\"postgres://logos:logos@127.0.0.1:5432/logos\")".to_owned(),
     })?;
     PostgresStore::connect(&database_url).map_err(|err| CliError::CommandRuntimeFailed {
         command: command.to_owned(),
@@ -116,6 +116,6 @@ mod tests {
         let Err(err) = connect_store_with_env("db.status", None) else {
             panic!("missing database url must fail");
         };
-        assert_eq!(err.to_string(), "DATABASE_URL is not set");
+        assert_eq!(err.to_string(), "DATABASE_URL is not set. Tip: Run `docker compose up -d db` and set DATABASE_URL (e.g. export DATABASE_URL=\"postgres://logos:logos@127.0.0.1:5432/logos\")");
     }
 }

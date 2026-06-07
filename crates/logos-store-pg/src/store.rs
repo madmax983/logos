@@ -710,14 +710,14 @@ impl PostgresStore {
     pub fn connect(database_url: &str) -> Result<Self, StoreError> {
         if database_url.trim().is_empty() {
             return Err(StoreError::ConnectionFailed {
-                message: "DATABASE_URL must not be empty".to_string(),
+                message: "DATABASE_URL must not be empty. Tip: Run `docker compose up -d db` and set DATABASE_URL (e.g. export DATABASE_URL=\"postgres://logos:logos@127.0.0.1:5432/logos\")".to_string(),
             });
         }
 
         let connection =
             PgConnection::establish(database_url).map_err(|err| StoreError::ConnectionFailed {
                 message: if err.to_string().contains("Connection refused") {
-                    "Connection Refused: Postgres may still be starting up.".to_string()
+                    "Connection Refused: Postgres may still be starting up. Tip: Run `docker compose up -d db` and wait a few seconds.".to_string()
                 } else {
                     err.to_string()
                 },
