@@ -1,5 +1,18 @@
 use core::fmt;
 
+/// The error type returned by statement fetching operations.
+///
+/// This struct captures errors that occur during the fetch pipeline, such as
+/// invalid configuration, failed secret resolution, or adapter execution failures.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_fetch::FetchError;
+///
+/// let err = FetchError::new("failed to parse configuration");
+/// assert_eq!(err.to_string(), "failed to parse configuration");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchError {
     message: String,
