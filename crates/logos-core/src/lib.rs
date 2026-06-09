@@ -48,9 +48,9 @@ pub(crate) mod domain;
 pub(crate) mod error;
 /// Experimental features and proof-of-concepts. Use at your own risk.
 pub(crate) mod experimental;
-pub use experimental::*;
+pub use experimental::{cashflow_projector::*, fire_ascent::*, mermaid_exporter::*, monte_carlo::*, recurrence_detector::*};
 pub(crate) mod planning;
-pub use planning::*;
+pub use planning::{fire::*, net_worth_projector::*, rsu_distributor::*};
 
 pub use domain::account::{AccountId, AccountType};
 pub use domain::budget::{BudgetMonth, rollover_end_balance};

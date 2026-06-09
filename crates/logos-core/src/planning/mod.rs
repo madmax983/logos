@@ -19,8 +19,8 @@
 //! to plot your path to financial independence.
 //!
 //! ```
-//! use logos_core::fire::{FireSimulator, UpcomingVest};
-//! use logos_core::net_worth_projector::NetWorthProjector;
+//! use logos_core::{FireSimulator, UpcomingVest};
+//! use logos_core::NetWorthProjector;
 //!
 //! // 1. Set the Destination: $5,000/month expenses = $1.5M FIRE number @ 4% SWR
 //! let mut fire_sim = FireSimulator::new(500_000);
