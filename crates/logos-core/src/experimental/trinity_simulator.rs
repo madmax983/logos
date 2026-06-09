@@ -108,45 +108,7 @@ impl TrinitySimulator {
         let mut lcg = Lcg::new(self.seed);
 
         for _ in 0..paths {
-            let mut current_portfolio = self.initial_portfolio_cents;
-            let mut survived = true;
-
-            for year in 0..years {
-                // Determine this year's withdrawal adjusted for inflation.
-                // The inflation projector formula is FV = PV * (1 + r)^n
-                let withdrawal = self
-                    .inflation_projector
-                    .future_nominal_cost_cents(self.initial_annual_withdrawal_cents, year);
-
-                current_portfolio = current_portfolio.saturating_sub(withdrawal);
-
-                if current_portfolio <= 0 {
-                    survived = false;
-                    break;
-                }
-
-                // Apply market return for the remaining portfolio
-                let random_norm = lcg.next_normal();
-                #[allow(clippy::suboptimal_flops)]
-                let annual_return = self.annual_mean_return + self.annual_volatility * random_norm;
-
-                #[allow(clippy::cast_precision_loss)]
-                let current_f64 = current_portfolio as f64;
-
-                let gain = current_f64 * annual_return;
-
-                #[allow(clippy::cast_possible_truncation)]
-                let gain_cents = gain.round() as i64;
-
-                current_portfolio = current_portfolio.saturating_add(gain_cents);
-
-                if current_portfolio <= 0 {
-                    survived = false;
-                    break;
-                }
-            }
-
-            if survived {
+            if self.simulate_path(years, &mut lcg) {
                 successful_paths += 1;
             }
         }
@@ -160,6 +122,47 @@ impl TrinitySimulator {
         TrinityResult {
             success_rate_pct: success_rate_pct.clamp(0, 100),
         }
+    }
+
+    fn simulate_path(&self, years: u16, lcg: &mut Lcg) -> bool {
+        let mut current_portfolio = self.initial_portfolio_cents;
+
+        for year in 0..years {
+            current_portfolio = self.apply_withdrawal(current_portfolio, year);
+            if current_portfolio <= 0 {
+                return false;
+            }
+
+            current_portfolio = self.apply_market_return(current_portfolio, lcg);
+            if current_portfolio <= 0 {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    fn apply_withdrawal(&self, portfolio: i64, year: u16) -> i64 {
+        let withdrawal = self
+            .inflation_projector
+            .future_nominal_cost_cents(self.initial_annual_withdrawal_cents, year);
+        portfolio.saturating_sub(withdrawal)
+    }
+
+    fn apply_market_return(&self, portfolio: i64, lcg: &mut Lcg) -> i64 {
+        let random_norm = lcg.next_normal();
+        #[allow(clippy::suboptimal_flops)]
+        let annual_return = self.annual_mean_return + self.annual_volatility * random_norm;
+
+        #[allow(clippy::cast_precision_loss)]
+        let current_f64 = portfolio as f64;
+
+        let gain = current_f64 * annual_return;
+
+        #[allow(clippy::cast_possible_truncation)]
+        let gain_cents = gain.round() as i64;
+
+        portfolio.saturating_add(gain_cents)
     }
 }
 
