@@ -1,8 +1,25 @@
 //! Runtime error types
+//!
+//! The `error` module defines the `RuntimeError` enum, which acts as the unified error boundary
+//! for the application runtime. It consolidates lower-level errors from the domain, persistence,
+//! and import engines into a single type that the UI or CLI can consume.
+
 use logos_import::ImportError;
 use logos_store::StoreError;
 use std::fmt;
 
+/// Represents a failure encountered during runtime execution.
+///
+/// Wraps underlying faults to provide unified error handling.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::RuntimeError;
+///
+/// let error = RuntimeError::Initialization { message: "config missing".to_string() };
+/// assert_eq!(error.to_string(), "config missing");
+/// ```
 #[derive(Debug)]
 pub enum RuntimeError {
     Store(StoreError),

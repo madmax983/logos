@@ -1,4 +1,9 @@
 //! The Execution Runtime
+//!
+//! This module defines the [`AppRuntime`], which acts as the core orchestrator binding
+//! the pure `logos-core` domain logic, the `logos-store` persistence layer, and the external
+//! `logos-fetch` and `logos-import` integrations into a cohesive executable state machine.
+
 struct SnapshotPostingRow {
     txn_id: String,
     description: String,
@@ -56,6 +61,28 @@ const ARTIFACTS_DIRECTORY: &str = "artifacts";
 const PARQUET_DIRECTORY: &str = "parquet";
 const DEFAULT_ANALYTICS_SCHEMA_VERSION: i64 = 1;
 
+/// The central application context orchestrating operations across the Logos ledger.
+///
+/// `AppRuntime` acts as a facade, exposing high-level workflows like statement imports,
+/// month-end reconciliation, and reporting, while managing the underlying storage state.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::AppRuntime;
+/// use logos_store::MemoryStore;
+/// use std::path::PathBuf;
+///
+/// // Create an isolated, in-memory runtime for testing
+/// let mut runtime = AppRuntime::with_store(
+///     MemoryStore::default(),
+///     PathBuf::from("/tmp/artifacts"),
+///     None,
+/// );
+///
+/// // Post a simple transaction
+/// runtime.post_double_entry("Opening Balance", "equity:opening", "assets:checking", 1000_00).unwrap();
+/// ```
 #[derive(Debug)]
 pub struct AppRuntime<S> {
     store: S,
