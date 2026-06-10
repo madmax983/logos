@@ -151,9 +151,9 @@ fn render_list_output(
             Cell::new(run.run_id()).fg(Color::DarkGrey),
             Cell::new(run.month_key()),
             Cell::new(run.checking_account()),
-            variance_cell,
-            reconciled_cell,
-            Cell::new(run.matched_transaction_count()),
+            variance_cell.set_alignment(comfy_table::CellAlignment::Right),
+            reconciled_cell.set_alignment(comfy_table::CellAlignment::Right),
+            Cell::new(run.matched_transaction_count()).set_alignment(comfy_table::CellAlignment::Right),
             Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
         ]);
     }
@@ -204,20 +204,20 @@ fn add_run_row(
         Cell::new(run.run_id()).fg(Color::DarkGrey),
         Cell::new(month_key),
         Cell::new(checking_account),
-        Cell::new(logos_core::format::currency(opening_balance_cents)),
-        Cell::new(logos_core::format::currency(run.ledger_delta_cents())),
+        Cell::new(logos_core::format::currency(opening_balance_cents)).set_alignment(comfy_table::CellAlignment::Right),
+        Cell::new(logos_core::format::currency(run.ledger_delta_cents())).set_alignment(comfy_table::CellAlignment::Right),
         Cell::new(logos_core::format::currency(
             run.expected_closing_balance_cents(),
-        )),
+        )).set_alignment(comfy_table::CellAlignment::Right),
         Cell::new(logos_core::format::currency(
             run.statement_closing_balance_cents(),
-        )),
-        variance_cell,
-        reconciled_cell,
-        Cell::new(run.matched_postings()),
-        Cell::new(run.matched_transaction_count()),
-        Cell::new(logos_core::format::currency(run.inflow_cents())).fg(Color::Green),
-        Cell::new(logos_core::format::currency(run.outflow_cents())).fg(Color::Red),
+        )).set_alignment(comfy_table::CellAlignment::Right),
+        variance_cell.set_alignment(comfy_table::CellAlignment::Right),
+        reconciled_cell.set_alignment(comfy_table::CellAlignment::Right),
+        Cell::new(run.matched_postings()).set_alignment(comfy_table::CellAlignment::Right),
+        Cell::new(run.matched_transaction_count()).set_alignment(comfy_table::CellAlignment::Right),
+        Cell::new(logos_core::format::currency(run.inflow_cents())).fg(Color::Green).set_alignment(comfy_table::CellAlignment::Right),
+        Cell::new(logos_core::format::currency(run.outflow_cents())).fg(Color::Red).set_alignment(comfy_table::CellAlignment::Right),
         Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
     ]
 }

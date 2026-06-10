@@ -167,8 +167,8 @@ fn manifest_row(manifest: &logos_store::StoredAnalyticsArtifactManifest) -> Vec<
     vec![
         Cell::new(manifest.artifact_id()).fg(Color::Blue),
         Cell::new(manifest.artifact_kind()).fg(Color::Green),
-        Cell::new(manifest.schema_version().to_string()),
-        Cell::new(manifest.row_count().to_string()),
+        Cell::new(manifest.schema_version().to_string()).set_alignment(comfy_table::CellAlignment::Right),
+        Cell::new(manifest.row_count().to_string()).set_alignment(comfy_table::CellAlignment::Right),
         Cell::new(manifest.content_hash()),
         Cell::new(manifest.artifact_uri()),
         Cell::new(us_timestamp(manifest.snapshot_valid_at())),
@@ -273,11 +273,11 @@ pub fn net_worth_project(
 
     for month in timeline {
         table.add_row(vec![
-            comfy_table::Cell::new(month.month_index.to_string()),
+            comfy_table::Cell::new(month.month_index.to_string()).set_alignment(comfy_table::CellAlignment::Right),
             comfy_table::Cell::new(logos_core::format::currency(month.net_worth_cents))
-                .fg(comfy_table::Color::Green),
-            comfy_table::Cell::new(logos_core::format::currency(month.saved_cents)),
-            comfy_table::Cell::new(logos_core::format::currency(month.vested_value_cents)),
+                .fg(comfy_table::Color::Green).set_alignment(comfy_table::CellAlignment::Right),
+            comfy_table::Cell::new(logos_core::format::currency(month.saved_cents)).set_alignment(comfy_table::CellAlignment::Right),
+            comfy_table::Cell::new(logos_core::format::currency(month.vested_value_cents)).set_alignment(comfy_table::CellAlignment::Right),
         ]);
     }
 
@@ -342,7 +342,7 @@ fn render_fire_sim_output(
     table.add_row(vec![
         comfy_table::Cell::new("Monthly Expenses"),
         comfy_table::Cell::new(logos_core::format::currency(monthly_expenses_cents))
-            .fg(comfy_table::Color::Red),
+            .fg(comfy_table::Color::Red).set_alignment(comfy_table::CellAlignment::Right),
     ]);
 
     table.add_row(vec![
@@ -351,19 +351,19 @@ fn render_fire_sim_output(
             .add_attribute(comfy_table::Attribute::Bold),
         comfy_table::Cell::new(logos_core::format::currency(fire_number))
             .fg(comfy_table::Color::Green)
-            .add_attribute(comfy_table::Attribute::Bold),
+            .add_attribute(comfy_table::Attribute::Bold).set_alignment(comfy_table::CellAlignment::Right),
     ]);
 
     table.add_row(vec![
         comfy_table::Cell::new("Current Safe Net Worth"),
         comfy_table::Cell::new(logos_core::format::currency(current_net_worth))
-            .fg(comfy_table::Color::Blue),
+            .fg(comfy_table::Color::Blue).set_alignment(comfy_table::CellAlignment::Right),
     ]);
 
     table.add_row(vec![
         comfy_table::Cell::new("Monthly Savings"),
         comfy_table::Cell::new(logos_core::format::currency(monthly_savings_cents))
-            .fg(comfy_table::Color::Green),
+            .fg(comfy_table::Color::Green).set_alignment(comfy_table::CellAlignment::Right),
     ]);
 
     let mut journey_table = comfy_table::Table::new();
@@ -395,7 +395,7 @@ fn render_fire_sim_output(
                 let extra_months = month % 12;
                 journey_table.add_row(vec![
                     comfy_table::Cell::new(milestone.name).fg(comfy_table::Color::Green),
-                    comfy_table::Cell::new(target_dollars).fg(comfy_table::Color::Green),
+                    comfy_table::Cell::new(target_dollars).fg(comfy_table::Color::Green).set_alignment(comfy_table::CellAlignment::Right),
                     comfy_table::Cell::new(format!(
                         "Reached in {years}y {extra_months}m (Month {month})"
                     ))
@@ -405,7 +405,7 @@ fn render_fire_sim_output(
             } else {
                 journey_table.add_row(vec![
                     comfy_table::Cell::new(milestone.name).fg(comfy_table::Color::Red),
-                    comfy_table::Cell::new(target_dollars).fg(comfy_table::Color::Red),
+                    comfy_table::Cell::new(target_dollars).fg(comfy_table::Color::Red).set_alignment(comfy_table::CellAlignment::Right),
                     comfy_table::Cell::new("Pending").fg(comfy_table::Color::Red),
                 ]);
             }

@@ -116,12 +116,12 @@ fn render_show_output(run: &StoredFetchRun) -> String {
         status_cell(run.status()),
         Cell::new(run.artifact_path().unwrap_or("-")),
         run.opening_balance_cents().map_or_else(
-            || Cell::new("-"),
-            |value| Cell::new(logos_core::format::currency(value)).fg(Color::Blue),
+            || Cell::new("-").set_alignment(comfy_table::CellAlignment::Right),
+            |value| Cell::new(logos_core::format::currency(value)).fg(Color::Blue).set_alignment(comfy_table::CellAlignment::Right),
         ),
         run.closing_balance_cents().map_or_else(
-            || Cell::new("-"),
-            |value| Cell::new(logos_core::format::currency(value)).fg(Color::Blue),
+            || Cell::new("-").set_alignment(comfy_table::CellAlignment::Right),
+            |value| Cell::new(logos_core::format::currency(value)).fg(Color::Blue).set_alignment(comfy_table::CellAlignment::Right),
         ),
         run.error_summary()
             .map_or_else(|| Cell::new("-"), |err| Cell::new(err).fg(Color::Red)),
