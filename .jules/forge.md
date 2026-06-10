@@ -12,3 +12,7 @@
 **Idiomatic Closures for `needless_pass_by_value` in mapped iterators**
 **Learning:** When resolving Clippy's `needless_pass_by_value` on functions that map over an iterator (especially ones optimized with `.into_iter()` to consume the collection), blindly changing the iterator to `.iter()` breaks the performance optimization. Using the `From` trait is the most idiomatic fix (`impl From<Row> for StoredObject`), but if you must pass a reference, use `.into_iter().map(|r| func(&r))` to keep the consumption while passing the reference.
 **Action:** When updating function signatures from value to reference due to clippy, review the call sites. If mapping over an iterator, ensure you maintain the original `.into_iter()` (if it exists for optimization) by passing references inside the closure, or prefer implementing `From`/`Into`.
+
+**Refactoring God Functions in PostgresStore**
+**Learning:** Functions flagged with `clippy::too_many_arguments` that merely map arguments directly to Diesel `NewRow` structs (like `NewImportBatchRow` or `NewReconciliationRunRow`) do not need intermediate "Context Payload" structs. Passing a configuration payload into a private helper function that only builds a struct is over-engineering.
+**Action:** When a private helper function's only job is to map an excessive number of arguments directly into a data struct, delete the helper function entirely and instantiate the struct directly at the call site.
