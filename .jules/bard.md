@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-06-10 - The "Connection refused" on First Run
+**Confusion:** Running the Getting Started commands from the `README.md` exactly as written caused a `Connection refused` error. This was because `docker compose up -d db` exits immediately after container creation, but Postgres inside the container takes a few seconds to accept connections.
+**Clarification:** Added an explicit comment `# Wait for Postgres to be ready for connections` above the existing `sleep 3` in the `README.md` example commands to explain *why* the sleep is necessary, preventing users from omitting it and facing connection issues.
