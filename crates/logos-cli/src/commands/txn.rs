@@ -87,7 +87,7 @@ pub fn add(
         comfy_table::Cell::new("✔ Added").fg(comfy_table::Color::Green),
         comfy_table::Cell::new(transaction_id.as_str()),
         comfy_table::Cell::new(description),
-        comfy_table::Cell::new(amount).fg(comfy_table::Color::Blue),
+        comfy_table::Cell::new(amount).set_alignment(comfy_table::CellAlignment::Right).fg(comfy_table::Color::Blue),
         comfy_table::Cell::new(debit_account),
         comfy_table::Cell::new(credit_account),
     ]);

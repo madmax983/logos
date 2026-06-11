@@ -134,9 +134,9 @@ fn render_list_output(
 
     for run in runs {
         let variance_cell = if run.variance_cents() == 0 {
-            Cell::new("$0.00").fg(Color::Green)
+            Cell::new("$0.00").set_alignment(comfy_table::CellAlignment::Right).fg(Color::Green)
         } else {
-            Cell::new(logos_core::format::currency(run.variance_cents()))
+            Cell::new(logos_core::format::currency(run.variance_cents())).set_alignment(comfy_table::CellAlignment::Right)
                 .fg(Color::Red)
                 .add_attribute(Attribute::Bold)
         };
@@ -187,9 +187,9 @@ fn add_run_row(
     run: &StoredReconciliationRun,
 ) -> Vec<Cell> {
     let variance_cell = if run.variance_cents() == 0 {
-        Cell::new("$0.00").fg(Color::Green)
+        Cell::new("$0.00").set_alignment(comfy_table::CellAlignment::Right).fg(Color::Green)
     } else {
-        Cell::new(logos_core::format::currency(run.variance_cents()))
+        Cell::new(logos_core::format::currency(run.variance_cents())).set_alignment(comfy_table::CellAlignment::Right)
             .fg(Color::Red)
             .add_attribute(Attribute::Bold)
     };
@@ -204,20 +204,20 @@ fn add_run_row(
         Cell::new(run.run_id()).fg(Color::DarkGrey),
         Cell::new(month_key),
         Cell::new(checking_account),
-        Cell::new(logos_core::format::currency(opening_balance_cents)),
-        Cell::new(logos_core::format::currency(run.ledger_delta_cents())),
+        Cell::new(logos_core::format::currency(opening_balance_cents)).set_alignment(comfy_table::CellAlignment::Right),
+        Cell::new(logos_core::format::currency(run.ledger_delta_cents())).set_alignment(comfy_table::CellAlignment::Right),
         Cell::new(logos_core::format::currency(
             run.expected_closing_balance_cents(),
-        )),
+        )).set_alignment(comfy_table::CellAlignment::Right),
         Cell::new(logos_core::format::currency(
             run.statement_closing_balance_cents(),
-        )),
+        )).set_alignment(comfy_table::CellAlignment::Right),
         variance_cell,
         reconciled_cell,
         Cell::new(run.matched_postings()),
         Cell::new(run.matched_transaction_count()),
-        Cell::new(logos_core::format::currency(run.inflow_cents())).fg(Color::Green),
-        Cell::new(logos_core::format::currency(run.outflow_cents())).fg(Color::Red),
+        Cell::new(logos_core::format::currency(run.inflow_cents())).set_alignment(comfy_table::CellAlignment::Right).fg(Color::Green),
+        Cell::new(logos_core::format::currency(run.outflow_cents())).set_alignment(comfy_table::CellAlignment::Right).fg(Color::Red),
         Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
     ]
 }

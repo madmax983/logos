@@ -274,10 +274,10 @@ pub fn net_worth_project(
     for month in timeline {
         table.add_row(vec![
             comfy_table::Cell::new(month.month_index.to_string()),
-            comfy_table::Cell::new(logos_core::format::currency(month.net_worth_cents))
+            comfy_table::Cell::new(logos_core::format::currency(month.net_worth_cents)).set_alignment(comfy_table::CellAlignment::Right)
                 .fg(comfy_table::Color::Green),
-            comfy_table::Cell::new(logos_core::format::currency(month.saved_cents)),
-            comfy_table::Cell::new(logos_core::format::currency(month.vested_value_cents)),
+            comfy_table::Cell::new(logos_core::format::currency(month.saved_cents)).set_alignment(comfy_table::CellAlignment::Right),
+            comfy_table::Cell::new(logos_core::format::currency(month.vested_value_cents)).set_alignment(comfy_table::CellAlignment::Right),
         ]);
     }
 
@@ -341,7 +341,7 @@ fn render_fire_sim_output(
 
     table.add_row(vec![
         comfy_table::Cell::new("Monthly Expenses"),
-        comfy_table::Cell::new(logos_core::format::currency(monthly_expenses_cents))
+        comfy_table::Cell::new(logos_core::format::currency(monthly_expenses_cents)).set_alignment(comfy_table::CellAlignment::Right)
             .fg(comfy_table::Color::Red),
     ]);
 
@@ -349,20 +349,20 @@ fn render_fire_sim_output(
         comfy_table::Cell::new("Target FIRE Number")
             .fg(comfy_table::Color::Green)
             .add_attribute(comfy_table::Attribute::Bold),
-        comfy_table::Cell::new(logos_core::format::currency(fire_number))
+        comfy_table::Cell::new(logos_core::format::currency(fire_number)).set_alignment(comfy_table::CellAlignment::Right)
             .fg(comfy_table::Color::Green)
             .add_attribute(comfy_table::Attribute::Bold),
     ]);
 
     table.add_row(vec![
         comfy_table::Cell::new("Current Safe Net Worth"),
-        comfy_table::Cell::new(logos_core::format::currency(current_net_worth))
+        comfy_table::Cell::new(logos_core::format::currency(current_net_worth)).set_alignment(comfy_table::CellAlignment::Right)
             .fg(comfy_table::Color::Blue),
     ]);
 
     table.add_row(vec![
         comfy_table::Cell::new("Monthly Savings"),
-        comfy_table::Cell::new(logos_core::format::currency(monthly_savings_cents))
+        comfy_table::Cell::new(logos_core::format::currency(monthly_savings_cents)).set_alignment(comfy_table::CellAlignment::Right)
             .fg(comfy_table::Color::Green),
     ]);
 
