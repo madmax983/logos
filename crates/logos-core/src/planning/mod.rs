@@ -49,6 +49,8 @@
 //! assert_eq!(timeline.len(), 5);
 //! ```
 
+#[cfg(feature = "nova")]
+pub mod debt_payoff;
 pub mod fire;
 pub mod net_worth_projector;
 pub mod rsu_distributor;
