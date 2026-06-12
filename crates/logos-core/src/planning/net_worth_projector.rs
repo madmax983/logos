@@ -22,7 +22,7 @@ use crate::planning::fire::UpcomingVest;
 /// ## Examples
 ///
 /// ```
-/// use logos_core::net_worth_projector::ProjectedMonth;
+/// use logos_core::ProjectedMonth;
 ///
 /// let snapshot = ProjectedMonth {
 ///     month_index: 3,
@@ -58,8 +58,8 @@ pub struct ProjectedMonth {
 /// ## Examples
 ///
 /// ```
-/// use logos_core::net_worth_projector::NetWorthProjector;
-/// use logos_core::fire::UpcomingVest;
+/// use logos_core::NetWorthProjector;
+/// use logos_core::UpcomingVest;
 ///
 /// // Start with $100k net worth, saving $5k per month.
 /// let mut projector = NetWorthProjector::new(100_000_00, 5_000_00);
@@ -93,7 +93,7 @@ impl NetWorthProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::net_worth_projector::NetWorthProjector;
+    /// use logos_core::NetWorthProjector;
     ///
     /// // Simulate starting with $50k, adding $2k every month.
     /// let projector = NetWorthProjector::new(50_000_00, 2_000_00);
@@ -117,7 +117,7 @@ impl NetWorthProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::net_worth_projector::NetWorthProjector;
+    /// use logos_core::NetWorthProjector;
     /// use logos_core::HaircutTierTable;
     ///
     /// let mut projector = NetWorthProjector::new(50_000_00, 2_000_00);
@@ -136,8 +136,8 @@ impl NetWorthProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::net_worth_projector::NetWorthProjector;
-    /// use logos_core::fire::UpcomingVest;
+    /// use logos_core::NetWorthProjector;
+    /// use logos_core::UpcomingVest;
     ///
     /// let mut projector = NetWorthProjector::new(50_000_00, 2_000_00);
     /// projector.add_upcoming_vest(UpcomingVest {
@@ -157,7 +157,7 @@ impl NetWorthProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::net_worth_projector::NetWorthProjector;
+    /// use logos_core::NetWorthProjector;
     ///
     /// let mut projector = NetWorthProjector::new(50_000_00, 2_000_00);
     /// projector.add_milestone_cents(100_000_00); // track when we hit $100k
@@ -179,7 +179,7 @@ impl NetWorthProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::net_worth_projector::NetWorthProjector;
+    /// use logos_core::NetWorthProjector;
     ///
     /// let mut projector = NetWorthProjector::new(10_000, 1_000);
     /// projector.add_milestone_cents(12_000); // Want to reach $120.00

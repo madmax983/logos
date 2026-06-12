@@ -262,7 +262,7 @@ pub fn net_worth_project(
     monthly_savings_cents: i64,
     months: u16,
 ) -> Result<(), CliError> {
-    use logos_core::net_worth_projector::NetWorthProjector;
+    use logos_core::NetWorthProjector;
 
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
     let (timeline, _) = projector.project_timeline(months);
@@ -300,8 +300,8 @@ pub fn fire_sim(
     liquid_assets_cents: i64,
     monthly_savings_cents: i64,
 ) -> Result<(), CliError> {
-    use logos_core::fire::FireSimulator;
-    use logos_core::net_worth_projector::NetWorthProjector;
+    use logos_core::FireSimulator;
+    use logos_core::NetWorthProjector;
 
     let mut sim = FireSimulator::new(monthly_expenses_cents);
     sim.add_assets_liabilities(liquid_assets_cents, 0);
