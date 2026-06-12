@@ -17,3 +17,7 @@
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
 **Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+
+## 2026-05-18 - Exhaustive chaos and robustness validation
+**Learning:** Conducted extensive `proptest` and `loom` checks across `logos-core`, `logos-reporting`, `logos-import`, `logos-cli`, and `logos-runtime`. Found arithmetic overflow panic in `CashflowProjector::project_balances` when amounts approach `i64::MAX`. Added `proptest` to trigger this overflow and a `loom` test to verify thread poisoning.
+**Action:** Identified vulnerability. Added failing chaos engineering test harness. Will log the wreckage in PR.
