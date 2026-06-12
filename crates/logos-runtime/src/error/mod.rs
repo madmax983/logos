@@ -1,9 +1,31 @@
-//! Runtime error types
+//! The Unified Error Boundary
+//!
+//! This module defines the [`RuntimeError`] enum, which consolidates all domain, storage, and
+//! import errors into a single, unified type used throughout the application's runtime orchestration.
+//! It ensures that failures bubble up cleanly without forcing the caller to handle disparate error types.
+
 use logos_import::ImportError;
 use logos_store::StoreError;
 use std::fmt;
 
 #[derive(Debug)]
+/// The unified error type for all runtime operations.
+///
+/// Consolidates underlying failures from storage, domain logic, and analytics generation.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::RuntimeError;
+/// use logos_core::DomainError;
+///
+/// let domain_err = DomainError::EmptyAccountId;
+/// let runtime_err: RuntimeError = domain_err.into();
+///
+/// // The error transparently wraps the underlying domain error string
+/// let error_string = runtime_err.to_string();
+/// assert!(error_string.starts_with("domain error:"));
+/// ```
 pub enum RuntimeError {
     Store(StoreError),
     Import(ImportError),

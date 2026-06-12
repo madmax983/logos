@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-10 - The "Dead End" Errors and Missing Run Objects
+**Confusion:** `FetchError` and `RuntimeError` lacked documentation, behaving like "Dead Ends" where a developer wouldn't know what they encapsulate or how they behave. Additionally, key runtime models like `MonthReconciliation` and `MonthAutopilotRequest` were completely undocumented black boxes, breaking the "Examples Section" rule.
+**Clarification:** Added explicit `//!` and `///` documentation to `crates/logos-fetch/src/error.rs` and `crates/logos-runtime/src/error/mod.rs` with executable examples showing how to instantiate or cast errors. Added `///` doc comments and `## Examples` executable blocks to `MonthReconciliation` and `MonthAutopilotRequest` in `crates/logos-runtime/src/models/mod.rs`.

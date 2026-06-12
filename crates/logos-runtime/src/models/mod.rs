@@ -23,6 +23,28 @@ pub struct MonthReport {
     cashflow: i64,
 }
 
+/// The result of comparing the internal ledger against an external statement.
+///
+/// It determines if the expected balance matches the statement, tracking any variance.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::MonthReconciliation;
+///
+/// let recon = MonthReconciliation::new(
+///     500_00,   // ledger delta
+///     1000_00,  // expected closing
+///     1000_00,  // statement closing
+///     0,        // variance
+///     true,     // reconciled
+///     5,        // matched postings
+///     500_00,   // inflow
+///     0,        // outflow
+/// );
+/// assert!(recon.is_reconciled());
+/// assert_eq!(recon.variance_cents(), 0);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MonthReconciliation {
     ledger_delta_cents: i64,
@@ -56,6 +78,23 @@ pub struct ImportSummary {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// A comprehensive request to execute the month autopilot process.
+///
+/// This encompasses fetching new statements, importing records, and attempting a full
+/// reconciliation and closing procedure for a single month.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::MonthAutopilotRequest;
+///
+/// let req = MonthAutopilotRequest::new("2026-03", "assets:checking")
+///     .with_balances(5000_00, 6000_00)
+///     .with_allow_variance(true);
+///
+/// assert_eq!(req.month_key(), "2026-03");
+/// assert!(req.allow_variance());
+/// ```
 pub struct MonthAutopilotRequest {
     month_key: String,
     checking_account: String,
