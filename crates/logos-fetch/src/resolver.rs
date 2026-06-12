@@ -33,12 +33,28 @@ pub trait SecretRefReader {
 ///
 /// It delegates the resolution of individual URIs to the inner `R`
 /// to create a combined [`SecretBundle`].
+///
+/// # Examples
+///
+/// ```
+/// use logos_fetch::OnePasswordCliSecretResolver;
+///
+/// let resolver = OnePasswordCliSecretResolver::from_environment();
+/// ```
 #[derive(Debug, Clone)]
 pub struct OnePasswordCliSecretResolver<R = OpCliSecretRefReader> {
     reader: R,
 }
 
 /// A `SecretRefReader` that invokes the 1Password command-line interface.
+///
+/// # Examples
+///
+/// ```
+/// use logos_fetch::OpCliSecretRefReader;
+///
+/// let reader = OpCliSecretRefReader::from_environment();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OpCliSecretRefReader {
     op_bin: PathBuf,

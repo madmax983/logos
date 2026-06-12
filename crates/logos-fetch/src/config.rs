@@ -8,6 +8,24 @@ use serde::Deserialize;
 use crate::{FetchError, OutputFormat, StatementSource};
 
 /// The aggregated configuration of all statement sources.
+///
+/// # Examples
+///
+/// ```
+/// use logos_fetch::StatementSourceConfig;
+///
+/// let toml = r#"
+/// [[sources]]
+/// source_id = "chase_checking"
+/// institution_id = "chase"
+/// ledger_account = "Assets:Checking"
+/// format_preference = ["csv", "pdf"]
+/// username_secret_ref = "op://vault/item/username"
+/// password_secret_ref = "op://vault/item/password"
+/// "#;
+///
+/// let config = StatementSourceConfig::from_toml(toml).unwrap();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StatementSourceConfig {
     sources: Vec<StatementSource>,
