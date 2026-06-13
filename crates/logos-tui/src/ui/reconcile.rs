@@ -4,6 +4,19 @@ use crossterm::style::Stylize;
 use crate::app::{ReconcileRunRecord, ReconcileStatementLineRecord};
 use logos_core::format::currency;
 
+/// Transforms a list of reconciliation runs and statement lines into a formatted UI view block.
+///
+/// This pure function separates the visual logic for statement reconciliation runs
+/// from the application event loop, ensuring layout consistency.
+///
+/// ## Examples
+///
+/// ```text
+/// use logos_tui::ui::reconcile::render;
+///
+/// let output = render(Some("2026-03"), Some("assets:checking"), &[], None, &[]);
+/// assert!(output.contains("Reconciliation View"));
+/// ```
 #[must_use]
 pub fn render(
     month_key: Option<&str>,

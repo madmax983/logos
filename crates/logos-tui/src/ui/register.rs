@@ -3,6 +3,21 @@ use comfy_table::{Cell, Color, Table};
 use crate::app::RegisterSnapshot;
 use logos_core::format::currency;
 
+/// Transforms a transaction history and snapshot into a formatted UI view block.
+///
+/// This pure function separates the visual logic for formatting ledger activities
+/// from the application event loop, ensuring layout consistency.
+///
+/// ## Examples
+///
+/// ```text
+/// use logos_tui::{ui::register::render, RegisterSnapshot, RegisterActivityRecord};
+///
+/// let records = vec![RegisterActivityRecord::new("2026-03-01", "Paycheck", 1500_00)];
+/// let snapshot = RegisterSnapshot::new("2026-03", 1000_00, records);
+/// let output = render("assets:checking", Some(&snapshot));
+/// assert!(output.contains("Register View"));
+/// ```
 #[must_use]
 pub fn render(account: &str, snapshot: Option<&RegisterSnapshot>) -> String {
     let mut lines = vec![

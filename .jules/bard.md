@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-04 - The Private Doctest Paradox
+**Confusion:** I attempted to write executable doctests (`## Examples`) for the `logos-tui/src/ui` rendering functions, but because the `ui` module is `pub(crate)` (private to the crate), `cargo test --doc` could not resolve the import paths. Making the module `pub` just for testing violates encapsulation, and using ````ignore` was rejected by the reviewer.
+**Clarification:** I learned that you cannot write standard executable doctests for private modules without exposing them. The workaround is to use ````text` code blocks, which provides the visual example for readers without triggering the compiler during `cargo test --doc`.

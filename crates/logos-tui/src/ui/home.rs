@@ -3,6 +3,23 @@ use comfy_table::Table;
 use crate::app::HomeSnapshot;
 use logos_core::format::currency;
 
+/// Transforms a home dashboard state snapshot into a formatted, unstyled UI view block.
+///
+/// This pure function builds the structural layout of the dashboard independently of the terminal framework,
+/// making it easy to test its output or embed it in larger views.
+///
+/// ## Examples
+///
+/// ```text
+/// use logos_tui::{ui::home::render, HomeSnapshot};
+/// // 1. Create a snapshot
+/// let snapshot = HomeSnapshot::new(
+///     "2026-03", "assets:checking", "expenses:", 5000_00, 8000_00, 6000_00, 2000_00, None, None
+/// );
+/// // 2. Render to string
+/// let output = render("2026-03", "assets:checking", "expenses:", Some(&snapshot));
+/// assert!(output.contains("Logos Home Dashboard"));
+/// ```
 #[must_use]
 pub fn render(
     month_key: &str,

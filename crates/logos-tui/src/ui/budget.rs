@@ -3,6 +3,20 @@ use comfy_table::Table;
 use crate::app::BudgetSnapshot;
 use logos_core::format::currency;
 
+/// Transforms a budget summary state into a formatted, styled UI view block.
+///
+/// This pure function separates the visual logic for formatting budget tracking
+/// from the application event loop, ensuring layout consistency.
+///
+/// ## Examples
+///
+/// ```text
+/// use logos_tui::{ui::budget::render, BudgetSnapshot};
+///
+/// let snapshot = BudgetSnapshot::new("2026-03", "expenses:", Some(3000_00), 1500_00, Some(-1500_00));
+/// let output = render("2026-03", "expenses:", Some(&snapshot));
+/// assert!(output.contains("Budget View"));
+/// ```
 #[must_use]
 pub fn render(
     month_key: &str,

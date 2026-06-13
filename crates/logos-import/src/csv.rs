@@ -1,6 +1,19 @@
 //! CSV Import Handling
 use core::fmt;
 
+/// Errors that can occur when parsing or extracting statements from CSV files.
+///
+/// This enum captures the myriad of ways real-world bank CSV files can be malformed,
+/// from missing columns and invalid monetary values to outright unreadable files.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_import::ImportError;
+///
+/// let err = ImportError::MissingColumns { expected: 4, found: 3 };
+/// assert_eq!(err.to_string(), "missing columns: expected 4, found 3");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ImportError {
     MissingColumns { expected: usize, found: usize },
