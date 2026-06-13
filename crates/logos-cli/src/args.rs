@@ -92,6 +92,21 @@ fn execute_command(command: &Command) -> Result<(), CliError> {
         Command::Close(command) => execute_close_command(command),
         Command::Budget(command) => execute_budget_command(command),
         Command::Report(command) => execute_report_command(command),
+        Command::Plan(command) => execute_plan_command(command),
+    }
+}
+
+fn execute_plan_command(command: &PlanCommand) -> Result<(), CliError> {
+    match command {
+        PlanCommand::Fire {
+            monthly_expenses_cents,
+            liquid_assets_cents,
+            monthly_savings_cents,
+        } => commands::analytics::fire_sim(
+            *monthly_expenses_cents,
+            *liquid_assets_cents,
+            *monthly_savings_cents,
+        ),
     }
 }
 
@@ -371,6 +386,7 @@ pub enum Command {
     Close(CloseCommand),
     Budget(BudgetCommand),
     Report(ReportCommand),
+    Plan(PlanCommand),
 }
 
 impl Command {
@@ -388,6 +404,7 @@ impl Command {
             Self::Help(HelpTopic::Reconcile) => "help.reconcile",
             Self::Help(HelpTopic::Month) => "help.month",
             Self::Help(HelpTopic::Close) => "help.close",
+            Self::Help(HelpTopic::Plan) => "help.plan",
             Self::Db(DbCommand::Migrate) => "db.migrate",
             Self::Db(DbCommand::Status) => "db.status",
             Self::Txn(TxnCommand::Add { .. }) => "txn.add",
@@ -411,6 +428,7 @@ impl Command {
             Self::Budget(BudgetCommand::RsuPlan { .. }) => "budget.rsu-plan",
             Self::Budget(BudgetCommand::MonteCarlo { .. }) => "budget.monte-carlo",
             Self::Report(ReportCommand::Month { .. }) => "report.month",
+            Self::Plan(PlanCommand::Fire { .. }) => "plan.fire",
         }
     }
 }
@@ -428,6 +446,7 @@ pub enum HelpTopic {
     Reconcile,
     Month,
     Close,
+    Plan,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -586,6 +605,15 @@ pub enum ReportCommand {
     },
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlanCommand {
+    Fire {
+        monthly_expenses_cents: i64,
+        liquid_assets_cents: i64,
+        monthly_savings_cents: i64,
+    },
+}
+
 /// Parses verb-first CLI arguments.
 ///
 /// # Errors
@@ -616,8 +644,43 @@ where
         "close" => parse_close(&values),
         "budget" => parse_budget(&values),
         "report" => parse_report(&values),
+        "plan" => parse_plan(&values),
         _ => Err(CliError::UnknownCommand {
             command: command.clone(),
+        }),
+    }
+}
+
+fn parse_plan(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Plan),
+        });
+    }
+
+    let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
+        command: "plan".to_owned(),
+    })?;
+
+    match subcommand.as_str() {
+        "fire" => {
+            let monthly_expenses_cents =
+                parse_required_parsed_flag(&args[1..], "--monthly-expenses-cents")?;
+            let liquid_assets_cents =
+                parse_required_parsed_flag(&args[1..], "--liquid-assets-cents")?;
+            let monthly_savings_cents =
+                parse_required_parsed_flag(&args[1..], "--monthly-savings-cents")?;
+            Ok(ParsedArgs {
+                command: Command::Plan(PlanCommand::Fire {
+                    monthly_expenses_cents,
+                    liquid_assets_cents,
+                    monthly_savings_cents,
+                }),
+            })
+        }
+        _ => Err(CliError::UnknownSubcommand {
+            command: "plan".to_owned(),
+            subcommand: subcommand.clone(),
         }),
     }
 }
@@ -1195,6 +1258,7 @@ fn parse_help_topic(args: &[String]) -> Result<HelpTopic, CliError> {
         Some("reconcile") => Ok(HelpTopic::Reconcile),
         Some("month") => Ok(HelpTopic::Month),
         Some("close") => Ok(HelpTopic::Close),
+        Some("plan") => Ok(HelpTopic::Plan),
         Some(subcommand) => Err(CliError::UnknownSubcommand {
             command: "help".to_owned(),
             subcommand: subcommand.to_owned(),

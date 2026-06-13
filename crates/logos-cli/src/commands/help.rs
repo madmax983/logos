@@ -17,6 +17,7 @@ Commands:
   close month                       Freeze a month scope with evidence links
   budget set                        Set a budget value
   report month                      Show the current month report
+  plan fire                         Simulate FIRE trajectory
 ";
 
 const TXN_HELP_TEXT: &str = "\
@@ -129,6 +130,14 @@ Environment:
   LOGOS_ARTIFACTS_PATH               Override artifact root directory
 ";
 
+const PLAN_HELP_TEXT: &str = "\
+Usage: ledger plan <subcommand> [options]
+
+Subcommands:
+  fire --monthly-expenses-cents <i64> --liquid-assets-cents <i64> --monthly-savings-cents <i64>
+                                     Simulate time to Financial Independence
+";
+
 const DB_HELP_TEXT: &str = "\
 Usage: ledger db <subcommand>
 
@@ -165,6 +174,7 @@ const fn help_text(topic: HelpTopic) -> &'static str {
         HelpTopic::Reconcile => RECONCILE_HELP_TEXT,
         HelpTopic::Month => MONTH_HELP_TEXT,
         HelpTopic::Close => CLOSE_HELP_TEXT,
+        HelpTopic::Plan => PLAN_HELP_TEXT,
     }
 }
 
