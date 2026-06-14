@@ -15,6 +15,7 @@ impl MermaidXyExporter {
 
     /// Generates a Mermaid XY Chart representing net worth growth.
     #[must_use]
+    #[allow(clippy::unused_self)]
     pub fn export_net_worth_xy(&self, timeline: &[ProjectedMonth]) -> String {
         if timeline.is_empty() {
             return String::from("```mermaid\nxychart-beta\n```\n");

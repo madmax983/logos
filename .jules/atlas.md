@@ -1,6 +1,3 @@
-**[Tangle: Explicit Module Re-exports within logos crates]**
-**Tangle:** In `logos-cli`, `logos-tui`, `logos-core`, and `logos-fetch`, internal module implementations were exposed using `pub mod`, violating the architectural principle of strict public APIs and leaking internal details.
-**Blueprint:** Updated visibility modifiers from `pub mod` to `pub(crate) mod` within these crates to correctly enforce the Facade pattern. The only exception made was for modules explicitly re-exported (such as those imported by `logos_cli::commands::analytics`), which were properly scoped. Tests and lints were verified using `cargo test` and `cargo clippy`.
-**[The Leaky Modules]**
-**Tangle:** In `logos-core` and `logos-fetch`, internal module implementations (`domain`, `planning`, `experimental`, `adapters`) were exposed using `pub mod`, violating the architectural principle of strict public APIs and leaking internal details.
-**Blueprint:** Updated visibility modifiers from `pub mod` to `pub(crate) mod` within these crates to correctly enforce the Facade pattern and encapsulate domain logic.
+**[Title: The Facade Fix]
+**Tangle:** Internal modules like `planning`, `experimental`, `domain`, and adapters were exposed as `pub mod`, leaking their internal implementation directly to consumers. Tests were importing deeply from these internal structures.
+**Blueprint:** Refactored visibility of internal modules to `pub(crate) mod` to enforce the Facade pattern. Added explicit `pub use` re-exports in the root `lib.rs` of `logos-core` to present a single, clean public API boundary. Updated all tests and downstream crates (`logos-cli`, `logos-tui`, `logos-fetch`) to import solely from the crate root (`logos_core::...`). Addressed strict clippy warnings like `clippy::redundant_pub_crate` by allowing them globally in affected modules, and fixed unused self errors in associated functions.

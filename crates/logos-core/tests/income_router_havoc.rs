@@ -2,7 +2,7 @@
 #![allow(clippy::should_panic_without_expect)]
 
 use logos_core::AccountId;
-use logos_core::income_router::{IncomeRouter, RouteRule};
+use logos_core::{IncomeRouter, RouteRule};
 use proptest::prelude::*;
 
 proptest! {

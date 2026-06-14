@@ -48,9 +48,25 @@ pub(crate) mod domain;
 pub(crate) mod error;
 /// Experimental features and proof-of-concepts. Use at your own risk.
 pub(crate) mod experimental;
-pub use experimental::*;
+pub use experimental::{
+    cashflow_projector::{CashflowProjector, RecurringTemplate},
+    debt_optimizer::{Debt, DebtOptimizer, PayoffStrategy},
+    fire_ascent::{AscentResult, FireAscentSimulator},
+    goal_fund_projector::GoalFundProjector,
+    income_router::{IncomeRouter, RouteRule},
+    inflation::InflationProjector,
+    mermaid_exporter::MermaidSankeyExporter,
+    monte_carlo::{MonteCarloProjector, MonteCarloResult},
+    portfolio_rebalancer::{PortfolioRebalancer, TargetAllocation},
+    predictive_ledger::PredictiveLedger,
+    tax_loss_harvester::{TaxLossHarvester, TaxLot},
+};
 pub(crate) mod planning;
-pub use planning::*;
+pub use planning::{
+    fire::{FireConfig, FireSimulator, UpcomingVest},
+    net_worth_projector::{NetWorthProjector, ProjectedMonth},
+    rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig},
+};
 
 pub use domain::account::{AccountId, AccountType};
 pub use domain::budget::{BudgetMonth, rollover_end_balance};
