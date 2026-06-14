@@ -23,6 +23,20 @@ pub struct MonthReport {
     cashflow: i64,
 }
 
+/// A snapshot of a month's ledger reconciliation against actual statements.
+///
+/// This tracks the variance between what the ledger expected the closing balance to be
+/// versus what the imported statement reported.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::MonthReconciliation;
+///
+/// let recon = MonthReconciliation::new(100_00, 500_00, 500_00, 0, true, 5, 200_00, 100_00);
+/// assert!(recon.is_reconciled());
+/// assert_eq!(recon.variance_cents(), 0);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MonthReconciliation {
     ledger_delta_cents: i64,
@@ -55,6 +69,21 @@ pub struct ImportSummary {
     dry_run: bool,
 }
 
+/// Describes a request to run the automated month-end closing process.
+///
+/// Used by the application runtime to orchestrate statement fetching, reconciliation, and reporting.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::MonthAutopilotRequest;
+///
+/// let req = MonthAutopilotRequest::new("2023-10", "assets:checking")
+///     .with_balances(1000_00, 2000_00)
+///     .with_confirm_close(true);
+/// assert_eq!(req.month_key(), "2023-10");
+/// assert!(req.confirm_close());
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthAutopilotRequest {
     month_key: String,
@@ -68,6 +97,46 @@ pub struct MonthAutopilotRequest {
     confirm_close: bool,
 }
 
+/// A complete summary of the month autopilot operation.
+///
+/// Includes the number of imported/duplicate records, the reconciliation status,
+/// the financial report, and references to the stored database entities.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::{MonthAutopilotSummary, MonthReport};
+/// use logos_store::{StoredMonthClose, StoredReconciliationRun};
+/// use chrono::Utc;
+///
+/// let close = StoredMonthClose::new(
+///     "test-id-1234",
+///     "2023-10",
+///     "assets:checking",
+///     "some-artifact-id",
+///     Some("some-analytics-id"),
+///     Utc::now().timestamp_micros()
+/// );
+/// let recon = StoredReconciliationRun::new(
+///     "test-id-1234",
+///     "2023-10",
+///     "assets:checking",
+///     1000_00,
+///     1000_00,
+///     1000_00,
+///     1000_00,
+///     0,
+///     true,
+///     10,
+///     5,
+///     100_00,
+///     50_00,
+///     Utc::now().timestamp_micros()
+/// );
+/// let report = MonthReport::new(1000_00, 500_00, 200_00, 300_00);
+/// let summary = MonthAutopilotSummary::new("2023-10", "assets:checking", 5, 0, vec![], recon, report, close);
+/// assert_eq!(summary.month_key(), "2023-10");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthAutopilotSummary {
     month_key: String,

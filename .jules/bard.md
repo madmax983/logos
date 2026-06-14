@@ -31,3 +31,9 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-05 - Runtime "Missing Links"
+**Confusion:** The `logos-runtime` crate lacked top-level documentation and executable examples on the public models used across the application to handle state and run routines, turning it into another "black box".
+**Clarification:** Documented `AppRuntime`, `MonthReconciliation`, `MonthAutopilotRequest`, and `MonthAutopilotSummary` with complete executable examples. Discovered that the uuid crate needs to be imported for `MonthAutopilotSummary` doctests to compile.
+## 2025-05-05 - Runtime "Missing Links"
+**Confusion:** The `logos-runtime` crate lacked top-level documentation and executable examples on the public models used across the application to handle state and run routines, turning it into another "black box".
+**Clarification:** Documented `AppRuntime`, `MonthReconciliation`, `MonthAutopilotRequest`, and `MonthAutopilotSummary` with complete executable examples. Discovered that the uuid crate needs to be imported for `MonthAutopilotSummary` doctests to compile.
