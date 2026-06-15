@@ -1,3 +1,22 @@
+//! Formatting utilities for presenting raw values (like microseconds or cents) as human-readable strings.
+//!
+//! This module provides the central formatting logic for the CLI and TUI, ensuring consistent
+//! presentation of timestamps and currency amounts.
+
+/// Formats a microsecond UNIX timestamp into a human-readable UTC string.
+///
+/// This is primarily used to display transaction ledger entries and log events consistently.
+/// If the timestamp is out of range for valid `DateTime` representation, it gracefully degrades
+/// to returning the raw integer string.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::format::us_timestamp;
+///
+/// // 1672531200000000 microseconds corresponds to 2023-01-01
+/// assert!(us_timestamp(1_672_531_200_000_000).starts_with("2023-01-01"));
+/// ```
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(
