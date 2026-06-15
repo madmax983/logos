@@ -23,6 +23,15 @@ pub fn render(
         return lines.join("\n");
     };
 
+    lines.push(render_month_table(snapshot).to_string());
+    lines.push(String::new());
+
+    lines.push(render_budget_table(snapshot).to_string());
+
+    lines.join("\n")
+}
+
+fn render_month_table(snapshot: &HomeSnapshot) -> Table {
     let mut month_table = Table::new();
     month_table.set_header(vec!["Metric", "Value"]);
     month_table.add_row(vec![
@@ -38,9 +47,10 @@ pub fn render(
         "Cashflow".to_owned(),
         currency(snapshot.cashflow_cents()),
     ]);
-    lines.push(month_table.to_string());
-    lines.push(String::new());
+    month_table
+}
 
+fn render_budget_table(snapshot: &HomeSnapshot) -> Table {
     let mut budget_table = Table::new();
     budget_table.set_header(vec!["Budget", "Value"]);
     budget_table.add_row(vec!["Month".to_owned(), snapshot.month_key().to_owned()]);
@@ -64,7 +74,5 @@ pub fn render(
             .budget_variance_cents()
             .map_or_else(|| "unconfigured".to_owned(), currency),
     ]);
-    lines.push(budget_table.to_string());
-
-    lines.join("\n")
+    budget_table
 }

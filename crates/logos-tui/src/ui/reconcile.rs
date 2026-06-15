@@ -57,38 +57,42 @@ fn render_runs_table(runs: &[ReconcileRunRecord], selected_id: Option<&str>) -> 
     ]);
 
     for run in runs {
-        let is_selected = Some(run.run_id()) == selected_id;
-        let marker = if is_selected {
-            Cell::new(">").fg(Color::Cyan)
-        } else {
-            Cell::new(" ")
-        };
-
-        let variance_val = run.variance_cents();
-        let variance_cell = if variance_val == 0 {
-            Cell::new(currency(variance_val)).fg(Color::Green)
-        } else {
-            Cell::new(currency(variance_val)).fg(Color::Red)
-        };
-
-        let reconciled_val = run.reconciled();
-        let reconciled_cell = if reconciled_val {
-            Cell::new("true").fg(Color::Green)
-        } else {
-            Cell::new("false").fg(Color::Red)
-        };
-
-        table.add_row(vec![
-            marker,
-            Cell::new(run.run_id()),
-            Cell::new(run.month_key()),
-            Cell::new(run.checking_account()),
-            variance_cell,
-            reconciled_cell,
-            Cell::new(run.matched_transaction_count().to_string()),
-        ]);
+        table.add_row(create_run_row(run, selected_id));
     }
     table.to_string()
+}
+
+fn create_run_row(run: &ReconcileRunRecord, selected_id: Option<&str>) -> Vec<Cell> {
+    let is_selected = Some(run.run_id()) == selected_id;
+    let marker = if is_selected {
+        Cell::new(">").fg(Color::Cyan)
+    } else {
+        Cell::new(" ")
+    };
+
+    let variance_val = run.variance_cents();
+    let variance_cell = if variance_val == 0 {
+        Cell::new(currency(variance_val)).fg(Color::Green)
+    } else {
+        Cell::new(currency(variance_val)).fg(Color::Red)
+    };
+
+    let reconciled_val = run.reconciled();
+    let reconciled_cell = if reconciled_val {
+        Cell::new("true").fg(Color::Green)
+    } else {
+        Cell::new("false").fg(Color::Red)
+    };
+
+    vec![
+        marker,
+        Cell::new(run.run_id()),
+        Cell::new(run.month_key()),
+        Cell::new(run.checking_account()),
+        variance_cell,
+        reconciled_cell,
+        Cell::new(run.matched_transaction_count().to_string()),
+    ]
 }
 
 fn render_evidence_table(selected_statement_lines: &[ReconcileStatementLineRecord]) -> String {
@@ -102,19 +106,23 @@ fn render_evidence_table(selected_statement_lines: &[ReconcileStatementLineRecor
     table.set_header(vec!["Line ID", "Timestamp", "Memo", "Amount"]);
 
     for line in selected_statement_lines {
-        let amount = line.amount_cents();
-        let amount_cell = match amount.cmp(&0) {
-            std::cmp::Ordering::Greater => Cell::new(currency(amount)).fg(Color::Green),
-            std::cmp::Ordering::Less => Cell::new(currency(amount)).fg(Color::Red),
-            std::cmp::Ordering::Equal => Cell::new(currency(amount)),
-        };
-
-        table.add_row(vec![
-            Cell::new(line.line_id()),
-            Cell::new(line.statement_timestamp()),
-            Cell::new(line.memo()),
-            amount_cell,
-        ]);
+        table.add_row(create_evidence_row(line));
     }
     table.to_string()
+}
+
+fn create_evidence_row(line: &ReconcileStatementLineRecord) -> Vec<Cell> {
+    let amount = line.amount_cents();
+    let amount_cell = match amount.cmp(&0) {
+        std::cmp::Ordering::Greater => Cell::new(currency(amount)).fg(Color::Green),
+        std::cmp::Ordering::Less => Cell::new(currency(amount)).fg(Color::Red),
+        std::cmp::Ordering::Equal => Cell::new(currency(amount)),
+    };
+
+    vec![
+        Cell::new(line.line_id()),
+        Cell::new(line.statement_timestamp()),
+        Cell::new(line.memo()),
+        amount_cell,
+    ]
 }
