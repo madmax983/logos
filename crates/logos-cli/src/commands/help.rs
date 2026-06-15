@@ -122,11 +122,17 @@ Subcommands:
   snapshot list                      List known analytics manifests
   snapshot show --artifact-id <id>   Show one manifest
   sankey                             Generate Mermaid Sankey diagram from current transactions
-  fire-sim --monthly-expenses-cents <i64> --liquid-assets-cents <i64> --monthly-savings-cents <i64>
-                                     Simulate time to Financial Independence
 
 Environment:
   LOGOS_ARTIFACTS_PATH               Override artifact root directory
+";
+
+const PLAN_HELP_TEXT: &str = "\
+Usage: ledger plan <subcommand> [options]
+
+Subcommands:
+  fire --monthly-expenses-cents <i64> [--liquid-assets-cents <i64>] [--monthly-savings-cents <i64>]
+                                     Simulate time to Financial Independence and show trajectory
 ";
 
 const DB_HELP_TEXT: &str = "\
@@ -165,6 +171,7 @@ const fn help_text(topic: HelpTopic) -> &'static str {
         HelpTopic::Reconcile => RECONCILE_HELP_TEXT,
         HelpTopic::Month => MONTH_HELP_TEXT,
         HelpTopic::Close => CLOSE_HELP_TEXT,
+        HelpTopic::Plan => PLAN_HELP_TEXT,
     }
 }
 
