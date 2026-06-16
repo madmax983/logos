@@ -351,3 +351,63 @@ fn validate_secret_ref(
     }
     Ok(trimmed.to_owned())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_return_true_for_valid_month_key() {
+        assert!(is_valid_month_key("2023-01"));
+        assert!(is_valid_month_key("2023-12"));
+    }
+
+    #[test]
+    fn should_return_false_for_invalid_month_key() {
+        assert!(!is_valid_month_key("2023-13"));
+        assert!(!is_valid_month_key("2023-00"));
+        assert!(!is_valid_month_key("202-01"));
+        assert!(!is_valid_month_key("2023-1"));
+        assert!(!is_valid_month_key("abcd-ef"));
+        assert!(!is_valid_month_key("2023/01"));
+        assert!(!is_valid_month_key(" 2023-01"));
+        assert!(!is_valid_month_key("2023-01 "));
+        assert!(!is_valid_month_key("2023-01-01"));
+    }
+
+    #[test]
+    fn should_trim_and_return_valid_secret_ref() {
+        assert_eq!(
+            validate_secret_ref("op://vault/item/field", "username", false).unwrap(),
+            "op://vault/item/field"
+        );
+        assert_eq!(
+            validate_secret_ref("  op://vault/item/field  ", "username", false).unwrap(),
+            "op://vault/item/field"
+        );
+    }
+
+    #[test]
+    fn should_return_empty_string_for_optional_secret_ref() {
+        assert_eq!(
+            validate_secret_ref("", "totp", true).unwrap(),
+            ""
+        );
+        assert_eq!(
+            validate_secret_ref("  ", "totp", true).unwrap(),
+            ""
+        );
+    }
+
+    #[test]
+    fn should_return_error_for_empty_required_secret_ref() {
+        let err = validate_secret_ref("", "username", false).unwrap_err();
+        assert_eq!(err.to_string(), "username must not be empty");
+    }
+
+    #[test]
+    fn should_return_error_for_invalid_1password_reference() {
+        let err = validate_secret_ref("not-op://stuff", "username", false).unwrap_err();
+        assert_eq!(err.to_string(), "username must be a 1Password reference");
+    }
+}

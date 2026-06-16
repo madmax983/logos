@@ -65,3 +65,30 @@ impl SecretBundle {
         self.totp_code.as_deref()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_build_secret_bundle_with_correct_properties() -> Result<(), crate::error::FetchError> {
+        let bundle = SecretBundle::new("user123", "pass456", Some("789012"))?;
+
+        assert_eq!(bundle.username(), "user123");
+        assert_eq!(bundle.password(), "pass456");
+        assert_eq!(bundle.totp_code(), Some("789012"));
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_error_when_username_is_empty() {
+        let err = SecretBundle::new("", "pass456", None).unwrap_err();
+        assert_eq!(err.to_string(), "secret username must not be empty");
+    }
+
+    #[test]
+    fn should_return_error_when_password_is_empty() {
+        let err = SecretBundle::new("user123", "", None).unwrap_err();
+        assert_eq!(err.to_string(), "secret password must not be empty");
+    }
+}

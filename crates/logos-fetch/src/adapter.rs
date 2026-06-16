@@ -212,3 +212,72 @@ impl StatementAdapter for FakeStatementAdapter {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_build_fetch_request_with_correct_properties() -> Result<(), crate::error::FetchError> {
+        let mut source = crate::model::StatementSource::new(
+            "src_1", "inst_1", "acct_1", vec![crate::model::OutputFormat::Csv]
+        )?;
+        source = source.with_secret_refs("op://user", "op://pass", None)?;
+
+        let req = FetchRequest::new(&source, "2023-01")?;
+        assert_eq!(req.month_key(), "2023-01");
+        assert_eq!(req.source().source_id(), "src_1");
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_error_when_month_key_is_invalid() {
+        let source = crate::model::StatementSource::new(
+            "src_1", "inst_1", "acct_1", vec![crate::model::OutputFormat::Csv]
+        ).unwrap();
+        let err = FetchRequest::new(&source, "invalid").unwrap_err();
+        assert_eq!(err.to_string(), "fetch request month key must be YYYY-MM");
+    }
+
+    #[test]
+    fn should_build_fetch_result_with_artifact() -> Result<(), crate::error::FetchError> {
+        let result_success = FetchResult::new(
+            crate::model::FetchRunStatus::Downloaded,
+            Some(crate::model::FetchedStatementArtifact::new(
+                "src_1", "acct_1", crate::model::OutputFormat::Csv, "path/to/csv", "2023-01", 100, 200
+            )?)
+        );
+
+        assert_eq!(result_success.status(), crate::model::FetchRunStatus::Downloaded);
+        assert!(result_success.artifact().is_some());
+        assert_eq!(result_success.error_summary(), None);
+        Ok(())
+    }
+
+    #[test]
+    fn should_build_fetch_result_without_artifact() {
+        let result_imported = FetchResult::new(crate::model::FetchRunStatus::Imported, None);
+        assert_eq!(result_imported.status(), crate::model::FetchRunStatus::Imported);
+        assert!(result_imported.artifact().is_none());
+
+        let result_no_stmt = FetchResult::new(crate::model::FetchRunStatus::NoNewStatement, None);
+        assert_eq!(result_no_stmt.status(), crate::model::FetchRunStatus::NoNewStatement);
+        assert!(result_no_stmt.artifact().is_none());
+    }
+
+    #[test]
+    fn should_build_fetch_result_with_needs_attention() -> Result<(), crate::error::FetchError> {
+        let result_attn = FetchResult::new(crate::model::FetchRunStatus::NeedsAttention, None)
+            .with_error_summary("needs 2FA")?;
+        assert_eq!(result_attn.status(), crate::model::FetchRunStatus::NeedsAttention);
+        assert_eq!(result_attn.error_summary(), Some("needs 2FA"));
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_error_when_needs_attention_summary_is_empty() {
+        let err = FetchResult::new(crate::model::FetchRunStatus::NeedsAttention, None)
+            .with_error_summary("  ").unwrap_err();
+        assert_eq!(err.to_string(), "fetch result error summary must not be empty");
+    }
+}

@@ -54,7 +54,7 @@ impl OnePasswordCliSecretResolver<OpCliSecretRefReader> {
     /// ```
     /// use logos_fetch::OnePasswordCliSecretResolver;
     ///
-    /// let resolver = OnePasswordCliSecretResolver::from_environment();
+    /// let _resolver = OnePasswordCliSecretResolver::from_environment();
     /// ```
     #[must_use]
     pub fn from_environment() -> Self {
