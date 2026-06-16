@@ -1,3 +1,7 @@
+//! Statement reconciliation view component.
+//!
+//! Provides the visual layout for reviewing statement imports and matching ledger entries.
+
 use comfy_table::{Cell, Color, Table};
 use crossterm::style::Stylize;
 

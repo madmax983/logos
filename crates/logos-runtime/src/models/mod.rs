@@ -23,6 +23,18 @@ pub struct MonthReport {
     cashflow: i64,
 }
 
+/// A summary of the statement reconciliation process for a month.
+///
+/// Tracks the variance between expected balances and actual statement balances.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::MonthReconciliation;
+///
+/// let rec = MonthReconciliation::new(500_00, 1500_00, 1500_00, 0, true, 5, 2000_00, 1500_00);
+/// assert_eq!(rec.ledger_delta_cents(), 500_00);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MonthReconciliation {
     ledger_delta_cents: i64,
@@ -55,6 +67,19 @@ pub struct ImportSummary {
     dry_run: bool,
 }
 
+/// Configuration for running the monthly autopilot workflow.
+///
+/// Holds the necessary inputs to fetch statements, import data, and reconcile.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::MonthAutopilotRequest;
+///
+/// let req = MonthAutopilotRequest::new("2024-03", "assets:checking")
+///     .with_statement_pdf("/path/to/statement.pdf");
+/// assert_eq!(req.month_key(), "2024-03");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthAutopilotRequest {
     month_key: String,
@@ -68,6 +93,18 @@ pub struct MonthAutopilotRequest {
     confirm_close: bool,
 }
 
+/// A comprehensive summary of the monthly autopilot workflow execution.
+///
+/// Includes the number of imported records, fetch runs, and the reconciliation report.
+///
+/// ## Examples
+///
+/// ```ignore
+/// use logos_runtime::MonthAutopilotSummary;
+///
+/// // Example of inspecting the results returned from `AppRuntime::run_month_autopilot`
+/// assert_eq!(summary.imported_count(), 42);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonthAutopilotSummary {
     month_key: String,

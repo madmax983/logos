@@ -1,3 +1,7 @@
+//! Dashboard home view component.
+//!
+//! Provides the visual layout for the high-level financial summary and cashflow overview.
+
 use comfy_table::Table;
 
 use crate::app::HomeSnapshot;

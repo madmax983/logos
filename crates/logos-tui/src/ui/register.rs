@@ -1,3 +1,7 @@
+//! Transaction register view component.
+//!
+//! Provides the visual layout for viewing historical account activity and balances.
+
 use comfy_table::{Cell, Color, Table};
 
 use crate::app::RegisterSnapshot;

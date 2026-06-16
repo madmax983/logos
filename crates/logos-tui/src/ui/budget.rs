@@ -1,3 +1,7 @@
+//! Budget variance view component.
+//!
+//! Provides the visual layout for comparing actual expenses against planned budget targets.
+
 use comfy_table::Table;
 
 use crate::app::BudgetSnapshot;
