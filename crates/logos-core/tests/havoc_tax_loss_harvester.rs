@@ -2,7 +2,7 @@
 #![allow(clippy::should_panic_without_expect)]
 
 use logos_core::AccountId;
-use logos_core::tax_loss_harvester::{TaxLossHarvester, TaxLot};
+use logos_core::{TaxLossHarvester, TaxLot};
 use proptest::prelude::*;
 
 proptest! {

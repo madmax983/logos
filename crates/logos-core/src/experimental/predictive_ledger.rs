@@ -28,9 +28,9 @@ impl PredictiveLedger {
     /// # Examples
     ///
     /// ```
-    /// use logos_core::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
+    /// use logos_core::{RsuDistributorConfig, RsuAutoDistributor};
     /// use logos_core::AllocationPolicy;
-    /// use logos_core::predictive_ledger::PredictiveLedger;
+    /// use logos_core::PredictiveLedger;
     /// use logos_core::AccountId;
     ///
     /// let config = RsuDistributorConfig {
@@ -61,9 +61,9 @@ impl PredictiveLedger {
     ///
     /// ```
     /// use logos_core::HaircutTierTable;
-    /// use logos_core::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
+    /// use logos_core::{RsuDistributorConfig, RsuAutoDistributor};
     /// use logos_core::AllocationPolicy;
-    /// use logos_core::predictive_ledger::PredictiveLedger;
+    /// use logos_core::PredictiveLedger;
     /// use logos_core::AccountId;
     ///
     /// let config = RsuDistributorConfig {
@@ -88,10 +88,10 @@ impl PredictiveLedger {
     /// # Examples
     ///
     /// ```
-    /// use logos_core::fire::UpcomingVest;
-    /// use logos_core::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
+    /// use logos_core::UpcomingVest;
+    /// use logos_core::{RsuDistributorConfig, RsuAutoDistributor};
     /// use logos_core::AllocationPolicy;
-    /// use logos_core::predictive_ledger::PredictiveLedger;
+    /// use logos_core::PredictiveLedger;
     /// use logos_core::AccountId;
     ///
     /// let config = RsuDistributorConfig {
@@ -127,10 +127,10 @@ impl PredictiveLedger {
     /// # Examples
     ///
     /// ```
-    /// use logos_core::fire::UpcomingVest;
-    /// use logos_core::rsu_distributor::{RsuDistributorConfig, RsuAutoDistributor};
+    /// use logos_core::UpcomingVest;
+    /// use logos_core::{RsuDistributorConfig, RsuAutoDistributor};
     /// use logos_core::AllocationPolicy;
-    /// use logos_core::predictive_ledger::PredictiveLedger;
+    /// use logos_core::PredictiveLedger;
     /// use logos_core::AccountId;
     ///
     /// let config = RsuDistributorConfig {

@@ -106,7 +106,7 @@ pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
 /// Returns an error when runtime initialization fails or querying transactions fails.
 pub fn sankey() -> Result<(), CliError> {
     use chrono::Utc;
-    use logos_core::mermaid_exporter::MermaidSankeyExporter;
+    use logos_core::MermaidSankeyExporter;
 
     let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.sankey".to_owned(),
@@ -262,7 +262,7 @@ pub fn net_worth_project(
     monthly_savings_cents: i64,
     months: u16,
 ) -> Result<(), CliError> {
-    use logos_core::net_worth_projector::NetWorthProjector;
+    use logos_core::NetWorthProjector;
 
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
     let (timeline, _) = projector.project_timeline(months);
@@ -300,8 +300,8 @@ pub fn fire_sim(
     liquid_assets_cents: i64,
     monthly_savings_cents: i64,
 ) -> Result<(), CliError> {
-    use logos_core::fire::FireSimulator;
-    use logos_core::net_worth_projector::NetWorthProjector;
+    use logos_core::FireSimulator;
+    use logos_core::NetWorthProjector;
 
     let mut sim = FireSimulator::new(monthly_expenses_cents);
     sim.add_assets_liabilities(liquid_assets_cents, 0);
@@ -313,7 +313,7 @@ pub fn fire_sim(
     let months_to_simulate = 1200; // up to 100 years
 
     let ascent_sim =
-        logos_core::fire_ascent::FireAscentSimulator::new(sim, projector, months_to_simulate);
+        logos_core::FireAscentSimulator::new(sim, projector, months_to_simulate);
     let ascent_result = ascent_sim.ascend();
 
     let output = render_fire_sim_output(
@@ -333,7 +333,7 @@ fn render_fire_sim_output(
     fire_number: i64,
     current_net_worth: i64,
     monthly_savings_cents: i64,
-    ascent_result: &logos_core::fire_ascent::AscentResult,
+    ascent_result: &logos_core::AscentResult,
 ) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);

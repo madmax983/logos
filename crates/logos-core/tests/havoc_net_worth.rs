@@ -1,5 +1,5 @@
 #![allow(clippy::should_panic_without_expect)]
-use logos_core::net_worth_projector::NetWorthProjector;
+use logos_core::NetWorthProjector;
 use proptest::prelude::*;
 
 proptest! {
