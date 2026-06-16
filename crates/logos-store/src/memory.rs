@@ -552,15 +552,13 @@ impl LedgerStore for MemoryStore {
             }
         }
 
-        let imported_txn_ids: Vec<TransactionId> = records
-            .iter()
-            .filter_map(|record| record.imported_txn_id().cloned())
-            .collect();
-        for txn_id in &imported_txn_ids {
-            if !self.transaction_exists(txn_id) {
-                return Err(StoreError::UnknownTransaction {
-                    transaction_id: txn_id.clone(),
-                });
+        for record in records {
+            if let Some(txn_id) = record.imported_txn_id() {
+                if !self.transaction_exists(txn_id) {
+                    return Err(StoreError::UnknownTransaction {
+                        transaction_id: txn_id.clone(),
+                    });
+                }
             }
         }
 
