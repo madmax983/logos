@@ -140,12 +140,12 @@ fn post_double_entry(
     }
 
     if debit_account.trim().is_empty() {
-        return Err(CliError::MissingArgValue {
+        return Err(CliError::MissingRequiredArg {
             flag: "--debit-account".to_owned(),
         });
     }
     if credit_account.trim().is_empty() {
-        return Err(CliError::MissingArgValue {
+        return Err(CliError::MissingRequiredArg {
             flag: "--credit-account".to_owned(),
         });
     }
@@ -170,18 +170,18 @@ fn apply_correction(
     runtime: &mut impl TxnPoster,
 ) -> Result<(), CliError> {
     if supersedes_id.trim().is_empty() {
-        return Err(CliError::MissingArgValue {
+        return Err(CliError::MissingRequiredArg {
             flag: "--supersedes-id".to_owned(),
         });
     }
     if reason.trim().is_empty() {
-        return Err(CliError::MissingArgValue {
+        return Err(CliError::MissingRequiredArg {
             flag: "--reason".to_owned(),
         });
     }
 
     let supersedes_id =
-        TransactionId::new(supersedes_id).map_err(|_| CliError::MissingArgValue {
+        TransactionId::new(supersedes_id).map_err(|_| CliError::MissingRequiredArg {
             flag: "--supersedes-id".to_owned(),
         })?;
 
@@ -372,7 +372,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Missing value for argument '--supersedes-id'."
+            "Missing required argument '--supersedes-id'."
         );
         assert_eq!(poster.correction_calls, 0);
     }
@@ -382,7 +382,7 @@ mod tests {
         let mut poster = FakePoster::default();
         let err = apply_correction("txn-7", "   ", &mut poster).expect_err("missing reason");
 
-        assert_eq!(err.to_string(), "Missing value for argument '--reason'.");
+        assert_eq!(err.to_string(), "Missing required argument '--reason'.");
         assert_eq!(poster.correction_calls, 0);
     }
 
