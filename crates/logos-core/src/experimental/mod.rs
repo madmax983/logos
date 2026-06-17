@@ -16,6 +16,8 @@ pub mod cashflow_projector;
 pub mod coast_fire;
 #[cfg(feature = "nova")]
 pub mod debt_optimizer;
+#[cfg(feature = "nova")]
+pub mod expense_independence;
 /// Simulating the FIRE journey as a mountain ascent.
 pub mod fire_ascent;
 #[cfg(feature = "nova")]
