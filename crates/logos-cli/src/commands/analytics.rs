@@ -282,8 +282,8 @@ pub fn net_worth_project(
     }
 
     println!(
-        "analytics.net-worth
-{table}"
+        "{}\n{table}",
+        crossterm::style::Stylize::bold(crossterm::style::Stylize::cyan("📈 Net Worth Projection"))
     );
 
     Ok(())
@@ -366,6 +366,26 @@ fn render_fire_sim_output(
             .fg(comfy_table::Color::Green),
     ]);
 
+    #[allow(clippy::cast_precision_loss)]
+    let progress_pct = if fire_number > 0 {
+        ((current_net_worth as f64 / fire_number as f64) * 100.0).clamp(0.0, 100.0)
+    } else {
+        100.0
+    };
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    let blocks = (progress_pct / 5.0).round() as usize;
+    let bar = format!(
+        "{} {:.1}%",
+        "█".repeat(blocks) + &"░".repeat(20_usize.saturating_sub(blocks)),
+        progress_pct
+    );
+
+    table.add_row(vec![
+        comfy_table::Cell::new("Progress"),
+        comfy_table::Cell::new(bar).fg(comfy_table::Color::Cyan),
+    ]);
+
     let mut journey_table = comfy_table::Table::new();
     journey_table.load_preset(comfy_table::presets::UTF8_FULL);
     journey_table.set_header(vec!["Milestone", "Target", "Status"]);
@@ -412,7 +432,10 @@ fn render_fire_sim_output(
         }
     }
 
-    format!("{table}\n\n{journey_table}")
+    let header = crossterm::style::Stylize::bold(crossterm::style::Stylize::magenta(
+        "🔥 FIRE Simulation Report",
+    ));
+    format!("\n{header}\n\n{table}\n\n{journey_table}")
 }
 
 #[cfg(test)]
