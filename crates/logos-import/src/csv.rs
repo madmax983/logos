@@ -130,8 +130,10 @@ enum CsvFieldState {
 }
 
 fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
-    let mut columns = Vec::new();
-    let mut field = String::new();
+    // ⚡ Bolt: Pre-allocate columns for a standard statement row width
+    let mut columns = Vec::with_capacity(16);
+    // ⚡ Bolt: Pre-allocate standard field string to prevent reallocation on push
+    let mut field = String::with_capacity(32);
     let mut state = CsvFieldState::Unquoted;
     let mut chars = row.chars().peekable();
 
@@ -140,7 +142,7 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
             CsvFieldState::Unquoted => match ch {
                 ',' => {
                     columns.push(field);
-                    field = String::new();
+                    field = String::with_capacity(32);
                 }
                 '"' => {
                     if field.trim().is_empty() {
@@ -169,7 +171,7 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
             CsvFieldState::AfterQuote => match ch {
                 ',' => {
                     columns.push(field);
-                    field = String::new();
+                    field = String::with_capacity(32);
                     state = CsvFieldState::Unquoted;
                 }
                 _ if ch.is_whitespace() => {}
