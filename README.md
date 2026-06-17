@@ -49,7 +49,9 @@ export DATABASE_URL="postgres://logos:logos@127.0.0.1:5432/logos"
 
 # Optional local convenience database
 docker compose up -d db
-sleep 3
+
+# Wait for Postgres to fully start and accept connections before migrating
+sleep 5
 
 # Apply explicit migrations
 cargo run -p logos-cli -- db migrate

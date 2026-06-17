@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-06-17 - The Postgres Startup Delay
+**Confusion:** Users following the `README.md` "Getting Started" guide encountered an immediate crash `Connection refused` when running `cargo run -p logos-cli -- db migrate` directly after `docker compose up -d db`. This happens because Docker returns success when the container is *created*, but Postgres takes a few seconds to actually initialize and accept connections on port 5432.
+**Clarification:** Added a `sleep 5` command with a comment in the `README.md` example block so that users copy-pasting the entire block will automatically wait for Postgres to become ready before attempting the migration.
