@@ -257,7 +257,8 @@ impl LedgerStore for MemoryStore {
     }
 
     fn budget_targets(&self) -> Vec<StoredBudgetTarget> {
-        let mut rows: Vec<_> = self.budget_targets.values().cloned().collect();
+        let mut rows = Vec::with_capacity(self.budget_targets.len());
+        rows.extend(self.budget_targets.values().cloned());
         rows.sort_by(|left, right| {
             left.month_key().cmp(right.month_key()).then_with(|| {
                 left.expense_account_prefix()
@@ -272,7 +273,8 @@ impl LedgerStore for MemoryStore {
     }
 
     fn analytics_artifacts(&self) -> Vec<StoredAnalyticsArtifactManifest> {
-        let mut rows: Vec<_> = self.analytics_artifacts.values().cloned().collect();
+        let mut rows = Vec::with_capacity(self.analytics_artifacts.len());
+        rows.extend(self.analytics_artifacts.values().cloned());
         rows.sort_by(|left, right| left.artifact_id().cmp(right.artifact_id()));
         rows
     }
@@ -286,13 +288,15 @@ impl LedgerStore for MemoryStore {
     }
 
     fn import_records(&self) -> Vec<StoredImportRecord> {
-        let mut rows: Vec<_> = self.import_records.values().cloned().collect();
+        let mut rows = Vec::with_capacity(self.import_records.len());
+        rows.extend(self.import_records.values().cloned());
         rows.sort_by(|left, right| left.content_hash_key().cmp(right.content_hash_key()));
         rows
     }
 
     fn import_batches(&self) -> Vec<StoredImportBatch> {
-        let mut rows: Vec<_> = self.import_batches.values().cloned().collect();
+        let mut rows = Vec::with_capacity(self.import_batches.len());
+        rows.extend(self.import_batches.values().cloned());
         rows.sort_by(|left, right| left.batch_id().cmp(right.batch_id()));
         rows
     }
@@ -302,7 +306,8 @@ impl LedgerStore for MemoryStore {
     }
 
     fn statement_lines(&self) -> Vec<StoredStatementLine> {
-        let mut rows: Vec<_> = self.statement_lines.values().cloned().collect();
+        let mut rows = Vec::with_capacity(self.statement_lines.len());
+        rows.extend(self.statement_lines.values().cloned());
         rows.sort_by(|left, right| left.line_id().cmp(right.line_id()));
         rows
     }
@@ -316,7 +321,8 @@ impl LedgerStore for MemoryStore {
     }
 
     fn fetch_runs(&self) -> Vec<StoredFetchRun> {
-        let mut rows: Vec<_> = self.fetch_runs.values().cloned().collect();
+        let mut rows = Vec::with_capacity(self.fetch_runs.len());
+        rows.extend(self.fetch_runs.values().cloned());
         rows.sort_by(|left, right| left.run_id().cmp(right.run_id()));
         rows
     }
@@ -343,7 +349,8 @@ impl LedgerStore for MemoryStore {
     }
 
     fn reconciliation_runs(&self) -> Vec<StoredReconciliationRun> {
-        let mut rows: Vec<_> = self.reconciliation_runs.values().cloned().collect();
+        let mut rows = Vec::with_capacity(self.reconciliation_runs.len());
+        rows.extend(self.reconciliation_runs.values().cloned());
         rows.sort_by(|left, right| left.run_id().cmp(right.run_id()));
         rows
     }
@@ -369,7 +376,8 @@ impl LedgerStore for MemoryStore {
     }
 
     fn month_closes(&self) -> Vec<StoredMonthClose> {
-        let mut rows: Vec<_> = self.month_closes.values().cloned().collect();
+        let mut rows = Vec::with_capacity(self.month_closes.len());
+        rows.extend(self.month_closes.values().cloned());
         rows.sort_by(|left, right| left.close_id().cmp(right.close_id()));
         rows
     }

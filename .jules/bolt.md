@@ -24,3 +24,10 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+## 2024-06-18 - Do not remove `Vec` allocations passed to Diesel's `eq_any`
+**Learning:** Diesel's `eq_any()` method expects an argument that implements the `AsInExpression` trait (which bindings parameters to a SQL array or `IN` clause). This trait is implemented for concrete collections like `Vec` and slices, but is *not* implemented for lazy iterators (like `std::iter::Map`). Removing intermediate `collect::<Vec<_>>()` calls before `eq_any` will cause compilation failures.
+**Action:** Always verify that traits like `AsInExpression` accept lazy iterators before trying to avoid intermediate `Vec` allocations. Leave `.collect::<Vec<_>>()` in place when passing iterators into Diesel queries.
+
+## 2024-06-18 - `collect::<Vec<_>>()` optimization on `ExactSizeIterator`
+**Learning:** When collecting from iterators that implement `ExactSizeIterator` (like `.values()` on maps), `collect::<Vec<_>>()` already uses `size_hint()` internally to pre-allocate exact capacity. Manually writing `Vec::with_capacity` followed by `.extend()` does not yield a measurable performance improvement and merely adds verbosity.
+**Action:** Trust `.collect::<Vec<_>>()` to perfectly pre-allocate memory when collecting from standard library map iterators. Only use explicit capacity allocation when the iterator does *not* provide a correct size hint (e.g., when repeatedly pushing to a vector inside a complex loop).
