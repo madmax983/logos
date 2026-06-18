@@ -16,4 +16,10 @@
 
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
-**Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+**Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.## 2025-06-18 - Havoc Arithmetic Overflow Mitigation
+**Learning:** Unguarded primitive arithmetic operators like `*` and `+=` in tight loops or projection scenarios can panic when supplied with massive numbers (e.g. `i64::MAX`).
+**Action:** Always prefer `checked_mul()`, `checked_add()`, `saturating_mul()`, or `saturating_add()` to safely manage bounded integers and maintain logical invariants when modeling large financial values or extended timelines. When calculating proportional allocations (e.g. multiplying by percentage then dividing by 100), handle large boundary math by mapping options instead of direct chaining.
+
+## 2025-06-18 - Havoc Arithmetic Overflow Mitigation
+**Learning:** Unguarded primitive arithmetic operators like `*` and `+=` in tight loops or projection scenarios can panic when supplied with massive numbers (e.g. `i64::MAX`).
+**Action:** Always prefer `checked_mul()`, `checked_add()`, `saturating_mul()`, or `saturating_add()` to safely manage bounded integers and maintain logical invariants when modeling large financial values or extended timelines. When calculating proportional allocations (e.g. multiplying by percentage then dividing by 100), handle large boundary math by mapping options instead of direct chaining.

@@ -68,13 +68,19 @@ impl PortfolioRebalancer {
 
         let mut remaining_value = total_value;
         for target in &self.targets {
-            let allocated = total_value.saturating_mul(i64::from(target.percentage)) / 100;
+            let allocated = total_value
+                .checked_mul(i64::from(target.percentage))
+                .map(|v| v / 100)
+                .ok_or(DomainError::AmountOverflow)?;
             target_values.push((target.asset.clone(), allocated));
             remaining_value -= allocated;
         }
 
         if remaining_value > 0 && !target_values.is_empty() {
-            target_values[0].1 += remaining_value;
+            target_values[0].1 = target_values[0]
+                .1
+                .checked_add(remaining_value)
+                .ok_or(DomainError::AmountOverflow)?;
         }
 
         let mut builder = TransactionBuilder::new(description);

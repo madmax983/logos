@@ -25,6 +25,9 @@ proptest! {
         let result = rebalancer.rebalance("Rebalance", &balances);
         // The transaction may fail to build due to remainder sweeps on i64::MAX boundary,
         // but it should definitely not panic with an arithmetic overflow.
-        assert!(result.is_ok() || matches!(result.unwrap_err(), logos_core::DomainError::UnbalancedTransaction { .. }));
+        assert!(matches!(
+            result,
+            Err(logos_core::DomainError::AmountOverflow | logos_core::DomainError::UnbalancedTransaction { .. }) | Ok(_)
+        ));
     }
 }
