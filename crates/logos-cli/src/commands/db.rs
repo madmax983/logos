@@ -25,7 +25,7 @@ pub fn migrate() -> Result<(), CliError> {
     }
 
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::NOTHING);
     table.set_header(vec![
         comfy_table::Cell::new("Status")
             .add_attribute(comfy_table::Attribute::Bold)
@@ -69,7 +69,7 @@ pub fn status() -> Result<(), CliError> {
     }
 
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::NOTHING);
     table.set_header(vec![
         comfy_table::Cell::new("Status")
             .add_attribute(comfy_table::Attribute::Bold)

@@ -144,7 +144,7 @@ fn render_budget_set_output(
         runtime.budget_variance_for_month(month_key, budget_cents, expense_account_prefix);
 
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::NOTHING);
     table.set_header(vec!["Month", "Budget", "Actual Prefix", "Variance"]);
 
     let variance_color = if variance_cents >= 0 {
@@ -168,7 +168,7 @@ fn render_budget_set_output(
 
 fn render_rsu_plan_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
     let mut plan_table = comfy_table::Table::new();
-    plan_table.load_preset(comfy_table::presets::UTF8_FULL);
+    plan_table.load_preset(comfy_table::presets::NOTHING);
     plan_table.set_header(vec![
         Cell::new("Month")
             .fg(Color::Cyan)
@@ -207,7 +207,7 @@ fn render_rsu_plan_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
 
 fn render_rsu_scenario_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
     let mut scenario_table = comfy_table::Table::new();
-    scenario_table.load_preset(comfy_table::presets::UTF8_FULL);
+    scenario_table.load_preset(comfy_table::presets::NOTHING);
     scenario_table.set_header(vec![
         Cell::new("Scenario")
             .fg(Color::Cyan)
@@ -269,7 +269,7 @@ fn render_rsu_plan_output(plan: &RsuBudgetPlan) -> String {
 
 fn render_monte_carlo_output(result: &logos_core::monte_carlo::MonteCarloResult) -> String {
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::NOTHING);
     table.set_header(vec!["Percentile", "Projected Outcome"]);
 
     table.add_row(vec![

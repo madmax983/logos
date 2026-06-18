@@ -87,7 +87,7 @@ fn render_month_output(
     run: &StoredReconciliationRun,
 ) -> String {
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::NOTHING);
     set_run_headers(&mut table);
     table.add_row(add_run_row(
         month_key,
@@ -100,7 +100,7 @@ fn render_month_output(
 
 fn render_show_output(run: &StoredReconciliationRun) -> String {
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::NOTHING);
     set_run_headers(&mut table);
     table.add_row(add_run_row(
         run.month_key(),
@@ -121,7 +121,7 @@ fn render_list_output(
     }
 
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::NOTHING);
     table.set_header(vec![
         "Run ID",
         "Month",

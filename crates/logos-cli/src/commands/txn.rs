@@ -71,7 +71,7 @@ pub fn add(
     let amount = logos_core::format::currency(amount_cents);
 
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::NOTHING);
     table.set_header(vec![
         comfy_table::Cell::new("Status")
             .add_attribute(comfy_table::Attribute::Bold)
@@ -109,7 +109,7 @@ pub fn correct(supersedes_id: &str, reason: &str) -> Result<(), CliError> {
         })?;
     apply_correction(supersedes_id, reason, &mut runtime)?;
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::NOTHING);
     table.set_header(vec![
         comfy_table::Cell::new("Status")
             .add_attribute(comfy_table::Attribute::Bold)

@@ -40,7 +40,7 @@ fn render_month_output(
     let report = runtime.month_report_for(checking_account, month_key);
 
     let mut table = comfy_table::Table::new();
-    table.load_preset(comfy_table::presets::UTF8_FULL);
+    table.load_preset(comfy_table::presets::NOTHING);
     table.set_header(vec![
         "Month",
         "Checking Account",
