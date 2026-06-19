@@ -24,3 +24,7 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+
+**⚡ Bolt: Remove unnecessary to_hex() string allocations**
+**Learning:** `blake3` Hasher output from `finalize()` implements `Display` and returns a string of the hexadecimal representation when `.to_string()` is called. Calling `.to_hex().to_string()` is unnecessary and triggers an extra string allocation under the hood in versions where `to_hex()` returns an `OutStr` or `Hex`.
+**Action:** Use `.to_string()` directly on `hasher.finalize()` to streamline string allocation and avoid unnecessary overhead.

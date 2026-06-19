@@ -24,7 +24,7 @@ pub fn deterministic_fingerprint(record: &ImportRecord) -> String {
     hash_text_field(&mut hasher, FIELD_MEMO, record.memo());
     hash_text_field(&mut hasher, FIELD_ACCOUNT, record.account());
     hash_text_field(&mut hasher, FIELD_CATEGORY, record.category());
-    hasher.finalize().to_hex().to_string()
+    hasher.finalize().to_string()
 }
 
 /// Legacy fingerprint retained only to preserve dedupe compatibility with

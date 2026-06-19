@@ -1386,7 +1386,7 @@ fn import_batch_key(
         hasher.update(key.as_bytes());
         hasher.update(b"\n");
     }
-    hasher.finalize().to_hex().to_string()
+    hasher.finalize().to_string()
 }
 
 #[must_use]
@@ -1516,7 +1516,7 @@ fn hash_rows(
         )
         .expect("writeln! to Hasher should never fail");
     }
-    hasher.finalize().to_hex().to_string()
+    hasher.finalize().to_string()
 }
 
 /// Writes ledger snapshot rows to a Parquet file.
