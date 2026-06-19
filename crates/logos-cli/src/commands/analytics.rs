@@ -412,7 +412,34 @@ fn render_fire_sim_output(
         }
     }
 
-    format!("{table}\n\n{journey_table}")
+    let title = crossterm::style::Stylize::cyan(crossterm::style::Stylize::bold(
+        "🔥 FIRE Journey Projection",
+    ));
+    let divider = crossterm::style::Stylize::cyan("==========================");
+
+    #[allow(clippy::cast_precision_loss)]
+    let pct = if fire_number > 0 {
+        (current_net_worth as f64 / fire_number as f64) * 100.0
+    } else {
+        100.0
+    };
+
+    let pct_clamped = pct.clamp(0.0, 100.0);
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    let filled = (pct_clamped / 5.0).round() as usize; // 20 blocks
+    let empty = 20usize.saturating_sub(filled);
+
+    let bar = format!(
+        "[{}{}] {:.1}%",
+        crossterm::style::Stylize::green("█".repeat(filled).as_str()),
+        crossterm::style::Stylize::dark_grey("░".repeat(empty).as_str()),
+        pct
+    );
+
+    let progress_header = crossterm::style::Stylize::bold("Progress to FIRE Number:");
+
+    format!("\n{title}\n{divider}\n\n{table}\n\n{progress_header} {bar}\n\n{journey_table}")
 }
 
 #[cfg(test)]
