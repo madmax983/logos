@@ -9,6 +9,15 @@ use serde::Deserialize;
 use crate::FetchError;
 
 /// The expected file format of a downloaded statement artifact.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_fetch::OutputFormat;
+///
+/// let format = OutputFormat::Pdf;
+/// assert_eq!(format, OutputFormat::Pdf);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OutputFormat {
@@ -19,6 +28,19 @@ pub enum OutputFormat {
 }
 
 /// Configuration for a specific statement source that can be fetched.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_fetch::{StatementSource, OutputFormat};
+///
+/// let source = StatementSource::new(
+///     "chase_checking",
+///     "chase",
+///     "Assets:Checking",
+///     vec![OutputFormat::Csv]
+/// ).unwrap();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StatementSource {
     /// A unique identifier for this source configuration.
@@ -38,6 +60,15 @@ pub struct StatementSource {
 }
 
 /// The status resulting from a fetch operation attempt.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_fetch::FetchRunStatus;
+///
+/// let status = FetchRunStatus::Downloaded;
+/// assert!(status.is_success());
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FetchRunStatus {
     /// A new statement was successfully downloaded to the artifact path.
@@ -53,6 +84,22 @@ pub enum FetchRunStatus {
 }
 
 /// Metadata about a successfully downloaded statement.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_fetch::{FetchedStatementArtifact, OutputFormat};
+///
+/// let artifact = FetchedStatementArtifact::new(
+///     "chase",
+///     "Assets:Checking",
+///     OutputFormat::Csv,
+///     "/path/to/statement.csv",
+///     "2023-10",
+///     1000_00,
+///     1500_00
+/// ).unwrap();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchedStatementArtifact {
     /// The ID of the source that produced this artifact.
