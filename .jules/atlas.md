@@ -4,3 +4,6 @@
 **[The Leaky Modules]**
 **Tangle:** In `logos-core` and `logos-fetch`, internal module implementations (`domain`, `planning`, `experimental`, `adapters`) were exposed using `pub mod`, violating the architectural principle of strict public APIs and leaking internal details.
 **Blueprint:** Updated visibility modifiers from `pub mod` to `pub(crate) mod` within these crates to correctly enforce the Facade pattern and encapsulate domain logic.
+**[The Leaky Format Module]**
+**Tangle:** In `logos-core`, the `format` module was exposed using `pub mod`, violating the architectural principle of strict public APIs and leaking internal details.
+**Blueprint:** Updated visibility modifier from `pub mod` to `pub(crate) mod` within `logos-core` and selectively exported `currency` and `us_timestamp` to correctly enforce the Facade pattern.
