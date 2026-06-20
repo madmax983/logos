@@ -57,13 +57,10 @@ impl FireAscentSimulator {
         }
     }
 
-    /// Simulates the ascent and returns the milestones reached and final outcome.
-    #[must_use]
-    pub fn ascend(&self) -> AscentResult {
-        let fire_number = self.fire_sim.fire_number_cents();
-
+    /// Handles edge cases where the FIRE number is 0 or mathematically impossible.
+    const fn handle_edge_cases(&self, fire_number: i64) -> Option<AscentResult> {
         if fire_number == 0 {
-            return AscentResult {
+            return Some(AscentResult {
                 summit_cents: 0,
                 max_months: self.max_months,
                 final_net_worth_cents: 0,
@@ -71,10 +68,10 @@ impl FireAscentSimulator {
                 success: true,
                 instant_summit: true,
                 impossible: false,
-            };
+            });
         }
         if fire_number == i64::MAX {
-            return AscentResult {
+            return Some(AscentResult {
                 summit_cents: i64::MAX,
                 max_months: self.max_months,
                 final_net_worth_cents: 0,
@@ -82,7 +79,58 @@ impl FireAscentSimulator {
                 success: false,
                 instant_summit: false,
                 impossible: true,
-            };
+            });
+        }
+        None
+    }
+
+    /// Evaluates the milestones crossed and returns the results.
+    fn evaluate_milestones(
+        &self,
+        summit: i64,
+        milestone_names: &[(i64, &'static str)],
+        crossed_milestones: Vec<(i64, u16)>,
+        final_net_worth_cents: i64,
+    ) -> AscentResult {
+        let mut sorted_milestones = crossed_milestones;
+        sorted_milestones.sort_by_key(|&(_, month)| month);
+
+        let mut milestones = Vec::with_capacity(milestone_names.len());
+        let mut success = false;
+
+        for &(target_cents, target_name) in milestone_names {
+            let month_reached = sorted_milestones
+                .iter()
+                .find(|&&(c, _)| c == target_cents)
+                .map(|&(_, m)| m);
+            if month_reached.is_some() && target_cents == summit {
+                success = true;
+            }
+            milestones.push(AscentMilestone {
+                name: target_name,
+                target_cents,
+                month_reached,
+            });
+        }
+
+        AscentResult {
+            summit_cents: summit,
+            max_months: self.max_months,
+            final_net_worth_cents,
+            milestones,
+            success,
+            instant_summit: false,
+            impossible: false,
+        }
+    }
+
+    /// Simulates the ascent and returns the milestones reached and final outcome.
+    #[must_use]
+    pub fn ascend(&self) -> AscentResult {
+        let fire_number = self.fire_sim.fire_number_cents();
+
+        if let Some(edge_case_result) = self.handle_edge_cases(fire_number) {
+            return edge_case_result;
         }
 
         let mut ascent_projector = self.projector.clone();
@@ -99,9 +147,6 @@ impl FireAscentSimulator {
 
         let (timeline, crossed_milestones) = ascent_projector.project_timeline(self.max_months);
 
-        let mut sorted_milestones = crossed_milestones;
-        sorted_milestones.sort_by_key(|&(_, month)| month);
-
         let milestone_names = [
             (camp1, "⛺ Camp 1 (25%)"),
             (camp2, "⛺ Camp 2 (50%)"),
@@ -109,35 +154,14 @@ impl FireAscentSimulator {
             (summit, "🚩 SUMMIT (100%)"),
         ];
 
-        let mut milestones = Vec::new();
-        let mut success = false;
-
-        for (target_cents, target_name) in milestone_names {
-            let month_reached = sorted_milestones
-                .iter()
-                .find(|&&(c, _)| c == target_cents)
-                .map(|&(_, m)| m);
-            if month_reached.is_some() && target_cents == summit {
-                success = true;
-            }
-            milestones.push(AscentMilestone {
-                name: target_name,
-                target_cents,
-                month_reached,
-            });
-        }
-
         let final_net_worth_cents = timeline.last().map_or(0, |m| m.net_worth_cents);
 
-        AscentResult {
-            summit_cents: summit,
-            max_months: self.max_months,
+        self.evaluate_milestones(
+            summit,
+            &milestone_names,
+            crossed_milestones,
             final_net_worth_cents,
-            milestones,
-            success,
-            instant_summit: false,
-            impossible: false,
-        }
+        )
     }
 }
 
