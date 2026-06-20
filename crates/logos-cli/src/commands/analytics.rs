@@ -52,8 +52,12 @@ pub fn snapshot_list() -> Result<(), CliError> {
 fn render_snapshot_manifest_list(
     manifests: &[logos_store::StoredAnalyticsArtifactManifest],
 ) -> String {
+    use crossterm::style::Stylize;
     if manifests.is_empty() {
-        return "No analytics snapshots found. Try creating one with 'ledger analytics snapshot create'.".to_owned();
+        return format!(
+            "{} No analytics snapshots found. Try creating one with 'ledger analytics snapshot create'.",
+            "ℹ️".blue()
+        );
     }
 
     let mut table = comfy_table::Table::new();

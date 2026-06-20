@@ -55,11 +55,15 @@ fn render_list_output(
     checking_account: Option<&str>,
     runs: &[StoredFetchRun],
 ) -> String {
+    use crossterm::style::Stylize;
     let filter_month = month_key.unwrap_or("*");
     let filter_account = checking_account.unwrap_or("*");
     if runs.is_empty() {
         return format!(
-            "fetch.list filter_month={filter_month} filter_checking_account={filter_account} count=0"
+            "{} No fetch runs found for month '{}' and account '{}'.",
+            "ℹ️".blue(),
+            filter_month,
+            filter_account
         );
     }
 

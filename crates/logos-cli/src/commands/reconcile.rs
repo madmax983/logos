@@ -116,8 +116,12 @@ fn render_list_output(
     _checking_account: Option<&str>,
     runs: &[StoredReconciliationRun],
 ) -> String {
+    use crossterm::style::Stylize;
     if runs.is_empty() {
-        return "No reconciliation runs found for the given filters.".to_string();
+        return format!(
+            "{} No reconciliation runs found for the given filters.",
+            "ℹ️".blue()
+        );
     }
 
     let mut table = comfy_table::Table::new();
