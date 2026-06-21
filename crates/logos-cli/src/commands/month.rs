@@ -2,51 +2,53 @@ use crate::args::CliError;
 use logos_runtime::{AppRuntime, MonthAutopilotRequest, MonthAutopilotSummary};
 use logos_store::StoredFetchRunStatus;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AutopilotConfig<'a> {
+    pub month_key: Option<&'a str>,
+    pub checking_account: &'a str,
+    pub opening_balance_cents: Option<i64>,
+    pub closing_balance_cents: Option<i64>,
+    pub statement_pdf: Option<&'a str>,
+    pub ocr: bool,
+    pub allow_variance: bool,
+    pub analytics_artifact_id: Option<&'a str>,
+    pub confirm_close: bool,
+}
+
 /// Handles `ledger month autopilot`.
 ///
 /// # Errors
 ///
 /// Returns an error when runtime initialization or workflow execution fails.
-#[allow(clippy::too_many_arguments)]
-pub fn autopilot(
-    month_key: Option<&str>,
-    checking_account: &str,
-    opening_balance_cents: Option<i64>,
-    closing_balance_cents: Option<i64>,
-    statement_pdf: Option<&str>,
-    ocr: bool,
-    allow_variance: bool,
-    analytics_artifact_id: Option<&str>,
-    confirm_close: bool,
-) -> Result<(), CliError> {
+pub fn autopilot(config: &AutopilotConfig<'_>) -> Result<(), CliError> {
     let mut runtime =
         crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
             command: "month.autopilot".to_owned(),
             message: format!("{err}"),
         })?;
-    let resolved_month_key = month_key.map_or_else(
+    let resolved_month_key = config.month_key.map_or_else(
         AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local,
         str::to_owned,
     );
-    let mut request = MonthAutopilotRequest::new(&resolved_month_key, checking_account);
+    let mut request = MonthAutopilotRequest::new(&resolved_month_key, config.checking_account);
     if let (Some(opening_balance_cents), Some(closing_balance_cents)) =
-        (opening_balance_cents, closing_balance_cents)
+        (config.opening_balance_cents, config.closing_balance_cents)
     {
         request = request.with_balances(opening_balance_cents, closing_balance_cents);
     }
-    if let Some(path) = statement_pdf {
+    if let Some(path) = config.statement_pdf {
         request = request.with_statement_pdf(path);
     }
-    if ocr {
+    if config.ocr {
         request = request.with_ocr(true);
     }
-    if allow_variance {
+    if config.allow_variance {
         request = request.with_allow_variance(true);
     }
-    if let Some(artifact_id) = analytics_artifact_id {
+    if let Some(artifact_id) = config.analytics_artifact_id {
         request = request.with_analytics_artifact_id(artifact_id);
     }
-    if confirm_close {
+    if config.confirm_close {
         request = request.with_confirm_close(true);
     }
 

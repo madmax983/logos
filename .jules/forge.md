@@ -12,3 +12,6 @@
 **Idiomatic Closures for `needless_pass_by_value` in mapped iterators**
 **Learning:** When resolving Clippy's `needless_pass_by_value` on functions that map over an iterator (especially ones optimized with `.into_iter()` to consume the collection), blindly changing the iterator to `.iter()` breaks the performance optimization. Using the `From` trait is the most idiomatic fix (`impl From<Row> for StoredObject`), but if you must pass a reference, use `.into_iter().map(|r| func(&r))` to keep the consumption while passing the reference.
 **Action:** When updating function signatures from value to reference due to clippy, review the call sites. If mapping over an iterator, ensure you maintain the original `.into_iter()` (if it exists for optimization) by passing references inside the closure, or prefer implementing `From`/`Into`.
+**Fixing Boolean Blindness and Pyramid of Doom in CLI & Simulators**
+**Learning:** Functions like `import::csv`, `import::pdf`, `month::autopilot` had up to 9 arguments including multiple boolean flags, triggering `clippy::too_many_arguments`. Functions in simulators had deeply nested loops that made it hard to follow.
+**Action:** Extracted config structs (e.g., `CsvImportConfig`) to pass to the CLI commands, eliminating boolean blindness and the clippy override. Flattened inner loops into `simulate_path()` methods in simulators.

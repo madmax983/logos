@@ -3,19 +3,45 @@ use std::path::Path;
 
 use crate::args::CliError;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PdfImportConfig<'a> {
+    pub file_path: &'a str,
+    pub account: &'a str,
+    pub dry_run: bool,
+    pub ocr: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CsvImportConfig<'a> {
+    pub file_path: &'a str,
+    pub source_id: Option<&'a str>,
+    pub timestamp_idx: usize,
+    pub amount_idx: usize,
+    pub memo_idx: usize,
+    pub account_idx: usize,
+    pub category_idx: usize,
+    pub skip_header: bool,
+    pub dry_run: bool,
+}
+
 /// Handles `ledger import pdf`.
 ///
 /// # Errors
 ///
 /// Returns an error when runtime initialization or import execution fails.
-pub fn pdf(file_path: &str, account: &str, dry_run: bool, ocr: bool) -> Result<(), CliError> {
+pub fn pdf(config: &PdfImportConfig<'_>) -> Result<(), CliError> {
     let mut runtime =
         crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
             command: "import.pdf".to_owned(),
             message: format!("{err}"),
         })?;
     let summary = runtime
-        .import_pdf_statement(Path::new(file_path), account, dry_run, ocr)
+        .import_pdf_statement(
+            Path::new(config.file_path),
+            config.account,
+            config.dry_run,
+            config.ocr,
+        )
         .map_err(|err| CliError::CommandRuntimeFailed {
             command: "import.pdf".to_owned(),
             message: err.to_string(),
@@ -23,14 +49,7 @@ pub fn pdf(file_path: &str, account: &str, dry_run: bool, ocr: bool) -> Result<(
 
     println!(
         "{}",
-        render_pdf_output(
-            file_path,
-            account,
-            dry_run,
-            ocr,
-            summary.imported_count(),
-            summary.duplicate_count()
-        )
+        render_pdf_output(config, summary.imported_count(), summary.duplicate_count())
     );
     Ok(())
 }
@@ -40,43 +59,37 @@ pub fn pdf(file_path: &str, account: &str, dry_run: bool, ocr: bool) -> Result<(
 /// # Errors
 ///
 /// Returns an error when runtime initialization or import execution fails.
-#[allow(clippy::too_many_arguments)]
-pub fn csv(
-    file_path: &str,
-    source_id: Option<&str>,
-    timestamp_idx: usize,
-    amount_idx: usize,
-    memo_idx: usize,
-    account_idx: usize,
-    category_idx: usize,
-    skip_header: bool,
-    dry_run: bool,
-) -> Result<(), CliError> {
+pub fn csv(config: &CsvImportConfig<'_>) -> Result<(), CliError> {
     let mut runtime =
         crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
             command: "import.csv".to_owned(),
             message: format!("{err}"),
         })?;
-    let source_id = source_id.map_or_else(
+    let source_id = config.source_id.map_or_else(
         || {
-            Path::new(file_path)
+            Path::new(config.file_path)
                 .file_name()
                 .and_then(|name| name.to_str())
-                .unwrap_or(file_path)
+                .unwrap_or(config.file_path)
                 .to_owned()
         },
         str::to_owned,
     );
     let mapping = CsvMapping {
         source_id,
-        timestamp_idx,
-        amount_idx,
-        memo_idx,
-        account_idx,
-        category_idx,
+        timestamp_idx: config.timestamp_idx,
+        amount_idx: config.amount_idx,
+        memo_idx: config.memo_idx,
+        account_idx: config.account_idx,
+        category_idx: config.category_idx,
     };
     let summary = runtime
-        .import_csv_statement(Path::new(file_path), &mapping, dry_run, skip_header)
+        .import_csv_statement(
+            Path::new(config.file_path),
+            &mapping,
+            config.dry_run,
+            config.skip_header,
+        )
         .map_err(|err| CliError::CommandRuntimeFailed {
             command: "import.csv".to_owned(),
             message: err.to_string(),
@@ -85,15 +98,8 @@ pub fn csv(
     println!(
         "{}",
         render_csv_output(
-            file_path,
+            config,
             mapping.source_id.as_str(),
-            dry_run,
-            skip_header,
-            mapping.timestamp_idx,
-            mapping.amount_idx,
-            mapping.memo_idx,
-            mapping.account_idx,
-            mapping.category_idx,
             summary.imported_count(),
             summary.duplicate_count(),
         )
@@ -102,10 +108,7 @@ pub fn csv(
 }
 
 fn render_pdf_output(
-    file_path: &str,
-    account: &str,
-    dry_run: bool,
-    ocr: bool,
+    config: &PdfImportConfig<'_>,
     imported_count: usize,
     duplicate_count: usize,
 ) -> String {
@@ -120,10 +123,10 @@ fn render_pdf_output(
         "Duplicates",
     ]);
     table.add_row(vec![
-        file_path.to_string(),
-        account.to_string(),
-        dry_run.to_string(),
-        ocr.to_string(),
+        config.file_path.to_string(),
+        config.account.to_string(),
+        config.dry_run.to_string(),
+        config.ocr.to_string(),
         imported_count.to_string(),
         duplicate_count.to_string(),
     ]);
@@ -131,17 +134,9 @@ fn render_pdf_output(
     format!("import.pdf\n{table}")
 }
 
-#[allow(clippy::too_many_arguments)]
 fn render_csv_output(
-    file_path: &str,
+    config: &CsvImportConfig<'_>,
     source_id: &str,
-    dry_run: bool,
-    skip_header: bool,
-    timestamp_idx: usize,
-    amount_idx: usize,
-    memo_idx: usize,
-    account_idx: usize,
-    category_idx: usize,
     imported_count: usize,
     duplicate_count: usize,
 ) -> String {
@@ -161,15 +156,15 @@ fn render_csv_output(
         "Duplicates",
     ]);
     table.add_row(vec![
-        file_path.to_string(),
+        config.file_path.to_string(),
         source_id.to_string(),
-        dry_run.to_string(),
-        skip_header.to_string(),
-        timestamp_idx.to_string(),
-        amount_idx.to_string(),
-        memo_idx.to_string(),
-        account_idx.to_string(),
-        category_idx.to_string(),
+        config.dry_run.to_string(),
+        config.skip_header.to_string(),
+        config.timestamp_idx.to_string(),
+        config.amount_idx.to_string(),
+        config.memo_idx.to_string(),
+        config.account_idx.to_string(),
+        config.category_idx.to_string(),
         imported_count.to_string(),
         duplicate_count.to_string(),
     ]);
@@ -179,11 +174,17 @@ fn render_csv_output(
 
 #[cfg(test)]
 mod tests {
-    use super::{render_csv_output, render_pdf_output};
+    use super::{CsvImportConfig, PdfImportConfig, render_csv_output, render_pdf_output};
 
     #[test]
     fn render_pdf_output_is_deterministic() {
-        let output = render_pdf_output("stmt.pdf", "assets:checking", true, false, 12, 3);
+        let config = PdfImportConfig {
+            file_path: "stmt.pdf",
+            account: "assets:checking",
+            dry_run: true,
+            ocr: false,
+        };
+        let output = render_pdf_output(&config, 12, 3);
         assert!(output.contains("import.pdf"));
         assert!(output.contains("stmt.pdf"));
         assert!(output.contains("assets:checking"));
@@ -195,19 +196,18 @@ mod tests {
 
     #[test]
     fn render_csv_output_is_deterministic() {
-        let output = render_csv_output(
-            "statement.csv",
-            "chase.csv",
-            false,
-            true,
-            0,
-            1,
-            2,
-            3,
-            4,
-            9,
-            1,
-        );
+        let config = CsvImportConfig {
+            file_path: "statement.csv",
+            source_id: None,
+            timestamp_idx: 0,
+            amount_idx: 1,
+            memo_idx: 2,
+            account_idx: 3,
+            category_idx: 4,
+            skip_header: true,
+            dry_run: false,
+        };
+        let output = render_csv_output(&config, "chase.csv", 9, 1);
         assert!(output.contains("import.csv"));
         assert!(output.contains("statement.csv"));
         assert!(output.contains("chase.csv"));

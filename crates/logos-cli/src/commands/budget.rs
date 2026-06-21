@@ -58,42 +58,55 @@ pub fn set(
     Ok(())
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RsuPlanConfig<'a> {
+    pub month_key: Option<&'a str>,
+    pub quarterly_units: u32,
+    pub days_to_vest: u16,
+    pub bear_price_cents: i64,
+    pub base_price_cents: i64,
+    pub bull_price_cents: i64,
+    pub fixed_commitments_cents: i64,
+    pub reserve_sweep_pct: u8,
+    pub investing_sweep_pct: u8,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MonteCarloConfig {
+    pub initial_cents: i64,
+    pub monthly_contribution_cents: i64,
+    pub annual_mean_return: f64,
+    pub annual_volatility: f64,
+    pub seed: u64,
+    pub months: u16,
+    pub paths: u32,
+}
+
 /// Handles `ledger budget rsu-plan`.
 ///
 /// # Errors
 ///
-/// Returns an error when runtime initialization or planning fails.
-#[allow(clippy::too_many_arguments)]
-pub fn rsu_plan(
-    month_key: Option<&str>,
-    quarterly_units: u32,
-    days_to_vest: u16,
-    bear_price_cents: i64,
-    base_price_cents: i64,
-    bull_price_cents: i64,
-    fixed_commitments_cents: i64,
-    reserve_sweep_pct: u8,
-    investing_sweep_pct: u8,
-) -> Result<(), CliError> {
+/// Returns an error when runtime initialization or projection fails.
+pub fn rsu_plan(config: &RsuPlanConfig<'_>) -> Result<(), CliError> {
     let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "budget.rsu-plan".to_owned(),
         message: format!("{err}"),
     })?;
-    let resolved_month_key = month_key.map_or_else(
+    let resolved_month_key = config.month_key.map_or_else(
         AppRuntime::<logos_store_pg::PostgresStore>::current_month_key_local,
         str::to_owned,
     );
     let plan = runtime
         .plan_rsu_budget_for_month(
             &resolved_month_key,
-            quarterly_units,
-            days_to_vest,
-            bear_price_cents,
-            base_price_cents,
-            bull_price_cents,
-            fixed_commitments_cents,
-            reserve_sweep_pct,
-            investing_sweep_pct,
+            config.quarterly_units,
+            config.days_to_vest,
+            config.bear_price_cents,
+            config.base_price_cents,
+            config.bull_price_cents,
+            config.fixed_commitments_cents,
+            config.reserve_sweep_pct,
+            config.investing_sweep_pct,
         )
         .map_err(|err| CliError::CommandRuntimeFailed {
             command: "budget.rsu-plan".to_owned(),
@@ -110,23 +123,15 @@ pub fn rsu_plan(
 ///
 /// Returns an error when execution fails.
 #[allow(clippy::unnecessary_wraps)]
-pub fn monte_carlo(
-    initial_cents: i64,
-    monthly_contribution_cents: i64,
-    annual_mean_return: f64,
-    annual_volatility: f64,
-    seed: u64,
-    months: u16,
-    paths: u32,
-) -> Result<(), CliError> {
+pub fn monte_carlo(config: &MonteCarloConfig) -> Result<(), CliError> {
     let projector = MonteCarloProjector::new(
-        initial_cents,
-        monthly_contribution_cents,
-        annual_mean_return,
-        annual_volatility,
-        seed,
+        config.initial_cents,
+        config.monthly_contribution_cents,
+        config.annual_mean_return,
+        config.annual_volatility,
+        config.seed,
     );
-    let result = projector.run(months, paths);
+    let result = projector.run(config.months, config.paths);
     let output = render_monte_carlo_output(&result);
     println!("{output}");
     Ok(())

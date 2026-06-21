@@ -163,7 +163,12 @@ fn execute_import_command(command: &ImportCommand) -> Result<(), CliError> {
             account,
             dry_run,
             ocr,
-        } => commands::import::pdf(file_path, account, *dry_run, *ocr),
+        } => commands::import::pdf(&commands::import::PdfImportConfig {
+            file_path,
+            account,
+            dry_run: *dry_run,
+            ocr: *ocr,
+        }),
         ImportCommand::Csv {
             file_path,
             source_id,
@@ -174,17 +179,17 @@ fn execute_import_command(command: &ImportCommand) -> Result<(), CliError> {
             category_idx,
             skip_header,
             dry_run,
-        } => commands::import::csv(
+        } => commands::import::csv(&commands::import::CsvImportConfig {
             file_path,
-            source_id.as_deref(),
-            *timestamp_idx,
-            *amount_idx,
-            *memo_idx,
-            *account_idx,
-            *category_idx,
-            *skip_header,
-            *dry_run,
-        ),
+            source_id: source_id.as_deref(),
+            timestamp_idx: *timestamp_idx,
+            amount_idx: *amount_idx,
+            memo_idx: *memo_idx,
+            account_idx: *account_idx,
+            category_idx: *category_idx,
+            skip_header: *skip_header,
+            dry_run: *dry_run,
+        }),
     }
 }
 
@@ -231,17 +236,17 @@ fn execute_month_command(command: &MonthCommand) -> Result<(), CliError> {
             allow_variance,
             analytics_artifact_id,
             confirm_close,
-        } => commands::month::autopilot(
-            month_key.as_deref(),
+        } => commands::month::autopilot(&commands::month::AutopilotConfig {
+            month_key: month_key.as_deref(),
             checking_account,
-            *opening_balance_cents,
-            *closing_balance_cents,
-            statement_pdf.as_deref(),
-            *ocr,
-            *allow_variance,
-            analytics_artifact_id.as_deref(),
-            *confirm_close,
-        ),
+            opening_balance_cents: *opening_balance_cents,
+            closing_balance_cents: *closing_balance_cents,
+            statement_pdf: statement_pdf.as_deref(),
+            ocr: *ocr,
+            allow_variance: *allow_variance,
+            analytics_artifact_id: analytics_artifact_id.as_deref(),
+            confirm_close: *confirm_close,
+        }),
     }
 }
 
@@ -278,17 +283,17 @@ fn execute_budget_command(command: &BudgetCommand) -> Result<(), CliError> {
             fixed_commitments_cents,
             reserve_sweep_pct,
             investing_sweep_pct,
-        } => commands::budget::rsu_plan(
-            month_key.as_deref(),
-            *quarterly_units,
-            *days_to_vest,
-            *bear_price_cents,
-            *base_price_cents,
-            *bull_price_cents,
-            *fixed_commitments_cents,
-            *reserve_sweep_pct,
-            *investing_sweep_pct,
-        ),
+        } => commands::budget::rsu_plan(&commands::budget::RsuPlanConfig {
+            month_key: month_key.as_deref(),
+            quarterly_units: *quarterly_units,
+            days_to_vest: *days_to_vest,
+            bear_price_cents: *bear_price_cents,
+            base_price_cents: *base_price_cents,
+            bull_price_cents: *bull_price_cents,
+            fixed_commitments_cents: *fixed_commitments_cents,
+            reserve_sweep_pct: *reserve_sweep_pct,
+            investing_sweep_pct: *investing_sweep_pct,
+        }),
         BudgetCommand::MonteCarlo {
             initial_cents,
             monthly_contribution_cents,
@@ -297,15 +302,15 @@ fn execute_budget_command(command: &BudgetCommand) -> Result<(), CliError> {
             seed,
             months,
             paths,
-        } => commands::budget::monte_carlo(
-            *initial_cents,
-            *monthly_contribution_cents,
-            *annual_mean_return,
-            *annual_volatility,
-            *seed,
-            *months,
-            *paths,
-        ),
+        } => commands::budget::monte_carlo(&commands::budget::MonteCarloConfig {
+            initial_cents: *initial_cents,
+            monthly_contribution_cents: *monthly_contribution_cents,
+            annual_mean_return: *annual_mean_return,
+            annual_volatility: *annual_volatility,
+            seed: *seed,
+            months: *months,
+            paths: *paths,
+        }),
     }
 }
 
