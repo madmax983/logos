@@ -1,0 +1,2 @@
+--- crates/logos-store-pg/tests/journal_core.rs
++++ crates/logos-store-pg/tests/journal_core.rs
