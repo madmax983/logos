@@ -1,6 +1,6 @@
 use crate::args::CliError;
 use comfy_table::{Cell, Color};
-use logos_core::format::us_timestamp;
+use logos_core::us_timestamp;
 
 /// Handles `ledger analytics snapshot create`.
 ///
@@ -106,7 +106,7 @@ pub fn snapshot_show(artifact_id: &str) -> Result<(), CliError> {
 /// Returns an error when runtime initialization fails or querying transactions fails.
 pub fn sankey() -> Result<(), CliError> {
     use chrono::Utc;
-    use logos_core::mermaid_exporter::MermaidSankeyExporter;
+    use logos_core::MermaidSankeyExporter;
 
     let runtime = crate::runtime::init_runtime().map_err(|err| CliError::CommandRuntimeFailed {
         command: "analytics.sankey".to_owned(),
@@ -262,7 +262,7 @@ pub fn net_worth_project(
     monthly_savings_cents: i64,
     months: u16,
 ) -> Result<(), CliError> {
-    use logos_core::net_worth_projector::NetWorthProjector;
+    use logos_core::NetWorthProjector;
 
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
     let (timeline, _) = projector.project_timeline(months);
@@ -274,10 +274,10 @@ pub fn net_worth_project(
     for month in timeline {
         table.add_row(vec![
             comfy_table::Cell::new(month.month_index.to_string()),
-            comfy_table::Cell::new(logos_core::format::currency(month.net_worth_cents))
+            comfy_table::Cell::new(logos_core::currency(month.net_worth_cents))
                 .fg(comfy_table::Color::Green),
-            comfy_table::Cell::new(logos_core::format::currency(month.saved_cents)),
-            comfy_table::Cell::new(logos_core::format::currency(month.vested_value_cents)),
+            comfy_table::Cell::new(logos_core::currency(month.saved_cents)),
+            comfy_table::Cell::new(logos_core::currency(month.vested_value_cents)),
         ]);
     }
 
@@ -300,8 +300,8 @@ pub fn fire_sim(
     liquid_assets_cents: i64,
     monthly_savings_cents: i64,
 ) -> Result<(), CliError> {
-    use logos_core::fire::FireSimulator;
-    use logos_core::net_worth_projector::NetWorthProjector;
+    use logos_core::FireSimulator;
+    use logos_core::NetWorthProjector;
 
     let mut sim = FireSimulator::new(monthly_expenses_cents);
     sim.add_assets_liabilities(liquid_assets_cents, 0);
@@ -312,8 +312,7 @@ pub fn fire_sim(
     let projector = NetWorthProjector::new(current_net_worth, monthly_savings_cents);
     let months_to_simulate = 1200; // up to 100 years
 
-    let ascent_sim =
-        logos_core::fire_ascent::FireAscentSimulator::new(sim, projector, months_to_simulate);
+    let ascent_sim = logos_core::FireAscentSimulator::new(sim, projector, months_to_simulate);
     let ascent_result = ascent_sim.ascend();
 
     let output = render_fire_sim_output(
@@ -333,7 +332,7 @@ fn render_fire_sim_output(
     fire_number: i64,
     current_net_worth: i64,
     monthly_savings_cents: i64,
-    ascent_result: &logos_core::fire_ascent::AscentResult,
+    ascent_result: &logos_core::AscentResult,
 ) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
@@ -341,7 +340,7 @@ fn render_fire_sim_output(
 
     table.add_row(vec![
         comfy_table::Cell::new("Monthly Expenses"),
-        comfy_table::Cell::new(logos_core::format::currency(monthly_expenses_cents))
+        comfy_table::Cell::new(logos_core::currency(monthly_expenses_cents))
             .fg(comfy_table::Color::Red),
     ]);
 
@@ -349,20 +348,20 @@ fn render_fire_sim_output(
         comfy_table::Cell::new("Target FIRE Number")
             .fg(comfy_table::Color::Green)
             .add_attribute(comfy_table::Attribute::Bold),
-        comfy_table::Cell::new(logos_core::format::currency(fire_number))
+        comfy_table::Cell::new(logos_core::currency(fire_number))
             .fg(comfy_table::Color::Green)
             .add_attribute(comfy_table::Attribute::Bold),
     ]);
 
     table.add_row(vec![
         comfy_table::Cell::new("Current Safe Net Worth"),
-        comfy_table::Cell::new(logos_core::format::currency(current_net_worth))
+        comfy_table::Cell::new(logos_core::currency(current_net_worth))
             .fg(comfy_table::Color::Blue),
     ]);
 
     table.add_row(vec![
         comfy_table::Cell::new("Monthly Savings"),
-        comfy_table::Cell::new(logos_core::format::currency(monthly_savings_cents))
+        comfy_table::Cell::new(logos_core::currency(monthly_savings_cents))
             .fg(comfy_table::Color::Green),
     ]);
 
@@ -388,7 +387,7 @@ fn render_fire_sim_output(
         ]);
     } else {
         for milestone in &ascent_result.milestones {
-            let target_dollars = logos_core::format::currency(milestone.target_cents);
+            let target_dollars = logos_core::currency(milestone.target_cents);
 
             if let Some(month) = milestone.month_reached {
                 let years = month / 12;

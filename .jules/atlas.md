@@ -1,6 +1,3 @@
-**[Tangle: Explicit Module Re-exports within logos crates]**
-**Tangle:** In `logos-cli`, `logos-tui`, `logos-core`, and `logos-fetch`, internal module implementations were exposed using `pub mod`, violating the architectural principle of strict public APIs and leaking internal details.
-**Blueprint:** Updated visibility modifiers from `pub mod` to `pub(crate) mod` within these crates to correctly enforce the Facade pattern. The only exception made was for modules explicitly re-exported (such as those imported by `logos_cli::commands::analytics`), which were properly scoped. Tests and lints were verified using `cargo test` and `cargo clippy`.
-**[The Leaky Modules]**
-**Tangle:** In `logos-core` and `logos-fetch`, internal module implementations (`domain`, `planning`, `experimental`, `adapters`) were exposed using `pub mod`, violating the architectural principle of strict public APIs and leaking internal details.
-**Blueprint:** Updated visibility modifiers from `pub mod` to `pub(crate) mod` within these crates to correctly enforce the Facade pattern and encapsulate domain logic.
+**[Explicit Module Re-exports within logos crates]**
+**Tangle:** In `logos-core`, internal module implementations (`domain`, `planning`, `experimental`) were exposed using `pub mod`, violating the architectural principle of strict public APIs and leaking internal details. Downstream crates were using these internal module paths.
+**Blueprint:** Updated visibility modifiers from `pub mod` to `pub(crate) mod` within `logos-core` for `domain`, `experimental`, and `planning`. Explicitly re-exported the necessary structures in the crate root `lib.rs` (e.g., `pub use experimental::predictive_ledger::PredictiveLedger;`). Refactored downstream dependencies (tests and `logos-cli`) to import these directly from the root namespace, enforcing the Facade pattern correctly.

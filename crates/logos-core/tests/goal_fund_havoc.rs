@@ -3,7 +3,7 @@
 #[cfg(feature = "nova")]
 use logos_core::AllocationPolicy;
 #[cfg(feature = "nova")]
-use logos_core::goal_fund_projector::GoalFundProjector;
+use logos_core::GoalFundProjector;
 #[cfg(feature = "nova")]
 use proptest::prelude::*;
 

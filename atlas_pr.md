@@ -1,6 +1,6 @@
-🕸️ Tangle: The `logos-core` and `logos-store` crates exposed their internal implementation modules (`error`, `model`, `traits`, `domain`, `experimental`, `planning`) publicly (`pub mod`), leaking internal details and violating encapsulation boundaries.
+🕸️ Tangle: The `logos-core`, `logos-cli`, `logos-tui`, and `logos-fetch` crates exposed their internal implementation modules (`domain`, `experimental`, `planning`, `ui`, `commands`, `adapters`) publicly (`pub mod`), leaking internal details and violating encapsulation boundaries.
 
-📐 Blueprint: Refactored both crates to use the Facade pattern. Changed internal module visibilities to `pub(crate) mod` and explicitly re-exported only the necessary types using `pub use` at the crate roots. Updated all downstream dependencies (`logos-cli`, `logos-runtime`, `logos-store-pg`, internal tests, and fuzzers) to use the new, cleaner top-level paths.
+📐 Blueprint: Refactored these crates to use the Facade pattern. Changed internal module visibilities from `pub mod` to `pub(crate) mod`. Explicitly re-exported only the necessary types using `pub use` at the crate roots (e.g. `pub use planning::fire::{FireSimulator, UpcomingVest};`). Updated all downstream dependencies, tests, and fuzzers to use the new, cleaner top-level paths.
 
 🧱 Stability: This architectural change enforces strict separation of concerns, hides internal module organization, and provides a clean, stable public API contract for downstream consumers.
 

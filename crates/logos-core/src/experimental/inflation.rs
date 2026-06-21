@@ -18,7 +18,7 @@ impl InflationProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::inflation::InflationProjector;
+    /// use logos_core::InflationProjector;
     ///
     /// let projector = InflationProjector::new(3.0);
     /// assert_eq!(projector.annual_inflation_rate_pct, 3.0);
@@ -37,7 +37,7 @@ impl InflationProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::inflation::InflationProjector;
+    /// use logos_core::InflationProjector;
     ///
     /// let projector = InflationProjector::new(3.0);
     /// // An item costing $10.00 today will cost ~$10.30 in 1 year at 3% inflation.
@@ -69,7 +69,7 @@ impl InflationProjector {
     /// ## Examples
     ///
     /// ```
-    /// use logos_core::inflation::InflationProjector;
+    /// use logos_core::InflationProjector;
     ///
     /// let projector = InflationProjector::new(3.0);
     /// // $10.30 in 1 year at 3% inflation has the purchasing power of $10.00 today.
