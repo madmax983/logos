@@ -262,6 +262,8 @@ pub fn net_worth_project(
     monthly_savings_cents: i64,
     months: u16,
 ) -> Result<(), CliError> {
+    use comfy_table::{Attribute, Cell, Color};
+    use crossterm::style::Stylize;
     use logos_core::net_worth_projector::NetWorthProjector;
 
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
@@ -269,22 +271,34 @@ pub fn net_worth_project(
 
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec!["Month", "Net Worth", "Saved Cash", "Vested Value"]);
+    table.set_header(vec![
+        Cell::new("Month")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Net Worth")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Saved Cash")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Vested Value")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+    ]);
 
     for month in timeline {
         table.add_row(vec![
-            comfy_table::Cell::new(month.month_index.to_string()),
-            comfy_table::Cell::new(logos_core::format::currency(month.net_worth_cents))
-                .fg(comfy_table::Color::Green),
-            comfy_table::Cell::new(logos_core::format::currency(month.saved_cents)),
-            comfy_table::Cell::new(logos_core::format::currency(month.vested_value_cents)),
+            Cell::new(month.month_index.to_string()),
+            Cell::new(logos_core::format::currency(month.net_worth_cents))
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold),
+            Cell::new(logos_core::format::currency(month.saved_cents)).fg(Color::Yellow),
+            Cell::new(logos_core::format::currency(month.vested_value_cents)).fg(Color::Blue),
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    let header = "📈 Net Worth Projection".green().bold();
+    println!("\n{header}\n{table}\n");
 
     Ok(())
 }
