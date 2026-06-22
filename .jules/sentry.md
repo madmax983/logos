@@ -17,3 +17,7 @@
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
 **Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+
+## 2026-05-02 - CashflowProjector arithmetic overflow
+**Learning:** Simulating recurring cashflows with massive inputs can cause arithmetic overflow panics when using unguarded `+=` operators.
+**Action:** Use `saturating_add` for aggregating balances over multiple simulation periods.
