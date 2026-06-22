@@ -366,6 +366,14 @@ fn render_fire_sim_output(
             .fg(comfy_table::Color::Green),
     ]);
 
+    let journey_table = render_fire_journey_table(ascent_result);
+
+    format!("{table}\n\n{journey_table}")
+}
+
+fn render_fire_journey_table(
+    ascent_result: &logos_core::fire_ascent::AscentResult,
+) -> comfy_table::Table {
     let mut journey_table = comfy_table::Table::new();
     journey_table.load_preset(comfy_table::presets::UTF8_FULL);
     journey_table.set_header(vec!["Milestone", "Target", "Status"]);
@@ -412,7 +420,7 @@ fn render_fire_sim_output(
         }
     }
 
-    format!("{table}\n\n{journey_table}")
+    journey_table
 }
 
 #[cfg(test)]
