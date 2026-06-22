@@ -1,3 +1,5 @@
+# 🔭 Vantage: Spec for FIRE CLI Integration
+
 👤 **User Story:**
 As a user planning for early retirement, I want to simulate my FIRE (Financial Independence, Retire Early) trajectory via the CLI so that I can understand my safe net worth and progress without writing custom code.
 
