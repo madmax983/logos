@@ -193,7 +193,8 @@ impl NetWorthProjector {
     #[must_use]
     pub fn project_timeline(&self, months: u16) -> (Vec<ProjectedMonth>, Vec<(i64, u16)>) {
         let mut timeline = Vec::with_capacity(usize::from(months));
-        let mut crossed_milestones = Vec::new();
+        // ⚡ Bolt Optimization: Preallocate the milestones vector to avoid reallocations.
+        let mut crossed_milestones = Vec::with_capacity(self.milestones_cents.len());
 
         let mut current_net_worth = self.initial_net_worth_cents;
 
