@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-04 - The Undocumented MemoryStore Constructors
+**Confusion:** The `MemoryStore` struct in `logos-store` had no documentation for its `new` and `new_in_memory` constructors, making it difficult for users to know how to properly instantiate the in-memory store for testing without diving into the source code.
+**Clarification:** Added `///` doc comments with executable `## Examples` sections to both the `new` and `new_in_memory` functions in `crates/logos-store/src/memory.rs`.

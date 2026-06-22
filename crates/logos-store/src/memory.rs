@@ -96,11 +96,27 @@ impl Default for MemoryStore {
 }
 
 impl MemoryStore {
+    /// Creates a new, empty in-memory store.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_store::MemoryStore;
+    /// let store = MemoryStore::new();
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Creates a new, empty in-memory store. This is an alias for `new()`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_store::MemoryStore;
+    /// let store = MemoryStore::new_in_memory();
+    /// ```
     #[must_use]
     pub fn new_in_memory() -> Self {
         Self::default()
