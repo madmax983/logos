@@ -1,3 +1,13 @@
+/// Formats a Unix microsecond timestamp to a human-readable string (YYYY-MM-DD HH:MM:SS UTC).
+///
+/// If the timestamp is invalid, it falls back to the raw string representation.
+///
+/// # Examples
+///
+/// ```
+/// use logos_core::format::us_timestamp;
+/// assert!(us_timestamp(1704067200000000).starts_with("2024"));
+/// ```
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(

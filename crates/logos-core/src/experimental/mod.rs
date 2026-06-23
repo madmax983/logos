@@ -10,6 +10,7 @@ pub mod portfolio_rebalancer;
 #[cfg(feature = "nova")]
 pub mod asset_depreciation;
 #[cfg(feature = "nova")]
+/// Analyzes transactions using Benford's Law to detect anomalies.
 pub mod benford_law;
 pub mod cashflow_projector;
 #[cfg(feature = "nova")]
@@ -29,6 +30,7 @@ pub mod inflation;
 /// Visualizing cashflows using Mermaid Sankey diagrams.
 pub mod mermaid_exporter;
 #[cfg(feature = "nova")]
+/// Exports projections to Mermaid XY charts.
 pub mod mermaid_xy_exporter;
 pub mod monte_carlo;
 #[cfg(feature = "nova")]
@@ -43,6 +45,7 @@ pub mod trinity_simulator;
 #[cfg(feature = "nova")]
 pub mod anomaly_detector;
 #[cfg(feature = "nova")]
+/// Analyzes spending trends across categories.
 pub mod category_trends;
 #[cfg(feature = "nova")]
 pub mod income_router;
@@ -51,4 +54,5 @@ pub mod lifestyle_creep;
 #[cfg(feature = "nova")]
 pub mod runway_simulator;
 #[cfg(feature = "nova")]
+/// Analyzes the long-term impact and fatigue of subscriptions.
 pub mod subscription_fatigue;

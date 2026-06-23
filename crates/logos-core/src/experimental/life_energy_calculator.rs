@@ -21,6 +21,15 @@ pub struct TrueWageCalculator {
 }
 
 impl TrueWageCalculator {
+    /// Creates a new `TrueWageCalculator`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_core::experimental::life_energy_calculator::TrueWageCalculator;
+    /// let calc = TrueWageCalculator::new(50_00, 40.0, 5.0, 100_00);
+    /// assert_eq!(calc.true_hourly_wage_cents(), 42_22);
+    /// ```
     #[must_use]
     pub const fn new(
         nominal_hourly_wage_cents: i64,
@@ -69,10 +78,15 @@ impl TrueWageCalculator {
 /// A report detailing the life energy cost of a recurring subscription.
 #[derive(Debug, Clone, PartialEq)]
 pub struct LifeEnergySubscriptionReport {
+    /// The name or description of the subscription.
     pub description: String,
+    /// The true hourly wage in cents used for the calculation.
     pub true_hourly_wage_cents: i64,
+    /// The direct monthly cost of the subscription, expressed in hours of life energy.
     pub direct_monthly_hours: f64,
+    /// The future opportunity cost value in cents of this subscription over time.
     pub opportunity_cost_future_value_cents: i64,
+    /// The future opportunity cost expressed in hours of life energy.
     pub opportunity_cost_future_hours: f64,
 }
 
@@ -84,6 +98,7 @@ pub struct LifeEnergySubscriptionEvaluator {
 }
 
 impl LifeEnergySubscriptionEvaluator {
+    /// Creates a new `LifeEnergySubscriptionEvaluator` from a wage calculator and opportunity analyzer.
     #[must_use]
     pub const fn new(
         wage_calculator: TrueWageCalculator,

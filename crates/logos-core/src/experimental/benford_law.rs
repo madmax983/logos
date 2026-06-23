@@ -13,6 +13,30 @@ pub struct BenfordLawAnalyzer {
 }
 
 impl BenfordLawAnalyzer {
+    /// Initializes an empty analyzer ready to detect statistical anomalies.
+    ///
+    /// Benford's law requires a significant amount of transaction volume to be
+    /// statistically sound. Create this once, feed it thousands of transactions,
+    /// and then observe the distribution.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_core::experimental::benford_law::BenfordLawAnalyzer;
+    /// use logos_core::domain::transaction::{TransactionBuilder, Posting};
+    /// use logos_core::AccountId;
+    ///
+    /// let mut analyzer = BenfordLawAnalyzer::new();
+    /// let tx = TransactionBuilder::new("T1")
+    ///     .posting(Posting::credit(AccountId::new("income").unwrap(), 100).unwrap())
+    ///     .posting(Posting::debit(AccountId::new("checking").unwrap(), 100).unwrap())
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// analyzer.add_transactions(&[tx]);
+    /// let observed = analyzer.observed_distribution();
+    /// assert_eq!(observed.get(&1).copied(), Some(1.0)); // 100 starts with 1
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self::default()

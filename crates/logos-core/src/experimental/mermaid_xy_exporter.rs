@@ -8,6 +8,26 @@ use std::fmt::Write;
 pub struct MermaidXyExporter {}
 
 impl MermaidXyExporter {
+    /// Instantiates a new Mermaid XY exporter.
+    ///
+    /// Because this exporter doesn't currently rely on any configuration state,
+    /// this function simply returns the default struct. Future updates may introduce
+    /// configuration for graph themes or dimensions.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use logos_core::experimental::mermaid_xy_exporter::MermaidXyExporter;
+    /// use logos_core::planning::net_worth_projector::ProjectedMonth;
+    ///
+    /// let exporter = MermaidXyExporter::new();
+    /// let timeline = vec![
+    ///     ProjectedMonth { month_index: 1, net_worth_cents: 100000, vested_value_cents: 0, saved_cents: 0 },
+    /// ];
+    ///
+    /// let chart = exporter.export_net_worth_xy(&timeline);
+    /// assert!(chart.contains("xychart-beta"));
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self::default()
