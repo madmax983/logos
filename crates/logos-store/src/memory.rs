@@ -601,11 +601,13 @@ impl LedgerStore for MemoryStore {
                     record.imported_txn_id().cloned(),
                     imported_at,
                 );
-                if let Some(txn_id) = record.imported_txn_id().cloned() {
-                    self.statement_line_ids_by_txn
-                        .entry(txn_id)
-                        .or_default()
-                        .push(line_id.clone());
+                if let Some(txn_id) = record.imported_txn_id() {
+                    if let Some(lines) = self.statement_line_ids_by_txn.get_mut(txn_id) {
+                        lines.push(line_id.clone());
+                    } else {
+                        self.statement_line_ids_by_txn
+                            .insert(txn_id.clone(), vec![line_id.clone()]);
+                    }
                 }
                 self.statement_lines.insert(line_id, stored_line);
             }
