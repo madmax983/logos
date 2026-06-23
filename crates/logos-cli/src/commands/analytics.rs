@@ -262,6 +262,7 @@ pub fn net_worth_project(
     monthly_savings_cents: i64,
     months: u16,
 ) -> Result<(), CliError> {
+    use crossterm::style::Stylize;
     use logos_core::net_worth_projector::NetWorthProjector;
 
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
@@ -281,10 +282,10 @@ pub fn net_worth_project(
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    let header = format!("🚀 Net Worth Projection ({months} months)")
+        .green()
+        .bold();
+    println!("\n{header}\n\n{table}");
 
     Ok(())
 }
@@ -300,6 +301,7 @@ pub fn fire_sim(
     liquid_assets_cents: i64,
     monthly_savings_cents: i64,
 ) -> Result<(), CliError> {
+    use crossterm::style::Stylize;
     use logos_core::fire::FireSimulator;
     use logos_core::net_worth_projector::NetWorthProjector;
 
@@ -323,7 +325,9 @@ pub fn fire_sim(
         monthly_savings_cents,
         &ascent_result,
     );
-    println!("{output}");
+
+    let header = "🔥 FIRE Simulation Results".green().bold();
+    println!("\n{header}\n\n{output}");
 
     Ok(())
 }
