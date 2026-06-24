@@ -293,3 +293,12 @@ fn test_app_input_to_char() {
         None
     );
 }
+
+#[test]
+fn test_view_title() {
+    assert_eq!(view_title(View::Home), "Home");
+    assert_eq!(view_title(View::Budget), "Budget");
+    assert_eq!(view_title(View::Register), "Register");
+    assert_eq!(view_title(View::Rsu), "RSU");
+    assert_eq!(view_title(View::Reconcile), "Reconcile");
+}

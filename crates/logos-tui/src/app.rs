@@ -1598,3 +1598,17 @@ mod tests {
         assert_eq!(civil_from_days(10957 + 31 + 29), (2000, 3, 1));
     }
 }
+
+#[cfg(test)]
+mod additional_civil_from_days_tests {
+    use super::civil_from_days;
+
+    #[test]
+    fn test_civil_from_days_mutant_kills() {
+        // Kills < to <= on month_prime
+        assert_eq!(civil_from_days(-731), (1968, 1, 1));
+
+        // Kills month <= 2 to month > 2
+        assert_eq!(civil_from_days(-1000), (1967, 4, 7));
+    }
+}
