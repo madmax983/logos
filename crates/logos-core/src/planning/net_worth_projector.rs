@@ -109,6 +109,17 @@ impl NetWorthProjector {
         }
     }
 
+    /// Returns the initial net worth in cents.
+    #[must_use]
+    pub const fn initial_net_worth_cents(&self) -> i64 {
+        self.initial_net_worth_cents
+    }
+
+    /// Updates the initial net worth to a new value.
+    pub fn set_initial_net_worth_cents(&mut self, cents: i64) {
+        self.initial_net_worth_cents = cents;
+    }
+
     /// Updates the `HaircutTierTable` used to discount future RSU vests.
     ///
     /// The projector uses these tiers to determine how much "safe" value
