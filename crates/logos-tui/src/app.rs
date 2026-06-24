@@ -1354,41 +1354,45 @@ impl App {
 
         self.scope_error = None;
         for (key, value) in normalized_fields {
-            match (key, value) {
-                (ScopeFieldKey::HomeMonthKey, Some(value)) => {
-                    self.home.month_key = value;
-                    self.home.snapshot = None;
-                }
-                (ScopeFieldKey::HomeCheckingAccount, Some(value)) => {
-                    self.home.checking_account = value;
-                    self.home.snapshot = None;
-                }
-                (ScopeFieldKey::HomeExpenseAccountPrefix, Some(value)) => {
-                    self.home.expense_account_prefix = value;
-                    self.home.snapshot = None;
-                }
-                (ScopeFieldKey::BudgetMonthKey, Some(value)) => {
-                    self.budget.month_key = value;
-                    self.budget.snapshot = None;
-                }
-                (ScopeFieldKey::BudgetExpenseAccountPrefix, Some(value)) => {
-                    self.budget.expense_account_prefix = value;
-                    self.budget.snapshot = None;
-                }
-                (ScopeFieldKey::RegisterAccount, Some(value)) => {
-                    self.register.account = value;
-                    self.register.snapshot = None;
-                }
-                (ScopeFieldKey::ReconcileMonthFilter, value) => {
-                    self.reconcile.filter_month_key = value;
-                    self.clear_reconcile_results();
-                }
-                (ScopeFieldKey::ReconcileCheckingAccountFilter, value) => {
-                    self.reconcile.filter_checking_account = value;
-                    self.clear_reconcile_results();
-                }
-                _ => {}
+            self.apply_scope_field(key, value);
+        }
+    }
+
+    fn apply_scope_field(&mut self, key: ScopeFieldKey, value: Option<String>) {
+        match (key, value) {
+            (ScopeFieldKey::HomeMonthKey, Some(value)) => {
+                self.home.month_key = value;
+                self.home.snapshot = None;
             }
+            (ScopeFieldKey::HomeCheckingAccount, Some(value)) => {
+                self.home.checking_account = value;
+                self.home.snapshot = None;
+            }
+            (ScopeFieldKey::HomeExpenseAccountPrefix, Some(value)) => {
+                self.home.expense_account_prefix = value;
+                self.home.snapshot = None;
+            }
+            (ScopeFieldKey::BudgetMonthKey, Some(value)) => {
+                self.budget.month_key = value;
+                self.budget.snapshot = None;
+            }
+            (ScopeFieldKey::BudgetExpenseAccountPrefix, Some(value)) => {
+                self.budget.expense_account_prefix = value;
+                self.budget.snapshot = None;
+            }
+            (ScopeFieldKey::RegisterAccount, Some(value)) => {
+                self.register.account = value;
+                self.register.snapshot = None;
+            }
+            (ScopeFieldKey::ReconcileMonthFilter, value) => {
+                self.reconcile.filter_month_key = value;
+                self.clear_reconcile_results();
+            }
+            (ScopeFieldKey::ReconcileCheckingAccountFilter, value) => {
+                self.reconcile.filter_checking_account = value;
+                self.clear_reconcile_results();
+            }
+            _ => {}
         }
     }
 

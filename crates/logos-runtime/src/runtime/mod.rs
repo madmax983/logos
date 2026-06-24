@@ -638,112 +638,16 @@ impl<S: LedgerStore> AppRuntime<S> {
         let mut staged_artifact = false;
         let mut persisted_runs = Vec::new();
         for source in matched_sources {
-            let fetch_request = match FetchRequest::new(source, request.month_key()) {
-                Ok(fetch_request) => fetch_request,
-                Err(err) => {
-                    let err = fetch_error_to_runtime(&err);
-                    if fetch_required && first_required_error.is_none() {
-                        first_required_error = Some(RuntimeError::Analytics {
-                            message: err.to_string(),
-                        });
-                    }
-                    persisted_runs.push(self.persist_failed_fetch_run(
-                        source,
-                        request.month_key(),
-                        &err.to_string(),
-                    )?);
-                    continue;
-                }
-            };
-            let secrets = match Self::secret_bundle_for_fetch_source(source) {
-                Ok(secrets) => secrets,
-                Err(err) => {
-                    if fetch_required && first_required_error.is_none() {
-                        first_required_error = Some(RuntimeError::Analytics {
-                            message: err.to_string(),
-                        });
-                    }
-                    persisted_runs.push(self.persist_failed_fetch_run(
-                        source,
-                        request.month_key(),
-                        &err.to_string(),
-                    )?);
-                    continue;
-                }
-            };
-            let result =
-                match Self::run_fetch_adapter(&fetch_runtime, source, &fetch_request, &secrets) {
-                    Ok(result) => result,
-                    Err(err) => {
-                        if fetch_required && first_required_error.is_none() {
-                            first_required_error = Some(RuntimeError::Analytics {
-                                message: err.to_string(),
-                            });
-                        }
-                        persisted_runs.push(self.persist_failed_fetch_run(
-                            source,
-                            request.month_key(),
-                            &err.to_string(),
-                        )?);
-                        continue;
-                    }
-                };
-            if matches!(
-                result.status(),
-                FetchRunStatus::Downloaded | FetchRunStatus::Imported
-            ) && result.artifact().is_none()
-            {
-                let message = format!(
-                    "statement fetch for source '{}' returned {:?} without an artifact",
-                    source.source_id(),
-                    result.status()
-                );
-                if fetch_required && first_required_error.is_none() {
-                    first_required_error = Some(RuntimeError::Analytics {
-                        message: message.clone(),
-                    });
-                }
-                persisted_runs.push(self.persist_failed_fetch_run(
-                    source,
-                    request.month_key(),
-                    &message,
-                )?);
-                continue;
-            }
-            match result.status() {
-                FetchRunStatus::Downloaded | FetchRunStatus::Imported => {
-                    if let Some(artifact) = result.artifact().cloned() {
-                        self.stage_fetched_statement_artifact(artifact);
-                        staged_artifact = true;
-                    }
-                    persisted_runs.push(self.persist_fetch_run_from_result(
-                        source,
-                        request.month_key(),
-                        &result,
-                    )?);
-                }
-                FetchRunStatus::NoNewStatement => {
-                    persisted_runs.push(self.persist_fetch_run_from_result(
-                        source,
-                        request.month_key(),
-                        &result,
-                    )?);
-                }
-                FetchRunStatus::NeedsAttention | FetchRunStatus::Failed => {
-                    persisted_runs.push(self.persist_fetch_run_from_result(
-                        source,
-                        request.month_key(),
-                        &result,
-                    )?);
-                    if fetch_required && first_required_error.is_none() {
-                        first_required_error = Some(RuntimeError::Analytics {
-                            message: format!(
-                                "statement fetch for source '{}' requires attention before month autopilot can continue",
-                                source.source_id()
-                            ),
-                        });
-                    }
-                }
+            if let Some(artifact) = self.process_fetch_source(
+                &fetch_runtime,
+                source,
+                request.month_key(),
+                fetch_required,
+                &mut first_required_error,
+                &mut persisted_runs,
+            )? {
+                self.stage_fetched_statement_artifact(artifact);
+                staged_artifact = true;
             }
         }
 
@@ -754,6 +658,111 @@ impl<S: LedgerStore> AppRuntime<S> {
         }
 
         Ok(persisted_runs)
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn process_fetch_source(
+        &mut self,
+        fetch_runtime: &tokio::runtime::Runtime,
+        source: &StatementSource,
+        month_key: &str,
+        fetch_required: bool,
+        first_required_error: &mut Option<RuntimeError>,
+        persisted_runs: &mut Vec<StoredFetchRun>,
+    ) -> Result<Option<FetchedStatementArtifact>, RuntimeError> {
+        let fetch_request = match FetchRequest::new(source, month_key) {
+            Ok(fetch_request) => fetch_request,
+            Err(err) => {
+                let err = fetch_error_to_runtime(&err);
+                if fetch_required && first_required_error.is_none() {
+                    *first_required_error = Some(RuntimeError::Analytics {
+                        message: err.to_string(),
+                    });
+                }
+                persisted_runs.push(self.persist_failed_fetch_run(
+                    source,
+                    month_key,
+                    &err.to_string(),
+                )?);
+                return Ok(None);
+            }
+        };
+        let secrets = match Self::secret_bundle_for_fetch_source(source) {
+            Ok(secrets) => secrets,
+            Err(err) => {
+                if fetch_required && first_required_error.is_none() {
+                    *first_required_error = Some(RuntimeError::Analytics {
+                        message: err.to_string(),
+                    });
+                }
+                persisted_runs.push(self.persist_failed_fetch_run(
+                    source,
+                    month_key,
+                    &err.to_string(),
+                )?);
+                return Ok(None);
+            }
+        };
+        let result = match Self::run_fetch_adapter(fetch_runtime, source, &fetch_request, &secrets)
+        {
+            Ok(result) => result,
+            Err(err) => {
+                if fetch_required && first_required_error.is_none() {
+                    *first_required_error = Some(RuntimeError::Analytics {
+                        message: err.to_string(),
+                    });
+                }
+                persisted_runs.push(self.persist_failed_fetch_run(
+                    source,
+                    month_key,
+                    &err.to_string(),
+                )?);
+                return Ok(None);
+            }
+        };
+        if matches!(
+            result.status(),
+            FetchRunStatus::Downloaded | FetchRunStatus::Imported
+        ) && result.artifact().is_none()
+        {
+            let message = format!(
+                "statement fetch for source '{}' returned {:?} without an artifact",
+                source.source_id(),
+                result.status()
+            );
+            if fetch_required && first_required_error.is_none() {
+                *first_required_error = Some(RuntimeError::Analytics {
+                    message: message.clone(),
+                });
+            }
+            persisted_runs.push(self.persist_failed_fetch_run(source, month_key, &message)?);
+            return Ok(None);
+        }
+        let mut staged = None;
+        match result.status() {
+            FetchRunStatus::Downloaded | FetchRunStatus::Imported => {
+                staged = result.artifact().cloned();
+                persisted_runs
+                    .push(self.persist_fetch_run_from_result(source, month_key, &result)?);
+            }
+            FetchRunStatus::NoNewStatement => {
+                persisted_runs
+                    .push(self.persist_fetch_run_from_result(source, month_key, &result)?);
+            }
+            FetchRunStatus::NeedsAttention | FetchRunStatus::Failed => {
+                persisted_runs
+                    .push(self.persist_fetch_run_from_result(source, month_key, &result)?);
+                if fetch_required && first_required_error.is_none() {
+                    *first_required_error = Some(RuntimeError::Analytics {
+                        message: format!(
+                            "statement fetch for source '{}' requires attention before month autopilot can continue",
+                            source.source_id()
+                        ),
+                    });
+                }
+            }
+        }
+        Ok(staged)
     }
 
     fn fetched_statement_artifact_for(
