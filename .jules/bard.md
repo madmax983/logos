@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2026-06-24 - The Quick Start Crash
+**Confusion:** Users copy-pasting the "Example Commands" block from the README hit a `Connection refused` error because Postgres takes a few seconds to start inside the Docker container, and the next command tries to connect before it is ready.
+**Clarification:** Added a note explaining why we must wait (`sleep 3`) between creating the docker container and running the database migrations in the `README.md` example code block.
