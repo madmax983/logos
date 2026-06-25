@@ -1,6 +1,7 @@
 use crate::args::CliError;
 use logos_runtime::{AppRuntime, MonthAutopilotRequest, MonthAutopilotSummary};
 use logos_store::StoredFetchRunStatus;
+use crossterm::style::Stylize;
 
 /// Handles `ledger month autopilot`.
 ///
@@ -100,7 +101,7 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
         summary.close().closed_at().to_string(),
     ]);
 
-    format!("month.autopilot\n{table}")
+    format!("\n{}\n\n{table}", "🤖 Month Autopilot Summary".green().bold())
 }
 
 #[cfg(test)]
@@ -164,7 +165,7 @@ mod tests {
         );
 
         let output = render_autopilot_output(&summary);
-        assert!(output.contains("month.autopilot"));
+        assert!(output.contains("🤖 Month Autopilot Summary"));
         assert!(output.contains("2026-04"));
         assert!(output.contains("assets:checking"));
         assert!(output.contains("recon-5"));

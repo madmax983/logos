@@ -1,5 +1,6 @@
 use logos_import::CsvMapping;
 use std::path::Path;
+use crossterm::style::Stylize;
 
 use crate::args::CliError;
 
@@ -128,7 +129,7 @@ fn render_pdf_output(
         duplicate_count.to_string(),
     ]);
 
-    format!("import.pdf\n{table}")
+    format!("\n{}\n\n{table}", "📄 PDF Import Summary".green().bold())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -174,7 +175,7 @@ fn render_csv_output(
         duplicate_count.to_string(),
     ]);
 
-    format!("import.csv\n{table}")
+    format!("\n{}\n\n{table}", "📊 CSV Import Summary".green().bold())
 }
 
 #[cfg(test)]
@@ -184,7 +185,7 @@ mod tests {
     #[test]
     fn render_pdf_output_is_deterministic() {
         let output = render_pdf_output("stmt.pdf", "assets:checking", true, false, 12, 3);
-        assert!(output.contains("import.pdf"));
+        assert!(output.contains("📄 PDF Import Summary"));
         assert!(output.contains("stmt.pdf"));
         assert!(output.contains("assets:checking"));
         assert!(output.contains("true"));
@@ -208,7 +209,7 @@ mod tests {
             9,
             1,
         );
-        assert!(output.contains("import.csv"));
+        assert!(output.contains("📊 CSV Import Summary"));
         assert!(output.contains("statement.csv"));
         assert!(output.contains("chase.csv"));
         assert!(output.contains("false"));

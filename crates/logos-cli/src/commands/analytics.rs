@@ -281,9 +281,10 @@ pub fn net_worth_project(
         ]);
     }
 
+    use crossterm::style::Stylize;
     println!(
-        "analytics.net-worth
-{table}"
+        "\n{}\n\n{table}",
+        "📈 Net Worth Projection".green().bold()
     );
 
     Ok(())
