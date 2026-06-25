@@ -1316,3 +1316,104 @@ fn parse_paired_i64_flags(
 fn parse_amount_cents(args: &[String]) -> Result<i64, CliError> {
     parse_required_parsed_flag(args, "--amount-cents")
 }
+
+#[cfg(test)]
+mod sentinel_tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_month_key_mutants() {
+        let err = parse_month_key("--month", "2024-01-".to_string()).unwrap_err();
+        assert!(matches!(err, CliError::InvalidArgValue { .. }));
+
+        let err = parse_month_key("--month", "202401".to_string()).unwrap_err();
+        assert!(matches!(err, CliError::InvalidArgValue { .. }));
+
+        let err = parse_month_key("--month", "abcd-01".to_string()).unwrap_err();
+        assert!(matches!(err, CliError::InvalidArgValue { .. }));
+
+        let err = parse_month_key("--month", "2024-ab".to_string()).unwrap_err();
+        assert!(matches!(err, CliError::InvalidArgValue { .. }));
+    }
+
+    #[test]
+    fn test_parse_help_mutants() {
+        assert!(matches!(
+            parse_txn(&["logos".into(), "txn".into(), "-h".into()])
+                .unwrap()
+                .command(),
+            Command::Help(HelpTopic::Txn)
+        ));
+        assert!(matches!(
+            parse_budget(&["logos".into(), "budget".into(), "-h".into()])
+                .unwrap()
+                .command(),
+            Command::Help(HelpTopic::Budget)
+        ));
+        assert!(matches!(
+            parse_analytics(&["logos".into(), "analytics".into(), "-h".into()])
+                .unwrap()
+                .command(),
+            Command::Help(HelpTopic::Analytics)
+        ));
+        assert!(matches!(
+            parse_import(&["logos".into(), "import".into(), "-h".into()])
+                .unwrap()
+                .command(),
+            Command::Help(HelpTopic::Import)
+        ));
+
+        // For fetch: parse_fetch looks at args[1]
+        assert!(matches!(
+            parse_fetch(&["logos".into(), "-h".into()])
+                .unwrap()
+                .command(),
+            Command::Help(HelpTopic::Fetch)
+        ));
+
+        assert!(matches!(
+            parse_report(&["logos".into(), "report".into(), "-h".into()])
+                .unwrap()
+                .command(),
+            Command::Help(HelpTopic::Report)
+        ));
+        assert!(matches!(
+            parse_reconcile(&["logos".into(), "reconcile".into(), "-h".into()])
+                .unwrap()
+                .command(),
+            Command::Help(HelpTopic::Reconcile)
+        ));
+        assert!(matches!(
+            parse_month(&["logos".into(), "month".into(), "-h".into()])
+                .unwrap()
+                .command(),
+            Command::Help(HelpTopic::Month)
+        ));
+        assert!(matches!(
+            parse_close(&["logos".into(), "close".into(), "-h".into()])
+                .unwrap()
+                .command(),
+            Command::Help(HelpTopic::Close)
+        ));
+        assert!(matches!(
+            parse_db(&["logos".into(), "db".into(), "-h".into()])
+                .unwrap()
+                .command(),
+            Command::Help(HelpTopic::Db)
+        ));
+
+        // Let's add the missing match arm mutants from earlier!
+        let err = parse_analytics_snapshot(&[
+            "logos".into(),
+            "analytics".into(),
+            "snapshot".into(),
+            "-h".into(),
+        ])
+        .unwrap_err();
+        assert!(
+            matches!(err, CliError::MissingRequiredArg { .. })
+                || matches!(err, CliError::MissingSubcommand { .. })
+                || matches!(err, CliError::UnknownSubcommand { .. })
+        );
+    }
+}
