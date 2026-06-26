@@ -3,6 +3,12 @@
 //! This crate provides the capability to fetch financial statements from various institutions.
 //! It defines the core abstractions for [`StatementAdapter`]s and configuration models
 //! like [`StatementSource`] and [`FetchedStatementArtifact`].
+//!
+//! # The Fetch Runtime
+//!
+//! Fetching is typically the first step in the month autopilot workflow. This crate is designed
+//! around a headless operator model where secret resolution (e.g., via 1Password CLI) is injected
+//! at runtime to allow automated, non-interactive execution.
 
 /// Statement adapter definitions and common types for fetching data.
 pub(crate) mod adapter;

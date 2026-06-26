@@ -31,3 +31,9 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-04 - The Fetch Runtime Enigma
+**Confusion:** The `logos-fetch` crate lacked module-level documentation. Users couldn't understand how the statement retrieval and credential fetching components connected, making `logos-fetch` a difficult-to-navigate black box.
+**Clarification:** Added module-level `//!` documentation to `crates/logos-fetch/src/lib.rs` explaining the `logos-fetch` statement retrieval framework and its integration points.
+## 2025-05-04 - The TUI Root Missing Story
+**Confusion:** The `logos-tui` library root did not explain how its internal state management, canvas components, and terminal rendering integrations worked together.
+**Clarification:** Added `//!` module documentation to `crates/logos-tui/src/lib.rs` outlining the architecture, making the purpose of `app`, `ui`, and `terminal` clear to users reading the core library docs.
