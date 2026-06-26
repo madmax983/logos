@@ -109,10 +109,31 @@ impl FireAscentSimulator {
             (summit, "🚩 SUMMIT (100%)"),
         ];
 
+        let (milestones, success) =
+            Self::collect_milestones(summit, &sorted_milestones, &milestone_names);
+
+        let final_net_worth_cents = timeline.last().map_or(0, |m| m.net_worth_cents);
+
+        AscentResult {
+            summit_cents: summit,
+            max_months: self.max_months,
+            final_net_worth_cents,
+            milestones,
+            success,
+            instant_summit: false,
+            impossible: false,
+        }
+    }
+
+    fn collect_milestones(
+        summit: i64,
+        sorted_milestones: &[(i64, u16)],
+        milestone_names: &[(i64, &'static str)],
+    ) -> (Vec<AscentMilestone>, bool) {
         let mut milestones = Vec::new();
         let mut success = false;
 
-        for (target_cents, target_name) in milestone_names {
+        for &(target_cents, target_name) in milestone_names {
             let month_reached = sorted_milestones
                 .iter()
                 .find(|&&(c, _)| c == target_cents)
@@ -127,17 +148,7 @@ impl FireAscentSimulator {
             });
         }
 
-        let final_net_worth_cents = timeline.last().map_or(0, |m| m.net_worth_cents);
-
-        AscentResult {
-            summit_cents: summit,
-            max_months: self.max_months,
-            final_net_worth_cents,
-            milestones,
-            success,
-            instant_summit: false,
-            impossible: false,
-        }
+        (milestones, success)
     }
 }
 

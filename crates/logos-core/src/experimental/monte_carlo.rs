@@ -105,27 +105,12 @@ impl MonteCarloProjector {
         let mut final_outcomes: Vec<i64> = Vec::with_capacity(paths as usize);
 
         for _ in 0..paths {
-            let mut current_cents = self.initial_cents;
-
-            for _ in 0..months {
-                let random_norm = lcg.next_normal();
-                #[allow(clippy::suboptimal_flops)]
-                let monthly_return = monthly_mean + monthly_volatility * random_norm;
-
-                #[allow(clippy::cast_precision_loss)]
-                let current_f64 = current_cents as f64;
-
-                let gain = current_f64 * monthly_return;
-
-                #[allow(clippy::cast_possible_truncation)]
-                let gain_cents = gain.round() as i64;
-
-                current_cents = current_cents
-                    .saturating_add(gain_cents)
-                    .saturating_add(self.monthly_contribution_cents);
-            }
-
-            final_outcomes.push(current_cents);
+            final_outcomes.push(self.simulate_path(
+                months,
+                &mut lcg,
+                monthly_mean,
+                monthly_volatility,
+            ));
         }
 
         final_outcomes.sort_unstable();
@@ -150,6 +135,36 @@ impl MonteCarloProjector {
             median_cents: final_outcomes[safe_median_idx],
             p95_cents: final_outcomes[safe_upper_bound_idx],
         }
+    }
+
+    fn simulate_path(
+        &self,
+        months: u16,
+        lcg: &mut Lcg,
+        monthly_mean: f64,
+        monthly_volatility: f64,
+    ) -> i64 {
+        let mut current_cents = self.initial_cents;
+
+        for _ in 0..months {
+            let random_norm = lcg.next_normal();
+            #[allow(clippy::suboptimal_flops)]
+            let monthly_return = monthly_mean + monthly_volatility * random_norm;
+
+            #[allow(clippy::cast_precision_loss)]
+            let current_f64 = current_cents as f64;
+
+            let gain = current_f64 * monthly_return;
+
+            #[allow(clippy::cast_possible_truncation)]
+            let gain_cents = gain.round() as i64;
+
+            current_cents = current_cents
+                .saturating_add(gain_cents)
+                .saturating_add(self.monthly_contribution_cents);
+        }
+
+        current_cents
     }
 }
 
