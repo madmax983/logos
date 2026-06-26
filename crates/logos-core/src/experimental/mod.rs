@@ -10,6 +10,8 @@ pub mod portfolio_rebalancer;
 #[cfg(feature = "nova")]
 pub mod asset_depreciation;
 #[cfg(feature = "nova")]
+pub mod barista_fire;
+#[cfg(feature = "nova")]
 pub mod benford_law;
 pub mod cashflow_projector;
 #[cfg(feature = "nova")]
