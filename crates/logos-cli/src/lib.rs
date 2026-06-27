@@ -22,3 +22,16 @@ where
     let parsed = parse_args(argv)?;
     parsed.execute()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_run_propagates_execute_error() {
+        // "logos-cli help unknown" triggers an unknown subcommand error during execution.
+        let args = vec!["logos-cli", "help", "unknown"];
+        let result = run(args);
+        assert!(result.is_err());
+    }
+}

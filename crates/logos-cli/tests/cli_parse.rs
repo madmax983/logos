@@ -1181,3 +1181,20 @@ fn rejects_aletheia_command_after_cutover() {
 
     assert_eq!(err.to_string(), "Unknown command 'aletheia'.");
 }
+
+#[test]
+fn rejects_month_key_with_invalid_characters() {
+    let args = vec!["ledger", "report", "month", "--month", "2026/04"];
+    let err = logos_cli::parse_args(args).expect_err("should reject slashes");
+    assert_eq!(
+        err.to_string(),
+        "Invalid value '2026/04' for argument '--month'."
+    );
+
+    let args = vec!["ledger", "report", "month", "--month", "YYYY-MM"];
+    let err = logos_cli::parse_args(args).expect_err("should reject letters");
+    assert_eq!(
+        err.to_string(),
+        "Invalid value 'YYYY-MM' for argument '--month'."
+    );
+}
