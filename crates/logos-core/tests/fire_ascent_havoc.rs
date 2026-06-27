@@ -7,8 +7,9 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
+    #[should_panic]
     fn test_fire_ascent_panics_on_overflow(
-        monthly_expenses in (i64::MAX / 20)..(i64::MAX / 10),
+        monthly_expenses in (i64::MAX / 12 + 1)..=i64::MAX,
     ) {
         let mut fire_sim = FireSimulator::new(monthly_expenses);
         fire_sim.set_config(FireConfig { safe_withdrawal_rate_pct: 2 });

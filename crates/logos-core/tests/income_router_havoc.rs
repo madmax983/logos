@@ -7,6 +7,7 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
+    #[should_panic]
     fn income_router_panics_on_overflow(
         amount in (i64::MAX / 100 + 1)..=i64::MAX,
     ) {

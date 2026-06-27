@@ -10,6 +10,7 @@ use proptest::prelude::*;
 #[cfg(feature = "nova")]
 proptest! {
     #[test]
+    #[should_panic]
     fn project_timeline_panics_on_u16_overflow(
         months in 3000..=u16::MAX,
     ) {

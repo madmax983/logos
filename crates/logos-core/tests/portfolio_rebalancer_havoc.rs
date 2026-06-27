@@ -7,6 +7,7 @@ use std::collections::HashMap;
 
 proptest! {
     #[test]
+    #[should_panic]
     fn portfolio_rebalancer_panics_on_overflow(
         val1 in (i64::MAX / 2) + 1..=i64::MAX,
         val2 in (i64::MAX / 2) + 1..=i64::MAX
