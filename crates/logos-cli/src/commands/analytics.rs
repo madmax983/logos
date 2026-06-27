@@ -431,4 +431,65 @@ mod fire_sim_tests {
         let result = fire_sim(500_000, 1_000_000, 200_000);
         assert!(result.is_ok());
     }
+
+    #[test]
+    fn render_fire_sim_output_impossible_is_deterministic() {
+        let result = logos_core::fire_ascent::AscentResult {
+            summit_cents: 10_000_000,
+            max_months: 1200,
+            final_net_worth_cents: 0,
+            impossible: true,
+            instant_summit: false,
+            success: false,
+            milestones: vec![],
+        };
+        let output = render_fire_sim_output(500_000, 150_000_000, 10_000_000, 50_000, &result);
+        assert!(output.contains("Impossible"));
+        assert!(output.contains("Infinite Summit"));
+    }
+
+    #[test]
+    fn render_fire_sim_output_instant_summit_is_deterministic() {
+        let result = logos_core::fire_ascent::AscentResult {
+            summit_cents: 0,
+            max_months: 1200,
+            final_net_worth_cents: 0,
+            impossible: false,
+            instant_summit: true,
+            success: true,
+            milestones: vec![],
+        };
+        let output = render_fire_sim_output(0, 0, 10_000_000, 50_000, &result);
+        assert!(output.contains("Instant Summit!"));
+        assert!(output.contains("$0.00 Expenses"));
+    }
+
+    #[test]
+    fn render_fire_sim_output_milestones_is_deterministic() {
+        let result = logos_core::fire_ascent::AscentResult {
+            summit_cents: 100_000_000,
+            max_months: 1200,
+            final_net_worth_cents: 50_000_000,
+            impossible: false,
+            instant_summit: false,
+            success: false,
+            milestones: vec![
+                logos_core::fire_ascent::AscentMilestone {
+                    name: "Base Camp 1",
+                    target_cents: 10_000_000,
+                    month_reached: Some(25), // 2y 1m
+                },
+                logos_core::fire_ascent::AscentMilestone {
+                    name: "Base Camp 2",
+                    target_cents: 50_000_000,
+                    month_reached: None,
+                },
+            ],
+        };
+        let output = render_fire_sim_output(500_000, 150_000_000, 5_000_000, 50_000, &result);
+        assert!(output.contains("Base Camp 1"));
+        assert!(output.contains("2y 1m (Month 25)"));
+        assert!(output.contains("Base Camp 2"));
+        assert!(output.contains("Pending"));
+    }
 }

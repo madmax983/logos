@@ -354,6 +354,25 @@ mod tests {
     }
 
     #[test]
+    fn render_budget_set_output_is_deterministic_negative_variance() {
+        let runtime = FakeBudgetRuntime {
+            variance_cents: -1_250,
+        };
+        let output = render_budget_set_output(&runtime, "2026-05", 5_000, "expenses:");
+        assert!(output.contains("-$12.50"));
+    }
+
+    #[test]
+    fn render_budget_set_output_color() {
+        let runtime_pos = FakeBudgetRuntime { variance_cents: 1 };
+        let out_pos = render_budget_set_output(&runtime_pos, "2026-05", 5_000, "expenses:");
+        // Ensure color logic is covered
+        let runtime_neg = FakeBudgetRuntime { variance_cents: -1 };
+        let out_neg = render_budget_set_output(&runtime_neg, "2026-05", 5_000, "expenses:");
+        assert_ne!(out_pos, out_neg);
+    }
+
+    #[test]
     fn render_monte_carlo_output_is_deterministic() {
         let result = logos_core::monte_carlo::MonteCarloResult {
             p5_cents: 100_000,

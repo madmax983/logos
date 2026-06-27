@@ -104,4 +104,14 @@ mod tests {
         assert!(output.contains("$25.00"));
         assert!(output.contains("$75.00"));
     }
+
+    #[test]
+    fn render_month_output_is_deterministic_negative_cashflow() {
+        let runtime = FakeReportRuntime {
+            report: MonthReport::new(7_500, 2_500, 10_000, -7_500),
+        };
+
+        let output = render_month_output(&runtime, "assets:checking", "2026-03");
+        assert!(output.contains("-$75.00"));
+    }
 }

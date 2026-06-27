@@ -256,6 +256,7 @@ mod tests {
         assert!(output.contains("$100.00"));
         assert!(output.contains("$25.00"));
         assert!(output.contains("1970-01-01 00:28:20 UTC"));
+        assert!(output.contains("Expected Closing"));
     }
 
     #[test]
