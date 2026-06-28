@@ -98,10 +98,12 @@ pub enum AccountType {
 }
 
 impl AccountType {
-    /// Returns the "normal balance" sign for the account type.
+    /// Determines the natural direction of growth for this account.
     ///
-    /// In double-entry bookkeeping, the normal balance is the type of entry
-    /// (debit or credit) that increases the account's balance. In `logos`:
+    /// In double-entry bookkeeping, an account's type dictates its "normal balance".
+    /// Assets and Expenses grow via debits (`1`), while Liabilities, Equity, and Income
+    /// grow via credits (`-1`). This multiplier ensures balances always sum to zero.
+    ///
     ///
     /// * **Debits are positive (+1)**
     /// * **Credits are negative (-1)**

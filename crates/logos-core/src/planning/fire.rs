@@ -146,7 +146,10 @@ impl FireSimulator {
         self.config = config;
     }
 
-    /// Returns the current configuration.
+    /// Extracts the active simulation settings.
+    ///
+    /// This configuration dictates critical levers like the safe withdrawal rate,
+    /// which fundamentally alters the required target FIRE number.
     #[must_use]
     pub const fn config(&self) -> FireConfig {
         self.config
@@ -219,7 +222,10 @@ impl FireSimulator {
             .saturating_div(i64::from(self.config.safe_withdrawal_rate_pct))
     }
 
-    /// Returns the configured monthly expenses in cents.
+    /// Exposes the baseline monthly burn rate used in calculations.
+    ///
+    /// This value represents your expected standard of living. It is multiplied
+    /// and scaled against the safe withdrawal rate to compute the final FIRE target.
     ///
     /// This is the "burn rate" used to calculate your target FIRE number.
     ///
@@ -269,7 +275,10 @@ impl FireSimulator {
         base_nw.saturating_add(rsu_value)
     }
 
-    /// Returns the progress towards the FIRE number as an integer percentage from 0 to 100.
+    /// Quantifies the completion of your financial independence journey.
+    ///
+    /// Compares your risk-adjusted safe net worth against the ultimate FIRE target.
+    /// Automatically caps at 100% to represent full independence.
     ///
     /// # Examples
     /// ```

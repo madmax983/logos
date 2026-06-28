@@ -61,7 +61,11 @@ impl BenfordLawAnalyzer {
         dist
     }
 
-    /// Returns the theoretical expected distribution according to Benford's Law.
+    /// Generates the theoretical ideal distribution curve.
+    ///
+    /// According to Benford's Law, naturally occurring numbers do not have uniformly
+    /// distributed leading digits. The number 1 should appear roughly 30% of the time.
+    /// This provides the baseline for fraud or anomaly detection.
     #[must_use]
     pub fn expected_distribution() -> HashMap<u8, f64> {
         let mut dist = HashMap::new();

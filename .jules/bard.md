@@ -31,3 +31,9 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-04 - The Auto-generated Noise
+**Confusion:** Some doc comments in the codebase were auto-generated and added no value (e.g. `/// Returns the...` for simple getters). This violated Bard's rule against noise and simple repeats of function names.
+**Clarification:** Rewrote the doc comments for `AccountType::normal_balance_sign`, several getters on `HaircutTierTable` and `AllocationPolicy` in `rsu.rs`, the getters in `FireSimulator`, and `BenfordLaw::expected_distribution` to explain *why* they exist and what they mean contextually in the domain, rather than just restating their name.
+## 2025-05-04 - The Premature Migration
+**Confusion:** The README instructed users to run `docker compose up -d db` and immediately follow it with `cargo run -p logos-cli -- db migrate`. Because Postgres takes a moment to spin up and accept connections, users experienced connection refused errors. The `sleep 3` command was present but lacked any contextual explanation.
+**Clarification:** Added a comment before the `sleep 3` explaining exactly *why* the delay is necessary.

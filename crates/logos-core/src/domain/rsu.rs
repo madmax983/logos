@@ -111,7 +111,11 @@ impl HaircutTierTable {
         Self::default()
     }
 
-    /// Returns the haircut percentage for a given number of days to vest.
+    /// Calculates the risk-adjusted discount (haircut) for an impending vest.
+    ///
+    /// As a vest date approaches, the risk of job loss or stock collapse decreases.
+    /// This determines the percentage discount to apply to the forecasted value based
+    /// on the remaining time horizon.
     ///
     /// ## Examples
     ///
@@ -197,7 +201,10 @@ impl AllocationPolicy {
         })
     }
 
-    /// Returns the percentage of the vest allocated to the tax reserve.
+    /// Retrieves the allocation slice reserved for taxation.
+    ///
+    /// RSU vests are taxed as ordinary income. This slice ensures sufficient cash
+    /// is set aside to cover potential tax withholding shortfalls.
     ///
     /// ## Examples
     ///
@@ -211,7 +218,10 @@ impl AllocationPolicy {
         self.tax_reserve
     }
 
-    /// Returns the percentage of the vest allocated to the income smoothing buffer.
+    /// Retrieves the allocation slice dedicated to income smoothing.
+    ///
+    /// This buffer acts as a shock absorber against volatile stock prices, ensuring
+    /// a steady cashflow equivalent to an expected baseline salary.
     ///
     /// ## Examples
     ///
@@ -225,7 +235,10 @@ impl AllocationPolicy {
         self.smoothing_buffer
     }
 
-    /// Returns the percentage of the vest allocated to specific financial goals.
+    /// Retrieves the allocation slice targeted at long-term financial goals.
+    ///
+    /// This portion is explicitly routed toward predetermined targets like a down
+    /// payment, a wedding, or accelerated FIRE investments.
     ///
     /// ## Examples
     ///
@@ -239,7 +252,10 @@ impl AllocationPolicy {
         self.goals
     }
 
-    /// Returns the percentage of the vest allocated to discretionary spending.
+    /// Retrieves the allocation slice available for guilt-free discretionary use.
+    ///
+    /// What remains after taxes, smoothing, and goals is routed here for spontaneous
+    /// lifestyle choices or bonus spending.
     ///
     /// ## Examples
     ///
