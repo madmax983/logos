@@ -21,6 +21,8 @@ pub mod fire_ascent;
 #[cfg(feature = "nova")]
 pub mod fire_goal_seeker;
 #[cfg(feature = "nova")]
+pub mod geo_arbitrage;
+#[cfg(feature = "nova")]
 pub mod goal_fund_projector;
 #[cfg(feature = "nova")]
 pub mod goal_seeker;
