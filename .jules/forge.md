@@ -12,3 +12,7 @@
 **Idiomatic Closures for `needless_pass_by_value` in mapped iterators**
 **Learning:** When resolving Clippy's `needless_pass_by_value` on functions that map over an iterator (especially ones optimized with `.into_iter()` to consume the collection), blindly changing the iterator to `.iter()` breaks the performance optimization. Using the `From` trait is the most idiomatic fix (`impl From<Row> for StoredObject`), but if you must pass a reference, use `.into_iter().map(|r| func(&r))` to keep the consumption while passing the reference.
 **Action:** When updating function signatures from value to reference due to clippy, review the call sites. If mapping over an iterator, ensure you maintain the original `.into_iter()` (if it exists for optimization) by passing references inside the closure, or prefer implementing `From`/`Into`.
+
+**Refactoring `logos-core` DebtOptimizer Simulate**
+**Learning:** The `simulate` function in `DebtOptimizer` was a "God Function" exceeding 60 lines, mixing multiple concerns: interest calculation, minimum payments, strategy sorting, and extra payments.
+**Action:** Extracted these distinct steps into small, descriptive, private helper functions (`apply_interest`, `pay_minimums`, `sort_debts_for_strategy`, `pay_extra`) to flatten the loop and improve readability.
