@@ -432,3 +432,91 @@ mod fire_sim_tests {
         assert!(result.is_ok());
     }
 }
+
+#[cfg(test)]
+mod missing_fire_sim_tests {
+    use super::*;
+    use logos_core::fire_ascent::{AscentMilestone, AscentResult};
+
+    #[test]
+    fn test_render_fire_sim_output_impossible() {
+        let ascent_result = AscentResult {
+            summit_cents: 10_000_000,
+            max_months: 12,
+            final_net_worth_cents: 1_000_000,
+            impossible: true,
+            instant_summit: false,
+            success: false,
+            milestones: vec![],
+        };
+
+        let output =
+            render_fire_sim_output(500_000, 100_000_000, 1_000_000, 200_000, &ascent_result);
+
+        assert!(output.contains("Impossible"));
+        assert!(output.contains("Infinite Summit"));
+    }
+
+    #[test]
+    fn test_render_fire_sim_output_instant() {
+        let ascent_result = AscentResult {
+            summit_cents: 0,
+            max_months: 12,
+            final_net_worth_cents: 1_000_000,
+            impossible: false,
+            instant_summit: true,
+            success: true,
+            milestones: vec![],
+        };
+
+        let output = render_fire_sim_output(0, 0, 1_000_000, 200_000, &ascent_result);
+
+        assert!(output.contains("Instant Summit!"));
+        assert!(output.contains("$0.00 Expenses"));
+    }
+
+    #[test]
+    fn test_render_fire_sim_output_pending_milestone() {
+        let ascent_result = AscentResult {
+            summit_cents: 10_000_000,
+            max_months: 12,
+            final_net_worth_cents: 1_000_000,
+            impossible: false,
+            instant_summit: false,
+            success: false,
+            milestones: vec![AscentMilestone {
+                name: "Pending Milestone",
+                target_cents: 10_000_000,
+                month_reached: None,
+            }],
+        };
+
+        let output =
+            render_fire_sim_output(500_000, 100_000_000, 1_000_000, 200_000, &ascent_result);
+
+        assert!(output.contains("Pending"));
+        assert!(output.contains("Pending Milestone"));
+    }
+
+    #[test]
+    fn test_render_fire_sim_output_milestone_reached() {
+        let ascent_result = AscentResult {
+            summit_cents: 10_000_000,
+            max_months: 12,
+            final_net_worth_cents: 1_000_000,
+            impossible: false,
+            instant_summit: false,
+            success: false,
+            milestones: vec![AscentMilestone {
+                name: "Test Milestone",
+                target_cents: 10_000_000,
+                month_reached: Some(25),
+            }],
+        };
+
+        let output =
+            render_fire_sim_output(500_000, 100_000_000, 1_000_000, 200_000, &ascent_result);
+
+        assert!(output.contains("Reached in 2y 1m (Month 25)"));
+    }
+}
