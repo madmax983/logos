@@ -1,10 +1,16 @@
-## 2026-04-12 - Havoc Discovered Debt Optimizer Overflow
-**Confusion:** The `DebtOptimizer` panics on arithmetic overflow when calculating interest for massive debt balances because it uses an unguarded multiplication (`balance_cents * interest_rate_pct`).
-**Clarification:** As Havoc, I wrote a `#[should_panic]` test to exploit this fragility and demonstrate the system's weakness without fixing it.
-## 2024-05-18 - Math Overflow panics in Proptest
+**👹 Havoc: Portfolio Rebalancer Panics on Arithmetic Overflow**
 
-**The Trigger:** Input math bounded by percentages is prone to integer overflow if `vest` values are unconstrained (e.g. `i64::MAX`).
-**The Crash:** `attempt to multiply with overflow` panics.
-**Action:** Havoc doesn't fix bugs, but proving the bounds missing through Proptests keeps the team on their toes.
-## Overflow Boundaries & Unbalanced Transactions
-When using saturating arithmetic to prevent overflows at extreme boundaries (like `i64::MAX`) in double-entry transaction builders (e.g., portfolio rebalancers), remainder sweeps may fail due to precision loss during percentage divisions. Update chaos tests to accept `DomainError::UnbalancedTransaction` as a valid safe boundary behavior rather than expecting an unconditional success or a panic.
+🧊 **The Trigger:**
+Passing highly skewed positive and negative balances to `PortfolioRebalancer::rebalance` causes an unhandled integer overflow panic during target variance calculations. Specifically, combining `i64::MIN` and `i64::MAX` across different target assets yields a total portfolio value > 0, leading to a calculated `target_val` that, when subtracted from the original `current_val` (`i64::MIN`), inherently overflows bounds.
+
+📉 **The Stack Trace:**
+```
+thread 'havoc_portfolio_rebalancer_overflow' panicked at crates/logos-core/src/experimental/portfolio_rebalancer.rs:104:
+attempt to subtract with overflow
+```
+
+🧪 **Reproduction:**
+Run `cargo test --test havoc_portfolio_rebalancer -p logos-core --features nova`. The simulated chaotic balance input will trigger the overflow.
+
+😈 **Comment:**
+"You assumed portfolio values would balance nicely because people have normal amounts of money. You didn't account for extreme debt (minimum bounds) and wealth existing simultaneously across sub-accounts. The difference calculation immediately exploded."
