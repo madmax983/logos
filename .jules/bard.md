@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-06-29 - The Undocumented Formatter
+**Confusion:** The `logos-core::format` module and its pure functions were missing high-level documentation and executable doctests, causing clippy missing_docs warnings when enforced and leaving users guessing how to use them.
+**Clarification:** Added module-level documentation to `crates/logos-core/src/format/mod.rs` and an executable doctest to `us_timestamp`.

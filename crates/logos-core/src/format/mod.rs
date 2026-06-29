@@ -1,3 +1,21 @@
+//! String formatting utilities for the core domain.
+//!
+//! This module provides pure, fast functions to convert internal representations
+//! (like microsecond timestamps and integer cents) into human-readable strings.
+
+/// Formats a microsecond UNIX timestamp into a UTC datetime string.
+///
+/// If the timestamp cannot be parsed, it falls back to returning the raw microsecond value as a string.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::format::us_timestamp;
+///
+/// // January 1, 2024 at 12:00:00 UTC
+/// let formatted = us_timestamp(1704110400000000);
+/// assert_eq!(formatted, "2024-01-01 12:00:00 UTC");
+/// ```
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(
