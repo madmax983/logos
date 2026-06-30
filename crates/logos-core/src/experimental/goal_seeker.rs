@@ -70,41 +70,35 @@ impl GoalSeeker {
             // Prevent overflow during midpoint calculation
             let mid = low + (high - low) / 2;
 
-            let mut projector = NetWorthProjector::new(self.initial_net_worth_cents, mid);
-
-            if let Some(tiers) = self.haircut_tiers {
-                projector.set_haircut_tiers(tiers);
-            }
-
-            for vest in &self.upcoming_vests {
-                // UpcomingVest only contains primitive copies, but we re-create it to avoid Clone bounds if not present.
-                projector.add_upcoming_vest(UpcomingVest {
-                    avg_close_price_cents: vest.avg_close_price_cents,
-                    units: vest.units,
-                    days_to_vest: vest.days_to_vest,
-                });
-            }
-
-            // We don't strictly need to add the milestone to the projector for the timeline projection,
-            // but we can to be thorough.
-            projector.add_milestone_cents(target_cents);
-
-            let (timeline, _) = projector.project_timeline(target_months);
-            let final_nw = timeline
-                .last()
-                .map_or(self.initial_net_worth_cents, |m| m.net_worth_cents);
-
-            if final_nw >= target_cents {
-                // We reached the goal. Try to find a smaller savings amount.
+            if self.simulate_savings(mid, target_cents, target_months) >= target_cents {
                 best_savings = Some(mid);
                 high = mid.saturating_sub(1);
             } else {
-                // We missed the goal. Need to save more.
                 low = mid.saturating_add(1);
             }
         }
 
         best_savings
+    }
+
+    fn simulate_savings(&self, savings: i64, target_cents: i64, target_months: u16) -> i64 {
+        let mut projector = NetWorthProjector::new(self.initial_net_worth_cents, savings);
+
+        if let Some(tiers) = self.haircut_tiers {
+            projector.set_haircut_tiers(tiers);
+        }
+
+        for vest in &self.upcoming_vests {
+            projector.add_upcoming_vest(UpcomingVest {
+                avg_close_price_cents: vest.avg_close_price_cents,
+                units: vest.units,
+                days_to_vest: vest.days_to_vest,
+            });
+        }
+
+        projector.add_milestone_cents(target_cents);
+        let (timeline, _) = projector.project_timeline(target_months);
+        timeline.last().map_or(self.initial_net_worth_cents, |m| m.net_worth_cents)
     }
 }
 
