@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-06-30 - The Hidden Async State
+**Confusion:** Users copying the getting started commands from the README verbatim were crashing on `db migrate` because Postgres takes a few seconds to accept connections after the docker container starts. Although `sleep 3` was in the commands, its purpose was not explained, leading users to not understand its necessity or potentially omit it.
+**Clarification:** Added a comment to the README `Example Commands` block explicitly stating that `sleep 3` is required to wait for Postgres to start accepting TCP/IP connections.
