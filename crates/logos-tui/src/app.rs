@@ -1597,4 +1597,36 @@ mod tests {
         assert_eq!(civil_from_days(10957 + 31 + 28), (2000, 2, 29));
         assert_eq!(civil_from_days(10957 + 31 + 29), (2000, 3, 1));
     }
+
+    #[test]
+    fn should_return_true_for_valid_month_keys() {
+        assert!(is_valid_month_key("2024-01"));
+        assert!(is_valid_month_key("2024-12"));
+        assert!(is_valid_month_key("1999-05"));
+        assert!(is_valid_month_key("0000-01"));
+    }
+
+    #[test]
+    fn should_return_false_for_invalid_month_keys() {
+        // Missing parts
+        assert!(!is_valid_month_key("2024"));
+        assert!(!is_valid_month_key("2024-"));
+        assert!(!is_valid_month_key("-01"));
+        assert!(!is_valid_month_key("2024-01-01"));
+
+        // Invalid length
+        assert!(!is_valid_month_key("202-01"));
+        assert!(!is_valid_month_key("20245-01"));
+        assert!(!is_valid_month_key("2024-1"));
+        assert!(!is_valid_month_key("2024-001"));
+
+        // Invalid characters
+        assert!(!is_valid_month_key("20a4-01"));
+        assert!(!is_valid_month_key("2024-a1"));
+        assert!(!is_valid_month_key("2024.01"));
+
+        // Out of bounds month
+        assert!(!is_valid_month_key("2024-00"));
+        assert!(!is_valid_month_key("2024-13"));
+    }
 }

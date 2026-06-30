@@ -351,3 +351,38 @@ fn validate_secret_ref(
     }
     Ok(trimmed.to_owned())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_return_true_for_valid_month_keys() {
+        assert!(is_valid_month_key("2024-01"));
+        assert!(is_valid_month_key("2024-12"));
+        assert!(is_valid_month_key("1999-05"));
+        assert!(is_valid_month_key("0000-01"));
+    }
+
+    #[test]
+    fn should_return_false_for_invalid_month_keys() {
+        // Missing parts or invalid separators
+        assert!(!is_valid_month_key("2024"));
+        assert!(!is_valid_month_key("2024/01"));
+        assert!(!is_valid_month_key("2024-01-01"));
+
+        // Invalid length
+        assert!(!is_valid_month_key("202-01"));
+        assert!(!is_valid_month_key("20245-01"));
+        assert!(!is_valid_month_key("2024-1"));
+        assert!(!is_valid_month_key("2024-001"));
+
+        // Invalid characters
+        assert!(!is_valid_month_key("20a4-01"));
+        assert!(!is_valid_month_key("2024-a1"));
+
+        // Out of bounds month
+        assert!(!is_valid_month_key("2024-00"));
+        assert!(!is_valid_month_key("2024-13"));
+    }
+}
