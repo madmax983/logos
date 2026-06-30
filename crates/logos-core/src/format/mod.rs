@@ -47,8 +47,18 @@ mod tests {
     fn test_currency_formatting() {
         assert_eq!(currency(150_000_000), "$1,500,000.00");
         assert_eq!(currency(-150_000_000), "-$1,500,000.00");
+        assert_eq!(currency(12_300), "$123.00"); // tests exact multiple of 3 to catch >= vs > boundary
         assert_eq!(currency(100), "$1.00");
         assert_eq!(currency(-50), "-$0.50");
         assert_eq!(currency(0), "$0.00");
+    }
+
+    #[test]
+    fn test_us_timestamp() {
+        assert_eq!(
+            us_timestamp(1_672_531_200_000_000),
+            "2023-01-01 00:00:00 UTC"
+        );
+        assert_eq!(us_timestamp(i64::MAX), i64::MAX.to_string());
     }
 }
