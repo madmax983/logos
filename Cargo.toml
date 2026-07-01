@@ -8,7 +8,7 @@ members = [
     "crates/logos-import",
     "crates/logos-reporting",
     "crates/logos-tui",
-    "crates/logos-runtime",
+    "crates/logos-runtime", "echo_test_1",
 ]
 resolver = "2"
 
