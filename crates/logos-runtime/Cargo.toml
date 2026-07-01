@@ -16,6 +16,7 @@ logos-import = { path = "../logos-import" }
 logos-reporting = { path = "../logos-reporting" }
 logos-store = { path = "../logos-store" }
 polars = { version = "0.46.0", features = ["parquet"] }
+thiserror = "2.0.18"
 tokio = { version = "1.48.0", features = ["rt"] }
 
 [dev-dependencies]

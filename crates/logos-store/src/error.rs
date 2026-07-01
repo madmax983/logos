@@ -1,5 +1,3 @@
-use core::fmt;
-
 use logos_core::{DomainError, TransactionId};
 
 /// The definitive error type for all persistence operations.
@@ -25,74 +23,46 @@ use logos_core::{DomainError, TransactionId};
 ///     _ => panic!("Expected UnknownTransaction"),
 /// }
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum StoreError {
     /// A domain invariant was violated before storage even occurred.
     /// E.g., You tried to save a transaction that didn't balance.
-    Domain(DomainError),
+    #[error(transparent)]
+    Domain(#[from] DomainError),
     /// You attempted to correct or lookup a transaction ID that the store has no record of.
+    #[error("cannot apply correction: unknown transaction '{0}'", transaction_id.as_str())]
     UnknownTransaction {
         /// The transaction id that was not found.
         transaction_id: TransactionId,
     },
     /// You attempted to lookup an analytics artifact that the store has no record of.
+    #[error("cannot link analytics artifact: unknown artifact '{artifact_id}'")]
     UnknownArtifact {
         /// The artifact id that was not found.
         artifact_id: String,
     },
     /// Data failed to load from the underlying storage mechanism.
+    #[error("failed to load store: {message}")]
     LoadFailed {
         /// The specific error message.
         message: String,
     },
     /// Data failed to write to the underlying storage mechanism.
+    #[error("failed to persist store: {message}")]
     PersistFailed {
         /// The specific error message.
         message: String,
     },
     /// Could not establish a connection to the database.
+    #[error("{message}")]
     ConnectionFailed {
         /// The specific error message.
         message: String,
     },
     /// Schema migrations failed to run.
+    #[error("store migration failed: {message}")]
     MigrationFailed {
         /// The specific error message.
         message: String,
     },
-}
-
-impl fmt::Display for StoreError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Domain(err) => write!(f, "{err}"),
-            Self::UnknownTransaction { transaction_id } => {
-                write!(
-                    f,
-                    "cannot apply correction: unknown transaction '{}'",
-                    transaction_id.as_str()
-                )
-            }
-            Self::UnknownArtifact { artifact_id } => {
-                write!(
-                    f,
-                    "cannot link analytics artifact: unknown artifact '{artifact_id}'"
-                )
-            }
-            Self::LoadFailed { message } => write!(f, "failed to load store: {message}"),
-            Self::PersistFailed { message } => write!(f, "failed to persist store: {message}"),
-            Self::ConnectionFailed { message } => {
-                write!(f, "{message}")
-            }
-            Self::MigrationFailed { message } => write!(f, "store migration failed: {message}"),
-        }
-    }
-}
-
-impl std::error::Error for StoreError {}
-
-impl From<DomainError> for StoreError {
-    fn from(value: DomainError) -> Self {
-        Self::Domain(value)
-    }
 }

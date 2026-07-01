@@ -1,46 +1,16 @@
 //! Runtime error types
 use logos_import::ImportError;
 use logos_store::StoreError;
-use std::fmt;
-
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum RuntimeError {
-    Store(StoreError),
-    Import(ImportError),
-    Domain(logos_core::DomainError),
+    #[error(transparent)]
+    Store(#[from] StoreError),
+    #[error(transparent)]
+    Import(#[from] ImportError),
+    #[error("domain error: {0}")]
+    Domain(#[from] logos_core::DomainError),
+    #[error("{message}")]
     Analytics { message: String },
+    #[error("{message}")]
     Initialization { message: String },
-}
-
-impl fmt::Display for RuntimeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Store(err) => write!(f, "{err}"),
-            Self::Import(err) => write!(f, "{err}"),
-            Self::Domain(err) => write!(f, "domain error: {err}"),
-            Self::Analytics { message } | Self::Initialization { message } => {
-                write!(f, "{message}")
-            }
-        }
-    }
-}
-
-impl std::error::Error for RuntimeError {}
-
-impl From<StoreError> for RuntimeError {
-    fn from(value: StoreError) -> Self {
-        Self::Store(value)
-    }
-}
-
-impl From<ImportError> for RuntimeError {
-    fn from(value: ImportError) -> Self {
-        Self::Import(value)
-    }
-}
-
-impl From<logos_core::DomainError> for RuntimeError {
-    fn from(value: logos_core::DomainError) -> Self {
-        Self::Domain(value)
-    }
 }

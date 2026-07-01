@@ -1,5 +1,4 @@
 //! Command Line Argument Parsing
-use core::fmt;
 
 use crate::commands;
 
@@ -7,51 +6,27 @@ const DEFAULT_BUDGET_CENTS: i64 = 0;
 const DEFAULT_EXPENSE_ACCOUNT_PREFIX: &str = "expenses:";
 const DEFAULT_CHECKING_ACCOUNT: &str = "assets:checking";
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum CliError {
+    #[error("Missing command.")]
     MissingCommand,
+    #[error("Missing subcommand for command '{command}'.")]
     MissingSubcommand { command: String },
+    #[error("Unknown command '{command}'.")]
     UnknownCommand { command: String },
+    #[error("Unknown subcommand '{subcommand}' for command '{command}'.")]
     UnknownSubcommand { command: String, subcommand: String },
+    #[error("Missing required argument '{flag}'.")]
     MissingRequiredArg { flag: String },
+    #[error("Missing value for argument '{flag}'.")]
     MissingArgValue { flag: String },
+    #[error("Invalid value '{value}' for argument '{flag}'.")]
     InvalidArgValue { flag: String, value: String },
+    #[error("Missing transaction description.")]
     MissingTxnDescription,
+    #[error("{message}")]
     CommandRuntimeFailed { command: String, message: String },
 }
-
-impl fmt::Display for CliError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::MissingCommand => write!(f, "Missing command."),
-            Self::MissingSubcommand { command } => {
-                write!(f, "Missing subcommand for command '{command}'.")
-            }
-            Self::UnknownCommand { command } => write!(f, "Unknown command '{command}'."),
-            Self::UnknownSubcommand {
-                command,
-                subcommand,
-            } => write!(
-                f,
-                "Unknown subcommand '{subcommand}' for command '{command}'."
-            ),
-            Self::MissingRequiredArg { flag } => write!(f, "Missing required argument '{flag}'."),
-            Self::MissingArgValue { flag } => write!(f, "Missing value for argument '{flag}'."),
-            Self::InvalidArgValue { flag, value } => {
-                write!(f, "Invalid value '{value}' for argument '{flag}'.")
-            }
-            Self::MissingTxnDescription => write!(f, "Missing transaction description."),
-            Self::CommandRuntimeFailed {
-                command: _,
-                message,
-            } => {
-                write!(f, "{message}")
-            }
-        }
-    }
-}
-
-impl std::error::Error for CliError {}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParsedArgs {

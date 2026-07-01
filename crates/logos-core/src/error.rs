@@ -8,8 +8,6 @@
 //! at creation time. If a function returns a `DomainError`, it means you tried
 //! to perform an operation that violates fundamental accounting or forecasting rules.
 
-use core::fmt;
-
 /// The central error type for all financial constraints in `logos`.
 ///
 /// This enumeration captures all the ways you might accidentally construct
@@ -41,36 +39,46 @@ use core::fmt;
 ///     Err(e) => panic!("Unexpected error: {:?}", e),
 /// }
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum DomainError {
     /// Returned when you try to create an `AccountId` from an empty string or just whitespace.
+    #[error("account id cannot be empty")]
     EmptyAccountId,
     /// Returned when you try to create a `TransactionId` from an empty string or just whitespace.
+    #[error("transaction id cannot be empty")]
     EmptyTransactionId,
     /// Returned when a `CategoryGroup` is given a name that trims down to nothing.
+    #[error("category group name cannot be empty")]
     EmptyCategoryGroupName,
     /// Returned when a `Category` is given a name that trims down to nothing.
+    #[error("category name cannot be empty")]
     EmptyCategoryName,
     /// Returned when a transaction builder is given an empty description.
     /// Every transaction must explain *what* happened.
+    #[error("transaction description cannot be empty")]
     EmptyTransactionDescription,
     /// Returned when you attempt to build a transaction without any postings.
     /// A double-entry transaction needs at least two legs!
+    #[error("transaction must contain at least one posting")]
     EmptyTransactionPostings,
     /// Returned when a correction is created without a reason. You must explain *why*
     /// you are rewriting history.
+    #[error("correction reason cannot be empty")]
     EmptyCorrectionReason,
     /// Returned when a correction claims to supersede its own ID.
     /// You cannot write a transaction that replaces itself.
+    #[error("correction cannot supersede itself")]
     CorrectionCannotSupersedeSelf,
     /// Returned when an RSU allocation policy does not equal exactly 100%.
     /// The `total` field tells you what sum you provided.
+    #[error("allocation percentages must sum to 100, got {total}")]
     InvalidAllocationTotal {
         /// The sum of the allocation percentages provided.
         total: u16,
     },
     /// Returned when a specific time horizon in a haircut table exceeds 100%.
     /// `tier` indicates the culprit (e.g., "short" or "medium"), and `percentage` is what you tried to set.
+    #[error("haircut percentage for {tier} tier must be in 0..=100, got {percentage}")]
     InvalidHaircutPercentage {
         /// The tier that exceeded 100%.
         tier: &'static str,
@@ -79,6 +87,9 @@ pub enum DomainError {
     },
     /// Returned when your risk haircut tiers are backwards.
     /// Risk should increase over time, so you must have `short <= medium <= long`.
+    #[error(
+        "haircut tiers must be non-decreasing by horizon (short <= medium <= long), got {short}, {medium}, {long}"
+    )]
     InvalidHaircutOrdering {
         /// The short-term haircut percentage.
         short: u8,
@@ -88,92 +99,29 @@ pub enum DomainError {
         long: u8,
     },
     /// Returned when you pass a zero or negative amount to a debit. Debits must be strictly positive.
+    #[error("debit amount must be greater than zero, got {amount}")]
     InvalidDebitAmount {
         /// The amount that was provided.
         amount: i64,
     },
     /// Returned when you pass a zero or negative amount to a credit. Credits must be strictly positive
     /// before they are converted internally to negatives.
+    #[error("credit amount must be greater than zero, got {amount}")]
     InvalidCreditAmount {
         /// The amount that was provided.
         amount: i64,
     },
     /// The fundamental rule of accounting broken. A transaction's debits and credits
     /// must perfectly cancel each other out to `0`. The `total` tells you how far off balance you are.
+    #[error("transaction must be balanced to zero, but total was {total}")]
     UnbalancedTransaction {
         /// The amount that the transaction is off balance.
         total: i64,
     },
     /// Returned when an operation exceeds the bounds of a 64-bit signed integer.
+    #[error("transaction amount calculation resulted in an overflow")]
     AmountOverflow,
 }
-
-impl fmt::Display for DomainError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::EmptyAccountId => {
-                write!(f, "account id cannot be empty")
-            }
-            Self::EmptyTransactionId => {
-                write!(f, "transaction id cannot be empty")
-            }
-            Self::EmptyCategoryGroupName => {
-                write!(f, "category group name cannot be empty")
-            }
-            Self::EmptyCategoryName => {
-                write!(f, "category name cannot be empty")
-            }
-            Self::EmptyTransactionDescription => {
-                write!(f, "transaction description cannot be empty")
-            }
-            Self::EmptyTransactionPostings => {
-                write!(f, "transaction must contain at least one posting")
-            }
-            Self::EmptyCorrectionReason => {
-                write!(f, "correction reason cannot be empty")
-            }
-            Self::CorrectionCannotSupersedeSelf => {
-                write!(f, "correction cannot supersede itself")
-            }
-            Self::InvalidAllocationTotal { total } => {
-                write!(f, "allocation percentages must sum to 100, got {total}")
-            }
-            Self::InvalidHaircutPercentage { tier, percentage } => {
-                write!(
-                    f,
-                    "haircut percentage for {tier} tier must be in 0..=100, got {percentage}"
-                )
-            }
-            Self::InvalidHaircutOrdering {
-                short,
-                medium,
-                long,
-            } => {
-                write!(
-                    f,
-                    "haircut tiers must be non-decreasing by horizon (short <= medium <= long), got {short}, {medium}, {long}"
-                )
-            }
-            Self::InvalidDebitAmount { amount } => {
-                write!(f, "debit amount must be greater than zero, got {amount}")
-            }
-            Self::InvalidCreditAmount { amount } => {
-                write!(f, "credit amount must be greater than zero, got {amount}")
-            }
-            Self::UnbalancedTransaction { total } => {
-                write!(
-                    f,
-                    "transaction must be balanced to zero, but total was {total}"
-                )
-            }
-            Self::AmountOverflow => {
-                write!(f, "transaction amount calculation resulted in an overflow")
-            }
-        }
-    }
-}
-
-impl std::error::Error for DomainError {}
 
 #[cfg(test)]
 mod tests {

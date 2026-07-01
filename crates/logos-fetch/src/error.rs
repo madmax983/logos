@@ -1,6 +1,5 @@
-use core::fmt;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("{message}")]
 pub struct FetchError {
     message: String,
 }
@@ -13,11 +12,3 @@ impl FetchError {
         }
     }
 }
-
-impl fmt::Display for FetchError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.message)
-    }
-}
-
-impl std::error::Error for FetchError {}

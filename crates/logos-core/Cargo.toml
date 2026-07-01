@@ -12,6 +12,7 @@ nova = []
 
 [dependencies]
 chrono = { version = "0.4.42", default-features = true, features = ["clock"] }
+thiserror = "2.0.18"
 
 [dev-dependencies]
 loom = "0.7.2"

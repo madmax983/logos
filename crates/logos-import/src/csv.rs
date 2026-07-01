@@ -1,42 +1,21 @@
 //! CSV Import Handling
-use core::fmt;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum ImportError {
+    #[error("missing columns: expected {expected}, found {found}")]
     MissingColumns { expected: usize, found: usize },
+    #[error("invalid amount in CSV row")]
     InvalidAmount,
+    #[error("invalid amount in CSV row at column {column}: '{value}'")]
     InvalidAmountAtColumn { column: usize, value: String },
+    #[error("invalid CSV row: {message}")]
     InvalidCsvRow { message: String },
+    #[error("failed reading import file '{path}': {message}")]
     FileReadFailed { path: String, message: String },
+    #[error("failed extracting text from PDF '{path}': {message}")]
     PdfTextExtractionFailed { path: String, message: String },
+    #[error("no statement rows parsed from '{path}'")]
     NoStatementRows { path: String },
 }
-
-impl fmt::Display for ImportError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::MissingColumns { expected, found } => {
-                write!(f, "missing columns: expected {expected}, found {found}")
-            }
-            Self::InvalidAmount => write!(f, "invalid amount in CSV row"),
-            Self::InvalidAmountAtColumn { column, value } => {
-                write!(f, "invalid amount in CSV row at column {column}: '{value}'")
-            }
-            Self::InvalidCsvRow { message } => write!(f, "invalid CSV row: {message}"),
-            Self::FileReadFailed { path, message } => {
-                write!(f, "failed reading import file '{path}': {message}")
-            }
-            Self::PdfTextExtractionFailed { path, message } => {
-                write!(f, "failed extracting text from PDF '{path}': {message}")
-            }
-            Self::NoStatementRows { path } => {
-                write!(f, "no statement rows parsed from '{path}'")
-            }
-        }
-    }
-}
-
-impl std::error::Error for ImportError {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CsvMapping {
