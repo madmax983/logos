@@ -262,6 +262,7 @@ pub fn net_worth_project(
     monthly_savings_cents: i64,
     months: u16,
 ) -> Result<(), CliError> {
+    use crossterm::style::Stylize;
     use logos_core::net_worth_projector::NetWorthProjector;
 
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
@@ -281,10 +282,8 @@ pub fn net_worth_project(
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    let header = "📈 Net Worth Projection".green().bold();
+    println!("\n{header}\n{table}");
 
     Ok(())
 }
