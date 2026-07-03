@@ -62,27 +62,8 @@ impl FireAscentSimulator {
     pub fn ascend(&self) -> AscentResult {
         let fire_number = self.fire_sim.fire_number_cents();
 
-        if fire_number == 0 {
-            return AscentResult {
-                summit_cents: 0,
-                max_months: self.max_months,
-                final_net_worth_cents: 0,
-                milestones: Vec::new(),
-                success: true,
-                instant_summit: true,
-                impossible: false,
-            };
-        }
-        if fire_number == i64::MAX {
-            return AscentResult {
-                summit_cents: i64::MAX,
-                max_months: self.max_months,
-                final_net_worth_cents: 0,
-                milestones: Vec::new(),
-                success: false,
-                instant_summit: false,
-                impossible: true,
-            };
+        if let Some(early_exit) = self.check_early_exits(fire_number) {
+            return early_exit;
         }
 
         let mut ascent_projector = self.projector.clone();
@@ -97,10 +78,58 @@ impl FireAscentSimulator {
         ascent_projector.add_milestone_cents(camp3);
         ascent_projector.add_milestone_cents(summit);
 
-        let (timeline, crossed_milestones) = ascent_projector.project_timeline(self.max_months);
+        let (timeline, mut crossed_milestones) = ascent_projector.project_timeline(self.max_months);
+        crossed_milestones.sort_by_key(|&(_, month)| month);
 
-        let mut sorted_milestones = crossed_milestones;
-        sorted_milestones.sort_by_key(|&(_, month)| month);
+        let (milestones, success) = Self::build_milestones(fire_number, &crossed_milestones);
+
+        let final_net_worth_cents = timeline.last().map_or(0, |m| m.net_worth_cents);
+
+        AscentResult {
+            summit_cents: summit,
+            max_months: self.max_months,
+            final_net_worth_cents,
+            milestones,
+            success,
+            instant_summit: false,
+            impossible: false,
+        }
+    }
+
+    const fn check_early_exits(&self, fire_number: i64) -> Option<AscentResult> {
+        if fire_number == 0 {
+            Some(AscentResult {
+                summit_cents: 0,
+                max_months: self.max_months,
+                final_net_worth_cents: 0,
+                milestones: Vec::new(),
+                success: true,
+                instant_summit: true,
+                impossible: false,
+            })
+        } else if fire_number == i64::MAX {
+            Some(AscentResult {
+                summit_cents: i64::MAX,
+                max_months: self.max_months,
+                final_net_worth_cents: 0,
+                milestones: Vec::new(),
+                success: false,
+                instant_summit: false,
+                impossible: true,
+            })
+        } else {
+            None
+        }
+    }
+
+    fn build_milestones(
+        fire_number: i64,
+        crossed_milestones: &[(i64, u16)],
+    ) -> (Vec<AscentMilestone>, bool) {
+        let camp1 = fire_number / 4;
+        let camp2 = fire_number / 2;
+        let camp3 = fire_number.saturating_mul(3) / 4;
+        let summit = fire_number;
 
         let milestone_names = [
             (camp1, "⛺ Camp 1 (25%)"),
@@ -113,7 +142,7 @@ impl FireAscentSimulator {
         let mut success = false;
 
         for (target_cents, target_name) in milestone_names {
-            let month_reached = sorted_milestones
+            let month_reached = crossed_milestones
                 .iter()
                 .find(|&&(c, _)| c == target_cents)
                 .map(|&(_, m)| m);
@@ -127,17 +156,7 @@ impl FireAscentSimulator {
             });
         }
 
-        let final_net_worth_cents = timeline.last().map_or(0, |m| m.net_worth_cents);
-
-        AscentResult {
-            summit_cents: summit,
-            max_months: self.max_months,
-            final_net_worth_cents,
-            milestones,
-            success,
-            instant_summit: false,
-            impossible: false,
-        }
+        (milestones, success)
     }
 }
 
