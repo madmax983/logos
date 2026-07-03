@@ -1,5 +1,5 @@
 #![cfg(feature = "nova")]
-use logos_core::monte_carlo::MonteCarloProjector;
+use logos_core::MonteCarloProjector;
 
 #[test]
 #[ignore = "OOM"]

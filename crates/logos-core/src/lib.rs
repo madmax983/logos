@@ -48,9 +48,58 @@ pub(crate) mod domain;
 pub(crate) mod error;
 /// Experimental features and proof-of-concepts. Use at your own risk.
 pub(crate) mod experimental;
-pub use experimental::*;
+pub use experimental::cashflow_projector::{CashflowProjector, RecurringTemplate};
+#[cfg(feature = "nova")]
+pub use experimental::debt_optimizer::{Debt, DebtOptimizer, PayoffStrategy};
+pub use experimental::fire_ascent::{AscentResult, FireAscentSimulator};
+#[cfg(feature = "nova")]
+pub use experimental::goal_fund_projector::GoalFundProjector;
+#[cfg(feature = "nova")]
+pub use experimental::income_router::{IncomeRouter, RouteRule};
+pub use experimental::mermaid_exporter::MermaidSankeyExporter;
+#[cfg(feature = "nova")]
+pub use experimental::anomaly_detector::{Anomaly, AnomalyDetector};
+#[cfg(feature = "nova")]
+pub use experimental::asset_depreciation::AssetDepreciationSimulator;
+#[cfg(feature = "nova")]
+pub use experimental::benford_law::BenfordLawAnalyzer;
+#[cfg(feature = "nova")]
+pub use experimental::category_trends::CategoryTrendAnalyzer;
+#[cfg(feature = "nova")]
+pub use experimental::coast_fire::CoastFireSimulator;
+#[cfg(feature = "nova")]
+pub use experimental::fire_goal_seeker::FireGoalSeeker;
+#[cfg(feature = "nova")]
+pub use experimental::goal_seeker::GoalSeeker;
+#[cfg(feature = "nova")]
+pub use experimental::inflation::InflationProjector;
+#[cfg(feature = "nova")]
+pub use experimental::life_energy_calculator::{TrueWageCalculator, LifeEnergySubscriptionReport, LifeEnergySubscriptionEvaluator};
+#[cfg(feature = "nova")]
+pub use experimental::lifestyle_creep::{CreepResult, LifestyleCreepSimulator};
+#[cfg(feature = "nova")]
+pub use experimental::mermaid_xy_exporter::MermaidXyExporter;
+#[cfg(feature = "nova")]
+pub use experimental::opportunity_cost::{OpportunityCostAnalyzer, OpportunityCostResult};
+#[cfg(feature = "nova")]
+pub use experimental::predictive_ledger::PredictiveLedger;
+pub use experimental::recurrence_detector::RecurrenceDetector;
+#[cfg(feature = "nova")]
+pub use experimental::runway_simulator::{RunwayResult, RunwaySimulator};
+#[cfg(feature = "nova")]
+pub use experimental::subscription_fatigue::{SubscriptionFatigueAnalyzer, SubscriptionFatigueReport};
+#[cfg(feature = "nova")]
+pub use experimental::trinity_simulator::{TrinityResult, TrinitySimulator};
+pub use experimental::monte_carlo::{MonteCarloProjector, MonteCarloResult};
+#[cfg(feature = "nova")]
+pub use experimental::portfolio_rebalancer::{PortfolioRebalancer, TargetAllocation};
+#[cfg(feature = "nova")]
+pub use experimental::tax_loss_harvester::{TaxLossHarvester, TaxLot};
 pub(crate) mod planning;
-pub use planning::*;
+pub use planning::fire::{FireConfig, FireSimulator, UpcomingVest};
+pub use planning::net_worth_projector::NetWorthProjector;
+pub use planning::net_worth_projector::ProjectedMonth;
+pub use planning::rsu_distributor::{RsuAutoDistributor, RsuDistributorConfig};
 
 pub use domain::account::{AccountId, AccountType};
 pub use domain::budget::{BudgetMonth, rollover_end_balance};

@@ -1,3 +1,4 @@
+#![allow(clippy::redundant_pub_crate)]
 //! The Financial Planning Engine
 //!
 //! # The Future is Plannable
@@ -19,8 +20,8 @@
 //! to plot your path to financial independence.
 //!
 //! ```
-//! use logos_core::fire::{FireSimulator, UpcomingVest};
-//! use logos_core::net_worth_projector::NetWorthProjector;
+//! use logos_core::{FireSimulator, UpcomingVest};
+//! use logos_core::NetWorthProjector;
 //!
 //! // 1. Set the Destination: $5,000/month expenses = $1.5M FIRE number @ 4% SWR
 //! let mut fire_sim = FireSimulator::new(500_000);
@@ -49,6 +50,6 @@
 //! assert_eq!(timeline.len(), 5);
 //! ```
 
-pub mod fire;
-pub mod net_worth_projector;
-pub mod rsu_distributor;
+pub(crate) mod fire;
+pub(crate) mod net_worth_projector;
+pub(crate) mod rsu_distributor;
