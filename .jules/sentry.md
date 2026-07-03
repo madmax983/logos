@@ -17,3 +17,7 @@
 ## 2026-04-29 - Removed unsafe env modifier in tests
 **Learning:** `env::set_var` in tests is intrinsically unsafe since Rust 1.80 because of multithreading environment contamination, causing undefined behavior if other tests concurrently read the environment.
 **Action:** Refactored `OpCliSecretRefReader` to expose a `new(PathBuf)` constructor to allow tests to safely pass dependency paths rather than mutating global test environment state.
+
+## 2026-04-30 - Portfolio Rebalancer edge cases
+**Learning:** Missed mutants around handling remaining value distribution when `remaining_value` is `0` or fractional cents remainder are completely balanced. Wrote `should_prevent_invalid_mutants` to test `EmptyTransactionPostings` correctly and `test_negative_remaining_value_is_not_swept` to test valid edge cases. Wrote `should_not_sweep_to_target_values_if_remaining_value_is_zero_or_negative_to_kill_mutants` which covers the remainder edge conditions effectively.
+**Action:** Always assert on exact posting lengths and credit/debit values using edge-case hash-map entries for boundary conditions involving fractional remainder sweeps. Note that the two remaining mutants involving `if remaining_value > 0 && !target_values.is_empty()` changing to `>= 0` or `||` are mathematically unviable/equivalent since `remaining_value` can never be negative due to `sum(percentages) == 100` and adding exactly zero to a target has no side effects.
