@@ -78,11 +78,37 @@ impl FetchRequest {
         })
     }
 
+    /// Provides access to the underlying [`StatementSource`] configuring this run.
+    ///
+    /// This acts as the identity binding, telling the adapter which institution
+    /// to target and which ledger account the resulting statement belongs to.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchRequest, StatementSource, OutputFormat};
+    /// let source = StatementSource::new("chase", "chase", "Assets:Checking", vec![OutputFormat::Csv]).unwrap();
+    /// let request = FetchRequest::new(&source, "2023-10").unwrap();
+    /// assert_eq!(request.source().institution_id(), "chase");
+    /// ```
     #[must_use]
     pub const fn source(&self) -> &StatementSource {
         &self.source
     }
 
+    /// Exposes the specific `YYYY-MM` accounting period the fetch is targeting.
+    ///
+    /// Adapters use this to query only the transactions relevant to the active
+    /// reconciliation cycle, ignoring older historical data.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchRequest, StatementSource, OutputFormat};
+    /// let source = StatementSource::new("chase", "chase", "Assets:Checking", vec![OutputFormat::Csv]).unwrap();
+    /// let request = FetchRequest::new(&source, "2023-10").unwrap();
+    /// assert_eq!(request.month_key(), "2023-10");
+    /// ```
     #[must_use]
     pub fn month_key(&self) -> &str {
         &self.month_key
@@ -100,11 +126,35 @@ impl FetchResult {
         }
     }
 
+    /// Extracts the finalized [`FetchRunStatus`] summarizing the adapter execution.
+    ///
+    /// This is the primary control flow value for the fetch pipeline, indicating
+    /// whether a new artifact is available or if human intervention is required.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchResult, FetchRunStatus};
+    /// let result = FetchResult::new(FetchRunStatus::NoNewStatement, None);
+    /// assert_eq!(result.status(), FetchRunStatus::NoNewStatement);
+    /// ```
     #[must_use]
     pub const fn status(&self) -> FetchRunStatus {
         self.status
     }
 
+    /// Retrieves the generated `FetchedStatementArtifact`, if one was created.
+    ///
+    /// This will only be `Some` if the `status` is [`FetchRunStatus::Downloaded`]
+    /// or [`FetchRunStatus::Imported`].
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchResult, FetchRunStatus};
+    /// let result = FetchResult::new(FetchRunStatus::NeedsAttention, None);
+    /// assert!(result.artifact().is_none());
+    /// ```
     #[must_use]
     pub const fn artifact(&self) -> Option<&FetchedStatementArtifact> {
         self.artifact.as_ref()
@@ -136,6 +186,18 @@ impl FetchResult {
         Ok(self)
     }
 
+    /// Reads the optional operator-facing error summary string.
+    ///
+    /// This provides context when a fetch fails or needs attention, such as
+    /// detailing SMS multi-factor auth challenges.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchResult, FetchRunStatus};
+    /// let result = FetchResult::new(FetchRunStatus::NeedsAttention, None).with_error_summary("SMS Code Required").unwrap();
+    /// assert_eq!(result.error_summary(), Some("SMS Code Required"));
+    /// ```
     #[must_use]
     pub fn error_summary(&self) -> Option<&str> {
         self.error_summary.as_deref()

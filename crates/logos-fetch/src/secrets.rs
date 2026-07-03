@@ -50,16 +50,49 @@ impl SecretBundle {
         })
     }
 
+    /// Returns the resolved plaintext username to be used for the fetch.
+    ///
+    /// This value is passed securely directly to the adapter execution environment.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::SecretBundle;
+    /// let bundle = SecretBundle::new("alice", "pass123", None).unwrap();
+    /// assert_eq!(bundle.username(), "alice");
+    /// ```
     #[must_use]
     pub fn username(&self) -> &str {
         &self.username
     }
 
+    /// Returns the resolved plaintext password to be used for the fetch.
+    ///
+    /// This value is passed securely directly to the adapter execution environment.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::SecretBundle;
+    /// let bundle = SecretBundle::new("alice", "pass123", None).unwrap();
+    /// assert_eq!(bundle.password(), "pass123");
+    /// ```
     #[must_use]
     pub fn password(&self) -> &str {
         &self.password
     }
 
+    /// Returns the active, resolved TOTP code to pass into multi-factor auth challenges.
+    ///
+    /// This will be `None` if the statement source was not configured with a TOTP secret ref.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::SecretBundle;
+    /// let bundle = SecretBundle::new("alice", "pass123", Some("456789")).unwrap();
+    /// assert_eq!(bundle.totp_code(), Some("456789"));
+    /// ```
     #[must_use]
     pub fn totp_code(&self) -> Option<&str> {
         self.totp_code.as_deref()

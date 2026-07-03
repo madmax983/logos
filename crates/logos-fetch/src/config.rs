@@ -84,6 +84,27 @@ impl StatementSourceConfig {
         Ok(Self { sources })
     }
 
+    /// Returns a slice of the active `StatementSource` list parsed from TOML.
+    ///
+    /// These sources dictate which institutions will be contacted during an automated fetch,
+    /// and represent the validated, executable configuration derived from the raw text.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::StatementSourceConfig;
+    /// let toml = r#"
+    /// [[sources]]
+    /// source_id = "chase_checking"
+    /// institution_id = "chase"
+    /// ledger_account = "Assets:Checking"
+    /// format_preference = ["csv"]
+    /// username_secret_ref = "op://test/user"
+    /// password_secret_ref = "op://test/pass"
+    /// "#;
+    /// let config = StatementSourceConfig::from_toml(toml).unwrap();
+    /// assert_eq!(config.sources()[0].source_id(), "chase_checking");
+    /// ```
     #[must_use]
     pub fn sources(&self) -> &[StatementSource] {
         &self.sources

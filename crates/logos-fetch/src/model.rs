@@ -122,26 +122,81 @@ impl StatementSource {
         })
     }
 
+    /// Returns the active string ID configured for this statement source.
+    ///
+    /// This ID links the fetch request back to the user configuration file.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    /// let source = StatementSource::new("chase_primary", "chase", "Assets", vec![OutputFormat::Csv]).unwrap();
+    /// assert_eq!(source.source_id(), "chase_primary");
+    /// ```
     #[must_use]
     pub fn source_id(&self) -> &str {
         &self.source_id
     }
 
+    /// Returns the target institution identifier mapping to an integration.
+    ///
+    /// This value drives adapter selection during runtime (e.g. `chase` or `amex`).
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    /// let source = StatementSource::new("chase_primary", "chase", "Assets", vec![OutputFormat::Csv]).unwrap();
+    /// assert_eq!(source.institution_id(), "chase");
+    /// ```
     #[must_use]
     pub fn institution_id(&self) -> &str {
         &self.institution_id
     }
 
+    /// Returns the bound ledger account path.
+    ///
+    /// This ensures downloaded statements are correctly routed into the double-entry journal.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    /// let source = StatementSource::new("chase_primary", "chase", "Assets:Checking", vec![OutputFormat::Csv]).unwrap();
+    /// assert_eq!(source.ledger_account(), "Assets:Checking");
+    /// ```
     #[must_use]
     pub fn ledger_account(&self) -> &str {
         &self.ledger_account
     }
 
+    /// Returns the slice of supported `OutputFormat`s.
+    ///
+    /// The adapter will attempt to download the earliest format in the slice first.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    /// let source = StatementSource::new("chase_primary", "chase", "Assets:Checking", vec![OutputFormat::Csv, OutputFormat::Pdf]).unwrap();
+    /// assert_eq!(source.format_preference(), &[OutputFormat::Csv, OutputFormat::Pdf]);
+    /// ```
     #[must_use]
     pub fn format_preference(&self) -> &[OutputFormat] {
         &self.format_preference
     }
 
+    /// Extracts the highest-priority `OutputFormat`.
+    ///
+    /// This is a convenience method for accessing the first element of the format preference slice.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    /// let source = StatementSource::new("chase_primary", "chase", "Assets:Checking", vec![OutputFormat::Csv, OutputFormat::Pdf]).unwrap();
+    /// assert_eq!(source.preferred_format(), Some(OutputFormat::Csv));
+    /// ```
     #[must_use]
     pub fn preferred_format(&self) -> Option<OutputFormat> {
         self.format_preference.first().copied()
@@ -183,16 +238,52 @@ impl StatementSource {
         Ok(self)
     }
 
+    /// Returns the loaded 1Password username secret ref.
+    ///
+    /// Used by the secret resolver to extract the plaintext value before passing it to the adapter.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    /// let source = StatementSource::new("id", "inst", "acct", vec![OutputFormat::Csv]).unwrap()
+    ///     .with_secret_refs("op://v/u", "op://v/p", None).unwrap();
+    /// assert_eq!(source.username_secret_ref(), "op://v/u");
+    /// ```
     #[must_use]
     pub fn username_secret_ref(&self) -> &str {
         &self.username_secret_ref
     }
 
+    /// Returns the loaded 1Password password secret ref.
+    ///
+    /// Used by the secret resolver to extract the plaintext value before passing it to the adapter.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    /// let source = StatementSource::new("id", "inst", "acct", vec![OutputFormat::Csv]).unwrap()
+    ///     .with_secret_refs("op://v/u", "op://v/p", None).unwrap();
+    /// assert_eq!(source.password_secret_ref(), "op://v/p");
+    /// ```
     #[must_use]
     pub fn password_secret_ref(&self) -> &str {
         &self.password_secret_ref
     }
 
+    /// Returns the loaded optional 1Password TOTP secret ref.
+    ///
+    /// Used when the institution requires an active multi-factor auth code.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    /// let source = StatementSource::new("id", "inst", "acct", vec![OutputFormat::Csv]).unwrap()
+    ///     .with_secret_refs("op://v/u", "op://v/p", Some("op://v/t")).unwrap();
+    /// assert_eq!(source.totp_secret_ref(), Some("op://v/t"));
+    /// ```
     #[must_use]
     pub fn totp_secret_ref(&self) -> Option<&str> {
         self.totp_secret_ref.as_deref()
@@ -283,36 +374,113 @@ impl FetchedStatementArtifact {
         })
     }
 
+    /// Returns the active string ID configured for this statement source.
+    ///
+    /// This ID links the fetch request back to the user configuration file.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    /// let source = StatementSource::new("chase_primary", "chase", "Assets", vec![OutputFormat::Csv]).unwrap();
+    /// assert_eq!(source.source_id(), "chase_primary");
+    /// ```
     #[must_use]
     pub fn source_id(&self) -> &str {
         &self.source_id
     }
 
+    /// Returns the bound ledger account path.
+    ///
+    /// This ensures downloaded statements are correctly routed into the double-entry journal.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{StatementSource, OutputFormat};
+    /// let source = StatementSource::new("chase_primary", "chase", "Assets:Checking", vec![OutputFormat::Csv]).unwrap();
+    /// assert_eq!(source.ledger_account(), "Assets:Checking");
+    /// ```
     #[must_use]
     pub fn ledger_account(&self) -> &str {
         &self.ledger_account
     }
 
+    /// Returns the final `OutputFormat` of the parsed artifact.
+    ///
+    /// This dictates which parser logic (e.g. CSV rules) will be used during the import phase.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchedStatementArtifact, OutputFormat};
+    /// let artifact = FetchedStatementArtifact::new("chase", "Assets", OutputFormat::Csv, "/path", "2023-10", 0, 0).unwrap();
+    /// assert_eq!(artifact.output_format(), OutputFormat::Csv);
+    /// ```
     #[must_use]
     pub const fn output_format(&self) -> OutputFormat {
         self.output_format
     }
 
+    /// Returns the absolute path where the statement artifact is stored.
+    ///
+    /// The importer pipeline will read from this path to generate the actual journal entries.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchedStatementArtifact, OutputFormat};
+    /// let artifact = FetchedStatementArtifact::new("chase", "Assets", OutputFormat::Csv, "/path/file.csv", "2023-10", 0, 0).unwrap();
+    /// assert_eq!(artifact.artifact_path(), "/path/file.csv");
+    /// ```
     #[must_use]
     pub fn artifact_path(&self) -> &str {
         &self.artifact_path
     }
 
+    /// Returns the `YYYY-MM` month key spanning this artifact.
+    ///
+    /// Used to bucket the resulting transactions correctly within the system.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchedStatementArtifact, OutputFormat};
+    /// let artifact = FetchedStatementArtifact::new("chase", "Assets", OutputFormat::Csv, "/path", "2023-10", 0, 0).unwrap();
+    /// assert_eq!(artifact.month_key(), "2023-10");
+    /// ```
     #[must_use]
     pub fn month_key(&self) -> &str {
         &self.month_key
     }
 
+    /// Returns the opening balance detected in the artifact.
+    ///
+    /// This provides a reconciliation anchor before the transactions are processed.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchedStatementArtifact, OutputFormat};
+    /// let artifact = FetchedStatementArtifact::new("chase", "Assets", OutputFormat::Csv, "/path", "2023-10", 10000, 20000).unwrap();
+    /// assert_eq!(artifact.opening_balance_cents(), 10000);
+    /// ```
     #[must_use]
     pub const fn opening_balance_cents(&self) -> i64 {
         self.opening_balance_cents
     }
 
+    /// Returns the closing balance detected in the artifact.
+    ///
+    /// This provides the final reconciliation anchor after all transactions are processed.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_fetch::{FetchedStatementArtifact, OutputFormat};
+    /// let artifact = FetchedStatementArtifact::new("chase", "Assets", OutputFormat::Csv, "/path", "2023-10", 10000, 20000).unwrap();
+    /// assert_eq!(artifact.closing_balance_cents(), 20000);
+    /// ```
     #[must_use]
     pub const fn closing_balance_cents(&self) -> i64 {
         self.closing_balance_cents
