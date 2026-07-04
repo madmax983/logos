@@ -27,6 +27,18 @@ use crate::domain::rsu::{HaircutTierTable, forecast_value_cents};
 ///
 /// let config = FireConfig { safe_withdrawal_rate_pct: 3 };
 /// ```
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::fire::FireConfig;
+///
+/// let config = FireConfig {
+///     safe_withdrawal_rate_pct: 3,
+/// };
+///
+/// assert_eq!(config.safe_withdrawal_rate_pct, 3);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FireConfig {
     /// Safe withdrawal rate as a percentage (e.g., 4 for 4%)
@@ -52,6 +64,20 @@ impl Default for FireConfig {
 ///     units: 500,                     // 500 shares
 ///     days_to_vest: 60,               // vesting in 60 days
 /// };
+/// ```
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::fire::UpcomingVest;
+///
+/// let vest = UpcomingVest {
+///     avg_close_price_cents: 100_000,
+///     units: 50,
+///     days_to_vest: 30,
+/// };
+///
+/// assert_eq!(vest.units, 50);
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UpcomingVest {

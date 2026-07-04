@@ -34,6 +34,22 @@ use crate::planning::fire::UpcomingVest;
 /// assert_eq!(snapshot.month_index, 3);
 /// assert_eq!(snapshot.net_worth_cents, 150_000_00);
 /// ```
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::net_worth_projector::ProjectedMonth;
+///
+/// let month = ProjectedMonth {
+///     month_index: 0,
+///     net_worth_cents: 100_000_00,
+///     vested_value_cents: 5_000_00,
+///     saved_cents: 2_000_00,
+/// };
+///
+/// assert_eq!(month.month_index, 0);
+/// assert_eq!(month.net_worth_cents, 100_000_00);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectedMonth {
     /// The month index in the projection (0 is the current month).
