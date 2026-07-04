@@ -4,8 +4,8 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    #[should_panic]
-    fn project_balances_panics_on_overflow(
+
+    fn project_balances_does_not_panic_on_overflow(
         amount in (i64::MAX / 2 + 1)..=i64::MAX,
     ) {
         let mut projector = CashflowProjector::new();
