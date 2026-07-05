@@ -16,6 +16,7 @@ use std::fmt::Write;
 
 use crate::domain::account::AccountId;
 use crate::domain::transaction::{Posting, TransactionBuilder};
+use crate::error::DomainError;
 
 /// Represents a template for a recurring transaction in cashflow projection.
 ///
@@ -67,7 +68,7 @@ pub struct RecurringTemplate {
 /// });
 ///
 /// // After 3 months, we should have an extra $6000 ($2000 * 3) in checking.
-/// let balances = projector.project_balances(3);
+/// let balances = projector.project_balances(3).unwrap();
 /// assert_eq!(*balances.get("assets:checking").unwrap(), 700_000); // 1000 + 6000 = $7000
 /// ```
 #[derive(Debug, Clone, Default)]
@@ -147,12 +148,12 @@ impl CashflowProjector {
     ///     debit_account: "assets:savings".to_string(),
     /// });
     ///
-    /// let balances = projector.project_balances(6); // Project 6 months out
+    /// let balances = projector.project_balances(6).unwrap(); // Project 6 months out
     /// // $10,000 + ($500 * 6) = $13,000
     /// assert_eq!(*balances.get("assets:savings").unwrap(), 13_000_00);
     /// ```
     #[must_use]
-    pub fn project_balances(&self, periods: u16) -> HashMap<String, i64> {
+    pub fn project_balances(&self, periods: u16) -> Result<HashMap<String, i64>, DomainError> {
         let mut current_balances = self.initial_balances.clone();
 
         for _ in 0..periods {
@@ -183,7 +184,7 @@ impl CashflowProjector {
                         // a new owned String if we need to insert a new entry.
                         if let Some(balance) = current_balances.get_mut(posting.account().as_str())
                         {
-                            *balance += posting.amount();
+                            *balance = balance.checked_add(posting.amount()).ok_or(DomainError::AmountOverflow)?;
                         } else {
                             current_balances
                                 .insert(posting.account().as_str().to_owned(), posting.amount());
@@ -193,7 +194,7 @@ impl CashflowProjector {
             }
         }
 
-        current_balances
+        Ok(current_balances)
     }
 
     /// Generates a human-readable text report showing the projected balances for all affected accounts.
@@ -208,12 +209,12 @@ impl CashflowProjector {
     /// let mut projector = CashflowProjector::new();
     /// projector.set_initial_balance("assets:checking", 100_000);
     ///
-    /// let report = projector.generate_report(1);
+    /// let report = projector.generate_report(1).unwrap();
     /// assert!(report.contains("assets:checking: $1000.00"));
     /// ```
     #[must_use]
-    pub fn generate_report(&self, periods: u16) -> String {
-        let balances = self.project_balances(periods);
+    pub fn generate_report(&self, periods: u16) -> Result<String, DomainError> {
+        let balances = self.project_balances(periods)?;
         let mut output = String::new();
         let _ = writeln!(
             &mut output,
@@ -230,7 +231,7 @@ impl CashflowProjector {
             let _ = writeln!(&mut output, "{account}: ${dollars:.2}");
         }
 
-        output
+        Ok(output)
     }
 }
 
@@ -261,7 +262,7 @@ mod tests {
         // Checking: 1000 + (500*2) - (300*2) = 1400 ($1400.00)
         // Income: -500 * 2 = -1000 (-$1000.00)
         // Rent: 300 * 2 = 600 ($600.00)
-        let balances = projector.project_balances(2);
+        let balances = projector.project_balances(2).unwrap();
 
         assert_eq!(*balances.get("assets:checking").unwrap_or(&0), 140_000);
         assert_eq!(*balances.get("income:salary").unwrap_or(&0), -100_000);
@@ -280,7 +281,7 @@ mod tests {
             debit_account: "assets:checking".to_string(),
         });
 
-        let report = projector.generate_report(1);
+        let report = projector.generate_report(1).unwrap();
         assert!(report.contains("assets:checking: $1500.00"));
         assert!(report.contains("income:salary: $-500.00"));
     }

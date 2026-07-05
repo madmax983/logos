@@ -4,7 +4,6 @@ use proptest::prelude::*;
 
 proptest! {
     #[test]
-    #[should_panic]
     fn project_balances_panics_on_overflow(
         amount in (i64::MAX / 2 + 1)..=i64::MAX,
     ) {
@@ -18,6 +17,7 @@ proptest! {
             debit_account: "assets:checking".to_string(),
         });
 
-        let _ = projector.project_balances(2);
+        let result = projector.project_balances(2);
+        assert!(matches!(result, Err(logos_core::DomainError::AmountOverflow)));
     }
 }
