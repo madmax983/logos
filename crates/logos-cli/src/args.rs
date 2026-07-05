@@ -92,6 +92,7 @@ fn execute_command(command: &Command) -> Result<(), CliError> {
         Command::Close(command) => execute_close_command(command),
         Command::Budget(command) => execute_budget_command(command),
         Command::Report(command) => execute_report_command(command),
+        Command::Plan(command) => execute_plan_command(command),
     }
 }
 
@@ -309,6 +310,22 @@ fn execute_budget_command(command: &BudgetCommand) -> Result<(), CliError> {
     }
 }
 
+fn execute_plan_command(command: &PlanCommand) -> Result<(), CliError> {
+    match command {
+        PlanCommand::Fire {
+            monthly_expenses_cents,
+            liquid_assets_cents,
+            liabilities_cents,
+            upcoming_vests_cents,
+        } => commands::plan::fire(
+            *monthly_expenses_cents,
+            *liquid_assets_cents,
+            *liabilities_cents,
+            *upcoming_vests_cents,
+        ),
+    }
+}
+
 fn execute_report_command(command: &ReportCommand) -> Result<(), CliError> {
     match command {
         ReportCommand::Month {
@@ -371,6 +388,7 @@ pub enum Command {
     Close(CloseCommand),
     Budget(BudgetCommand),
     Report(ReportCommand),
+    Plan(PlanCommand),
 }
 
 impl Command {
@@ -381,6 +399,7 @@ impl Command {
             Self::Help(HelpTopic::Txn) => "help.txn",
             Self::Help(HelpTopic::Budget) => "help.budget",
             Self::Help(HelpTopic::Report) => "help.report",
+            Self::Help(HelpTopic::Plan) => "help.plan",
             Self::Help(HelpTopic::Db) => "help.db",
             Self::Help(HelpTopic::Analytics) => "help.analytics",
             Self::Help(HelpTopic::Import) => "help.import",
@@ -411,6 +430,7 @@ impl Command {
             Self::Budget(BudgetCommand::RsuPlan { .. }) => "budget.rsu-plan",
             Self::Budget(BudgetCommand::MonteCarlo { .. }) => "budget.monte-carlo",
             Self::Report(ReportCommand::Month { .. }) => "report.month",
+            Self::Plan(PlanCommand::Fire { .. }) => "plan.fire",
         }
     }
 }
@@ -428,6 +448,7 @@ pub enum HelpTopic {
     Reconcile,
     Month,
     Close,
+    Plan,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -616,6 +637,7 @@ where
         "close" => parse_close(&values),
         "budget" => parse_budget(&values),
         "report" => parse_report(&values),
+        "plan" => parse_plan(&values),
         _ => Err(CliError::UnknownCommand {
             command: command.clone(),
         }),
@@ -958,6 +980,45 @@ fn parse_fetch(args: &[String]) -> Result<ParsedArgs, CliError> {
     }
 }
 
+fn parse_plan_fire(args: &[String]) -> Result<ParsedArgs, CliError> {
+    let monthly_expenses_cents =
+        parse_required_parsed_flag(&args[2..], "--monthly-expenses-cents")?;
+    let liquid_assets_cents = parse_optional_parsed_flag(&args[2..], "--liquid-assets-cents", 0)?;
+    let liabilities_cents = parse_optional_parsed_flag(&args[2..], "--liabilities-cents", 0)?;
+    let upcoming_vests_cents = parse_optional_parsed_flag(&args[2..], "--upcoming-vests-cents", 0)?;
+    Ok(ParsedArgs {
+        command: Command::Plan(PlanCommand::Fire {
+            monthly_expenses_cents,
+            liquid_assets_cents,
+            liabilities_cents,
+            upcoming_vests_cents,
+        }),
+    })
+}
+
+fn parse_plan(args: &[String]) -> Result<ParsedArgs, CliError> {
+    if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
+        return Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Plan),
+        });
+    }
+
+    let subcommand = args.get(1).ok_or_else(|| CliError::MissingSubcommand {
+        command: "plan".to_owned(),
+    })?;
+
+    match subcommand.as_str() {
+        "--help" | "-h" => Ok(ParsedArgs {
+            command: Command::Help(HelpTopic::Plan),
+        }),
+        "fire" => parse_plan_fire(args),
+        _ => Err(CliError::UnknownSubcommand {
+            command: "plan".to_owned(),
+            subcommand: subcommand.clone(),
+        }),
+    }
+}
+
 fn parse_report(args: &[String]) -> Result<ParsedArgs, CliError> {
     if parse_flag_present(args, "--help") || parse_flag_present(args, "-h") {
         return Ok(ParsedArgs {
@@ -1189,6 +1250,7 @@ fn parse_help_topic(args: &[String]) -> Result<HelpTopic, CliError> {
         Some("analytics") => Ok(HelpTopic::Analytics),
         Some("budget") => Ok(HelpTopic::Budget),
         Some("report") => Ok(HelpTopic::Report),
+        Some("plan") => Ok(HelpTopic::Plan),
         Some("db") => Ok(HelpTopic::Db),
         Some("import") => Ok(HelpTopic::Import),
         Some("fetch") => Ok(HelpTopic::Fetch),
@@ -1315,4 +1377,14 @@ fn parse_paired_i64_flags(
 
 fn parse_amount_cents(args: &[String]) -> Result<i64, CliError> {
     parse_required_parsed_flag(args, "--amount-cents")
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlanCommand {
+    Fire {
+        monthly_expenses_cents: i64,
+        liquid_assets_cents: i64,
+        liabilities_cents: i64,
+        upcoming_vests_cents: i64,
+    },
 }

@@ -7,6 +7,7 @@ pub mod fetch;
 pub mod help;
 pub mod import;
 pub mod month;
+pub mod plan;
 pub mod reconcile;
 pub mod report;
 pub mod txn;
