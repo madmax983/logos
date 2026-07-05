@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-15 - The Formatting Gap
+**Confusion:** The `logos_core::format` module was completely undocumented. The translation from raw machine types (like microseconds and cents) to human-readable strings was treated like a Black Box without context on why standardizations like UTC were chosen. The functions `us_timestamp` and `currency` also lacked executable examples.
+**Clarification:** Added module-level `//!` documentation explaining the purpose of the formatting boundary. Added `///` doc comments and executable `## Examples` to both `us_timestamp` and `currency`.

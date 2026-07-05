@@ -1,3 +1,25 @@
+//! String formatting utilities for the ledger.
+//!
+//! # Bridging the Gap
+//!
+//! While the `domain` module deals in strict integer cents and Unix microseconds for mathematical
+//! correctness, humans don't read numbers that way. This module is responsible for translating
+//! cold, hard ledger data into familiar, readable strings (like standard currency strings or
+//! UTC timestamps) for the CLI and TUI to consume.
+
+/// Converts a Unix timestamp in microseconds into a human-readable UTC string.
+///
+/// We standardized on UTC to ensure that ledger history is immutable and looks exactly
+/// the same regardless of the time zone of the machine viewing it.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::format::us_timestamp;
+///
+/// let timestamp_us = 1_704_067_200_000_000; // 2024-01-01 00:00:00 UTC
+/// assert_eq!(us_timestamp(timestamp_us), "2024-01-01 00:00:00 UTC");
+/// ```
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(
@@ -13,6 +35,15 @@ pub fn us_timestamp(us: i64) -> String {
 /// causing O(n^2) shifts of all existing bytes per character. By pre-allocating the string capacity,
 /// iterating forward over the bytes, and using `push`, we achieve O(n) performance
 /// and eliminate intermediate allocations on the formatting hot path.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::format::currency;
+///
+/// assert_eq!(currency(150_000_00), "$150,000.00");
+/// assert_eq!(currency(-50_50), "-$50.50");
+/// ```
 #[must_use]
 pub fn currency(cents: i64) -> String {
     let sign = if cents < 0 { "-" } else { "" };
