@@ -138,7 +138,10 @@ impl RsuAutoDistributor {
             gross_vest_cents.saturating_mul(i64::from(policy.discretionary_pct())) / 100;
 
         // The remaining amount goes to the tax reserve to ensure perfectly balanced transaction
-        let tax_cents = gross_vest_cents - smoothing_cents - goals_cents - discretionary_cents;
+        let tax_cents = gross_vest_cents
+            .saturating_sub(smoothing_cents)
+            .saturating_sub(goals_cents)
+            .saturating_sub(discretionary_cents);
 
         let mut builder = TransactionBuilder::new(description).posting(Posting::credit(
             self.config.rsu_asset.clone(),

@@ -76,8 +76,8 @@ impl GoalFundProjector {
         for month_index in 1..=months {
             let mut allocated_this_month = 0_i64;
 
-            let month_start_days = (u32::from(month_index) - 1) * 30;
-            let month_end_days = u32::from(month_index) * 30;
+            let month_start_days = (u32::from(month_index) - 1).saturating_mul(30);
+            let month_end_days = u32::from(month_index).saturating_mul(30);
 
             for vest in &self.upcoming_vests {
                 if u32::from(vest.days_to_vest) > month_start_days

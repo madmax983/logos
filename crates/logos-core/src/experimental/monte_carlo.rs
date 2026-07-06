@@ -89,7 +89,7 @@ impl MonteCarloProjector {
 
     /// Runs the Monte Carlo simulation for a given number of months and paths.
     #[must_use]
-    pub fn run(&self, months: u16, paths: u32) -> MonteCarloResult {
+    pub fn run(&self, months: u16, mut paths: u32) -> MonteCarloResult {
         if paths == 0 {
             return MonteCarloResult {
                 p5_cents: self.initial_cents,
@@ -97,6 +97,9 @@ impl MonteCarloProjector {
                 p95_cents: self.initial_cents,
             };
         }
+
+        // Cap paths to avoid out of memory panics
+        paths = paths.min(1_000_000);
 
         let monthly_mean = self.annual_mean_return / 12.0;
         let monthly_volatility = self.annual_volatility / 12.0f64.sqrt();

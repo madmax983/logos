@@ -183,7 +183,7 @@ impl CashflowProjector {
                         // a new owned String if we need to insert a new entry.
                         if let Some(balance) = current_balances.get_mut(posting.account().as_str())
                         {
-                            *balance += posting.amount();
+                            *balance = balance.saturating_add(posting.amount());
                         } else {
                             current_balances
                                 .insert(posting.account().as_str().to_owned(), posting.amount());

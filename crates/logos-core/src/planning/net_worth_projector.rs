@@ -204,8 +204,8 @@ impl NetWorthProjector {
             let mut vested_this_month: i64 = 0;
 
             // Assume 1 month is roughly 30 days. We check if any vest happens in this 30-day window.
-            let month_start_days = (u32::from(month_index) - 1) * 30;
-            let month_end_days = u32::from(month_index) * 30;
+            let month_start_days = (u32::from(month_index) - 1).saturating_mul(30);
+            let month_end_days = u32::from(month_index).saturating_mul(30);
 
             for vest in &self.upcoming_vests {
                 // If the vest falls in the current month's window
