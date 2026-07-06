@@ -1,0 +1,57 @@
+Found 786 mutants to test
+ok       Unmutated baseline in 19s build + 2s test
+MISSED   crates/logos-core/src/format/mod.rs:3:5: replace us_timestamp -> String with String::new() in 4s build + 2s test
+MISSED   crates/logos-core/src/format/mod.rs:3:5: replace us_timestamp -> String with "xyzzy".into() in 2s build + 2s test
+MISSED   crates/logos-core/src/format/mod.rs:32:14: replace > with >= in currency in 2s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:44:9: replace TrueWageCalculator::true_hourly_wage_cents -> i64 with 0 in 2s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:44:9: replace TrueWageCalculator::true_hourly_wage_cents -> i64 with 1 in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:44:9: replace TrueWageCalculator::true_hourly_wage_cents -> i64 with -1 in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:45:52: replace * with + in TrueWageCalculator::true_hourly_wage_cents in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:45:52: replace * with / in TrueWageCalculator::true_hourly_wage_cents in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:46:50: replace - with + in TrueWageCalculator::true_hourly_wage_cents in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:46:50: replace - with / in TrueWageCalculator::true_hourly_wage_cents in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:47:62: replace + with - in TrueWageCalculator::true_hourly_wage_cents in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:47:62: replace + with * in TrueWageCalculator::true_hourly_wage_cents in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:49:34: replace <= with > in TrueWageCalculator::true_hourly_wage_cents in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:53:33: replace / with % in TrueWageCalculator::true_hourly_wage_cents in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:53:33: replace / with * in TrueWageCalculator::true_hourly_wage_cents in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:60:9: replace TrueWageCalculator::evaluate_expense -> f64 with 0.0 in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:60:9: replace TrueWageCalculator::evaluate_expense -> f64 with 1.0 in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:60:9: replace TrueWageCalculator::evaluate_expense -> f64 with -1.0 in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:61:22: replace <= with > in TrueWageCalculator::evaluate_expense in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:65:30: replace / with % in TrueWageCalculator::evaluate_expense in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:65:30: replace / with * in TrueWageCalculator::evaluate_expense in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/life_energy_calculator.rs:104:9: replace LifeEnergySubscriptionEvaluator::evaluate_subscription -> LifeEnergySubscriptionReport with Default::default() in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:47:9: replace TaxLossHarvester::add_lot with () in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:61:9: replace TaxLossHarvester::find_opportunities -> Vec<HarvestingOpportunity> with vec![] in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:61:9: replace TaxLossHarvester::find_opportunities -> Vec<HarvestingOpportunity> with vec![Default::default()] in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:65:34: replace < with == in TaxLossHarvester::find_opportunities in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:65:34: replace < with > in TaxLossHarvester::find_opportunities in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:65:34: replace < with <= in TaxLossHarvester::find_opportunities in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:66:62: replace - with + in TaxLossHarvester::find_opportunities in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:66:62: replace - with / in TaxLossHarvester::find_opportunities in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:70:35: replace > with == in TaxLossHarvester::find_opportunities in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:70:35: replace > with < in TaxLossHarvester::find_opportunities in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/tax_loss_harvester.rs:70:35: replace > with >= in TaxLossHarvester::find_opportunities in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:56:9: replace PortfolioRebalancer::rebalance -> Result<Transaction, DomainError> with Ok(Default::default()) in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:64:24: replace <= with > in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:71:86: replace / with % in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:71:86: replace / with * in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:73:29: replace -= with += in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:73:29: replace -= with /= in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:76:32: replace && with || in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:76:28: replace > with == in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:76:28: replace > with < in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:76:28: replace > with >= in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:76:35: delete ! in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:77:32: replace += with -= in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:77:32: replace += with *= in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:84:35: replace - with + in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:84:35: replace - with / in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:86:21: replace > with == in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:86:21: replace > with < in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:86:21: replace > with >= in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:88:28: replace < with == in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:88:28: replace < with > in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:88:28: replace < with <= in PortfolioRebalancer::rebalance in 0s build + 2s test
+MISSED   crates/logos-core/src/experimental/portfolio_rebalancer.rs:89:66: delete - in PortfolioRebalancer::rebalance in 0s build + 2s test
