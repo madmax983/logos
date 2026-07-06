@@ -7,6 +7,11 @@
 use crate::FetchError;
 
 /// A securely resolved bundle of credentials for a specific fetch operation.
+/// ## Examples
+/// ```
+/// use logos_fetch::SecretBundle;
+/// let bundle = SecretBundle::new("user", "pass", None).unwrap();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecretBundle {
     /// The resolved username.

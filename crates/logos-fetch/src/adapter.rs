@@ -14,6 +14,12 @@ use crate::{
 };
 
 /// A request to fetch a statement from a source for a specific month.
+/// ## Examples
+/// ```ignore
+/// use logos_fetch::{FetchRequest, StatementSource, OutputFormat};
+/// let source = StatementSource::new("id", "inst", "acct", vec![OutputFormat::Csv]).unwrap();
+/// let req = FetchRequest::new(source, "2024-01");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchRequest {
     source: StatementSource,
@@ -21,6 +27,11 @@ pub struct FetchRequest {
 }
 
 /// The result of attempting to fetch a statement.
+/// ## Examples
+/// ```ignore
+/// use logos_fetch::{FetchResult, FetchRunStatus};
+/// let res = FetchResult::new(FetchRunStatus::NoNewStatement, None, None);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchResult {
     status: FetchRunStatus,
@@ -39,6 +50,11 @@ pub trait StatementAdapter {
 }
 
 /// A fake implementation of [`StatementAdapter`] for testing purposes.
+/// ## Examples
+/// ```
+/// use logos_fetch::FakeStatementAdapter;
+/// let adapter = FakeStatementAdapter::download_fixture_statement();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FakeStatementAdapter {
     mode: FakeStatementAdapterMode,

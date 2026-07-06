@@ -1,3 +1,10 @@
+//! The Experimental Lab
+//!
+//! This module serves as an incubator for experimental financial modeling
+//! concepts (Nova features) and chaos engineering tools (Havoc features).
+//! It contains isolated, additive modules like `fire_ascent` and `monte_carlo`
+//! that project data into the future without modifying the core ledger invariants.
+
 #[cfg(feature = "nova")]
 pub mod life_energy_calculator;
 

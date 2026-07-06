@@ -8,6 +8,11 @@ use serde::Deserialize;
 use crate::{FetchError, OutputFormat, StatementSource};
 
 /// The aggregated configuration of all statement sources.
+/// ## Examples
+/// ```ignore
+/// use logos_fetch::StatementSourceConfig;
+/// let config = StatementSourceConfig::parse_toml("...").unwrap();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StatementSourceConfig {
     sources: Vec<StatementSource>,

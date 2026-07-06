@@ -15,6 +15,11 @@ use crate::{
 };
 
 /// An adapter that integrates with the external `provident` tool via JSON output.
+/// ## Examples
+/// ```
+/// use logos_fetch::ProvidentAdapter;
+/// let adapter = ProvidentAdapter::fixture_runner_output();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProvidentAdapter {
     runner_output_path: PathBuf,

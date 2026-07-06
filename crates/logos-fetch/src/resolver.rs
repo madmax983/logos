@@ -12,6 +12,10 @@ use crate::{FetchError, SecretBundle, StatementSource};
 const LOGOS_FETCH_OP_BIN_ENV: &str = "LOGOS_FETCH_OP_BIN";
 
 /// A trait for resolving secret references from a source into a complete bundle.
+/// ## Examples
+/// ```ignore
+/// impl SecretResolver for MyResolver { ... }
+/// ```
 pub trait SecretResolver {
     /// Resolves secrets required for a given source.
     ///
@@ -21,6 +25,10 @@ pub trait SecretResolver {
 }
 
 /// A trait for retrieving the actual secret value from a reference URI.
+/// ## Examples
+/// ```ignore
+/// impl SecretRefReader for MyReader { ... }
+/// ```
 pub trait SecretRefReader {
     /// Reads a secret by its reference.
     ///

@@ -9,6 +9,11 @@ pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 /// # Errors
 /// Returns `StoreError` on execution failure.
+/// ## Examples
+/// ```ignore
+/// use logos_store_pg::run_pending_migrations;
+/// run_pending_migrations(&mut conn).unwrap();
+/// ```
 pub fn run_pending_migrations(conn: &mut PgConnection) -> Result<Vec<String>, StoreError> {
     let applied =
         conn.run_pending_migrations(MIGRATIONS)
@@ -24,6 +29,11 @@ pub fn run_pending_migrations(conn: &mut PgConnection) -> Result<Vec<String>, St
 
 /// # Errors
 /// Returns `StoreError` on fetch failure.
+/// ## Examples
+/// ```ignore
+/// use logos_store_pg::pending_migration_names;
+/// let names = pending_migration_names(&mut conn).unwrap();
+/// ```
 pub fn pending_migration_names(conn: &mut PgConnection) -> Result<Vec<String>, StoreError> {
     let pending =
         conn.pending_migrations(MIGRATIONS)

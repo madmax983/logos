@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-15 - The Forgotten Format Check
+**Confusion:** I initially blindly `re.sub`'d documentation strings into files right above the `pub struct` declaration, neglecting the fact that many structs have `#[derive(...)]` attributes. This caused the doc comments `///` to be awkwardly placed after the derives rather than at the top of the item.
+**Clarification:** I created a Python script with a regex that correctly moves `/// ## Examples` blocks *above* any `#[...]` attributes, ensuring correct Rust formatting. I also removed some leftover temporary Python scripts used for generation so they weren't accidentally committed.

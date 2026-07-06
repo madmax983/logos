@@ -198,6 +198,12 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
 ///
 /// Returns an error when CSV quoting is malformed, required columns are missing,
 /// or amount parsing fails.
+/// ## Examples
+/// ```
+/// use logos_import::{parse_simple_csv_row, CsvMapping};
+/// let mapping = CsvMapping::default();
+/// let record = parse_simple_csv_row("2024-01-01,10000,Groceries,Checking,Food", &mapping).unwrap();
+/// ```
 pub fn parse_simple_csv_row(row: &str, mapping: &CsvMapping) -> Result<ImportRecord, ImportError> {
     let columns = parse_csv_columns(row)?;
     let max_idx = [

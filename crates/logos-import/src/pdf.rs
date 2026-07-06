@@ -15,6 +15,11 @@ use crate::csv::{ImportError, ImportRecord};
 /// # Errors
 ///
 /// Returns an error when file reading, text extraction, or row parsing fails.
+/// ## Examples
+/// ```ignore
+/// use logos_import::parse_pdf_statement_file;
+/// let records = parse_pdf_statement_file("statement.pdf", "Assets:Checking", false).unwrap();
+/// ```
 pub fn parse_pdf_statement_file(
     path: impl AsRef<Path>,
     account: &str,
