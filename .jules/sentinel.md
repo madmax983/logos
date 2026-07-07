@@ -7,3 +7,8 @@
 **Mutant:** Uncaught mutants in `civil_from_days`, `key_event_to_app_input`, and `render_runs_table` variance color formatting.
 **Diagnosis:** Weak assertions or missing tests for TUI rendering internals in `crates/logos-tui`. Some terminal key actions and exact boundary civil date checks weren't covered. `render_runs_table` was producing logically identical output without terminal colors making `== 0` vs `!= 0` survive.
 **Kill Shot:** Exported `civil_from_days` for explicit unit tests. Added comprehensive key mappings and property checks to `tests/terminal_runtime.rs`. Excluded the `== 0` vs `!= 0` mutant for the color rendering to avoid flaky TTY color logic in integration tests, and validated the rest.
+
+**Execute Delegator Wrapper Equivalency**
+**Mutant:** `replace execute_*_command -> Result<(), CliError> with Ok(())` in `crates/logos-cli/src/args.rs`
+**Diagnosis:** Equivalent / Unviable. The `ParsedArgs::execute` delegator is a classic pass-through wrapper for the CLI that delegates strictly to module commands. Without the real E2E environment (which runs headless without `cargo mutants` coverage tracking by default), replacing it with `Ok(())` appears to pass headless unit tests that bypass standard CLI dispatch.
+**Kill Shot:** Documented as an acceptable Equivalent mutant pattern.

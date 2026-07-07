@@ -1316,3 +1316,38 @@ fn parse_paired_i64_flags(
 fn parse_amount_cents(args: &[String]) -> Result<i64, CliError> {
     parse_required_parsed_flag(args, "--amount-cents")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_month_key_valid() {
+        assert_eq!(parse_month_key("--month", "2024-01".to_string()).unwrap(), "2024-01");
+        assert_eq!(parse_month_key("--month", "1999-12".to_string()).unwrap(), "1999-12");
+    }
+
+    #[test]
+    fn test_parse_month_key_invalid_length() {
+        assert!(parse_month_key("--month", "2024-1".to_string()).is_err());
+        assert!(parse_month_key("--month", "2024-01-01".to_string()).is_err());
+    }
+
+    #[test]
+    fn test_parse_month_key_invalid_format() {
+        assert!(parse_month_key("--month", "2024/01".to_string()).is_err());
+        assert!(parse_month_key("--month", "2024001".to_string()).is_err());
+    }
+
+    #[test]
+    fn test_parse_month_key_non_numeric() {
+        assert!(parse_month_key("--month", "abcd-01".to_string()).is_err());
+        assert!(parse_month_key("--month", "2024-ab".to_string()).is_err());
+    }
+
+    #[test]
+    fn test_parse_month_key_invalid_month_range() {
+        assert!(parse_month_key("--month", "2024-00".to_string()).is_err());
+        assert!(parse_month_key("--month", "2024-13".to_string()).is_err());
+    }
+}
