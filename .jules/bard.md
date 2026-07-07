@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2024-05-18 - The Human Interface and The Laboratory
+**Confusion:** The `logos-core::format` and `logos-core::experimental` modules lacked high-level conceptual documentation (`//!`). The `format` functions (`us_timestamp` and `currency`) lacked executable doctests (`## Examples`), leaving their specific formatting behavior undocumented and users confused about how machine precision (cents/microseconds) translates to human-readable strings.
+**Clarification:** Added module-level `//!` documentation to both modules. Wrote `///` comments and executable `## Examples` doctests for `us_timestamp` and `currency` in the `format` module to clarify how they handle edge cases like negative values.

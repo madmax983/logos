@@ -1,3 +1,12 @@
+//! Experimental modules and Mashups.
+//!
+//! # The Laboratory
+//!
+//! This module contains highly speculative, bleeding-edge financial planning tools.
+//! Features in here are under active development and have absolutely no stability guarantees.
+//! They might be promoted to `planning` or completely removed in a future release.
+//! Use at your own risk.
+
 #[cfg(feature = "nova")]
 pub mod life_energy_calculator;
 
