@@ -24,3 +24,9 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+**[MemoryStore clone avoidance]
+**Learning:** Returning references from an iterator requires changing the return type signature, but returning references within a local loop without changing signatures might be safer if the caller relies heavily on values. Here, changing  to  is better as the caller only uses .
+**Action:** Always verify if a returned collection needs owned values or if references are sufficient, especially when filtering or passing to .
+**[MemoryStore clone avoidance]**
+**Learning:** Returning references from an iterator requires changing the return type signature, but returning references within a local loop without changing signatures might be safer if the caller relies heavily on values. Here, changing `HashSet<T>` to `HashSet<&T>` is better as the caller only uses `contains()`.
+**Action:** Always verify if a returned collection needs owned values or if references are sufficient, especially when filtering or passing to `contains`.

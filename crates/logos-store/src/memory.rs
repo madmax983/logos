@@ -163,11 +163,11 @@ impl MemoryStore {
         rows
     }
 
-    fn superseded_transaction_ids(&self, tx_time_us: Timestamp) -> HashSet<TransactionId> {
+    fn superseded_transaction_ids(&self, tx_time_us: Timestamp) -> HashSet<&TransactionId> {
         self.corrections
             .iter()
             .filter(|entry| entry.recorded_at_us <= tx_time_us)
-            .map(|entry| entry.stored.correction().supersedes_id().clone())
+            .map(|entry| entry.stored.correction().supersedes_id())
             .collect()
     }
 
