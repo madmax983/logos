@@ -266,3 +266,81 @@ fn memory_store_rejects_unknown_related_records() {
         logos_store::StoreError::UnknownTransaction { .. }
     ));
 }
+#[test]
+fn test_reconciliation_run_and_month_close_negative_bounds() {
+    let mut store = MemoryStore::new();
+
+    // matched postings
+    let err = store.write_reconciliation_run_and_month_close(
+        "2026-03", "assets:checking", 100_000, 0, 100_000, 100_000, 0, true, -1, 0, 0, &[], None
+    ).unwrap_err();
+    assert!(err.to_string().contains("matched_postings must be non-negative"));
+
+    // inflow cents
+    let err = store.write_reconciliation_run_and_month_close(
+        "2026-03", "assets:checking", 100_000, 0, 100_000, 100_000, 0, true, 0, -1, 0, &[], None
+    ).unwrap_err();
+    assert!(err.to_string().contains("inflow_cents must be non-negative"));
+
+    // outflow cents
+    let err = store.write_reconciliation_run_and_month_close(
+        "2026-03", "assets:checking", 100_000, 0, 100_000, 100_000, 0, true, 0, 0, -1, &[], None
+    ).unwrap_err();
+    assert!(err.to_string().contains("outflow_cents must be non-negative"));
+}
+
+#[test]
+fn test_reconciliation_run_negative_bounds() {
+    let mut store = MemoryStore::new();
+
+    // matched postings
+    let err = store.write_reconciliation_run(
+        "2026-03", "assets:checking", 100_000, 0, 100_000, 100_000, 0, true, -1, 0, 0, &[]
+    ).unwrap_err();
+    assert!(err.to_string().contains("matched_postings must be non-negative"));
+
+    // inflow cents
+    let err = store.write_reconciliation_run(
+        "2026-03", "assets:checking", 100_000, 0, 100_000, 100_000, 0, true, 0, -1, 0, &[]
+    ).unwrap_err();
+    assert!(err.to_string().contains("inflow_cents must be non-negative"));
+
+    // outflow cents
+    let err = store.write_reconciliation_run(
+        "2026-03", "assets:checking", 100_000, 0, 100_000, 100_000, 0, true, 0, 0, -1, &[]
+    ).unwrap_err();
+    assert!(err.to_string().contains("outflow_cents must be non-negative"));
+}
+
+#[test]
+fn test_reconciliation_run_and_month_close_unknown_txn_and_artifact() {
+    let mut store = MemoryStore::new();
+
+    // Unknown artifact
+    let err = store.write_reconciliation_run_and_month_close(
+        "2026-03", "assets:checking", 100_000, 0, 100_000, 100_000, 0, true, 0, 0, 0, &[], Some("missing-artifact")
+    ).unwrap_err();
+    assert!(matches!(err, logos_store::StoreError::UnknownArtifact { .. }));
+
+    // Unknown transaction
+    let missing_txn = TransactionId::new("txn-99").unwrap();
+    let err = store.write_reconciliation_run_and_month_close(
+        "2026-03", "assets:checking", 100_000, 0, 100_000, 100_000, 0, true, 0, 0, 0, &[missing_txn], None
+    ).unwrap_err();
+    assert!(matches!(err, logos_store::StoreError::UnknownTransaction { .. }));
+}
+
+#[test]
+fn test_month_close_negative_bounds_and_unknowns() {
+    let mut store = MemoryStore::new();
+
+    // Set up a valid run
+    store.write_reconciliation_run(
+        "2026-03", "assets:checking", 100_000, 0, 100_000, 100_000, 0, true, 0, 0, 0, &[]
+    ).unwrap();
+
+    let err = store.write_month_close(
+        "2026-03", "assets:checking", "recon-1", Some("missing-artifact")
+    ).unwrap_err();
+    assert!(matches!(err, logos_store::StoreError::UnknownArtifact { .. }));
+}
