@@ -37,7 +37,10 @@ impl CategoryTrendAnalyzer {
         &self,
         transactions: &[Transaction],
     ) -> HashMap<CategoryGroupId, i64> {
-        let mut trends: HashMap<CategoryGroupId, i64> = HashMap::new();
+        // ⚡ Bolt Optimization: Pre-allocate the HashMap based on the upper bound of registered
+        // accounts to eliminate runtime memory re-allocations and rehashing during the hot loop.
+        let mut trends: HashMap<CategoryGroupId, i64> =
+            HashMap::with_capacity(self.account_to_category.len());
 
         for tx in transactions {
             for posting in tx.postings() {
