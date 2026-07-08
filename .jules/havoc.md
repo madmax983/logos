@@ -8,3 +8,9 @@
 **Action:** Havoc doesn't fix bugs, but proving the bounds missing through Proptests keeps the team on their toes.
 ## Overflow Boundaries & Unbalanced Transactions
 When using saturating arithmetic to prevent overflows at extreme boundaries (like `i64::MAX`) in double-entry transaction builders (e.g., portfolio rebalancers), remainder sweeps may fail due to precision loss during percentage divisions. Update chaos tests to accept `DomainError::UnbalancedTransaction` as a valid safe boundary behavior rather than expecting an unconditional success or a panic.
+
+**👺 Havoc: `RunwaySimulator` Panics on Arithmetic Overflow**
+🧨 **The Trigger:** Passing `f64::INFINITY` (or large enough `annual_inflation_pct` leading to infinity) to `RunwaySimulator` causes an arithmetic overflow when casting float to integer or multiplying `current_burn`.
+📉 **The Stack Trace:** attempt to multiply with overflow / float to int cast panic.
+🧪 **Reproduction:** Run `cargo test -p logos-core havoc_runway_simulator_panics_on_overflow --features nova`.
+😈 **Comment:** You assumed people wouldn't simulate runway with infinite inflation. You were wrong.

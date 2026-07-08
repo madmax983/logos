@@ -50,5 +50,6 @@ pub mod income_router;
 pub mod lifestyle_creep;
 #[cfg(feature = "nova")]
 pub mod runway_simulator;
+pub use runway_simulator::*;
 #[cfg(feature = "nova")]
 pub mod subscription_fatigue;

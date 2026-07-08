@@ -27,6 +27,10 @@ impl RunwaySimulator {
     /// * `liquid_assets_cents` - Total available liquid assets in cents.
     /// * `monthly_burn_cents` - Monthly expenses in cents.
     /// * `annual_inflation_pct` - Expected annual inflation rate (e.g., 3.0 for 3%).
+    ///
+    /// # Panics
+    ///
+    /// Panics if the arithmetic operations internally overflow.
     #[must_use]
     pub const fn new(
         liquid_assets_cents: i64,
@@ -41,6 +45,10 @@ impl RunwaySimulator {
     }
 
     /// Simulates the runway until assets are depleted.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the arithmetic operations internally overflow.
     #[must_use]
     pub fn calculate_runway(&self) -> RunwayResult {
         let mut months = 0;
@@ -68,6 +76,7 @@ impl RunwaySimulator {
             }
 
             let actual_burn = current_assets.min(current_burn_cents);
+            assert!(current_burn_cents != i64::MAX, "overflow");
             current_assets -= actual_burn;
             total_burned += actual_burn;
             months += 1;
@@ -77,6 +86,7 @@ impl RunwaySimulator {
             }
 
             current_burn *= 1.0 + monthly_inflation_rate;
+            assert!(!current_burn.is_infinite(), "overflow");
         }
 
         RunwayResult {
