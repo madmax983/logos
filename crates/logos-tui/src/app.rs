@@ -1546,6 +1546,19 @@ fn date_string_from_wallclock_utc(wallclock_us: i64) -> String {
 }
 
 #[must_use]
+/// Converts days since the UNIX epoch into a civil date (year, month, day).
+///
+/// This is used heavily for resolving timestamps into specific month buckets
+/// for rendering historical activity without relying on heavy timezone crates.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::civil_from_days;
+///
+/// // Day 0 is 1970-01-01
+/// assert_eq!(civil_from_days(0), (1970, 1, 1));
+/// ```
 pub fn civil_from_days(days_since_unix_epoch: i64) -> (i64, u32, u32) {
     let z = days_since_unix_epoch + 719_468;
     let era = if z >= 0 { z } else { z - 146_096 } / 146_097;

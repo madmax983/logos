@@ -1,3 +1,15 @@
+/// Formats a UNIX timestamp (in microseconds) into a human-readable UTC string.
+///
+/// If the timestamp is wildly out of bounds and cannot be parsed by chrono,
+/// it gracefully falls back to returning the raw integer string.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::format::us_timestamp;
+///
+/// assert_eq!(us_timestamp(1704067200000000), "2024-01-01 00:00:00 UTC");
+/// ```
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(

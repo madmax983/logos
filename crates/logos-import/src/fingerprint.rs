@@ -13,6 +13,24 @@ const FIELD_MEMO: u8 = 4;
 const FIELD_ACCOUNT: u8 = 5;
 const FIELD_CATEGORY: u8 = 6;
 
+/// Generates a stable, deterministic hash for an import record to enable deduplication.
+///
+/// This fingerprint hashes the source ID, timestamp, amount, memo, and account.
+/// It intentionally ignores the category, meaning if you change the category of
+/// an imported transaction, it will still match the same fingerprint and not
+/// create a duplicate.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_import::{ImportRecord, deterministic_fingerprint};
+///
+/// let record = ImportRecord::new(
+///     "chase", "2024-01-01", 1500, "Coffee", "assets:checking", "expenses:food"
+/// );
+/// let fingerprint = deterministic_fingerprint(&record);
+/// assert!(!fingerprint.is_empty());
+/// ```
 #[must_use]
 pub fn deterministic_fingerprint(record: &ImportRecord) -> String {
     let mut hasher = Hasher::new();
@@ -29,6 +47,18 @@ pub fn deterministic_fingerprint(record: &ImportRecord) -> String {
 
 /// Legacy fingerprint retained only to preserve dedupe compatibility with
 /// previously persisted import keys.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_import::{ImportRecord, deterministic_fingerprint_legacy_v1};
+///
+/// let record = ImportRecord::new(
+///     "chase", "2024-01-01", 1500, "Coffee", "assets:checking", "expenses:food"
+/// );
+/// let fingerprint = deterministic_fingerprint_legacy_v1(&record);
+/// assert!(fingerprint > 0);
+/// ```
 #[must_use]
 pub fn deterministic_fingerprint_legacy_v1(record: &ImportRecord) -> u64 {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();

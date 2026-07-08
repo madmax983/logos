@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-15 - The Forgotten Formats and Un-linked Functions
+**Confusion:** Several utility functions like `us_timestamp`, `deterministic_fingerprint`, and terminal parsing functions in `logos-tui` lacked documentation `///` and executable examples `## Examples`, treating them as "Black Boxes" and "Missing Links". Additionally, `is_valid_month_key` was not exported publicly in the `logos_fetch` root.
+**Clarification:** Added missing function documentation and doctests for formatting (`us_timestamp`), identity (`deterministic_fingerprint`), dates (`civil_from_days`), and runtime settings (`default_artifacts_root`). Re-exported `is_valid_month_key` to make it accessible to public docs.

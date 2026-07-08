@@ -319,6 +319,20 @@ impl FetchedStatementArtifact {
     }
 }
 
+/// Validates whether a given string is a properly formatted YYYY-MM month key.
+///
+/// This is heavily used throughout the codebase for bucketing transactions,
+/// budgets, and statements into strict monthly boundaries.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_fetch::is_valid_month_key;
+/// // internal validation checks bytes for `YYYY-MM` and numeric range `1..=12` for month
+/// assert!(is_valid_month_key("2024-01"));
+/// assert!(!is_valid_month_key("2024-13"));
+/// assert!(!is_valid_month_key("01-2024"));
+/// ```
 pub fn is_valid_month_key(value: &str) -> bool {
     let bytes = value.as_bytes();
     if bytes.len() != 7 || bytes[4] != b'-' {

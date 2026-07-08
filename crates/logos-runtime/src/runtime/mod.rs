@@ -1389,6 +1389,20 @@ fn import_batch_key(
     hasher.finalize().to_hex().to_string()
 }
 
+/// Resolves the default directory path where fetched statement artifacts should be stored.
+///
+/// This checks the `LOGOS_ARTIFACTS_PATH` environment variable first. If not set,
+/// it falls back to a nested `artifacts` directory within the provided state root.
+///
+/// ## Examples
+///
+/// ```
+/// use std::path::Path;
+/// use logos_runtime::default_artifacts_root;
+///
+/// let state_root = Path::new("/var/logos");
+/// let artifacts = default_artifacts_root(state_root);
+/// ```
 #[must_use]
 pub fn default_artifacts_root(state_root: &Path) -> PathBuf {
     if let Some(path) = env::var_os(LOGOS_ARTIFACTS_PATH_ENV) {
@@ -1398,6 +1412,20 @@ pub fn default_artifacts_root(state_root: &Path) -> PathBuf {
     state_root.join(ARTIFACTS_DIRECTORY)
 }
 
+/// Resolves the default path to the fetch configuration file.
+///
+/// This checks the `LOGOS_FETCH_CONFIG_PATH` environment variable first. If not set,
+/// it falls back to the file `fetch.toml` within the provided state root.
+///
+/// ## Examples
+///
+/// ```
+/// use std::path::Path;
+/// use logos_runtime::default_fetch_config_path;
+///
+/// let state_root = Path::new("/var/logos");
+/// let config = default_fetch_config_path(state_root);
+/// ```
 #[must_use]
 pub fn default_fetch_config_path(state_root: &Path) -> PathBuf {
     if let Some(path) = env::var_os(LOGOS_FETCH_CONFIG_PATH_ENV) {
@@ -1407,6 +1435,20 @@ pub fn default_fetch_config_path(state_root: &Path) -> PathBuf {
     state_root.join(DEFAULT_FETCH_CONFIG_NAME)
 }
 
+/// Resolves the default root directory for logos state files.
+///
+/// It attempts to use the user's home directory (`$HOME` on Unix, `$USERPROFILE` on Windows)
+/// and appends `.logos`. If the home directory cannot be determined, it falls back
+/// to the current working directory.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_runtime::default_state_root;
+///
+/// let root = default_state_root();
+/// assert!(root.is_absolute() || root.as_os_str().is_empty() == false);
+/// ```
 #[must_use]
 pub fn default_state_root() -> PathBuf {
     if let Some(home) = env::var_os("HOME").or_else(|| env::var_os("USERPROFILE")) {

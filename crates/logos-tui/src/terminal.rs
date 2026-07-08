@@ -185,6 +185,15 @@ pub fn read_event_input(event: &Event) -> Option<AppInput> {
     }
 }
 
+/// Reads an input event and maps it to a high-level application input action.
+///
+/// ## Examples
+///
+/// ```ignore
+/// use logos_tui::{key_event_to_app_input, AppInput};
+/// // example ignored as `KeyEvent` details are specific to crossterm implementation
+/// // and the function translates raw keystrokes into `AppInput` enumeration variants.
+/// ```
 #[must_use]
 #[allow(clippy::missing_const_for_fn)]
 pub fn key_event_to_app_input(key_event: KeyEvent) -> Option<AppInput> {
@@ -255,6 +264,17 @@ pub const fn view_title(view: View) -> &'static str {
     }
 }
 
+/// Generates the lines to be displayed in the scope panel for the current application state.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::{App, view_scope_lines};
+///
+/// let app = App::new();
+/// let lines = view_scope_lines(&app);
+/// assert!(!lines.is_empty());
+/// ```
 #[must_use]
 pub fn view_scope_lines(app: &App) -> Vec<String> {
     let editing = app.is_scope_editing();
@@ -364,6 +384,17 @@ fn reconcile_status_lines(app: &App) -> Vec<String> {
     ]
 }
 
+/// Generates the lines to be displayed in the status panel for the current application state.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_tui::{App, view_status_lines};
+///
+/// let app = App::new();
+/// let lines = view_status_lines(&app, true);
+/// assert!(!lines.is_empty());
+/// ```
 #[must_use]
 pub fn view_status_lines(app: &App, runtime_available: bool) -> Vec<Line<'static>> {
     let mode = if app.is_scope_editing() {
