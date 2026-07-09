@@ -282,8 +282,14 @@ pub fn net_worth_project(
     }
 
     println!(
-        "analytics.net-worth
-{table}"
+        "
+📈 {}
+
+{table}
+",
+        crossterm::style::Stylize::bold(crossterm::style::Stylize::green(
+            "Net Worth Projection Dashboard"
+        ))
     );
 
     Ok(())
@@ -312,6 +318,7 @@ pub fn fire_sim(
     let projector = NetWorthProjector::new(current_net_worth, monthly_savings_cents);
     let months_to_simulate = 1200; // up to 100 years
 
+    let progress_pct = sim.fire_progress_pct();
     let ascent_sim =
         logos_core::fire_ascent::FireAscentSimulator::new(sim, projector, months_to_simulate);
     let ascent_result = ascent_sim.ascend();
@@ -320,6 +327,7 @@ pub fn fire_sim(
         monthly_expenses_cents,
         fire_number,
         current_net_worth,
+        progress_pct,
         monthly_savings_cents,
         &ascent_result,
     );
@@ -332,6 +340,7 @@ fn render_fire_sim_output(
     monthly_expenses_cents: i64,
     fire_number: i64,
     current_net_worth: i64,
+    progress_pct: u8,
     monthly_savings_cents: i64,
     ascent_result: &logos_core::fire_ascent::AscentResult,
 ) -> String {
@@ -358,6 +367,13 @@ fn render_fire_sim_output(
         comfy_table::Cell::new("Current Safe Net Worth"),
         comfy_table::Cell::new(logos_core::format::currency(current_net_worth))
             .fg(comfy_table::Color::Blue),
+    ]);
+
+    table.add_row(vec![
+        comfy_table::Cell::new("Progress %"),
+        comfy_table::Cell::new(format!("{progress_pct}%"))
+            .fg(comfy_table::Color::Cyan)
+            .add_attribute(comfy_table::Attribute::Bold),
     ]);
 
     table.add_row(vec![
