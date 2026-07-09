@@ -24,3 +24,7 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+
+## 2025-07-09 - Remove Intermediate Vectors for Database Queries
+**Learning:** Diesel's `.eq_any()` method accepts any type that implements `IntoIterator`. Previously, we were allocating intermediate `Vec<&str>` collections purely to pass to `eq_any` (e.g., `let ids: Vec<&str> = transaction_ids.iter().map(TransactionId::as_str).collect()`).
+**Action:** Pass the mapped iterators directly into `.eq_any()` instead of using `.collect::<Vec<_>>()` to avoid heap allocations when building SQL `IN` clauses.

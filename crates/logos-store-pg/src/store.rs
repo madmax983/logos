@@ -821,16 +821,15 @@ impl PostgresStore {
             return Ok(Vec::new());
         }
 
-        let transaction_ids: Vec<&str> = rows.iter().map(|row| row.id.as_str()).collect();
         let posting_rows = postings::table
-            .filter(postings::transaction_id.eq_any(&transaction_ids))
+            .filter(postings::transaction_id.eq_any(rows.iter().map(|row| row.id.as_str())))
             .order((postings::transaction_id.asc(), postings::ordinal.asc()))
             .select(PostingRow::as_select())
             .load::<PostingRow>(connection)
             .map_err(|err| load_failure(format!("loading postings failed: {err}")))?;
 
         let mut postings_by_transaction: HashMap<String, Vec<PostingRow>> =
-            HashMap::with_capacity(transaction_ids.len());
+            HashMap::with_capacity(rows.len());
 
         for mut posting_row in posting_rows {
             // ⚡ Bolt: Using `std::mem::take` allows us to extract the `transaction_id` string from the
@@ -1455,9 +1454,11 @@ impl PostgresStore {
         if transaction_ids.is_empty() {
             return Ok(Vec::new());
         }
-        let ids: Vec<&str> = transaction_ids.iter().map(TransactionId::as_str).collect();
         statement_lines::table
-            .filter(statement_lines::imported_txn_id.eq_any(ids))
+            .filter(
+                statement_lines::imported_txn_id
+                    .eq_any(transaction_ids.iter().map(TransactionId::as_str)),
+            )
             .select(statement_lines::line_id)
             .order(statement_lines::line_id.asc())
             .load::<String>(connection)
