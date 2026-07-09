@@ -88,8 +88,10 @@ impl MonteCarloProjector {
     }
 
     /// Runs the Monte Carlo simulation for a given number of months and paths.
+    /// To prevent out-of-memory errors on capacity overflow, the number of paths is capped to 10,000,000.
     #[must_use]
     pub fn run(&self, months: u16, paths: u32) -> MonteCarloResult {
+        let paths = paths.min(10_000_000);
         if paths == 0 {
             return MonteCarloResult {
                 p5_cents: self.initial_cents,
