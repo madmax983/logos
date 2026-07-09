@@ -183,7 +183,7 @@ impl CashflowProjector {
                         // a new owned String if we need to insert a new entry.
                         if let Some(balance) = current_balances.get_mut(posting.account().as_str())
                         {
-                            *balance += posting.amount();
+                            *balance = balance.saturating_add(posting.amount());
                         } else {
                             current_balances
                                 .insert(posting.account().as_str().to_owned(), posting.amount());
@@ -283,5 +283,21 @@ mod tests {
         let report = projector.generate_report(1);
         assert!(report.contains("assets:checking: $1500.00"));
         assert!(report.contains("income:salary: $-500.00"));
+    }
+
+    #[test]
+    fn should_prevent_overflow_on_massive_balances() {
+        let mut projector = CashflowProjector::new();
+        projector.set_initial_balance("assets:checking", i64::MAX);
+
+        projector.add_recurring_template(RecurringTemplate {
+            description: "Massive Salary".to_string(),
+            amount_cents: 10_000,
+            credit_account: "income:salary".to_string(),
+            debit_account: "assets:checking".to_string(),
+        });
+
+        let balances = projector.project_balances(1);
+        assert_eq!(*balances.get("assets:checking").unwrap(), i64::MAX);
     }
 }
