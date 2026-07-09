@@ -11,7 +11,8 @@ pub mod portfolio_rebalancer;
 pub mod asset_depreciation;
 #[cfg(feature = "nova")]
 pub mod benford_law;
-pub mod cashflow_projector;
+pub(crate) mod cashflow_projector;
+pub use cashflow_projector::*;
 #[cfg(feature = "nova")]
 pub mod coast_fire;
 #[cfg(feature = "nova")]
@@ -36,7 +37,8 @@ pub mod opportunity_cost;
 #[cfg(feature = "nova")]
 pub mod predictive_ledger;
 /// Detecting recurring transactions to aid in automated classification and projection.
-pub mod recurrence_detector;
+pub(crate) mod recurrence_detector;
+pub use recurrence_detector::*;
 #[cfg(feature = "nova")]
 pub mod trinity_simulator;
 

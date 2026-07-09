@@ -8,9 +8,9 @@
 //! meaning that invalid financial states (like unbalanced transactions or negative equity forecasts)
 //! are structurally impossible to create.
 
-pub mod account;
-pub mod budget;
-pub mod category;
-pub mod correction;
-pub mod rsu;
-pub mod transaction;
+pub(crate) mod account;
+pub(crate) mod budget;
+pub(crate) mod category;
+pub(crate) mod correction;
+pub(crate) mod rsu;
+pub(crate) mod transaction;

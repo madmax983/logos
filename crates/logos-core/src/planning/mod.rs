@@ -51,4 +51,5 @@
 
 pub mod fire;
 pub mod net_worth_projector;
-pub mod rsu_distributor;
+pub(crate) mod rsu_distributor;
+pub use rsu_distributor::*;

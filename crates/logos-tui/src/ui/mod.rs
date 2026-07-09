@@ -41,8 +41,8 @@
 //! assert!(output.contains("2026-03"));
 //! ```
 
-pub mod budget;
-pub mod home;
-pub mod reconcile;
-pub mod register;
-pub mod rsu;
+pub(crate) mod budget;
+pub(crate) mod home;
+pub(crate) mod reconcile;
+pub(crate) mod register;
+pub(crate) mod rsu;
