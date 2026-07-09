@@ -32,14 +32,7 @@ fn balanced_transaction(description: &str, amount_cents: i64) -> TransactionBuil
 #[test]
 #[ignore = "requires Docker (testcontainers)"]
 fn budget_targets_and_artifacts_round_trip() {
-    let container = postgres::Postgres::default()
-        .start()
-        .expect("start postgres container");
-    let host = container.get_host().expect("container host");
-    let port = container.get_host_port_ipv4(5432).expect("postgres port");
-    let database_url = format!("postgres://postgres:postgres@{host}:{port}/postgres");
-
-    let mut store = connect_store(&database_url);
+    let (_container, mut store) = setup_postgres_db();
 
     assert!(store.budget_target("2026-03", "expenses:food").is_none());
     store
@@ -114,14 +107,7 @@ fn budget_targets_and_artifacts_round_trip() {
 #[test]
 #[ignore = "requires Docker (testcontainers)"]
 fn import_batches_fetch_runs_and_statement_lines_round_trip() {
-    let container = postgres::Postgres::default()
-        .start()
-        .expect("start postgres container");
-    let host = container.get_host().expect("container host");
-    let port = container.get_host_port_ipv4(5432).expect("postgres port");
-    let database_url = format!("postgres://postgres:postgres@{host}:{port}/postgres");
-
-    let mut store = connect_store(&database_url);
+    let (_container, mut store) = setup_postgres_db();
     let txn1 = store
         .write_transaction(balanced_transaction("txn-1", 1_000))
         .expect("write txn 1");
@@ -216,14 +202,7 @@ fn import_batches_fetch_runs_and_statement_lines_round_trip() {
 #[ignore = "requires Docker (testcontainers)"]
 #[allow(clippy::too_many_lines)]
 fn reconciliation_run_and_month_close_round_trip() {
-    let container = postgres::Postgres::default()
-        .start()
-        .expect("start postgres container");
-    let host = container.get_host().expect("container host");
-    let port = container.get_host_port_ipv4(5432).expect("postgres port");
-    let database_url = format!("postgres://postgres:postgres@{host}:{port}/postgres");
-
-    let mut store = connect_store(&database_url);
+    let (_container, mut store) = setup_postgres_db();
     let txn1 = store
         .write_transaction(balanced_transaction("txn-1", 1_000))
         .expect("write txn 1");
@@ -382,4 +361,20 @@ fn reconciliation_run_and_month_close_round_trip() {
             .close_id(),
         standalone_close.close_id()
     );
+}
+
+fn setup_postgres_db() -> (
+    testcontainers_modules::testcontainers::Container<postgres::Postgres>,
+    PostgresStore,
+) {
+    let container = postgres::Postgres::default()
+        .start()
+        .expect("start postgres container");
+    let host = container.get_host().expect("container host");
+    let port = container.get_host_port_ipv4(5432).expect("postgres port");
+    let database_url = format!("postgres://postgres:postgres@{host}:{port}/postgres");
+
+    let store = connect_store(&database_url);
+
+    (container, store)
 }
