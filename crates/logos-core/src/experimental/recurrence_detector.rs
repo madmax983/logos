@@ -120,4 +120,29 @@ mod tests {
         assert_eq!(templates[0].credit_account, "assets:checking");
         assert_eq!(templates[0].debit_account, "expenses:entertainment");
     }
+
+    #[test]
+    fn test_skips_transactions_without_exactly_two_postings() {
+        let detector = RecurrenceDetector::new(1);
+        let mut transactions = Vec::new();
+
+        // Transaction with 1 posting (invalid normally, but just to test the logic)
+        // Since TransactionBuilder prevents this, we might need a workaround or test with 3 postings.
+        let tx = TransactionBuilder::new("Split")
+            .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), 1500).unwrap())
+            .posting(Posting::debit(AccountId::new("expenses:food").unwrap(), 1000).unwrap())
+            .posting(
+                Posting::debit(AccountId::new("expenses:entertainment").unwrap(), 500).unwrap(),
+            )
+            .build()
+            .unwrap();
+        transactions.push(tx);
+
+        let templates = detector.detect(&transactions);
+        assert!(
+            templates.is_empty(),
+            "Should skip transactions with != 2 postings"
+        );
+    }
+
 }

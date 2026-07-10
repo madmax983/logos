@@ -20,3 +20,6 @@
 ## 2024-06-09 - Unguarded Arithmetic in CashflowProjector
 **Learning:** Using `+=` without bounds checking causes panics with extreme inputs during balance projection.
 **Action:** Always use `saturating_add` or `checked_add` when aggregating numbers like cents or values over an unknown number of iterations.
+## 2026-07-10 - Unrepresentable states in TransactionBuilder
+**Learning:** The `TransactionBuilder` enforces strict double-entry balancing rules via `Posting::amount()`. It guarantees that any 2-posting transaction will inherently have one debit (>0) and one credit (<0). Attempting to test invalid states like a transaction with two debits in downstream consumers like `RecurrenceDetector` is impossible because the domain layer outright prevents such objects from being instantiated.
+**Action:** Do not write empty tests for invalid domain states. If the type system and domain layer make an invalid state unrepresentable (e.g., unbalanced transactions), rely on the domain tests. Downstream consumers do not need defensive unit tests for states the compiler/domain already proves impossible.
