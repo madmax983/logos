@@ -46,6 +46,7 @@ pub mod anomaly_detector;
 pub mod category_trends;
 #[cfg(feature = "nova")]
 pub mod income_router;
+pub mod lcg;
 #[cfg(feature = "nova")]
 pub mod lifestyle_creep;
 #[cfg(feature = "nova")]
