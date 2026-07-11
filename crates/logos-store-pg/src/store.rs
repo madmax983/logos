@@ -1877,18 +1877,19 @@ impl LedgerStore for PostgresStore {
             .into_iter()
             .collect();
 
-        let rows = transactions::table
+        let mut rows = transactions::table
             .filter(transactions::effective_at_us.le(valid_time_us))
             .filter(transactions::recorded_at_us.le(tx_time_us))
             .order(transactions::id.asc())
             .select(TransactionRow::as_select())
             .load::<TransactionRow>(&mut *connection)
             .map_err(|err| load_failure(format!("loading as-of transactions failed: {err}")))?;
-        let visible_rows = rows
-            .into_iter()
-            .filter(|row| !superseded_ids.contains(&row.id))
-            .collect();
-        Self::hydrate_transactions(&mut connection, visible_rows)
+
+        // ⚡ Bolt Optimization: Use `retain` to filter elements in-place on the existing `Vec`
+        // rather than consuming it with `into_iter().filter(...).collect::<Vec<_>>()`,
+        // which avoids the overhead of an intermediate memory allocation.
+        rows.retain(|row| !superseded_ids.contains(&row.id));
+        Self::hydrate_transactions(&mut connection, rows)
     }
 
     fn write_transaction(
