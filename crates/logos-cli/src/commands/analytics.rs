@@ -1,5 +1,6 @@
 use crate::args::CliError;
 use comfy_table::{Cell, Color};
+use crossterm::style::Stylize;
 use logos_core::format::us_timestamp;
 
 /// Handles `ledger analytics snapshot create`.
@@ -281,10 +282,8 @@ pub fn net_worth_project(
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    let header = "📈 Net Worth Projection".green().bold();
+    println!("\n{header}\n{table}\n");
 
     Ok(())
 }
