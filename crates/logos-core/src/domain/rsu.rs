@@ -306,26 +306,42 @@ mod tests {
     }
 
     #[test]
-    fn should_reject_haircut_percentage_above_100() {
-        assert_eq!(
-            HaircutTierTable::new(20, 40, 101),
-            Err(DomainError::InvalidHaircutPercentage {
-                tier: "long",
-                percentage: 101
-            })
-        );
+    fn should_reject_invalid_haircut_percentages_via_table() {
+        let cases = vec![
+            (101, 40, 60, "short", 101),
+            (20, 105, 60, "medium", 105),
+            (20, 40, 255, "long", 255),
+        ];
+
+        for (short, medium, long, expected_tier, expected_pct) in cases {
+            assert_eq!(
+                HaircutTierTable::new(short, medium, long),
+                Err(DomainError::InvalidHaircutPercentage {
+                    tier: expected_tier,
+                    percentage: expected_pct
+                })
+            );
+        }
     }
 
     #[test]
-    fn should_reject_non_monotonic_haircut_tiers() {
-        assert_eq!(
-            HaircutTierTable::new(50, 40, 60),
-            Err(DomainError::InvalidHaircutOrdering {
-                short: 50,
-                medium: 40,
-                long: 60
-            })
-        );
+    fn should_reject_invalid_haircut_ordering_via_table() {
+        let cases = vec![
+            (30, 20, 40), // short > medium
+            (20, 50, 40), // medium > long
+            (60, 50, 40), // short > medium and medium > long
+        ];
+
+        for (short, medium, long) in cases {
+            assert_eq!(
+                HaircutTierTable::new(short, medium, long),
+                Err(DomainError::InvalidHaircutOrdering {
+                    short,
+                    medium,
+                    long
+                })
+            );
+        }
     }
 
     #[test]
@@ -365,11 +381,22 @@ mod tests {
     }
 
     #[test]
-    fn should_reject_invalid_allocation_total() {
-        assert_eq!(
-            AllocationPolicy::new(40, 20, 30, 20),
-            Err(DomainError::InvalidAllocationTotal { total: 110 })
-        );
+    fn should_reject_invalid_allocation_total_via_table() {
+        let cases = vec![
+            (40, 20, 30, 20, 110),     // Over-allocated
+            (40, 20, 30, 0, 90),       // Under-allocated
+            (0, 0, 0, 0, 0),           // Zeroed out
+            (100, 100, 100, 100, 400), // Maxed out
+        ];
+
+        for (tax, buffer, goals, disc, expected_total) in cases {
+            assert_eq!(
+                AllocationPolicy::new(tax, buffer, goals, disc),
+                Err(DomainError::InvalidAllocationTotal {
+                    total: expected_total
+                })
+            );
+        }
     }
 
     #[test]

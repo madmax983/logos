@@ -20,3 +20,6 @@
 ## 2024-06-09 - Unguarded Arithmetic in CashflowProjector
 **Learning:** Using `+=` without bounds checking causes panics with extreme inputs during balance projection.
 **Action:** Always use `saturating_add` or `checked_add` when aggregating numbers like cents or values over an unknown number of iterations.
+## 2024-07-12 - Table-Driven Tests Over Trivial Ones
+**Learning:** Adding test cases for edge validations (like all configuration parameters being correctly bounds-checked) often exposes fragile implementations faster than simple getters/setters, but requires table-driven data models.
+**Action:** Always prefer `vec![]` table-driven test cases when validating constraints or complex bounds over simple one-off assertions to verify cross-parameter bugs.

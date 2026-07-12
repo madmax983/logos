@@ -266,6 +266,19 @@ mod tests {
     }
 
     #[test]
+    fn should_saturate_and_not_panic_on_large_net_worth_overflow() {
+        // Start with a net worth that's almost i64::MAX
+        let projector = NetWorthProjector::new(i64::MAX - 5_000, 10_000);
+
+        let (timeline, _) = projector.project_timeline(2);
+
+        // Month 1 should saturate at MAX instead of panicking
+        assert_eq!(timeline[0].net_worth_cents, i64::MAX);
+        // Month 2 should remain saturated
+        assert_eq!(timeline[1].net_worth_cents, i64::MAX);
+    }
+
+    #[test]
     fn test_project_timeline_no_vests() {
         let mut projector = NetWorthProjector::new(100_000, 10_000);
         projector.add_milestone_cents(115_000);
