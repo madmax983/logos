@@ -1181,3 +1181,279 @@ fn rejects_aletheia_command_after_cutover() {
 
     assert_eq!(err.to_string(), "Unknown command 'aletheia'.");
 }
+
+#[test]
+fn parses_budget_monte_carlo() {
+    let args = vec![
+        "ledger",
+        "budget",
+        "monte-carlo",
+        "--quarterly-units",
+        "100",
+        "--vest-price",
+        "50",
+        "--initial-price",
+        "50",
+        "--volatility",
+        "0.2",
+        "--initial-cents",
+        "1000",
+        "--years",
+        "10",
+        "--monthly-contribution-cents",
+        "100",
+        "--annual-mean-return",
+        "0.08",
+        "--annual-volatility",
+        "0.15",
+        "--months",
+        "12",
+        "--paths",
+        "1000",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+    assert_eq!(parsed.command_path(), "budget.monte-carlo");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::Command::Budget(logos_cli::BudgetCommand::MonteCarlo { .. })
+    ));
+}
+
+#[test]
+fn parses_analytics_fire_sim() {
+    let args = vec![
+        "ledger",
+        "analytics",
+        "fire-sim",
+        "--initial-net-worth-cents",
+        "1000",
+        "--monthly-savings-cents",
+        "100",
+        "--monthly-savings-growth-cents",
+        "5",
+        "--market-growth-rate",
+        "1.05",
+        "--months",
+        "12",
+        "--monte-carlo-iterations",
+        "1000",
+        "--monthly-expenses-cents",
+        "50",
+        "--liquid-assets-cents",
+        "500",
+    ];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+    assert_eq!(parsed.command_path(), "analytics.fire-sim");
+    assert!(matches!(
+        parsed.command(),
+        logos_cli::Command::Analytics(logos_cli::AnalyticsCommand::FireSim { .. })
+    ));
+}
+
+#[test]
+fn test_parse_month_key_invalid_length() {
+    let args = vec!["ledger", "reconcile", "month", "--month", "2026-4"];
+    let err = logos_cli::parse_args(args).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "Invalid value '2026-4' for argument '--month'."
+    );
+}
+
+#[test]
+fn test_parse_month_key_missing_dash() {
+    let args = vec!["ledger", "reconcile", "month", "--month", "2026004"];
+    let err = logos_cli::parse_args(args).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "Invalid value '2026004' for argument '--month'."
+    );
+}
+
+#[test]
+fn test_parse_month_key_invalid_year_digits() {
+    let args = vec!["ledger", "reconcile", "month", "--month", "abcd-04"];
+    let err = logos_cli::parse_args(args).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "Invalid value 'abcd-04' for argument '--month'."
+    );
+}
+
+#[test]
+fn test_parse_month_key_invalid_month_digits() {
+    let args = vec!["ledger", "reconcile", "month", "--month", "2026-ab"];
+    let err = logos_cli::parse_args(args).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "Invalid value '2026-ab' for argument '--month'."
+    );
+}
+
+#[test]
+fn parses_txn_help_flag_alone() {
+    let args = vec!["ledger", "txn", "-h"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+    assert_eq!(parsed.command_path(), "help.txn");
+}
+
+#[test]
+fn parses_txn_help_subcommand() {
+    let args = vec!["ledger", "txn", "--help"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+    assert_eq!(parsed.command_path(), "help.txn");
+}
+
+#[test]
+fn test_parse_txn_missing_subcommand_but_has_help_flag() {
+    let args = vec!["ledger", "txn", "-h"];
+    let parsed = logos_cli::parse_args(args).expect("parse");
+    assert_eq!(parsed.command_path(), "help.txn");
+}
+
+#[test]
+fn test_parse_budget_help_subcommand() {
+    let args = vec!["ledger", "budget", "--help"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.budget");
+}
+
+#[test]
+fn test_parse_analytics_help_subcommand() {
+    let args = vec!["ledger", "analytics", "--help"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.analytics");
+}
+
+#[test]
+fn test_parse_analytics_snapshot_help_subcommand() {
+    let args = vec!["ledger", "analytics", "snapshot", "--help"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.analytics");
+}
+
+#[test]
+fn test_parse_import_help_subcommand() {
+    let args = vec!["ledger", "import", "--help"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.import");
+}
+
+#[test]
+fn test_parse_fetch_help_subcommand() {
+    let args = vec!["ledger", "fetch", "--help"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.fetch");
+}
+
+#[test]
+fn test_parse_report_help_subcommand() {
+    let args = vec!["ledger", "report", "--help"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.report");
+}
+
+#[test]
+fn test_parse_reconcile_help_subcommand() {
+    let args = vec!["ledger", "reconcile", "--help"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.reconcile");
+}
+
+#[test]
+fn test_parse_month_help_subcommand() {
+    let args = vec!["ledger", "month", "--help"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.month");
+}
+
+#[test]
+fn test_parse_close_help_subcommand() {
+    let args = vec!["ledger", "close", "--help"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.close");
+}
+
+#[test]
+fn test_parse_db_help_subcommand() {
+    let args = vec!["ledger", "db", "--help"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.db");
+}
+
+#[test]
+fn test_parse_txn_help_flag_alias() {
+    let args = vec!["ledger", "txn", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.txn");
+}
+
+#[test]
+fn test_parse_budget_help_flag_alias() {
+    let args = vec!["ledger", "budget", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.budget");
+}
+
+#[test]
+fn test_parse_analytics_help_flag_alias() {
+    let args = vec!["ledger", "analytics", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.analytics");
+}
+
+#[test]
+fn test_parse_analytics_snapshot_help_flag_alias() {
+    let args = vec!["ledger", "analytics", "snapshot", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.analytics");
+}
+
+#[test]
+fn test_parse_import_help_flag_alias() {
+    let args = vec!["ledger", "import", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.import");
+}
+
+#[test]
+fn test_parse_fetch_help_flag_alias() {
+    let args = vec!["ledger", "fetch", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.fetch");
+}
+
+#[test]
+fn test_parse_report_help_flag_alias() {
+    let args = vec!["ledger", "report", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.report");
+}
+
+#[test]
+fn test_parse_reconcile_help_flag_alias() {
+    let args = vec!["ledger", "reconcile", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.reconcile");
+}
+
+#[test]
+fn test_parse_month_help_flag_alias() {
+    let args = vec!["ledger", "month", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.month");
+}
+
+#[test]
+fn test_parse_close_help_flag_alias() {
+    let args = vec!["ledger", "close", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.close");
+}
+
+#[test]
+fn test_parse_db_help_flag_alias() {
+    let args = vec!["ledger", "db", "-h"];
+    let parsed = logos_cli::parse_args(args).unwrap();
+    assert_eq!(parsed.command_path(), "help.db");
+}
