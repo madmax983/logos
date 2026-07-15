@@ -52,3 +52,25 @@ mod tests {
         assert_eq!(currency(0), "$0.00");
     }
 }
+#[cfg(test)]
+mod additional_tests {
+    use super::*;
+
+    #[test]
+    fn test_currency_length_boundaries() {
+        // 3 digits
+        assert_eq!(currency(10_000), "$100.00");
+        // 6 digits
+        assert_eq!(currency(10_000_000), "$100,000.00");
+    }
+
+    #[test]
+    fn test_us_timestamp() {
+        assert_eq!(
+            us_timestamp(1_700_000_000_000_000),
+            "2023-11-14 22:13:20 UTC"
+        );
+        // invalid timestamp fallback
+        assert_eq!(us_timestamp(i64::MAX), i64::MAX.to_string());
+    }
+}

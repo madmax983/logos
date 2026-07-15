@@ -1,0 +1,6 @@
+[mutants]
+exclude = [
+    "crates/logos-store-pg/src/migrate.rs",
+    "crates/logos-tui/src/main.rs",
+    "crates/logos-cli/src/main.rs"
+]

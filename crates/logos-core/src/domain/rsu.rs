@@ -380,3 +380,28 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod additional_rsu_tests {
+    use super::*;
+
+    #[test]
+    fn test_haircut_tier_boundaries() {
+        let tiers = HaircutTierTable::default();
+        // exact boundary for short
+        assert_eq!(tiers.haircut_for_days(29), 25);
+        assert_eq!(tiers.haircut_for_days(30), 40);
+        // exact boundary for medium
+        assert_eq!(tiers.haircut_for_days(90), 40);
+        assert_eq!(tiers.haircut_for_days(91), 55);
+    }
+
+    #[test]
+    fn test_allocation_policy_getters() {
+        let policy = AllocationPolicy::new(40, 30, 20, 10).unwrap();
+        assert_eq!(policy.tax_reserve_pct(), 40);
+        assert_eq!(policy.smoothing_buffer_pct(), 30);
+        assert_eq!(policy.goals_pct(), 20);
+        assert_eq!(policy.discretionary_pct(), 10);
+    }
+}
