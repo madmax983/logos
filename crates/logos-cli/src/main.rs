@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use crossterm::style::Stylize;
 
 fn main() {

@@ -1,4 +1,8 @@
 //! Concrete `LedgerStore` implementation using `PostgreSQL`
+//!
+//! This module provides the `PostgresStore` struct, which implements the `LedgerStore`
+//! trait. It acts as the production persistence layer, translating abstract domain actions
+//! (like recording transactions or saving budgets) into explicit SQL queries via Diesel.
 use std::cell::{RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -317,6 +321,10 @@ struct SequenceValueRow {
     sequence_value: i64,
 }
 
+/// The PostgreSQL-backed implementation of `LedgerStore`.
+///
+/// This struct holds a database connection and handles translating all generic
+/// persistence operations into PostgreSQL-specific queries.
 pub struct PostgresStore {
     connection: RefCell<PgConnection>,
 }
@@ -705,6 +713,8 @@ impl PostgresStore {
         )
     }
 
+    /// Establishes a new connection to the `PostgreSQL` database.
+    ///
     /// # Errors
     /// Returns `StoreError` if connection fails.
     pub fn connect(database_url: &str) -> Result<Self, StoreError> {
@@ -728,6 +738,10 @@ impl PostgresStore {
         })
     }
 
+    /// Provides mutable access to the underlying `PostgreSQL` connection.
+    ///
+    /// This is useful for running migrations or executing raw SQL queries
+    /// directly against the database outside of the `LedgerStore` trait.
     #[must_use]
     pub fn connection_mut(&self) -> RefMut<'_, PgConnection> {
         self.connection.borrow_mut()

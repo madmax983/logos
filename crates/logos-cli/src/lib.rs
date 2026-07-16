@@ -1,4 +1,5 @@
 //! Logos Command Line Interface
+#![allow(missing_docs)]
 pub(crate) mod args;
 pub(crate) mod commands;
 

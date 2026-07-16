@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 pub(crate) mod app;
 pub use app::civil_from_days;
 pub(crate) mod terminal;
