@@ -38,6 +38,8 @@ pub mod predictive_ledger;
 /// Detecting recurring transactions to aid in automated classification and projection.
 pub mod recurrence_detector;
 #[cfg(feature = "nova")]
+pub mod rent_vs_buy;
+#[cfg(feature = "nova")]
 pub mod trinity_simulator;
 
 #[cfg(feature = "nova")]
