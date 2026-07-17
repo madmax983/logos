@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-15 - The Invisible Income Router
+**Confusion:** The `IncomeRouter` struct and its methods (`new` and `route_income`) in `crates/logos-core/src/experimental/income_router.rs` completely lacked executable doctests. Developers had to guess how to construct routing rules and what the resulting transaction postings would look like, making it a "Black Box" API.
+**Clarification:** Added executable `## Examples` doc tests to the struct, `new`, and `route_income` to show how to configure `RouteRule` instances and assert on the generated transaction.

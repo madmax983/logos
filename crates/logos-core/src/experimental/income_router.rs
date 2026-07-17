@@ -18,6 +18,28 @@ pub struct RouteRule {
 }
 
 /// Automatically routes a single income amount to multiple destinations.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::income_router::{IncomeRouter, RouteRule};
+/// use logos_core::AccountId;
+///
+/// let source = AccountId::new("income:salary").unwrap();
+/// let checking = AccountId::new("assets:checking").unwrap();
+/// let savings = AccountId::new("assets:savings").unwrap();
+///
+/// let router = IncomeRouter::new(
+///     source,
+///     vec![
+///         RouteRule { destination: checking, percentage: 80 },
+///         RouteRule { destination: savings, percentage: 20 },
+///     ],
+/// ).unwrap();
+///
+/// let tx = router.route_income("Paycheck", 1000).unwrap();
+/// assert_eq!(tx.postings().len(), 3);
+/// ```
 #[derive(Debug, Clone)]
 pub struct IncomeRouter {
     source_account: AccountId,
@@ -26,6 +48,21 @@ pub struct IncomeRouter {
 
 impl IncomeRouter {
     /// Creates a new `IncomeRouter`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::income_router::{IncomeRouter, RouteRule};
+    /// use logos_core::AccountId;
+    ///
+    /// let source = AccountId::new("income:salary").unwrap();
+    /// let checking = AccountId::new("assets:checking").unwrap();
+    ///
+    /// let router = IncomeRouter::new(
+    ///     source,
+    ///     vec![RouteRule { destination: checking, percentage: 100 }],
+    /// ).unwrap();
+    /// ```
     ///
     /// # Errors
     /// Returns a `DomainError::InvalidAllocationTotal` if the percentages do not sum exactly to 100.
@@ -44,6 +81,24 @@ impl IncomeRouter {
 
     /// Routes the income amount, creating a perfectly balanced transaction.
     /// Any fractional cents are swept into the first rule's destination.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::income_router::{IncomeRouter, RouteRule};
+    /// use logos_core::AccountId;
+    ///
+    /// let source = AccountId::new("income:salary").unwrap();
+    /// let checking = AccountId::new("assets:checking").unwrap();
+    ///
+    /// let router = IncomeRouter::new(
+    ///     source,
+    ///     vec![RouteRule { destination: checking, percentage: 100 }],
+    /// ).unwrap();
+    ///
+    /// let tx = router.route_income("Paycheck", 500).unwrap();
+    /// assert_eq!(tx.description(), "Paycheck");
+    /// ```
     ///
     /// # Errors
     /// Returns a `DomainError::InvalidCreditAmount` if the `amount_cents` is zero or negative.
