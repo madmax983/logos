@@ -431,4 +431,53 @@ mod fire_sim_tests {
         let result = fire_sim(500_000, 1_000_000, 200_000);
         assert!(result.is_ok());
     }
+
+    #[test]
+    fn render_fire_sim_output_is_deterministic() {
+        use logos_core::fire_ascent::{AscentMilestone, AscentResult};
+
+        let ascent_result = AscentResult {
+            summit_cents: 150_000_000,
+            max_months: 60,
+            final_net_worth_cents: 20_000_000,
+            milestones: vec![
+                AscentMilestone {
+                    name: "Coast FIRE",
+                    target_cents: 50_000_000,
+                    month_reached: Some(25), // 2y 1m
+                },
+                AscentMilestone {
+                    name: "Lean FIRE",
+                    target_cents: 75_000_000,
+                    month_reached: None,
+                },
+            ],
+            success: false,
+            instant_summit: false,
+            impossible: false,
+        };
+
+        let output = super::render_fire_sim_output(
+            500_000,
+            150_000_000,
+            20_000_000,
+            200_000,
+            &ascent_result,
+        );
+
+        assert!(output.contains("Monthly Expenses"));
+        assert!(output.contains("$5,000.00"));
+        assert!(output.contains("Target FIRE Number"));
+        assert!(output.contains("$1,500,000.00"));
+        assert!(output.contains("Current Safe Net Worth"));
+        assert!(output.contains("$200,000.00"));
+        assert!(output.contains("Monthly Savings"));
+        assert!(output.contains("$2,000.00"));
+        assert!(output.contains("Coast FIRE"));
+        assert!(output.contains("$500,000.00"));
+        assert!(output.contains("Reached in 2y 1m (Month 25)"));
+        assert!(output.contains("Lean FIRE"));
+        assert!(output.contains("$750,000.00"));
+        assert!(output.contains("Pending"));
+    }
 }

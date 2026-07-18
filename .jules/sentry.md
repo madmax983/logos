@@ -20,3 +20,6 @@
 ## 2024-06-09 - Unguarded Arithmetic in CashflowProjector
 **Learning:** Using `+=` without bounds checking causes panics with extreme inputs during balance projection.
 **Action:** Always use `saturating_add` or `checked_add` when aggregating numbers like cents or values over an unknown number of iterations.
+## 2026-07-18 - Math Mutants in logos-cli Analytics View
+**Learning:** Math mutants mapping to `/` vs `%` in `render_fire_sim_output` were missed due to a lack of deterministic snapshot/unit tests that assert the rendered table text contents and numbers.
+**Action:** Always add deterministic unit tests using dummy data constructs (e.g. `AscentResult` with dummy logic milestones) and assert `.contains()` on output string formatted table output, to ensure simple math and view layer presentation isn't skipped.
