@@ -220,12 +220,7 @@ fn parse_amount_cents_token(token: &str) -> Option<i64> {
 
     let (negative, numeric_part) = strip_amount_sign_and_currency(cleaned);
 
-    let sanitized: String = numeric_part.chars().filter(|ch| *ch != ',').collect();
-    if sanitized.is_empty() {
-        return None;
-    }
-
-    let cents = parse_cents_from_sanitized(&sanitized)?;
+    let cents = parse_cents_no_alloc(numeric_part)?;
     Some(if negative { -cents } else { cents })
 }
 
@@ -250,24 +245,46 @@ fn strip_amount_sign_and_currency(mut cleaned: &str) -> (bool, &str) {
     (negative, cleaned)
 }
 
-fn parse_cents_from_sanitized(sanitized: &str) -> Option<i64> {
-    let (whole_text, frac_text) = if let Some((whole, frac)) = sanitized.split_once('.') {
-        (whole, frac)
-    } else {
-        (sanitized, "")
-    };
-    if whole_text.is_empty() || frac_text.len() > 2 {
+fn parse_cents_no_alloc(numeric_part: &str) -> Option<i64> {
+    let mut whole: i64 = 0;
+    let mut frac: i64 = 0;
+    let mut frac_len = 0;
+    let mut in_frac = false;
+    let mut has_whole_digits = false;
+
+    for ch in numeric_part.chars() {
+        if ch == ',' {
+            continue;
+        }
+
+        if ch == '.' {
+            if in_frac {
+                return None;
+            }
+            in_frac = true;
+        } else if let Some(digit) = ch.to_digit(10) {
+            if in_frac {
+                frac_len += 1;
+                if frac_len > 2 {
+                    return None;
+                }
+                frac = frac * 10 + i64::from(digit);
+            } else {
+                has_whole_digits = true;
+                whole = whole.checked_mul(10)?.checked_add(i64::from(digit))?;
+            }
+        } else {
+            return None;
+        }
+    }
+
+    if !has_whole_digits {
         return None;
     }
 
-    let whole = whole_text.parse::<i64>().ok()?;
-    let frac = if frac_text.is_empty() {
-        0_i64
-    } else if frac_text.len() == 1 {
-        i64::from(frac_text.chars().next()?.to_digit(10)?) * 10
-    } else {
-        frac_text.parse::<i64>().ok()?
-    };
+    if in_frac && frac_len == 1 {
+        frac *= 10;
+    }
 
     whole.checked_mul(100)?.checked_add(frac)
 }
