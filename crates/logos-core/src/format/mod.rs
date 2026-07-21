@@ -1,3 +1,20 @@
+//! Formatting utilities for the core domain.
+//!
+//! This module provides functions for standardizing the display of timestamps,
+//! currencies, and other domain primitives into human-readable strings.
+
+/// Formats a microsecond UNIX timestamp into a UTC string.
+///
+/// If the timestamp is out of bounds for `chrono`, it falls back to returning
+/// the raw integer string.
+///
+/// ## Examples
+/// ```
+/// use logos_core::format::us_timestamp;
+///
+/// let ts = 1672531200_000_000; // 2023-01-01 00:00:00 UTC
+/// assert_eq!(us_timestamp(ts), "2023-01-01 00:00:00 UTC");
+/// ```
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(

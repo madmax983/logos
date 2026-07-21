@@ -8,16 +8,21 @@
 pub enum DepreciationSchedule {
     /// Loses a fixed percentage of its ORIGINAL value each year.
     Linear {
+        /// The total number of years over which the asset depreciates.
         useful_life_years: u16,
+        /// The estimated residual value of the asset at the end of its useful life.
         salvage_value_cents: i64,
     },
     /// Loses a fixed percentage of its CURRENT value each year.
     DecliningBalance {
+        /// The percentage rate at which the asset's current balance declines yearly.
         depreciation_rate_pct: u8,
+        /// The minimum value the asset will hit; it will not depreciate below this.
         salvage_value_cents: i64,
     },
 }
 
+/// Projects the future value of a physical asset over time.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AssetDepreciationSimulator {
     initial_value_cents: i64,
@@ -25,6 +30,16 @@ pub struct AssetDepreciationSimulator {
 }
 
 impl AssetDepreciationSimulator {
+    /// Creates a new `AssetDepreciationSimulator`.
+    ///
+    /// ## Examples
+    /// ```
+    /// use logos_core::experimental::asset_depreciation::{AssetDepreciationSimulator, DepreciationSchedule};
+    ///
+    /// let schedule = DepreciationSchedule::Linear { useful_life_years: 5, salvage_value_cents: 200_000 };
+    /// let simulator = AssetDepreciationSimulator::new(1_000_000, schedule);
+    /// assert_eq!(simulator.value_after_years(5), 200_000);
+    /// ```
     #[must_use]
     pub const fn new(initial_value_cents: i64, schedule: DepreciationSchedule) -> Self {
         Self {

@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-15 - The "Missing" Experimental Links
+**Confusion:** The experimental sub-modules inside `logos-core` (`format`, `benford_law`, `mermaid_xy_exporter`, `category_trends`, `subscription_fatigue`, `life_energy_calculator`, `asset_depreciation`) were emitting `missing_docs` lint warnings because they lacked module-level `//!` documentation and several public methods lacked executable doctests. Users entering the experimental namespace were greeted with a wall of undocumented structural code.
+**Clarification:** Added module-level documentation (`//!`) to the core formatting utilities and the missing experimental components. Appended executable doctests to initialization methods (`new`) to clarify their base usage without needing to read the source code.

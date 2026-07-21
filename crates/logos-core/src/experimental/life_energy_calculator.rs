@@ -21,6 +21,18 @@ pub struct TrueWageCalculator {
 }
 
 impl TrueWageCalculator {
+    /// Creates a new `TrueWageCalculator`.
+    ///
+    /// The inputs include the baseline wage as well as the hidden costs of
+    /// commuting and job-related expenses (uniforms, gas, lunches).
+    ///
+    /// ## Examples
+    /// ```
+    /// use logos_core::experimental::life_energy_calculator::TrueWageCalculator;
+    ///
+    /// let calc = TrueWageCalculator::new(50_00, 40.0, 5.0, 10_000);
+    /// assert_eq!(calc.true_hourly_wage_cents(), 42_22);
+    /// ```
     #[must_use]
     pub const fn new(
         nominal_hourly_wage_cents: i64,
@@ -69,10 +81,15 @@ impl TrueWageCalculator {
 /// A report detailing the life energy cost of a recurring subscription.
 #[derive(Debug, Clone, PartialEq)]
 pub struct LifeEnergySubscriptionReport {
+    /// The name of the recurring subscription.
     pub description: String,
+    /// The true hourly wage used for calculation.
     pub true_hourly_wage_cents: i64,
+    /// Direct hours of life energy spent per month on this subscription.
     pub direct_monthly_hours: f64,
+    /// The long-term future financial cost of keeping this subscription.
     pub opportunity_cost_future_value_cents: i64,
+    /// The total future hours of life energy this opportunity cost represents.
     pub opportunity_cost_future_hours: f64,
 }
 
@@ -84,6 +101,20 @@ pub struct LifeEnergySubscriptionEvaluator {
 }
 
 impl LifeEnergySubscriptionEvaluator {
+    /// Creates a new `LifeEnergySubscriptionEvaluator`.
+    ///
+    /// Requires both a wage calculator (to determine true hourly rate) and
+    /// an opportunity cost analyzer (to project future value).
+    ///
+    /// ## Examples
+    /// ```
+    /// use logos_core::experimental::life_energy_calculator::{LifeEnergySubscriptionEvaluator, TrueWageCalculator};
+    /// use logos_core::experimental::opportunity_cost::OpportunityCostAnalyzer;
+    ///
+    /// let wage = TrueWageCalculator::new(50_00, 40.0, 5.0, 10_000);
+    /// let opp = OpportunityCostAnalyzer::new(7.0, 10);
+    /// let evaluator = LifeEnergySubscriptionEvaluator::new(wage, opp);
+    /// ```
     #[must_use]
     pub const fn new(
         wage_calculator: TrueWageCalculator,

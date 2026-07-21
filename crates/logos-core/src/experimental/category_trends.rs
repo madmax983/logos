@@ -1,3 +1,8 @@
+//! Category Spending Trends
+//!
+//! Provides basic tools for mapping transaction accounts to high-level category
+//! groups (like "Housing" or "Living") and computing total expenditures.
+
 use std::collections::HashMap;
 
 use crate::domain::account::AccountId;
