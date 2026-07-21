@@ -179,6 +179,57 @@ mod tests {
     }
 
     #[test]
+    fn test_portfolio_with_negative_balance_returns_error() {
+        let aapl = AccountId::new("assets:aapl").unwrap();
+
+        let rebalancer = PortfolioRebalancer::new(vec![TargetAllocation {
+            asset: aapl.clone(),
+            percentage: 100,
+        }])
+        .unwrap();
+
+        let mut current_balances = HashMap::new();
+        current_balances.insert(aapl, -100);
+
+        let tx = rebalancer.rebalance("Rebalance", &current_balances);
+        assert_eq!(tx.unwrap_err(), DomainError::EmptyTransactionPostings);
+    }
+
+    #[test]
+    fn test_portfolio_rebalance_no_remainder() {
+        let aapl = AccountId::new("assets:aapl").unwrap();
+        let tsla = AccountId::new("assets:tsla").unwrap();
+
+        let rebalancer = PortfolioRebalancer::new(vec![
+            TargetAllocation {
+                asset: aapl.clone(),
+                percentage: 50,
+            },
+            TargetAllocation {
+                asset: tsla.clone(),
+                percentage: 50,
+            },
+        ])
+        .unwrap();
+
+        let mut current_balances = HashMap::new();
+        // Total value = 100
+        current_balances.insert(aapl.clone(), 100);
+
+        let tx = rebalancer
+            .rebalance("Rebalance", &current_balances)
+            .unwrap();
+        let postings = tx.postings();
+
+        // Target: aapl = 50, tsla = 50
+        // aapl diff = 50 - 100 = -50 (credit)
+        // tsla diff = 50 - 0 = 50 (debit)
+        assert_eq!(postings.len(), 2);
+        assert!(postings.contains(&Posting::credit(aapl, 50).unwrap()));
+        assert!(postings.contains(&Posting::debit(tsla, 50).unwrap()));
+    }
+
+    #[test]
     fn test_portfolio_rebalance_with_fractional_cents_remainder() {
         let aapl = AccountId::new("assets:aapl").unwrap();
         let tsla = AccountId::new("assets:tsla").unwrap();
