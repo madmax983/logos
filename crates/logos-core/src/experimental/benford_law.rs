@@ -1,3 +1,9 @@
+//! Benford's Law Fraud Detection
+//!
+//! Provides analysis tools to compare the first digits of transaction amounts
+//! against the expected logarithmic distribution of Benford's Law. This is
+//! commonly used to detect potentially anomalous or fraudulent financial data.
+
 use crate::domain::transaction::Transaction;
 use std::collections::HashMap;
 
@@ -13,6 +19,15 @@ pub struct BenfordLawAnalyzer {
 }
 
 impl BenfordLawAnalyzer {
+    /// Creates a new, empty `BenfordLawAnalyzer`.
+    ///
+    /// ## Examples
+    /// ```
+    /// use logos_core::experimental::benford_law::BenfordLawAnalyzer;
+    ///
+    /// let analyzer = BenfordLawAnalyzer::new();
+    /// assert_eq!(analyzer.observed_distribution().len(), 0);
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self::default()

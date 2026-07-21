@@ -1,3 +1,8 @@
+//! Mermaid XY Chart Exporters
+//!
+//! Provides utilities to export financial timelines into Markdown-compatible
+//! Mermaid XY charts.
+
 use crate::planning::net_worth_projector::ProjectedMonth;
 use std::fmt::Write;
 
@@ -8,6 +13,15 @@ use std::fmt::Write;
 pub struct MermaidXyExporter {}
 
 impl MermaidXyExporter {
+    /// Creates a new `MermaidXyExporter`.
+    ///
+    /// ## Examples
+    /// ```
+    /// use logos_core::experimental::mermaid_xy_exporter::MermaidXyExporter;
+    ///
+    /// let exporter = MermaidXyExporter::new();
+    /// assert_eq!(exporter.export_net_worth_xy(&[]), "```mermaid\nxychart-beta\n```\n");
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self::default()

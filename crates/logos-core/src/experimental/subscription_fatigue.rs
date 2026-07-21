@@ -1,3 +1,8 @@
+//! Subscription Fatigue Analysis
+//!
+//! Combines recurrence detection with opportunity cost analysis to show the true
+//! long-term pain of small, recurring subscriptions.
+
 use crate::domain::transaction::Transaction;
 use crate::experimental::opportunity_cost::{OpportunityCostAnalyzer, OpportunityCostResult};
 use crate::experimental::recurrence_detector::RecurrenceDetector;
