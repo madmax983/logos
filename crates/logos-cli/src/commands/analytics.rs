@@ -281,10 +281,8 @@ pub fn net_worth_project(
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    let header = "\x1b[1;32m📈 Net Worth Projection\x1b[0m";
+    println!("\n{header}\n\n{table}");
 
     Ok(())
 }
