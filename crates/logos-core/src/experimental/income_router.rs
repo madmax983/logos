@@ -48,6 +48,11 @@ impl IncomeRouter {
     /// # Errors
     /// Returns a `DomainError::InvalidCreditAmount` if the `amount_cents` is zero or negative.
     /// Returns a `DomainError` if the underlying transaction builder fails.
+    /// ⚡ Bolt Optimization:
+    /// Replaced a single O(N) pass that allocated an intermediate `Vec::with_capacity`
+    /// with two O(N) non-allocating passes over the rules slice. This eliminates
+    /// the heap allocation entirely and delays cloning the destination `AccountId`
+    /// until it's guaranteed to be pushed to the `TransactionBuilder`.
     pub fn route_income(
         &self,
         description: &str,
@@ -63,23 +68,21 @@ impl IncomeRouter {
             .posting(Posting::credit(self.source_account.clone(), amount_cents)?);
 
         let mut remaining_cents = amount_cents;
-        let mut allocations = Vec::with_capacity(self.rules.len());
 
-        // Calculate exact allocations, leaving remainders
+        // First pass: Pre-compute total allocated to determine remainder
         for rule in &self.rules {
             let allocated = amount_cents.saturating_mul(i64::from(rule.percentage)) / 100;
-            allocations.push((rule.destination.clone(), allocated));
             remaining_cents -= allocated;
         }
 
-        // Sweep remainder to the first bucket (if any)
-        if remaining_cents > 0 && !allocations.is_empty() {
-            allocations[0].1 += remaining_cents;
-        }
-
-        for (dest, amount) in allocations {
-            if amount > 0 {
-                builder = builder.posting(Posting::debit(dest, amount)?);
+        // Second pass: apply allocations and sweep remainder into the first bucket
+        for (i, rule) in self.rules.iter().enumerate() {
+            let mut allocated = amount_cents.saturating_mul(i64::from(rule.percentage)) / 100;
+            if i == 0 && remaining_cents > 0 {
+                allocated += remaining_cents;
+            }
+            if allocated > 0 {
+                builder = builder.posting(Posting::debit(rule.destination.clone(), allocated)?);
             }
         }
 
