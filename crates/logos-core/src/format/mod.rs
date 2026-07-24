@@ -1,3 +1,29 @@
+//! # Formatting Utilities
+//!
+//! This module provides standardized formatting utilities for human-readable output
+//! across the `logos` ecosystem. Since the core domain works strictly with raw integers
+//! (e.g., cents for currency, microseconds for timestamps), these functions bridge the gap
+//! between internal state and user presentation.
+//!
+//! ## Philosophy
+//!
+//! Output should be deterministic, safe, and clear. If a timestamp is invalid or out of bounds,
+//! it gracefully falls back to the raw integer string instead of panicking.
+
+/// Formats a UNIX timestamp (in microseconds) into a human-readable UTC string.
+///
+/// Converts a raw microsecond timestamp into `YYYY-MM-DD HH:MM:SS UTC`. If the timestamp
+/// is completely out of bounds for a valid date, it will fallback to the raw number string.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::format::us_timestamp;
+///
+/// // A valid timestamp in microseconds (e.g., 2023-01-01 12:00:00 UTC)
+/// let ts = 1672574400000000;
+/// assert_eq!(us_timestamp(ts), "2023-01-01 12:00:00 UTC");
+/// ```
 #[must_use]
 pub fn us_timestamp(us: i64) -> String {
     chrono::DateTime::from_timestamp_micros(us).map_or_else(
