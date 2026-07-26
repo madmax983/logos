@@ -20,3 +20,6 @@
 ## 2024-06-09 - Unguarded Arithmetic in CashflowProjector
 **Learning:** Using `+=` without bounds checking causes panics with extreme inputs during balance projection.
 **Action:** Always use `saturating_add` or `checked_add` when aggregating numbers like cents or values over an unknown number of iterations.
+## 2024-07-26 - Targeted Edge Case Tests for Runway Simulator
+**Learning:** Found several floating point arithmetic and loop boundary mutants that survived in the financial runway simulation due to a lack of tests hitting edge case bounds directly (e.g. negative inflation, precise iteration cutoff on 1200th month).
+**Action:** Adding explicit, mathematically-verified behavioral tests isolating partial month rounding, loop bounding constraints, and exact division steps effectively eliminates all such algebraic mutants.
