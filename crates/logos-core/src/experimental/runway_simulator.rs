@@ -133,4 +133,53 @@ mod tests {
         let result3 = sim3.calculate_runway();
         assert!(result3.months <= 11);
     }
+
+    #[test]
+    fn test_negative_inflation() {
+        let sim = RunwaySimulator::new(1_000_000, 100_000, -5.0);
+        let result = sim.calculate_runway();
+        // Negative inflation should be treated as 0 in this model (if > 0.0 check works)
+        assert_eq!(result.months, 10);
+        assert_eq!(result.total_burned_cents, 1_000_000);
+    }
+
+    #[test]
+    fn test_math_operators_and_bounds() {
+        // High inflation to ensure calculation uses exactly (1 + rate / 100)^(1/12) - 1
+        // If / 100 or / 12 is changed, the burn rate will explode or vanish.
+        let sim = RunwaySimulator::new(500_000, 100_000, 100.0);
+        let result = sim.calculate_runway();
+        // $5k assets, $1k burn, 100% inflation.
+        // Month 1: 100_000
+        // Month 2: 100_000 * 1.059... = ~105,946
+        // Month 3: ~112,246
+        // Month 4: ~118,920
+        // Month 5: ~125,992
+        // sum = 563,104 > 500k, so it should run out in exactly 5 months, partial on month 5.
+        assert_eq!(result.months, 5);
+        assert_eq!(result.total_burned_cents, 500_000);
+    }
+
+    #[test]
+    fn test_loop_bounds_and_conditions() {
+        // Test months == 1200 boundary.
+        let sim = RunwaySimulator::new(10_000_000_000_000, 1, 0.0); // essentially infinite
+        let result = sim.calculate_runway();
+        assert_eq!(result.months, 1200);
+        // It should have burned exactly 1200 cents
+        assert_eq!(result.total_burned_cents, 1200);
+
+        // Test current_assets == 0 break condition vs while current_assets > 0
+        let sim = RunwaySimulator::new(0, 100_000, 0.0);
+        let result = sim.calculate_runway();
+        assert_eq!(result.months, 0);
+        assert_eq!(result.total_burned_cents, 0);
+
+        // Partial month testing. Burn exactly 1 cent on last month.
+        let sim = RunwaySimulator::new(100_001, 100_000, 0.0);
+        let result = sim.calculate_runway();
+        // Month 1: 100_000 burned. Month 2: 1 burned.
+        assert_eq!(result.months, 2);
+        assert_eq!(result.total_burned_cents, 100_001);
+    }
 }
