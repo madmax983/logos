@@ -20,3 +20,6 @@
 ## 2024-06-09 - Unguarded Arithmetic in CashflowProjector
 **Learning:** Using `+=` without bounds checking causes panics with extreme inputs during balance projection.
 **Action:** Always use `saturating_add` or `checked_add` when aggregating numbers like cents or values over an unknown number of iterations.
+## 2024-06-10 - Explicit typing required for saturating_add
+**Learning:** When replacing implicit arithmetic like `+=` with explicit function calls like `.saturating_add()` or `.checked_add()` in Rust on variables initialized as `0`, the compiler may throw `E0689: can't call method saturating_add on ambiguous numeric type {integer}`.
+**Action:** Ensure the base accumulator variable has an explicit type annotation (e.g., `let mut total: i64 = 0;` instead of `let mut total = 0;`) when switching from `+=` to `.saturating_add()` to provide the compiler with enough type context.

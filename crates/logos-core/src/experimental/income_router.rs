@@ -74,7 +74,7 @@ impl IncomeRouter {
 
         // Sweep remainder to the first bucket (if any)
         if remaining_cents > 0 && !allocations.is_empty() {
-            allocations[0].1 += remaining_cents;
+            allocations[0].1 = allocations[0].1.saturating_add(remaining_cents);
         }
 
         for (dest, amount) in allocations {
@@ -250,5 +250,26 @@ mod tests {
             .expect("Should not fail from 0 posting");
         let postings = tx.postings();
         assert_eq!(postings.len(), 2);
+    }
+
+    #[test]
+    fn test_income_router_sweep_overflow_prevention() {
+        let source = AccountId::new("income:salary").unwrap();
+        let dest = AccountId::new("assets:checking").unwrap();
+
+        let router = IncomeRouter::new(
+            source,
+            vec![RouteRule {
+                destination: dest.clone(),
+                percentage: 100,
+            }],
+        )
+        .unwrap();
+
+        let tx = router.route_income("Massive Income", i64::MAX).unwrap();
+        let postings = tx.postings();
+
+        assert_eq!(postings.len(), 2);
+        assert!(postings.contains(&Posting::debit(dest, i64::MAX).unwrap()));
     }
 }
