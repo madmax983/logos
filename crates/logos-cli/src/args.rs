@@ -497,6 +497,7 @@ pub enum ImportCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub enum FetchCommand {
     ListRuns {
         month_key: Option<String>,
@@ -508,6 +509,7 @@ pub enum FetchCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub enum ReconcileCommand {
     Month {
         checking_account: String,
@@ -525,6 +527,7 @@ pub enum ReconcileCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub enum MonthCommand {
     Autopilot {
         month_key: Option<String>,
@@ -540,6 +543,7 @@ pub enum MonthCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub enum CloseCommand {
     Month {
         month_key: Option<String>,
@@ -550,6 +554,7 @@ pub enum CloseCommand {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[allow(missing_docs)]
 pub enum BudgetCommand {
     Set {
         month_key: Option<String>,
@@ -579,6 +584,7 @@ pub enum BudgetCommand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_docs)]
 pub enum ReportCommand {
     Month {
         checking_account: String,

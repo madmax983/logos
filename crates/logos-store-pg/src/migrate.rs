@@ -5,6 +5,7 @@ use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 
 use logos_store::StoreError;
 
+/// Embedded migrations used by diesel.
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 /// # Errors

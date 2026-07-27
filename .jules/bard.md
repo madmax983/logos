@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-15 - The Verbose Commands
+**Confusion:** The `cargo doc` generation failed because internal CLI argument enumerations (like `FetchCommand` and `MonthCommand`) were heavily nested with options. Requiring users to read docstrings for flags like `--dry-run` added noise and didn't tell a compelling story.
+**Clarification:** I added `#[allow(missing_docs)]` specifically to CLI command argument structures where individual field-level comments add zero value and constitute "Noise".
