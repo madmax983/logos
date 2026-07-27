@@ -1,0 +1,806 @@
+    Checking either v1.15.0
+    Checking rayon v1.11.0
+    Checking hashbrown v0.15.5
+    Checking hashbrown v0.14.5
+    Checking polars-utils v0.46.0
+    Checking polars-schema v0.46.0
+    Checking polars-arrow v0.46.0
+    Checking polars-compute v0.46.0
+    Checking polars-row v0.46.0
+    Checking polars-parquet v0.46.0
+    Checking polars-core v0.46.0
+    Checking polars-ops v0.46.0
+    Checking polars-time v0.46.0
+    Checking polars-io v0.46.0
+    Checking polars v0.46.0
+    Checking logos-runtime v0.1.0 (/app/crates/logos-runtime)
+ Documenting logos-cli v0.1.0 (/app/crates/logos-cli)
+error: missing documentation for an enum
+  --> crates/logos-cli/src/args.rs:11:1
+   |
+11 | pub enum CliError {
+   | ^^^^^^^^^^^^^^^^^
+   |
+   = note: requested on the command line with `-D missing-docs`
+
+error: missing documentation for a variant
+  --> crates/logos-cli/src/args.rs:12:5
+   |
+12 |     MissingCommand,
+   |     ^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-cli/src/args.rs:13:5
+   |
+13 |     MissingSubcommand { command: String },
+   |     ^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-cli/src/args.rs:13:25
+   |
+13 |     MissingSubcommand { command: String },
+   |                         ^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-cli/src/args.rs:14:5
+   |
+14 |     UnknownCommand { command: String },
+   |     ^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-cli/src/args.rs:14:22
+   |
+14 |     UnknownCommand { command: String },
+   |                      ^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-cli/src/args.rs:15:5
+   |
+15 |     UnknownSubcommand { command: String, subcommand: String },
+   |     ^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-cli/src/args.rs:15:25
+   |
+15 |     UnknownSubcommand { command: String, subcommand: String },
+   |                         ^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-cli/src/args.rs:15:42
+   |
+15 |     UnknownSubcommand { command: String, subcommand: String },
+   |                                          ^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-cli/src/args.rs:16:5
+   |
+16 |     MissingRequiredArg { flag: String },
+   |     ^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-cli/src/args.rs:16:26
+   |
+16 |     MissingRequiredArg { flag: String },
+   |                          ^^^^^^^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-cli/src/args.rs:17:5
+   |
+17 |     MissingArgValue { flag: String },
+   |     ^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-cli/src/args.rs:17:23
+   |
+17 |     MissingArgValue { flag: String },
+   |                       ^^^^^^^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-cli/src/args.rs:18:5
+   |
+18 |     InvalidArgValue { flag: String, value: String },
+   |     ^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-cli/src/args.rs:18:23
+   |
+18 |     InvalidArgValue { flag: String, value: String },
+   |                       ^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-cli/src/args.rs:18:37
+   |
+18 |     InvalidArgValue { flag: String, value: String },
+   |                                     ^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-cli/src/args.rs:19:5
+   |
+19 |     MissingTxnDescription,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-cli/src/args.rs:20:5
+   |
+20 |     CommandRuntimeFailed { command: String, message: String },
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-cli/src/args.rs:20:28
+   |
+20 |     CommandRuntimeFailed { command: String, message: String },
+   |                            ^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-cli/src/args.rs:20:45
+   |
+20 |     CommandRuntimeFailed { command: String, message: String },
+   |                                             ^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct
+  --> crates/logos-cli/src/args.rs:57:1
+   |
+57 | pub struct ParsedArgs {
+   | ^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+  --> crates/logos-cli/src/args.rs:63:5
+   |
+63 |     pub const fn command(&self) -> &Command {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+  --> crates/logos-cli/src/args.rs:68:5
+   |
+68 |     pub const fn command_path(&self) -> &'static str {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an enum
+   --> crates/logos-cli/src/args.rs:362:1
+    |
+362 | pub enum Command {
+    | ^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:363:5
+    |
+363 |     Help(HelpTopic),
+    |     ^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:364:5
+    |
+364 |     Db(DbCommand),
+    |     ^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:365:5
+    |
+365 |     Txn(TxnCommand),
+    |     ^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:366:5
+    |
+366 |     Analytics(AnalyticsCommand),
+    |     ^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:367:5
+    |
+367 |     Import(ImportCommand),
+    |     ^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:368:5
+    |
+368 |     Fetch(FetchCommand),
+    |     ^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:369:5
+    |
+369 |     Reconcile(ReconcileCommand),
+    |     ^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:370:5
+    |
+370 |     Month(MonthCommand),
+    |     ^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:371:5
+    |
+371 |     Close(CloseCommand),
+    |     ^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:372:5
+    |
+372 |     Budget(BudgetCommand),
+    |     ^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:373:5
+    |
+373 |     Report(ReportCommand),
+    |     ^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-cli/src/args.rs:378:5
+    |
+378 |     pub const fn path(&self) -> &'static str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an enum
+   --> crates/logos-cli/src/args.rs:454:1
+    |
+454 | pub enum AnalyticsCommand {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:455:5
+    |
+455 |     SnapshotCreate {
+    |     ^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:456:9
+    |
+456 |         as_of_valid_time_us: Option<i64>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:457:9
+    |
+457 |         as_of_tx_time_us: Option<i64>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:458:9
+    |
+458 |         schema_version: i64,
+    |         ^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:459:9
+    |
+459 |         supersedes_artifact_id: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:461:5
+    |
+461 |     SnapshotList,
+    |     ^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:462:5
+    |
+462 |     SnapshotShow {
+    |     ^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:463:9
+    |
+463 |         artifact_id: String,
+    |         ^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:465:5
+    |
+465 |     Sankey,
+    |     ^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:466:5
+    |
+466 |     FireSim {
+    |     ^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:467:9
+    |
+467 |         monthly_expenses_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:468:9
+    |
+468 |         liquid_assets_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:469:9
+    |
+469 |         monthly_savings_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:471:5
+    |
+471 |     NetWorthProject {
+    |     ^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:472:9
+    |
+472 |         initial_net_worth_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:473:9
+    |
+473 |         monthly_savings_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:474:9
+    |
+474 |         months: u16,
+    |         ^^^^^^^^^^^
+
+error: missing documentation for an enum
+   --> crates/logos-cli/src/args.rs:479:1
+    |
+479 | pub enum ImportCommand {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:480:5
+    |
+480 |     Pdf {
+    |     ^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:481:9
+    |
+481 |         file_path: String,
+    |         ^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:482:9
+    |
+482 |         account: String,
+    |         ^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:483:9
+    |
+483 |         dry_run: bool,
+    |         ^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:484:9
+    |
+484 |         ocr: bool,
+    |         ^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:486:5
+    |
+486 |     Csv {
+    |     ^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:487:9
+    |
+487 |         file_path: String,
+    |         ^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:488:9
+    |
+488 |         source_id: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:489:9
+    |
+489 |         timestamp_idx: usize,
+    |         ^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:490:9
+    |
+490 |         amount_idx: usize,
+    |         ^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:491:9
+    |
+491 |         memo_idx: usize,
+    |         ^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:492:9
+    |
+492 |         account_idx: usize,
+    |         ^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:493:9
+    |
+493 |         category_idx: usize,
+    |         ^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:494:9
+    |
+494 |         skip_header: bool,
+    |         ^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:495:9
+    |
+495 |         dry_run: bool,
+    |         ^^^^^^^^^^^^^
+
+error: missing documentation for an enum
+   --> crates/logos-cli/src/args.rs:500:1
+    |
+500 | pub enum FetchCommand {
+    | ^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:501:5
+    |
+501 |     ListRuns {
+    |     ^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:502:9
+    |
+502 |         month_key: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:503:9
+    |
+503 |         checking_account: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:505:5
+    |
+505 |     ShowRun {
+    |     ^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:506:9
+    |
+506 |         run_id: String,
+    |         ^^^^^^^^^^^^^^
+
+error: missing documentation for an enum
+   --> crates/logos-cli/src/args.rs:511:1
+    |
+511 | pub enum ReconcileCommand {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:512:5
+    |
+512 |     Month {
+    |     ^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:513:9
+    |
+513 |         checking_account: String,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:514:9
+    |
+514 |         month_key: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:515:9
+    |
+515 |         opening_balance_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:516:9
+    |
+516 |         closing_balance_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:518:5
+    |
+518 |     List {
+    |     ^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:519:9
+    |
+519 |         month_key: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:520:9
+    |
+520 |         checking_account: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:522:5
+    |
+522 |     Show {
+    |     ^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:523:9
+    |
+523 |         run_id: String,
+    |         ^^^^^^^^^^^^^^
+
+error: missing documentation for an enum
+   --> crates/logos-cli/src/args.rs:528:1
+    |
+528 | pub enum MonthCommand {
+    | ^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:529:5
+    |
+529 |     Autopilot {
+    |     ^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:530:9
+    |
+530 |         month_key: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:531:9
+    |
+531 |         checking_account: String,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:532:9
+    |
+532 |         opening_balance_cents: Option<i64>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:533:9
+    |
+533 |         closing_balance_cents: Option<i64>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:534:9
+    |
+534 |         statement_pdf: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:535:9
+    |
+535 |         ocr: bool,
+    |         ^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:536:9
+    |
+536 |         allow_variance: bool,
+    |         ^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:537:9
+    |
+537 |         analytics_artifact_id: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:538:9
+    |
+538 |         confirm_close: bool,
+    |         ^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an enum
+   --> crates/logos-cli/src/args.rs:543:1
+    |
+543 | pub enum CloseCommand {
+    | ^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:544:5
+    |
+544 |     Month {
+    |     ^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:545:9
+    |
+545 |         month_key: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:546:9
+    |
+546 |         checking_account: String,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:547:9
+    |
+547 |         run_id: String,
+    |         ^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:548:9
+    |
+548 |         analytics_artifact_id: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an enum
+   --> crates/logos-cli/src/args.rs:553:1
+    |
+553 | pub enum BudgetCommand {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:554:5
+    |
+554 |     Set {
+    |     ^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:555:9
+    |
+555 |         month_key: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:556:9
+    |
+556 |         budget_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:557:9
+    |
+557 |         expense_account_prefix: String,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:559:5
+    |
+559 |     RsuPlan {
+    |     ^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:560:9
+    |
+560 |         month_key: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:561:9
+    |
+561 |         quarterly_units: u32,
+    |         ^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:562:9
+    |
+562 |         days_to_vest: u16,
+    |         ^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:563:9
+    |
+563 |         bear_price_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:564:9
+    |
+564 |         base_price_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:565:9
+    |
+565 |         bull_price_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:566:9
+    |
+566 |         fixed_commitments_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:567:9
+    |
+567 |         reserve_sweep_pct: u8,
+    |         ^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:568:9
+    |
+568 |         investing_sweep_pct: u8,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:570:5
+    |
+570 |     MonteCarlo {
+    |     ^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:571:9
+    |
+571 |         initial_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:572:9
+    |
+572 |         monthly_contribution_cents: i64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:573:9
+    |
+573 |         annual_mean_return: f64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:574:9
+    |
+574 |         annual_volatility: f64,
+    |         ^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:575:9
+    |
+575 |         seed: u64,
+    |         ^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:576:9
+    |
+576 |         months: u16,
+    |         ^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:577:9
+    |
+577 |         paths: u32,
+    |         ^^^^^^^^^^
+
+error: missing documentation for an enum
+   --> crates/logos-cli/src/args.rs:582:1
+    |
+582 | pub enum ReportCommand {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+   --> crates/logos-cli/src/args.rs:583:5
+    |
+583 |     Month {
+    |     ^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:584:9
+    |
+584 |         checking_account: String,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+   --> crates/logos-cli/src/args.rs:585:9
+    |
+585 |         month_key: Option<String>,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: could not document `logos-cli`

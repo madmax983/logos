@@ -1,0 +1,714 @@
+    Checking logos-store-pg v0.1.0 (/app/crates/logos-store-pg)
+ Documenting logos-runtime v0.1.0 (/app/crates/logos-runtime)
+ Documenting logos-store-pg v0.1.0 (/app/crates/logos-store-pg)
+ Documenting logos-fetch v0.1.0 (/app/crates/logos-fetch)
+error: missing documentation for a method
+  --> crates/logos-fetch/src/adapter.rs:82:5
+   |
+82 |     pub const fn source(&self) -> &StatementSource {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: requested on the command line with `-D missing-docs`
+
+error: missing documentation for a method
+  --> crates/logos-fetch/src/adapter.rs:87:5
+   |
+87 |     pub fn month_key(&self) -> &str {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/adapter.rs:104:5
+    |
+104 |     pub const fn status(&self) -> FetchRunStatus {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/adapter.rs:109:5
+    |
+109 |     pub const fn artifact(&self) -> Option<&FetchedStatementArtifact> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/adapter.rs:140:5
+    |
+140 |     pub fn error_summary(&self) -> Option<&str> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+  --> crates/logos-fetch/src/config.rs:88:5
+   |
+88 |     pub fn sources(&self) -> &[StatementSource] {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct
+ --> crates/logos-fetch/src/error.rs:4:1
+  |
+4 | pub struct FetchError {
+  | ^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an associated function
+  --> crates/logos-fetch/src/error.rs:10:5
+   |
+10 |     pub fn new(message: impl Into<String>) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:126:5
+    |
+126 |     pub fn source_id(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:131:5
+    |
+131 |     pub fn institution_id(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:136:5
+    |
+136 |     pub fn ledger_account(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:141:5
+    |
+141 |     pub fn format_preference(&self) -> &[OutputFormat] {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:146:5
+    |
+146 |     pub fn preferred_format(&self) -> Option<OutputFormat> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:187:5
+    |
+187 |     pub fn username_secret_ref(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:192:5
+    |
+192 |     pub fn password_secret_ref(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:197:5
+    |
+197 |     pub fn totp_secret_ref(&self) -> Option<&str> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:287:5
+    |
+287 |     pub fn source_id(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:292:5
+    |
+292 |     pub fn ledger_account(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:297:5
+    |
+297 |     pub const fn output_format(&self) -> OutputFormat {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:302:5
+    |
+302 |     pub fn artifact_path(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:307:5
+    |
+307 |     pub fn month_key(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:312:5
+    |
+312 |     pub const fn opening_balance_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-fetch/src/model.rs:317:5
+    |
+317 |     pub const fn closing_balance_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+  --> crates/logos-fetch/src/secrets.rs:54:5
+   |
+54 |     pub fn username(&self) -> &str {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+  --> crates/logos-fetch/src/secrets.rs:59:5
+   |
+59 |     pub fn password(&self) -> &str {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+  --> crates/logos-fetch/src/secrets.rs:64:5
+   |
+64 |     pub fn totp_code(&self) -> Option<&str> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an enum
+ --> crates/logos-runtime/src/error/mod.rs:7:1
+  |
+7 | pub enum RuntimeError {
+  | ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `-D missing-docs`
+
+error: missing documentation for a variant
+ --> crates/logos-runtime/src/error/mod.rs:8:5
+  |
+8 |     Store(StoreError),
+  |     ^^^^^
+
+error: missing documentation for a variant
+ --> crates/logos-runtime/src/error/mod.rs:9:5
+  |
+9 |     Import(ImportError),
+  |     ^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-runtime/src/error/mod.rs:10:5
+   |
+10 |     Domain(logos_core::DomainError),
+   |     ^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-runtime/src/error/mod.rs:11:5
+   |
+11 |     Analytics { message: String },
+   |     ^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-runtime/src/error/mod.rs:11:17
+   |
+11 |     Analytics { message: String },
+   |                 ^^^^^^^^^^^^^^^
+
+error: missing documentation for a variant
+  --> crates/logos-runtime/src/error/mod.rs:12:5
+   |
+12 |     Initialization { message: String },
+   |     ^^^^^^^^^^^^^^
+
+error: missing documentation for a struct field
+  --> crates/logos-runtime/src/error/mod.rs:12:22
+   |
+12 |     Initialization { message: String },
+   |                      ^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct
+  --> crates/logos-runtime/src/models/mod.rs:27:1
+   |
+27 | pub struct MonthReconciliation {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct
+  --> crates/logos-runtime/src/models/mod.rs:59:1
+   |
+59 | pub struct MonthAutopilotRequest {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct
+  --> crates/logos-runtime/src/models/mod.rs:72:1
+   |
+72 | pub struct MonthAutopilotSummary {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a type alias
+  --> crates/logos-runtime/src/models/mod.rs:83:1
+   |
+83 | pub type PdfImportSummary = ImportSummary;
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a type alias
+  --> crates/logos-runtime/src/models/mod.rs:84:1
+   |
+84 | pub type CsvImportSummary = ImportSummary;
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an associated function
+  --> crates/logos-runtime/src/models/mod.rs:88:5
+   |
+88 |     pub const fn new(imported_count: usize, duplicate_count: usize, dry_run: bool) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+  --> crates/logos-runtime/src/models/mod.rs:97:5
+   |
+97 |     pub const fn imported_count(&self) -> usize {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:102:5
+    |
+102 |     pub const fn duplicate_count(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:107:5
+    |
+107 |     pub const fn dry_run(&self) -> bool {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an associated function
+   --> crates/logos-runtime/src/models/mod.rs:114:5
+    |
+114 |     pub fn new(month_key: &str, checking_account: &str) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:129:5
+    |
+129 |     pub fn with_statement_pdf(mut self, path: impl AsRef<Path>) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:135:5
+    |
+135 | /     pub const fn with_balances(
+136 | |         mut self,
+137 | |         opening_balance_cents: i64,
+138 | |         closing_balance_cents: i64,
+139 | |     ) -> Self {
+    | |_____________^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:146:5
+    |
+146 |     pub const fn with_ocr(mut self, enable_ocr: bool) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:152:5
+    |
+152 |     pub const fn with_allow_variance(mut self, allow_variance: bool) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:158:5
+    |
+158 |     pub fn with_analytics_artifact_id(mut self, artifact_id: &str) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:164:5
+    |
+164 |     pub const fn with_confirm_close(mut self, confirm_close: bool) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:170:5
+    |
+170 |     pub fn month_key(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:175:5
+    |
+175 |     pub fn checking_account(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:180:5
+    |
+180 |     pub const fn opening_balance_cents(&self) -> Option<i64> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:185:5
+    |
+185 |     pub const fn closing_balance_cents(&self) -> Option<i64> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:190:5
+    |
+190 |     pub const fn statement_pdf_path(&self) -> Option<&PathBuf> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:195:5
+    |
+195 |     pub const fn enable_ocr(&self) -> bool {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:200:5
+    |
+200 |     pub const fn allow_variance(&self) -> bool {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:205:5
+    |
+205 |     pub fn analytics_artifact_id(&self) -> Option<&str> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:210:5
+    |
+210 |     pub const fn confirm_close(&self) -> bool {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an associated function
+   --> crates/logos-runtime/src/models/mod.rs:218:5
+    |
+218 | /     pub fn new(
+219 | |         month_key: &str,
+220 | |         checking_account: &str,
+221 | |         imported_count: usize,
+...   |
+226 | |         close: StoredMonthClose,
+227 | |     ) -> Self {
+    | |_____________^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:241:5
+    |
+241 |     pub fn month_key(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:246:5
+    |
+246 |     pub fn checking_account(&self) -> &str {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:251:5
+    |
+251 |     pub const fn imported_count(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:256:5
+    |
+256 |     pub const fn duplicate_count(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:261:5
+    |
+261 |     pub fn fetch_runs(&self) -> &[StoredFetchRun] {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:266:5
+    |
+266 |     pub const fn reconciliation_run(&self) -> &StoredReconciliationRun {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:271:5
+    |
+271 |     pub const fn report(&self) -> &MonthReport {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:276:5
+    |
+276 |     pub const fn close(&self) -> &StoredMonthClose {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an associated function
+   --> crates/logos-runtime/src/models/mod.rs:283:5
+    |
+283 | /     pub const fn new(
+284 | |         checking_balance_cents: i64,
+285 | |         income_cents: i64,
+286 | |         expense_cents: i64,
+287 | |         cashflow_cents: i64,
+288 | |     ) -> Self {
+    | |_____________^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:298:5
+    |
+298 |     pub const fn checking_balance_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:303:5
+    |
+303 |     pub const fn income_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:308:5
+    |
+308 |     pub const fn expense_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:313:5
+    |
+313 |     pub const fn cashflow_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an associated function
+   --> crates/logos-runtime/src/models/mod.rs:321:5
+    |
+321 | /     pub const fn new(
+322 | |         ledger_delta_cents: i64,
+323 | |         expected_closing_balance_cents: i64,
+324 | |         statement_closing_balance_cents: i64,
+...   |
+329 | |         outflow_cents: i64,
+330 | |     ) -> Self {
+    | |_____________^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:344:5
+    |
+344 |     pub const fn ledger_delta_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:349:5
+    |
+349 |     pub const fn expected_closing_balance_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:354:5
+    |
+354 |     pub const fn statement_closing_balance_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:359:5
+    |
+359 |     pub const fn variance_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:364:5
+    |
+364 |     pub const fn is_reconciled(&self) -> bool {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:369:5
+    |
+369 |     pub const fn matched_postings(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:374:5
+    |
+374 |     pub const fn inflow_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/models/mod.rs:379:5
+    |
+379 |     pub const fn outflow_cents(&self) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a struct
+  --> crates/logos-runtime/src/runtime/mod.rs:60:1
+   |
+60 | pub struct AppRuntime<S> {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an associated function
+  --> crates/logos-runtime/src/runtime/mod.rs:70:5
+   |
+70 | /     pub const fn with_store(
+71 | |         store: S,
+72 | |         artifacts_root: PathBuf,
+73 | |         fetch_config_path: Option<PathBuf>,
+74 | |     ) -> Self {
+   | |_____________^
+
+error: missing documentation for an associated function
+  --> crates/logos-runtime/src/runtime/mod.rs:87:5
+   |
+87 |     pub fn new_in_memory() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an associated function
+  --> crates/logos-runtime/src/runtime/mod.rs:99:5
+   |
+99 |     pub fn current_month_key_local() -> String {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an associated function
+   --> crates/logos-runtime/src/runtime/mod.rs:103:5
+    |
+103 |     pub fn current_month_key_utc() -> String {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for an associated function
+   --> crates/logos-runtime/src/runtime/mod.rs:113:5
+    |
+113 |     pub const fn default_analytics_schema_version() -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:161:5
+    |
+161 |     pub fn transaction_exists(&self, id: &TransactionId) -> bool {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:181:5
+    |
+181 |     pub fn register_balance_for(&self, account: &str) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:193:5
+    |
+193 |     pub fn budget_variance_for(&self, budget_cents: i64, expense_account_prefix: &str) -> i64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:230:5
+    |
+230 | /     pub fn budget_target_for_month(
+231 | |         &self,
+232 | |         month_key: &str,
+233 | |         expense_account_prefix: &str,
+234 | |     ) -> Option<i64> {
+    | |____________________^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:241:5
+    |
+241 | /     pub fn budget_variance_for_month(
+242 | |         &self,
+243 | |         month_key: &str,
+244 | |         budget_cents: i64,
+245 | |         expense_account_prefix: &str,
+246 | |     ) -> i64 {
+    | |____________^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:295:5
+    |
+295 | /     pub fn reconcile_month_for(
+296 | |         &self,
+297 | |         checking_account: &str,
+298 | |         month_key: &str,
+299 | |         opening_balance_cents: i64,
+300 | |         closing_balance_cents: i64,
+301 | |     ) -> MonthReconciliation {
+    | |____________________________^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:386:5
+    |
+386 |     pub fn reconciliation_run_count(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:391:5
+    |
+391 |     pub fn reconciliation_run(&self, run_id: &str) -> Option<StoredReconciliationRun> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:396:5
+    |
+396 | /     pub fn list_reconciliation_runs(
+397 | |         &self,
+398 | |         month_key: Option<&str>,
+399 | |         checking_account: Option<&str>,
+400 | |     ) -> Vec<StoredReconciliationRun> {
+    | |_____________________________________^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:418:5
+    |
+418 |     pub fn fetch_run(&self, run_id: &str) -> Option<StoredFetchRun> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:423:5
+    |
+423 | /     pub fn list_fetch_runs(
+424 | |         &self,
+425 | |         month_key: Option<&str>,
+426 | |         checking_account: Option<&str>,
+427 | |     ) -> Vec<StoredFetchRun> {
+    | |____________________________^
+
+error: missing documentation for a method
+   --> crates/logos-runtime/src/runtime/mod.rs:467:5
+    |
+467 | /     pub fn month_close_for_scope(
+468 | |         &self,
+469 | |         month_key: &str,
+470 | |         checking_account: &str,
+471 | |     ) -> Option<StoredMonthClose> {
+    | |_________________________________^
+
+error: missing documentation for a method
+    --> crates/logos-runtime/src/runtime/mod.rs:1182:5
+     |
+1182 |     pub const fn imported_record_count(&self) -> usize {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+    --> crates/logos-runtime/src/runtime/mod.rs:1187:5
+     |
+1187 |     pub fn statement_lines_for_reconciliation_run(&self, run_id: &str) -> Vec<StoredStatementLine> {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+    --> crates/logos-runtime/src/runtime/mod.rs:1244:5
+     |
+1244 |     pub fn list_analytics_snapshots(&self) -> Vec<StoredAnalyticsArtifactManifest> {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a method
+    --> crates/logos-runtime/src/runtime/mod.rs:1256:5
+     |
+1256 | /     pub fn get_analytics_snapshot(
+1257 | |         &self,
+1258 | |         artifact_id: &str,
+1259 | |     ) -> Option<StoredAnalyticsArtifactManifest> {
+     | |________________________________________________^
+
+error: missing documentation for a method
+    --> crates/logos-runtime/src/runtime/mod.rs:1279:5
+     |
+1279 |     pub fn latest_correction_target(&self) -> Option<TransactionId> {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a function
+    --> crates/logos-runtime/src/runtime/mod.rs:1393:1
+     |
+1393 | pub fn default_artifacts_root(state_root: &Path) -> PathBuf {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a function
+    --> crates/logos-runtime/src/runtime/mod.rs:1402:1
+     |
+1402 | pub fn default_fetch_config_path(state_root: &Path) -> PathBuf {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: missing documentation for a function
+    --> crates/logos-runtime/src/runtime/mod.rs:1411:1
+     |
+1411 | pub fn default_state_root() -> PathBuf {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: could not document `logos-fetch`
+warning: build failed, waiting for other jobs to finish...
+error: could not document `logos-runtime`

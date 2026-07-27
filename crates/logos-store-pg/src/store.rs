@@ -317,6 +317,7 @@ struct SequenceValueRow {
     sequence_value: i64,
 }
 
+/// A `PostgreSQL` implementation of the `LedgerStore` contract.
 pub struct PostgresStore {
     connection: RefCell<PgConnection>,
 }
@@ -728,6 +729,7 @@ impl PostgresStore {
         })
     }
 
+    /// Returns a mutable reference to the underlying `PgConnection`.
     #[must_use]
     pub fn connection_mut(&self) -> RefMut<'_, PgConnection> {
         self.connection.borrow_mut()
