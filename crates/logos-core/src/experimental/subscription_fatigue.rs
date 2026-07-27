@@ -44,13 +44,13 @@ impl SubscriptionFatigueAnalyzer {
         let recurring_templates = self.recurrence_detector.detect(transactions);
 
         let mut items = Vec::new();
-        let mut total_monthly = 0;
-        let mut total_opportunity = 0;
+        let mut total_monthly: i64 = 0;
+        let mut total_opportunity: i64 = 0;
 
         for template in recurring_templates {
             let cost_result = self.opportunity_cost_analyzer.analyze(&template);
-            total_monthly += cost_result.monthly_cost_cents;
-            total_opportunity += cost_result.future_value_cents;
+            total_monthly = total_monthly.saturating_add(cost_result.monthly_cost_cents);
+            total_opportunity = total_opportunity.saturating_add(cost_result.future_value_cents);
             items.push(cost_result);
         }
 
@@ -130,5 +130,31 @@ mod tests {
             report.total_opportunity_cost_cents,
             gym.future_value_cents + netflix.future_value_cents
         );
+    }
+
+    #[test]
+    fn test_subscription_fatigue_overflow_prevention() {
+        let analyzer = SubscriptionFatigueAnalyzer::new(1, 0.0, 10);
+        let mut transactions = Vec::new();
+        let amt = i64::MAX / 2 + 100;
+
+        let tx1 = TransactionBuilder::new("Sub1")
+            .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), amt).unwrap())
+            .posting(Posting::debit(AccountId::new("expenses:ent").unwrap(), amt).unwrap())
+            .build()
+            .unwrap();
+        transactions.push(tx1);
+
+        let tx2 = TransactionBuilder::new("Sub2")
+            .posting(Posting::credit(AccountId::new("assets:checking").unwrap(), amt).unwrap())
+            .posting(Posting::debit(AccountId::new("expenses:ent").unwrap(), amt).unwrap())
+            .build()
+            .unwrap();
+        transactions.push(tx2);
+
+        let report = analyzer.analyze(&transactions);
+
+        assert_eq!(report.total_monthly_cost_cents, i64::MAX);
+        assert_eq!(report.total_opportunity_cost_cents, i64::MAX);
     }
 }
