@@ -63,23 +63,24 @@ impl IncomeRouter {
             .posting(Posting::credit(self.source_account.clone(), amount_cents)?);
 
         let mut remaining_cents = amount_cents;
-        let mut allocations = Vec::with_capacity(self.rules.len());
 
-        // Calculate exact allocations, leaving remainders
+        // Pass 1: Calculate exact allocations to determine the remainder without allocating
         for rule in &self.rules {
             let allocated = amount_cents.saturating_mul(i64::from(rule.percentage)) / 100;
-            allocations.push((rule.destination.clone(), allocated));
             remaining_cents -= allocated;
         }
 
-        // Sweep remainder to the first bucket (if any)
-        if remaining_cents > 0 && !allocations.is_empty() {
-            allocations[0].1 += remaining_cents;
-        }
+        // Pass 2: Apply allocations directly to the transaction builder
+        for (i, rule) in self.rules.iter().enumerate() {
+            let mut amount = amount_cents.saturating_mul(i64::from(rule.percentage)) / 100;
 
-        for (dest, amount) in allocations {
+            // Sweep remainder to the first bucket (if any)
+            if i == 0 && remaining_cents > 0 {
+                amount += remaining_cents;
+            }
+
             if amount > 0 {
-                builder = builder.posting(Posting::debit(dest, amount)?);
+                builder = builder.posting(Posting::debit(rule.destination.clone(), amount)?);
             }
         }
 
