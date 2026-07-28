@@ -131,6 +131,34 @@ mod tests {
         // With high inflation, the 11th month might drain the rest.
         let sim3 = RunwaySimulator::new(1_150_000, 100_000, 50.0);
         let result3 = sim3.calculate_runway();
-        assert!(result3.months <= 11);
+        assert_eq!(result3.months, 10);
+        assert_eq!(result3.total_burned_cents, 1_150_000);
+    }
+
+    #[test]
+    fn test_zero_assets() {
+        let sim = RunwaySimulator::new(0, 100_000, 0.0);
+        let result = sim.calculate_runway();
+        assert_eq!(result.months, 0);
+        assert_eq!(result.total_burned_cents, 0);
+    }
+
+    #[test]
+    fn test_max_months() {
+        // Only $1 burn rate per month, 2000 months worth of assets
+        let sim = RunwaySimulator::new(2000, 1, 0.0);
+        let result = sim.calculate_runway();
+        assert_eq!(result.months, 1200);
+        assert_eq!(result.total_burned_cents, 1200);
+    }
+
+    #[test]
+    fn test_inflation_below_zero() {
+        // -12% inflation, deflation. The burn rate decreases.
+        // The monthly inflation rate calculation is only applied if > 0
+        let sim = RunwaySimulator::new(1_200_000, 100_000, -12.0);
+        let result = sim.calculate_runway();
+        assert_eq!(result.months, 12);
+        assert_eq!(result.total_burned_cents, 1_200_000);
     }
 }
