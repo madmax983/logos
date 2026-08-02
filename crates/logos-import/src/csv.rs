@@ -129,9 +129,13 @@ enum CsvFieldState {
     AfterQuote,
 }
 
+/// ⚡ Bolt Optimization: Uses `Vec::with_capacity` and `String::with_capacity`
+/// to avoid repeated heap allocations and dynamic resizing while assembling
+/// CSV fields character-by-character. 8 columns and 32 chars are reasonable
+/// empirical defaults for standard financial statement data.
 fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
-    let mut columns = Vec::new();
-    let mut field = String::new();
+    let mut columns = Vec::with_capacity(8);
+    let mut field = String::with_capacity(32);
     let mut state = CsvFieldState::Unquoted;
     let mut chars = row.chars().peekable();
 
@@ -140,7 +144,7 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
             CsvFieldState::Unquoted => match ch {
                 ',' => {
                     columns.push(field);
-                    field = String::new();
+                    field = String::with_capacity(32);
                 }
                 '"' => {
                     if field.trim().is_empty() {
@@ -169,7 +173,7 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
             CsvFieldState::AfterQuote => match ch {
                 ',' => {
                     columns.push(field);
-                    field = String::new();
+                    field = String::with_capacity(32);
                     state = CsvFieldState::Unquoted;
                 }
                 _ if ch.is_whitespace() => {}
