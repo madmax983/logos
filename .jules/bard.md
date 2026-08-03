@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-06 - The Missing Object Examples in Storage
+**Confusion:** The storage models in `logos-store/src/model.rs` (e.g., `StoredCorrection`, `StoredBudgetTarget`, `StoredAnalyticsArtifactManifest`, `StoredImportBatch`) lacked `///` doc comments and executable examples. Users couldn't easily tell how domain types mapped into persistence types or how to construct them for mock storage tests.
+**Clarification:** Added explicit `///` documentation and executable `## Examples` doc tests to `StoredCorrection`, `StoredBudgetTarget`, `StoredAnalyticsArtifactManifest`, and `StoredImportBatch` in `logos-store/src/model.rs`.
