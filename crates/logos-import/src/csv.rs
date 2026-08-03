@@ -129,9 +129,12 @@ enum CsvFieldState {
     AfterQuote,
 }
 
+/// ⚡ Bolt Optimization: Pre-allocates vector and string capacities to avoid
+/// reallocation overhead during processing. We create new strings with capacity
+/// instead of cloning/clearing to minimize heap churn on hot paths.
 fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
-    let mut columns = Vec::new();
-    let mut field = String::new();
+    let mut columns = Vec::with_capacity(8);
+    let mut field = String::with_capacity(32);
     let mut state = CsvFieldState::Unquoted;
     let mut chars = row.chars().peekable();
 
@@ -140,7 +143,7 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
             CsvFieldState::Unquoted => match ch {
                 ',' => {
                     columns.push(field);
-                    field = String::new();
+                    field = String::with_capacity(32);
                 }
                 '"' => {
                     if field.trim().is_empty() {
@@ -169,7 +172,7 @@ fn parse_csv_columns(row: &str) -> Result<Vec<String>, ImportError> {
             CsvFieldState::AfterQuote => match ch {
                 ',' => {
                     columns.push(field);
-                    field = String::new();
+                    field = String::with_capacity(32);
                     state = CsvFieldState::Unquoted;
                 }
                 _ if ch.is_whitespace() => {}
