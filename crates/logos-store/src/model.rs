@@ -62,6 +62,24 @@ impl StoredTransaction {
     }
 }
 
+/// Represents a correction applied to a previously stored transaction.
+///
+/// In the `logos` append-only ledger, mistakes are not overwritten. Instead,
+/// a `Correction` points to the old transaction ID and provides a reason for the change,
+/// preserving the audit trail.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::{Correction, TransactionId};
+/// use logos_store::StoredCorrection;
+///
+/// let old_tx = TransactionId::new("tx-123").unwrap();
+/// let correction = Correction::new(old_tx, "Fixed typo in account").unwrap();
+/// let stored = StoredCorrection::new(correction);
+///
+/// assert_eq!(stored.correction().reason(), "Fixed typo in account");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredCorrection {
     correction: Correction,
@@ -79,6 +97,20 @@ impl StoredCorrection {
     }
 }
 
+/// Represents an active budget target for a specific envelope month.
+///
+/// Links a budget amount in cents to a specific month (e.g. `2023-10`) and
+/// category prefix.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredBudgetTarget;
+///
+/// let target = StoredBudgetTarget::new("2023-10", "expenses:food", 500_00);
+/// assert_eq!(target.budget_cents(), 500_00);
+/// assert_eq!(target.month_key(), "2023-10");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredBudgetTarget {
     month_key: String,
@@ -112,6 +144,22 @@ impl StoredBudgetTarget {
     }
 }
 
+/// A manifest detailing a compiled analytics artifact (e.g., a parquet file).
+///
+/// This struct holds metadata about materialized views of the ledger used for reporting,
+/// tracking when they were created, the data schema, and content hashes to ensure integrity.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredAnalyticsArtifactManifest;
+///
+/// let manifest = StoredAnalyticsArtifactManifest::new(
+///     "art-123", "net_worth", "file:///tmp/net_worth.parquet", "hash",
+///     1, 100, 1672531200, 1672531200, 1672531200, None, "month-2023-10"
+/// );
+/// assert_eq!(manifest.artifact_id(), "art-123");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredAnalyticsArtifactManifest {
     artifact_id: String,
@@ -214,6 +262,22 @@ impl StoredAnalyticsArtifactManifest {
     }
 }
 
+/// Represents a batch of imported records (e.g., from a CSV or bank API).
+///
+/// Tracks the source URI, number of records, and configuration flags like whether OCR
+/// was enabled or if this was a dry run.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_store::StoredImportBatch;
+///
+/// let batch = StoredImportBatch::new(
+///     "batch-1", "csv", "file:///tmp/stmt.csv", "key-1", 10, 0, false, false, 1672531200
+/// );
+/// assert_eq!(batch.batch_id(), "batch-1");
+/// assert_eq!(batch.record_count(), 10);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredImportBatch {
     batch_id: String,
