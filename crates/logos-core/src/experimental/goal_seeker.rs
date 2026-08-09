@@ -19,6 +19,15 @@ pub struct GoalSeeker {
 
 impl GoalSeeker {
     /// Creates a new `GoalSeeker` with the current financial baseline.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::GoalSeeker;
+    ///
+    /// // Start with $50,000 baseline
+    /// let seeker = GoalSeeker::new(5_000_000);
+    /// ```
     #[must_use]
     pub const fn new(initial_net_worth_cents: i64) -> Self {
         Self {
@@ -44,6 +53,19 @@ impl GoalSeeker {
     /// Returns `None` if the goal is unreachable even with a very high
     /// savings rate (e.g. if the target timeframe is 0 months and current
     /// net worth is below the target).
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::GoalSeeker;
+    ///
+    /// // Start with $0. Want $120,000 in 12 months.
+    /// let seeker = GoalSeeker::new(0);
+    /// let required = seeker.find_required_savings(12_000_000, 12).unwrap();
+    ///
+    /// // You must save exactly $10,000 per month
+    /// assert_eq!(required, 1_000_000);
+    /// ```
     #[must_use]
     pub fn find_required_savings(&self, target_cents: i64, target_months: u16) -> Option<i64> {
         if target_months == 0 {
