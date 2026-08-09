@@ -1,3 +1,13 @@
+//! # The Experimental Laboratory
+//!
+//! Welcome to the bleeding edge of the `logos` engine. This module contains beta features,
+//! proof-of-concepts, and highly speculative financial simulators.
+//!
+//! **Why does this exist?** Financial planning is often more art than science. While the `domain`
+//! enforces absolute truth (double-entry rules), this module explores "what-if" scenarios,
+//! such as reverse-engineering savings rates, running Monte Carlo simulations, and tracking
+//! lifestyle creep. Treat these APIs as volatile and subject to change without notice.
+
 #[cfg(feature = "nova")]
 pub mod life_energy_calculator;
 
