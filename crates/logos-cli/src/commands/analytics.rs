@@ -269,22 +269,37 @@ pub fn net_worth_project(
 
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec!["Month", "Net Worth", "Saved Cash", "Vested Value"]);
+    table.set_header(vec![
+        comfy_table::Cell::new("Month")
+            .fg(comfy_table::Color::Blue)
+            .add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Net Worth")
+            .fg(comfy_table::Color::Blue)
+            .add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Saved Cash")
+            .fg(comfy_table::Color::Blue)
+            .add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Vested Value")
+            .fg(comfy_table::Color::Blue)
+            .add_attribute(comfy_table::Attribute::Bold),
+    ]);
 
     for month in timeline {
         table.add_row(vec![
             comfy_table::Cell::new(month.month_index.to_string()),
             comfy_table::Cell::new(logos_core::format::currency(month.net_worth_cents))
-                .fg(comfy_table::Color::Green),
-            comfy_table::Cell::new(logos_core::format::currency(month.saved_cents)),
-            comfy_table::Cell::new(logos_core::format::currency(month.vested_value_cents)),
+                .fg(comfy_table::Color::Cyan)
+                .add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new(logos_core::format::currency(month.saved_cents))
+                .fg(comfy_table::Color::Green)
+                .add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new(logos_core::format::currency(month.vested_value_cents))
+                .fg(comfy_table::Color::Green)
+                .add_attribute(comfy_table::Attribute::Bold),
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
+    println!("{table}");
 
     Ok(())
 }
