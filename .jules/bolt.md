@@ -24,3 +24,7 @@
 ## 2026-04-27 - Reduce Iteration Allocations
 **Learning:** Found several places where `.iter().map(...).collect()` was being used on vectors that were owned and going to be discarded, which borrows the elements and creates unnecessary indirection/allocations. Changing them to `.into_iter().map(|row| ...(&row)).collect()` consumes the vector and avoids borrowing if the mapping function doesn't require it, or allows the `Vec` to be consumed. Note that for simple structs and references this is minor, but combining `.into_iter()` avoids re-borrowing.
 **Action:** Use `.into_iter()` instead of `.iter()` whenever a vector is no longer needed, especially when building result collections.
+
+## YYYY-MM-DD - HashSet<T> to HashSet<&T> Reference Issues
+**Learning:** When changing a `HashSet` item type from an owned value (`T`) to a reference (`&T`), call sites interacting with the set (e.g. `.contains()`) must be updated. Because `contains` expects a reference to the item type, it now requires a reference to a reference (`&&T`) or a similar borrow that satisfies the `Borrow` trait.
+**Action:** When making this optimization, always immediately re-run `cargo check` and update all corresponding call sites (e.g. changing `.contains(x)` to `.contains(&x)` if `x` is already a reference to `T`) before concluding the change is safe.
