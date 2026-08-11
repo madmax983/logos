@@ -152,13 +152,13 @@ fn render_budget_set_output(
     } else {
         Color::Red
     };
-    let variance_cell = Cell::new(logos_core::format::currency(variance_cents))
+    let variance_cell = Cell::new(logos_core::currency(variance_cents))
         .fg(variance_color)
         .add_attribute(Attribute::Bold);
 
     table.add_row(vec![
         Cell::new(month_key.to_string()),
-        Cell::new(logos_core::format::currency(budget_cents)),
+        Cell::new(logos_core::currency(budget_cents)),
         Cell::new(expense_account_prefix.to_string()),
         variance_cell,
     ]);
@@ -191,11 +191,11 @@ fn render_rsu_plan_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
     ]);
     plan_table.add_row(vec![
         Cell::new(plan.month_key()).add_attribute(Attribute::Bold),
-        Cell::new(logos_core::format::currency(
+        Cell::new(logos_core::currency(
             plan.conservative_budget_cents(),
         )),
-        Cell::new(logos_core::format::currency(plan.fixed_commitments_cents())),
-        Cell::new(logos_core::format::currency(
+        Cell::new(logos_core::currency(plan.fixed_commitments_cents())),
+        Cell::new(logos_core::currency(
             plan.baseline_remaining_cents(),
         ))
         .add_attribute(Attribute::Bold),
@@ -241,15 +241,15 @@ fn render_rsu_scenario_table(plan: &RsuBudgetPlan) -> comfy_table::Table {
                 Cell::new(scenario_name(key))
                     .fg(color)
                     .add_attribute(Attribute::Bold),
-                Cell::new(logos_core::format::currency(
+                Cell::new(logos_core::currency(
                     scenario.monthly_income_cents(),
                 )),
-                Cell::new(logos_core::format::currency(scenario.surplus_cents())),
-                Cell::new(logos_core::format::currency(scenario.reserve_sweep_cents())),
-                Cell::new(logos_core::format::currency(
+                Cell::new(logos_core::currency(scenario.surplus_cents())),
+                Cell::new(logos_core::currency(scenario.reserve_sweep_cents())),
+                Cell::new(logos_core::currency(
                     scenario.investing_sweep_cents(),
                 )),
-                Cell::new(logos_core::format::currency(
+                Cell::new(logos_core::currency(
                     scenario.available_after_sweeps_cents(),
                 ))
                 .fg(color)
@@ -274,19 +274,19 @@ fn render_monte_carlo_output(result: &logos_core::monte_carlo::MonteCarloResult)
 
     table.add_row(vec![
         Cell::new("P5 (Pessimistic)").fg(Color::Red),
-        Cell::new(logos_core::format::currency(result.p5_cents)).fg(Color::Red),
+        Cell::new(logos_core::currency(result.p5_cents)).fg(Color::Red),
     ]);
     table.add_row(vec![
         Cell::new("Median (Expected)")
             .fg(Color::Green)
             .add_attribute(Attribute::Bold),
-        Cell::new(logos_core::format::currency(result.median_cents))
+        Cell::new(logos_core::currency(result.median_cents))
             .fg(Color::Green)
             .add_attribute(Attribute::Bold),
     ]);
     table.add_row(vec![
         Cell::new("P95 (Optimistic)").fg(Color::Blue),
-        Cell::new(logos_core::format::currency(result.p95_cents)).fg(Color::Blue),
+        Cell::new(logos_core::currency(result.p95_cents)).fg(Color::Blue),
     ]);
 
     format!("{table}")

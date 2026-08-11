@@ -1,7 +1,7 @@
 use comfy_table::Table;
 
 use crate::app::BudgetSnapshot;
-use logos_core::format::currency;
+use logos_core::currency;
 
 #[must_use]
 pub fn render(
