@@ -1,6 +1,6 @@
 use crate::args::CliError;
 use comfy_table::{Attribute, Cell, Color};
-use logos_core::format::us_timestamp;
+use logos_core::us_timestamp;
 use logos_runtime::AppRuntime;
 use logos_store::StoredReconciliationRun;
 
@@ -136,7 +136,7 @@ fn render_list_output(
         let variance_cell = if run.variance_cents() == 0 {
             Cell::new("$0.00").fg(Color::Green)
         } else {
-            Cell::new(logos_core::format::currency(run.variance_cents()))
+            Cell::new(logos_core::currency(run.variance_cents()))
                 .fg(Color::Red)
                 .add_attribute(Attribute::Bold)
         };
@@ -189,7 +189,7 @@ fn add_run_row(
     let variance_cell = if run.variance_cents() == 0 {
         Cell::new("$0.00").fg(Color::Green)
     } else {
-        Cell::new(logos_core::format::currency(run.variance_cents()))
+        Cell::new(logos_core::currency(run.variance_cents()))
             .fg(Color::Red)
             .add_attribute(Attribute::Bold)
     };
@@ -204,20 +204,20 @@ fn add_run_row(
         Cell::new(run.run_id()).fg(Color::DarkGrey),
         Cell::new(month_key),
         Cell::new(checking_account),
-        Cell::new(logos_core::format::currency(opening_balance_cents)),
-        Cell::new(logos_core::format::currency(run.ledger_delta_cents())),
-        Cell::new(logos_core::format::currency(
+        Cell::new(logos_core::currency(opening_balance_cents)),
+        Cell::new(logos_core::currency(run.ledger_delta_cents())),
+        Cell::new(logos_core::currency(
             run.expected_closing_balance_cents(),
         )),
-        Cell::new(logos_core::format::currency(
+        Cell::new(logos_core::currency(
             run.statement_closing_balance_cents(),
         )),
         variance_cell,
         reconciled_cell,
         Cell::new(run.matched_postings()),
         Cell::new(run.matched_transaction_count()),
-        Cell::new(logos_core::format::currency(run.inflow_cents())).fg(Color::Green),
-        Cell::new(logos_core::format::currency(run.outflow_cents())).fg(Color::Red),
+        Cell::new(logos_core::currency(run.inflow_cents())).fg(Color::Green),
+        Cell::new(logos_core::currency(run.outflow_cents())).fg(Color::Red),
         Cell::new(us_timestamp(run.created_at())).fg(Color::DarkGrey),
     ]
 }
