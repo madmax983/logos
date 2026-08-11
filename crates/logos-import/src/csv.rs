@@ -1,6 +1,29 @@
 //! CSV Import Handling
+//!
+//! Provides the core primitives for reading raw tabular transaction data
+//! from external systems (like banks and credit cards) and projecting it
+//! into standard double-entry formats. CSV ingestion allows operators
+//! to smoothly map arbitrary column structures to the required target schema
+//! using [`CsvMapping`].
+
 use core::fmt;
 
+/// An error that occurs while attempting to import raw statement data.
+///
+/// This error captures the specific failure mode, whether a row is missing
+/// required columns, contains malformed data types, or a file operation failed.
+///
+/// # Examples
+///
+/// ```
+/// use logos_import::ImportError;
+///
+/// // Represents a row missing expected data
+/// let err = ImportError::MissingColumns { expected: 5, found: 3 };
+///
+/// // Represents a failed parse attempt on an amount field
+/// let err2 = ImportError::InvalidAmountAtColumn { column: 1, value: "N/A".to_string() };
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ImportError {
     MissingColumns { expected: usize, found: usize },
@@ -38,6 +61,26 @@ impl fmt::Display for ImportError {
 
 impl std::error::Error for ImportError {}
 
+/// Defines how raw CSV columns map to the expected standard schema fields.
+///
+/// Many institutions use different column layouts. By configuring a `CsvMapping`,
+/// the parser is instructed which index (0-based) represents the specific data points.
+///
+/// # Examples
+///
+/// ```
+/// use logos_import::CsvMapping;
+///
+/// // Maps a CSV where the date is column 0, amount is column 1, and so on.
+/// let mapping = CsvMapping {
+///     source_id: "chase_checking".to_string(),
+///     timestamp_idx: 0,
+///     amount_idx: 1,
+///     memo_idx: 2,
+///     account_idx: 3,
+///     category_idx: 4,
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CsvMapping {
     pub source_id: String,
@@ -61,6 +104,26 @@ impl Default for CsvMapping {
     }
 }
 
+/// A parsed and validated record extracted from an external data source.
+///
+/// The `ImportRecord` serves as the normalized intermediate representation
+/// of a raw financial transaction before it is ingested and committed to the ledger.
+///
+/// # Examples
+///
+/// ```
+/// use logos_import::ImportRecord;
+///
+/// let record = ImportRecord::new(
+///     "chase_checking",
+///     "2023-10-15T00:00:00",
+///     -50_00,
+///     "COFFEE SHOP",
+///     "Assets:Checking",
+///     "Expenses:Dining",
+/// );
+/// assert_eq!(record.amount_cents(), -5000);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportRecord {
     source_id: String,

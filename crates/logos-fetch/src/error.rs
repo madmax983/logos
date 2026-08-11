@@ -1,5 +1,20 @@
 use core::fmt;
 
+/// An error that occurs during a statement fetch operation.
+///
+/// This error captures failures related to parsing the statement source configuration,
+/// resolving secrets from an external store (like 1Password), or executing the underlying
+/// fetch adapter.
+///
+/// # Examples
+///
+/// ```
+/// use logos_fetch::FetchError;
+///
+/// // Create an error representing a missing environment variable or missing secret
+/// let err = FetchError::new("1Password CLI could not resolve 'op://vault/item'");
+/// assert_eq!(err.to_string(), "1Password CLI could not resolve 'op://vault/item'");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FetchError {
     message: String,
