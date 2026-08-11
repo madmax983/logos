@@ -1,4 +1,11 @@
 //! Deterministic fingerprint generation.
+//!
+//! Provides cryptographic, deterministic hashing of imported statements to prevent
+//! duplicate ingestion. When `logos` imports records from CSV or PDF, it generates
+//! a unique fingerprint based on the *semantic content* of the record (timestamp,
+//! amount, memo, etc). If a fingerprint already exists in the ledger, the row is
+//! safely ignored as a duplicate.
+
 use std::hash::{Hash, Hasher as StdHasher};
 
 use blake3::Hasher;
@@ -13,6 +20,23 @@ const FIELD_MEMO: u8 = 4;
 const FIELD_ACCOUNT: u8 = 5;
 const FIELD_CATEGORY: u8 = 6;
 
+/// Generates a deterministic, cryptographically secure fingerprint for an import record.
+///
+/// This uses Blake3 hashing over the normalized semantic fields of the record.
+/// The resulting fingerprint is uniquely tied to the transaction data and is
+/// safe to use as an idempotent key during ledger ingestion.
+///
+/// # Examples
+///
+/// ```
+/// use logos_import::{ImportRecord, deterministic_fingerprint};
+///
+/// let record1 = ImportRecord::new("src", "2023", 100, "Memo", "A", "C");
+/// let record2 = ImportRecord::new("src", "2023", 100, "memo", "A", "C"); // Different casing
+///
+/// // Normalizes text and guarantees identical hashes
+/// assert_eq!(deterministic_fingerprint(&record1), deterministic_fingerprint(&record2));
+/// ```
 #[must_use]
 pub fn deterministic_fingerprint(record: &ImportRecord) -> String {
     let mut hasher = Hasher::new();

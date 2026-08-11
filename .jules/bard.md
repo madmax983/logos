@@ -31,3 +31,7 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+
+## 2026-08-11 - The Missing Primitives
+**Confusion:** Several data-mapping primitives (`CsvMapping`, `ImportRecord`, `ImportError`, and `FetchError`) lacked executable examples on the struct definitions. Additionally, the `logos-import` crate was missing a conceptual overview of why CSV mapping and fingerprinting exist, leaving users treating data ingestion as a black box.
+**Clarification:** Added module-level narrative documentation to `crates/logos-import/src/csv.rs` and `crates/logos-import/src/fingerprint.rs`. Added detailed struct/function-level `///` documentation with executable `## Examples` blocks to `CsvMapping`, `ImportRecord`, `ImportError`, `deterministic_fingerprint`, and `FetchError` to clearly demonstrate usage and failure recovery.
