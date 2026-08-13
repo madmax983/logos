@@ -156,18 +156,18 @@ impl MemoryStore {
         let mut rows: Vec<_> = self
             .transactions
             .values()
-            .filter(|entry| !superseded.contains(entry.stored.id()))
+            .filter(|entry| !superseded.contains(&entry.stored.id()))
             .map(|entry| entry.stored.clone())
             .collect();
         rows.sort_by(|left, right| left.id().as_str().cmp(right.id().as_str()));
         rows
     }
 
-    fn superseded_transaction_ids(&self, tx_time_us: Timestamp) -> HashSet<TransactionId> {
+    fn superseded_transaction_ids(&self, tx_time_us: Timestamp) -> HashSet<&TransactionId> {
         self.corrections
             .iter()
             .filter(|entry| entry.recorded_at_us <= tx_time_us)
-            .map(|entry| entry.stored.correction().supersedes_id().clone())
+            .map(|entry| entry.stored.correction().supersedes_id())
             .collect()
     }
 
@@ -183,7 +183,7 @@ impl MemoryStore {
             .filter(|entry| {
                 entry.recorded_at_us <= tx_time_us
                     && entry.stored.effective_at() <= valid_time_us
-                    && !superseded.contains(entry.stored.id())
+                    && !superseded.contains(&entry.stored.id())
             })
             .map(|entry| entry.stored.clone())
             .collect();
