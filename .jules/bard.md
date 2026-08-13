@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2025-05-10 - The Unpredictable Future
+**Confusion:** The `MonteCarloProjector` and its methods in `logos-core/src/experimental/monte_carlo.rs` lacked executable doctests. Users were left guessing how to initialize the simulator parameters (like mean return and volatility) and how to interpret the `MonteCarloResult` percentiles.
+**Clarification:** Added `## Examples` blocks to `MonteCarloResult`, `MonteCarloProjector`, `MonteCarloProjector::new`, and `MonteCarloProjector::run` to provide copy-pasteable usage examples and clarify the input variables and simulation results.
