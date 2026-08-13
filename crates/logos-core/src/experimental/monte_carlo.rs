@@ -48,6 +48,21 @@ impl Lcg {
 }
 
 /// The result of a Monte Carlo simulation.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::monte_carlo::MonteCarloResult;
+///
+/// let result = MonteCarloResult {
+///     p5_cents: 80_000,
+///     median_cents: 100_000,
+///     p95_cents: 120_000,
+/// };
+///
+/// assert!(result.p5_cents < result.median_cents);
+/// assert!(result.median_cents < result.p95_cents);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonteCarloResult {
     /// 5th percentile outcome in cents.
@@ -59,6 +74,23 @@ pub struct MonteCarloResult {
 }
 
 /// A projector to simulate many possible future paths for investments.
+///
+/// ## Examples
+///
+/// ```
+/// use logos_core::monte_carlo::MonteCarloProjector;
+///
+/// let projector = MonteCarloProjector::new(
+///     10_000_000, // $100,000 initial
+///     100_000,    // $1,000 monthly contribution
+///     0.07,       // 7% annual return
+///     0.15,       // 15% volatility
+///     42,         // fixed seed
+/// );
+///
+/// let result = projector.run(120, 1000); // 10 years, 1000 paths
+/// assert!(result.median_cents > 22_000_000);
+/// ```
 #[derive(Debug, Clone)]
 pub struct MonteCarloProjector {
     initial_cents: i64,
@@ -69,7 +101,22 @@ pub struct MonteCarloProjector {
 }
 
 impl MonteCarloProjector {
-    /// Creates a new `MonteCarloProjector`.
+    /// Initializes a Monte Carlo simulator to project a range of potential future portfolio values.
+    /// This establishes the baseline assumptions for compounding returns, steady contributions, and expected market turbulence before executing paths.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::monte_carlo::MonteCarloProjector;
+    ///
+    /// let projector = MonteCarloProjector::new(
+    ///     10_000_000, // $100,000 initial
+    ///     100_000,    // $1,000 monthly contribution
+    ///     0.07,       // 7% annual return
+    ///     0.15,       // 15% volatility
+    ///     42,         // fixed seed
+    /// );
+    /// ```
     #[must_use]
     pub const fn new(
         initial_cents: i64,
@@ -87,8 +134,20 @@ impl MonteCarloProjector {
         }
     }
 
-    /// Runs the Monte Carlo simulation for a given number of months and paths.
+    /// Executes the simulation across multiple randomized paths to calculate potential financial outcomes over time.
+    /// By running thousands of paths, it smooths out the volatility to determine statistical confidence intervals (like the 5th and 95th percentiles) rather than relying on a single linear projection.
     /// To prevent out-of-memory errors on capacity overflow, the number of paths is capped to 10,000,000.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use logos_core::monte_carlo::MonteCarloProjector;
+    ///
+    /// let projector = MonteCarloProjector::new(10_000_000, 100_000, 0.07, 0.15, 42);
+    /// let result = projector.run(12, 100);
+    ///
+    /// println!("Median after 1 year: {}", result.median_cents);
+    /// ```
     #[must_use]
     pub fn run(&self, months: u16, paths: u32) -> MonteCarloResult {
         let paths = paths.min(10_000_000);
