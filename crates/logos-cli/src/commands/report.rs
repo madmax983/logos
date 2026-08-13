@@ -42,12 +42,24 @@ fn render_month_output(
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
     table.set_header(vec![
-        "Month",
-        "Checking Account",
-        "Balance",
-        "Income",
-        "Expense",
-        "Cashflow",
+        Cell::new("Month")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Checking Account")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Balance")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Income")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Expense")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Cashflow")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
     ]);
 
     let cashflow_cents = report.cashflow_cents();
@@ -66,8 +78,8 @@ fn render_month_output(
         Cell::new(logos_core::format::currency(
             report.checking_balance_cents(),
         )),
-        Cell::new(logos_core::format::currency(report.income_cents())),
-        Cell::new(logos_core::format::currency(report.expense_cents())),
+        Cell::new(logos_core::format::currency(report.income_cents())).fg(Color::Green),
+        Cell::new(logos_core::format::currency(report.expense_cents())).fg(Color::Red),
         cashflow_cell,
     ]);
 
@@ -96,6 +108,7 @@ mod tests {
         };
 
         let output = render_month_output(&runtime, "assets:checking", "2026-03");
+        let output = String::from_utf8(strip_ansi_escapes::strip(&output)).unwrap();
 
         assert!(output.contains("2026-03"));
         assert!(output.contains("assets:checking"));

@@ -61,6 +61,8 @@ pub fn autopilot(
     Ok(())
 }
 
+use comfy_table::{Attribute, Cell, Color};
+
 fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
     let fetch_needs_attention_count = summary
         .fetch_runs()
@@ -71,33 +73,80 @@ fn render_autopilot_output(summary: &MonthAutopilotSummary) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
     table.set_header(vec![
-        "Month",
-        "Account",
-        "Imported",
-        "Duplicates",
-        "Fetch Runs",
-        "Needs Attention",
-        "Recon Run ID",
-        "Variance",
-        "Reconciled",
-        "Cashflow",
-        "Close ID",
-        "Closed At",
+        Cell::new("Month")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Account")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Imported")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Duplicates")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Fetch Runs")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Needs Attention")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Recon Run ID")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Variance")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Reconciled")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Cashflow")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Close ID")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
+        Cell::new("Closed At")
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold),
     ]);
 
+    let attention_color = if fetch_needs_attention_count > 0 {
+        Color::Red
+    } else {
+        Color::Green
+    };
+    let variance_cents = summary.reconciliation_run().variance_cents();
+    let variance_color = if variance_cents != 0 {
+        Color::Red
+    } else {
+        Color::Green
+    };
+    let reconciled_color = if summary.reconciliation_run().reconciled() {
+        Color::Green
+    } else {
+        Color::Red
+    };
+    let cashflow_cents = summary.report().cashflow_cents();
+    let cashflow_color = if cashflow_cents >= 0 {
+        Color::Green
+    } else {
+        Color::Red
+    };
+
     table.add_row(vec![
-        summary.month_key().to_owned(),
-        summary.checking_account().to_owned(),
-        summary.imported_count().to_string(),
-        summary.duplicate_count().to_string(),
-        summary.fetch_runs().len().to_string(),
-        fetch_needs_attention_count.to_string(),
-        summary.reconciliation_run().run_id().to_owned(),
-        logos_core::format::currency(summary.reconciliation_run().variance_cents()),
-        summary.reconciliation_run().reconciled().to_string(),
-        logos_core::format::currency(summary.report().cashflow_cents()),
-        summary.close().close_id().to_owned(),
-        summary.close().closed_at().to_string(),
+        Cell::new(summary.month_key()),
+        Cell::new(summary.checking_account()),
+        Cell::new(summary.imported_count()),
+        Cell::new(summary.duplicate_count()),
+        Cell::new(summary.fetch_runs().len()),
+        Cell::new(fetch_needs_attention_count).fg(attention_color),
+        Cell::new(summary.reconciliation_run().run_id()),
+        Cell::new(logos_core::format::currency(variance_cents)).fg(variance_color),
+        Cell::new(summary.reconciliation_run().reconciled()).fg(reconciled_color),
+        Cell::new(logos_core::format::currency(cashflow_cents)).fg(cashflow_color),
+        Cell::new(summary.close().close_id()),
+        Cell::new(summary.close().closed_at()),
     ]);
 
     format!("month.autopilot\n{table}")
@@ -164,6 +213,7 @@ mod tests {
         );
 
         let output = render_autopilot_output(&summary);
+        let output = String::from_utf8(strip_ansi_escapes::strip(&output)).unwrap();
         assert!(output.contains("month.autopilot"));
         assert!(output.contains("2026-04"));
         assert!(output.contains("assets:checking"));
