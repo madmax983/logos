@@ -51,4 +51,17 @@ mod tests {
         assert_eq!(currency(-50), "-$0.50");
         assert_eq!(currency(0), "$0.00");
     }
+
+    #[test]
+    fn test_us_timestamp() {
+        let res = us_timestamp(1_700_000_000_000_000);
+        assert!(res.contains("2023-11-14"));
+    }
+
+    #[test]
+    fn test_currency_formatting_boundary() {
+        assert_eq!(currency(100_000), "$1,000.00");
+        // len is 3. i=0, len-i=3.
+        assert_eq!(currency(12300), "$123.00");
+    }
 }
