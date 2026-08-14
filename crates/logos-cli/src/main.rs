@@ -2,7 +2,7 @@ use crossterm::style::Stylize;
 
 fn main() {
     if let Err(err) = logos_cli::run(std::env::args()) {
-        eprintln!("{}", format!("Error: {err}").red().bold());
+        eprintln!("{} {}", "✘".red().bold(), format!("{err}").red());
         std::process::exit(1);
     }
 }
