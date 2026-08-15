@@ -12,6 +12,34 @@
 //! Provides primitives to project progress toward financial independence
 //! by incorporating current expenses, base net worth, and upcoming RSU
 //! vests (adjusted for risk via haircut tiers).
+//!
+//! ## Examples
+//!
+//! ```
+//! use logos_core::fire::{FireSimulator, UpcomingVest};
+//!
+//! // 1. Create a simulator for $5,000 monthly expenses ($60,000/yr).
+//! // The default Safe Withdrawal Rate is 4%, yielding a $1,500,000 FIRE number.
+//! let mut sim = FireSimulator::new(500_000);
+//!
+//! // 2. Add current assets and liabilities: $200k assets, $50k liabilities = $150k Base Net Worth
+//! sim.add_assets_liabilities(20_000_000, 5_000_000);
+//!
+//! // 3. Add an upcoming RSU vest: 500 units @ $1000 ($500k gross), vesting in 60 days.
+//! // At 60 days, the default haircut tier retains 60%, adding $300k safe value.
+//! sim.add_upcoming_vest(UpcomingVest {
+//!     avg_close_price_cents: 100_000,
+//!     units: 500,
+//!     days_to_vest: 60,
+//! });
+//!
+//! // Total Safe Net Worth = $150k (base) + $300k (RSUs) = $450k.
+//! assert_eq!(sim.safe_net_worth_cents(), 45_000_000);
+//!
+//! // 4. Calculate progress toward the $1.5M goal
+//! // $450k / $1.5M = 30% progress
+//! assert_eq!(sim.fire_progress_pct(), 30);
+//! ```
 
 use crate::domain::rsu::{HaircutTierTable, forecast_value_cents};
 
