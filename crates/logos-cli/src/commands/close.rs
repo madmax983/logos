@@ -1,5 +1,5 @@
 use crate::args::CliError;
-use logos_core::format::us_timestamp;
+use logos_core::us_timestamp;
 
 use logos_store::StoredMonthClose;
 
