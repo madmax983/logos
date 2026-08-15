@@ -1,4 +1,5 @@
 //! PDF Statement Parsing
+use std::borrow::Cow;
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -212,6 +213,9 @@ const fn is_leap_year(year: u32) -> bool {
     (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
 
+/// We avoid unconditional string allocations here by checking for commas.
+/// Most amounts in a statement do not contain commas, so this zero-cost abstraction
+/// saves 1 heap allocation per amount token on the hot path.
 fn parse_amount_cents_token(token: &str) -> Option<i64> {
     let cleaned = token.trim_matches(|c: char| matches!(c, ',' | ';'));
     if cleaned.is_empty() {
@@ -220,7 +224,16 @@ fn parse_amount_cents_token(token: &str) -> Option<i64> {
 
     let (negative, numeric_part) = strip_amount_sign_and_currency(cleaned);
 
-    let sanitized: String = numeric_part.chars().filter(|ch| *ch != ',').collect();
+    // We avoid unconditional string allocations here by checking for commas.
+    // Most amounts in a statement do not contain commas, so this zero-cost abstraction
+    // saves 1 heap allocation per amount token on the hot path.
+    let sanitized = if numeric_part.contains(',') {
+        let stripped: String = numeric_part.chars().filter(|ch| *ch != ',').collect();
+        Cow::Owned(stripped)
+    } else {
+        Cow::Borrowed(numeric_part)
+    };
+
     if sanitized.is_empty() {
         return None;
     }
