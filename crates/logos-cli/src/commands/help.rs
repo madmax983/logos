@@ -124,6 +124,8 @@ Subcommands:
   sankey                             Generate Mermaid Sankey diagram from current transactions
   fire-sim --monthly-expenses-cents <i64> --liquid-assets-cents <i64> --monthly-savings-cents <i64>
                                      Simulate time to Financial Independence
+  net-worth --initial-net-worth-cents <i64> --monthly-savings-cents <i64> --months <u16>
+                                     Project net worth over time
 
 Environment:
   LOGOS_ARTIFACTS_PATH               Override artifact root directory
