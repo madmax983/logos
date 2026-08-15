@@ -20,3 +20,6 @@
 ## 2024-06-09 - Unguarded Arithmetic in CashflowProjector
 **Learning:** Using `+=` without bounds checking causes panics with extreme inputs during balance projection.
 **Action:** Always use `saturating_add` or `checked_add` when aggregating numbers like cents or values over an unknown number of iterations.
+## 2025-02-27 - Coverage Gaps Addressed
+**Learning:** Adding unit tests for custom Error types (`Display` and `From` trait implementations) significantly increases code coverage and prevents display format regressions in application reporting.
+**Action:** When auditing coverage, always verify that `fmt::Display` blocks for custom enums in `error.rs` files are thoroughly exercised by unit tests.

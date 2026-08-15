@@ -96,3 +96,73 @@ impl From<DomainError> for StoreError {
         Self::Domain(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use logos_core::DomainError;
+
+    #[test]
+    fn test_store_error_display() {
+        let domain_err = StoreError::Domain(DomainError::UnbalancedTransaction { total: 100 });
+        assert_eq!(
+            domain_err.to_string(),
+            "transaction must be balanced to zero, but total was 100"
+        );
+
+        let unknown_tx_err = StoreError::UnknownTransaction {
+            transaction_id: TransactionId::new("tx-123").unwrap(),
+        };
+        assert_eq!(
+            unknown_tx_err.to_string(),
+            "cannot apply correction: unknown transaction 'tx-123'"
+        );
+
+        let unknown_artifact_err = StoreError::UnknownArtifact {
+            artifact_id: "art-456".to_string(),
+        };
+        assert_eq!(
+            unknown_artifact_err.to_string(),
+            "cannot link analytics artifact: unknown artifact 'art-456'"
+        );
+
+        let load_err = StoreError::LoadFailed {
+            message: "db read timeout".to_string(),
+        };
+        assert_eq!(
+            load_err.to_string(),
+            "failed to load store: db read timeout"
+        );
+
+        let persist_err = StoreError::PersistFailed {
+            message: "disk full".to_string(),
+        };
+        assert_eq!(
+            persist_err.to_string(),
+            "failed to persist store: disk full"
+        );
+
+        let conn_err = StoreError::ConnectionFailed {
+            message: "connection refused".to_string(),
+        };
+        assert_eq!(conn_err.to_string(), "connection refused");
+
+        let migrate_err = StoreError::MigrationFailed {
+            message: "syntax error".to_string(),
+        };
+        assert_eq!(
+            migrate_err.to_string(),
+            "store migration failed: syntax error"
+        );
+    }
+
+    #[test]
+    fn test_store_error_from_domain_error() {
+        let domain_err = DomainError::UnbalancedTransaction { total: 100 };
+        let store_err: StoreError = domain_err.clone().into();
+        match store_err {
+            StoreError::Domain(e) => assert_eq!(e, domain_err),
+            _ => panic!("Expected StoreError::Domain"),
+        }
+    }
+}
