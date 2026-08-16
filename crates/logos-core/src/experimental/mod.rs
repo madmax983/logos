@@ -34,6 +34,8 @@ pub mod monte_carlo;
 #[cfg(feature = "nova")]
 pub mod opportunity_cost;
 #[cfg(feature = "nova")]
+pub mod payoff_vs_invest;
+#[cfg(feature = "nova")]
 pub mod predictive_ledger;
 /// Detecting recurring transactions to aid in automated classification and projection.
 pub mod recurrence_detector;
