@@ -252,3 +252,22 @@ mod tests {
         assert_eq!(postings.len(), 2);
     }
 }
+
+#[test]
+fn test_sweep_remainder_when_perfect_allocation() {
+    let source = AccountId::new("income:salary").unwrap();
+    let dest = AccountId::new("assets:checking").unwrap();
+
+    let router = IncomeRouter::new(
+        source,
+        vec![RouteRule {
+            destination: dest.clone(),
+            percentage: 100,
+        }],
+    )
+    .unwrap();
+
+    let tx = router.route_income("Paycheck", 100).unwrap();
+    let postings = tx.postings();
+    assert!(postings.contains(&Posting::debit(dest, 100).unwrap()));
+}
