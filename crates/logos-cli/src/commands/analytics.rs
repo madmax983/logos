@@ -180,7 +180,10 @@ fn manifest_row(manifest: &logos_store::StoredAnalyticsArtifactManifest) -> Vec<
 
 #[cfg(test)]
 mod tests {
-    use super::{render_sankey_output, render_snapshot_manifest, render_snapshot_manifest_list};
+    use super::{
+        render_net_worth_output, render_sankey_output, render_snapshot_manifest,
+        render_snapshot_manifest_list,
+    };
     use logos_store::StoredAnalyticsArtifactManifest;
 
     #[test]
@@ -220,6 +223,39 @@ mod tests {
         assert!(output.contains("cafebabe"));
         assert!(output.contains("C:\\artifacts\\def.parquet"));
         assert!(output.contains("artifact-7"));
+    }
+
+    #[test]
+    fn render_net_worth_output_is_deterministic() {
+        let timeline = vec![
+            logos_core::net_worth_projector::ProjectedMonth {
+                month_index: 1,
+                net_worth_cents: 120_000,
+                saved_cents: 20_000,
+                vested_value_cents: 0,
+            },
+            logos_core::net_worth_projector::ProjectedMonth {
+                month_index: 2,
+                net_worth_cents: 140_000,
+                saved_cents: 20_000,
+                vested_value_cents: 0,
+            },
+        ];
+
+        let output = render_net_worth_output(&timeline);
+
+        assert!(output.contains("Month"));
+        assert!(output.contains("Net Worth"));
+        assert!(output.contains("Saved Cash"));
+        assert!(output.contains("Vested Value"));
+
+        assert!(output.contains('1'));
+        assert!(output.contains("$1,200.00"));
+        assert!(output.contains("$200.00"));
+        assert!(output.contains("$0.00"));
+
+        assert!(output.contains('2'));
+        assert!(output.contains("$1,400.00"));
     }
 
     #[test]
@@ -267,9 +303,21 @@ pub fn net_worth_project(
     let projector = NetWorthProjector::new(initial_net_worth_cents, monthly_savings_cents);
     let (timeline, _) = projector.project_timeline(months);
 
+    let output = render_net_worth_output(&timeline);
+    println!("{output}");
+
+    Ok(())
+}
+
+fn render_net_worth_output(timeline: &[logos_core::net_worth_projector::ProjectedMonth]) -> String {
     let mut table = comfy_table::Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec!["Month", "Net Worth", "Saved Cash", "Vested Value"]);
+    table.set_header(vec![
+        comfy_table::Cell::new("Month").add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Net Worth").add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Saved Cash").add_attribute(comfy_table::Attribute::Bold),
+        comfy_table::Cell::new("Vested Value").add_attribute(comfy_table::Attribute::Bold),
+    ]);
 
     for month in timeline {
         table.add_row(vec![
@@ -281,12 +329,7 @@ pub fn net_worth_project(
         ]);
     }
 
-    println!(
-        "analytics.net-worth
-{table}"
-    );
-
-    Ok(())
+    table.to_string()
 }
 
 /// Handles `ledger analytics fire-sim`.
