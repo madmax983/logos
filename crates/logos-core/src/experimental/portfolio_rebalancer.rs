@@ -223,3 +223,33 @@ mod tests {
         assert!(postings.contains(&Posting::debit(msft, 3).unwrap()));
     }
 }
+
+#[test]
+fn test_portfolio_rebalance_remaining_value_is_zero_no_sweep() {
+    let aapl = AccountId::new("assets:aapl").unwrap();
+    let tsla = AccountId::new("assets:tsla").unwrap();
+
+    let rebalancer = PortfolioRebalancer::new(vec![
+        TargetAllocation {
+            asset: aapl,
+            percentage: 50,
+        },
+        TargetAllocation {
+            asset: tsla,
+            percentage: 50,
+        },
+    ])
+    .unwrap();
+
+    let mut current_balances = HashMap::new();
+    // Just avoiding `.clone()` to pass clippy redundant clone lint
+    current_balances.insert(AccountId::new("assets:aapl").unwrap(), 100);
+    current_balances.insert(AccountId::new("assets:tsla").unwrap(), 0);
+
+    let tx = rebalancer
+        .rebalance("Rebalance", &current_balances)
+        .unwrap();
+
+    let postings = tx.postings();
+    assert_eq!(postings.len(), 2);
+}

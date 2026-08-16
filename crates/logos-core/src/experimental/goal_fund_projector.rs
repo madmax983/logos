@@ -186,3 +186,45 @@ mod tests {
         assert_eq!(result, Err(DomainError::AmountOverflow));
     }
 }
+
+#[test]
+fn test_goal_already_reached_initial() {
+    let policy = AllocationPolicy::new(50, 10, 40, 0).unwrap();
+    let projector = GoalFundProjector::new(2_500_000, 100_000, policy, 2_000_000);
+
+    let (_, goal_month) = projector.project_timeline(3).unwrap();
+    assert_eq!(goal_month, Some(1));
+}
+
+#[test]
+fn test_goal_reached_exactly() {
+    let policy = AllocationPolicy::new(50, 10, 40, 0).unwrap();
+    let projector = GoalFundProjector::new(1_500_000, 500_000, policy, 2_000_000);
+
+    let (timeline, goal_month) = projector.project_timeline(3).unwrap();
+
+    // M1: 2.0M, exact target hit.
+    assert_eq!(goal_month, Some(1));
+    assert_eq!(timeline[0].fund_balance_cents, 2_000_000);
+}
+
+#[test]
+fn test_vest_on_month_start_boundary() {
+    let policy = AllocationPolicy::new(50, 10, 40, 0).unwrap();
+    let mut projector = GoalFundProjector::new(0, 0, policy, 2_000_000);
+
+    // Vest exactly at the start of month 2 (day 30)
+    projector.add_upcoming_vest(UpcomingVest {
+        avg_close_price_cents: 10_000,
+        units: 100,
+        days_to_vest: 30, // month_start_days for month 2 is 30.
+    });
+
+    let (timeline, _) = projector.project_timeline(3).unwrap();
+
+    // In month 1 (index 1), days 1-30 are covered.
+    // month_start_days = 0, month_end_days = 30
+    // vest.days_to_vest (30) > 0 && <= 30 => should vest in month 1
+    assert_eq!(timeline[0].allocated_vest_cents, 240_000);
+    assert_eq!(timeline[1].allocated_vest_cents, 0);
+}

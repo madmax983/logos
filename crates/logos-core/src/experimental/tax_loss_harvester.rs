@@ -164,3 +164,38 @@ mod tests {
         assert!(opportunities.is_empty());
     }
 }
+
+#[cfg(test)]
+mod sentinel_tests {
+    use super::*;
+
+    #[test]
+    fn test_no_opportunities_when_price_equals_cost_basis() {
+        let mut harvester = TaxLossHarvester::new();
+        let aapl = AccountId::new("assets:aapl").unwrap();
+
+        harvester.add_lot(TaxLot {
+            asset: aapl,
+            units: 10,
+            cost_basis_cents: 10_000,
+        });
+
+        let opportunities = harvester.find_opportunities(|_| Some(10_000));
+        assert!(opportunities.is_empty());
+    }
+
+    #[test]
+    fn test_no_opportunities_when_units_zero() {
+        let mut harvester = TaxLossHarvester::new();
+        let aapl = AccountId::new("assets:aapl").unwrap();
+
+        harvester.add_lot(TaxLot {
+            asset: aapl,
+            units: 0,
+            cost_basis_cents: 15_000,
+        });
+
+        let opportunities = harvester.find_opportunities(|_| Some(10_000));
+        assert!(opportunities.is_empty());
+    }
+}
