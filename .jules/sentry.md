@@ -20,3 +20,6 @@
 ## 2024-06-09 - Unguarded Arithmetic in CashflowProjector
 **Learning:** Using `+=` without bounds checking causes panics with extreme inputs during balance projection.
 **Action:** Always use `saturating_add` or `checked_add` when aggregating numbers like cents or values over an unknown number of iterations.
+## 2024-08-17 - Error Enum Display Roundtrip
+**Learning:** `RuntimeError`'s `Display` implementation had missed arms and its conversion traits (`From`) lacked unit tests, which could hide serialization/formatting errors in production logs.
+**Action:** Always write a unit test for `fmt::Display` and `From` trait implementations for error enums to ensure all variants are formatted correctly and conversions succeed.

@@ -44,3 +44,61 @@ impl From<logos_core::DomainError> for RuntimeError {
         Self::Domain(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use logos_core::DomainError;
+    use logos_import::ImportError;
+    use logos_store::StoreError;
+
+    #[test]
+    fn test_runtime_error_display() {
+        let store_err = RuntimeError::Store(StoreError::ConnectionFailed {
+            message: "store err".into(),
+        });
+        assert_eq!(store_err.to_string(), "store err");
+
+        let import_err = RuntimeError::Import(ImportError::InvalidAmount);
+        assert_eq!(import_err.to_string(), "invalid amount in CSV row");
+
+        let domain_err = RuntimeError::Domain(DomainError::EmptyAccountId);
+        assert_eq!(
+            domain_err.to_string(),
+            "domain error: account id cannot be empty"
+        );
+
+        let analytics_err = RuntimeError::Analytics {
+            message: "analytics err".into(),
+        };
+        assert_eq!(analytics_err.to_string(), "analytics err");
+
+        let init_err = RuntimeError::Initialization {
+            message: "init err".into(),
+        };
+        assert_eq!(init_err.to_string(), "init err");
+    }
+
+    #[test]
+    fn test_runtime_error_from() {
+        let store_err = StoreError::ConnectionFailed {
+            message: "store err".into(),
+        };
+        assert!(matches!(
+            RuntimeError::from(store_err),
+            RuntimeError::Store(_)
+        ));
+
+        let import_err = ImportError::InvalidAmount;
+        assert!(matches!(
+            RuntimeError::from(import_err),
+            RuntimeError::Import(_)
+        ));
+
+        let domain_err = DomainError::EmptyAccountId;
+        assert!(matches!(
+            RuntimeError::from(domain_err),
+            RuntimeError::Domain(_)
+        ));
+    }
+}
