@@ -56,18 +56,16 @@ fn render_month_output(
     } else {
         Color::Red
     };
-    let cashflow_cell = Cell::new(logos_core::format::currency(cashflow_cents))
+    let cashflow_cell = Cell::new(logos_core::currency(cashflow_cents))
         .fg(cashflow_color)
         .add_attribute(Attribute::Bold);
 
     table.add_row(vec![
         Cell::new(month_key.to_string()),
         Cell::new(checking_account.to_string()),
-        Cell::new(logos_core::format::currency(
-            report.checking_balance_cents(),
-        )),
-        Cell::new(logos_core::format::currency(report.income_cents())),
-        Cell::new(logos_core::format::currency(report.expense_cents())),
+        Cell::new(logos_core::currency(report.checking_balance_cents())),
+        Cell::new(logos_core::currency(report.income_cents())),
+        Cell::new(logos_core::currency(report.expense_cents())),
         cashflow_cell,
     ]);
 
