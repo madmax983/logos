@@ -31,3 +31,6 @@
 ## 2025-05-03 - The "Black Box" of TUI Views
 **Confusion:** The `logos-tui/src/ui/mod.rs` file was an undocumented black box that simply re-exported modules. Developers couldn't tell that these modules contained pure functions designed to be used independently of ratatui, leading to potential confusion about how views are rendered.
 **Clarification:** Added module-level `//!` documentation explaining the pure-function architecture of the `ui` module, including an ignored code example demonstrating how to render a view without any terminal setup.
+## 2024-05-24 - The Dead End of Logos Fetch Error
+**Confusion:** The `FetchError` struct in `logos-fetch` was completely undocumented, acting as a "Dead End" for users trying to understand how to handle errors returned by the crate.
+**Clarification:** Added `//!` module documentation and `///` doc comments with an executable `## Examples` block to `FetchError` to clarify how errors are instantiated and displayed.
