@@ -1,0 +1,6 @@
+[mutants]
+# Skip equivalent mutants
+exclude = [
+    "replace MemoryStore::new_in_memory -> Self with Default::default()",
+    "replace system_time_us -> Timestamp with Default::default()"
+]

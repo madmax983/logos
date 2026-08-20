@@ -266,3 +266,448 @@ fn memory_store_rejects_unknown_related_records() {
         logos_store::StoreError::UnknownTransaction { .. }
     ));
 }
+
+#[test]
+fn memory_store_missing_counts() {
+    let store = MemoryStore::new_in_memory();
+    assert_eq!(store.import_record_count(), 0);
+    assert_eq!(store.fetch_run_count(), 0);
+    assert_eq!(store.reconciliation_run_count(), 0);
+    assert_eq!(store.month_close_count(), 0);
+    assert!(!store.has_import_record_content_hash("hash"));
+}
+
+#[test]
+fn memory_store_has_transaction() {
+    let mut store = MemoryStore::new_in_memory();
+    let txn = store
+        .write_transaction(balanced_txn(
+            "paycheck",
+            "assets:checking",
+            "income:salary",
+            10_000,
+        ))
+        .expect("write txn");
+    assert!(store.has_transaction(&txn));
+    assert!(!store.has_transaction(&TransactionId::new("missing").expect("id")));
+}
+
+#[test]
+fn memory_store_mutant_kills() {
+    let mut store = MemoryStore::new_in_memory();
+    let txn = store
+        .write_transaction(balanced_txn(
+            "paycheck",
+            "assets:checking",
+            "income:salary",
+            10_000,
+        ))
+        .expect("write txn");
+
+    store
+        .write_budget_target("2026-03", "expenses:food", 500)
+        .unwrap();
+    let targets = store.budget_targets();
+    assert_eq!(targets.len(), 1);
+
+    let _artifact = store
+        .write_analytics_artifact_manifest("report", "uri", "hash", 1, 1, 1, 1, None)
+        .unwrap();
+    let artifacts = store.analytics_artifacts();
+    assert_eq!(artifacts.len(), 1);
+
+    store
+        .write_import_batch(
+            "source",
+            "uri",
+            "batch-1",
+            0,
+            false,
+            false,
+            &[NewImportRecord::new("hash", Some(&txn))],
+        )
+        .unwrap();
+    assert_eq!(store.import_record_count(), 1);
+    assert!(store.has_import_record_content_hash("hash"));
+    let records = store.import_records();
+    assert_eq!(records.len(), 1);
+    let batches = store.import_batches();
+    assert_eq!(batches.len(), 1);
+
+    assert_eq!(store.statement_line_count(), 0);
+
+    let _fetch = store
+        .write_fetch_run(
+            "src",
+            "bank",
+            "assets",
+            "2026",
+            logos_store::StoredFetchRunStatus::Downloaded,
+            Some("uri"),
+            Some(logos_store::StoredFetchArtifactFormat::Csv),
+            Some(1),
+            Some(1),
+            None,
+        )
+        .unwrap();
+    assert_eq!(store.fetch_run_count(), 1);
+    let fetches = store.fetch_runs();
+    assert_eq!(fetches.len(), 1);
+
+    let recon = store
+        .write_reconciliation_run("2026", "assets", 0, 0, 0, 0, 0, true, 0, 0, 0, &[])
+        .unwrap();
+    assert_eq!(store.reconciliation_run_count(), 1);
+    assert!(store.reconciliation_run(recon.run_id()).is_some());
+    let recons = store.reconciliation_runs();
+    assert_eq!(recons.len(), 1);
+
+    let close = store
+        .write_month_close("2026", "assets", recon.run_id(), None)
+        .unwrap();
+    assert_eq!(store.month_close_count(), 1);
+    assert!(store.month_close(close.close_id()).is_some());
+    let closes = store.month_closes();
+    assert_eq!(closes.len(), 1);
+}
+
+#[test]
+fn memory_store_rejects_unknown_superseded_artifact() {
+    let mut store = MemoryStore::new();
+    let res = store.write_analytics_artifact_manifest(
+        "report",
+        "uri",
+        "hash",
+        1,
+        1,
+        1,
+        1,
+        Some("missing"),
+    );
+    assert!(res.is_err());
+}
+
+#[test]
+fn memory_store_rejects_negative_import_duplicate_count() {
+    let mut store = MemoryStore::new();
+    let res = store.write_import_batch("kind", "uri", "batch", -1, false, false, &[]);
+    assert!(res.is_err());
+}
+
+#[test]
+fn memory_store_rejects_missing_fetch_run_metadata_for_downloaded() {
+    let mut store = MemoryStore::new();
+
+    // Missing artifact_path
+    assert!(
+        store
+            .write_fetch_run(
+                "src",
+                "bank",
+                "assets",
+                "2026",
+                logos_store::StoredFetchRunStatus::Downloaded,
+                None,
+                Some(logos_store::StoredFetchArtifactFormat::Csv),
+                Some(1),
+                Some(1),
+                None
+            )
+            .is_err()
+    );
+
+    // Missing output_format
+    assert!(
+        store
+            .write_fetch_run(
+                "src",
+                "bank",
+                "assets",
+                "2026",
+                logos_store::StoredFetchRunStatus::Downloaded,
+                Some("uri"),
+                None,
+                Some(1),
+                Some(1),
+                None
+            )
+            .is_err()
+    );
+
+    // Missing opening balance
+    assert!(
+        store
+            .write_fetch_run(
+                "src",
+                "bank",
+                "assets",
+                "2026",
+                logos_store::StoredFetchRunStatus::Downloaded,
+                Some("uri"),
+                Some(logos_store::StoredFetchArtifactFormat::Csv),
+                None,
+                Some(1),
+                None
+            )
+            .is_err()
+    );
+
+    // Missing closing balance
+    assert!(
+        store
+            .write_fetch_run(
+                "src",
+                "bank",
+                "assets",
+                "2026",
+                logos_store::StoredFetchRunStatus::Downloaded,
+                Some("uri"),
+                Some(logos_store::StoredFetchArtifactFormat::Csv),
+                Some(1),
+                None,
+                None
+            )
+            .is_err()
+    );
+}
+
+#[test]
+fn memory_store_rejects_missing_fetch_run_metadata_for_imported() {
+    let mut store = MemoryStore::new();
+
+    // Missing artifact_path
+    assert!(
+        store
+            .write_fetch_run(
+                "src",
+                "bank",
+                "assets",
+                "2026",
+                logos_store::StoredFetchRunStatus::Imported,
+                None,
+                Some(logos_store::StoredFetchArtifactFormat::Csv),
+                Some(1),
+                Some(1),
+                None
+            )
+            .is_err()
+    );
+
+    // Missing output_format
+    assert!(
+        store
+            .write_fetch_run(
+                "src",
+                "bank",
+                "assets",
+                "2026",
+                logos_store::StoredFetchRunStatus::Imported,
+                Some("uri"),
+                None,
+                Some(1),
+                Some(1),
+                None
+            )
+            .is_err()
+    );
+
+    // Missing opening balance
+    assert!(
+        store
+            .write_fetch_run(
+                "src",
+                "bank",
+                "assets",
+                "2026",
+                logos_store::StoredFetchRunStatus::Imported,
+                Some("uri"),
+                Some(logos_store::StoredFetchArtifactFormat::Csv),
+                None,
+                Some(1),
+                None
+            )
+            .is_err()
+    );
+
+    // Missing closing balance
+    assert!(
+        store
+            .write_fetch_run(
+                "src",
+                "bank",
+                "assets",
+                "2026",
+                logos_store::StoredFetchRunStatus::Imported,
+                Some("uri"),
+                Some(logos_store::StoredFetchArtifactFormat::Csv),
+                Some(1),
+                None,
+                None
+            )
+            .is_err()
+    );
+
+    // Empty error string is normalized to None
+    let run = store
+        .write_fetch_run(
+            "src",
+            "bank",
+            "assets",
+            "2026",
+            logos_store::StoredFetchRunStatus::Downloaded,
+            Some("uri"),
+            Some(logos_store::StoredFetchArtifactFormat::Csv),
+            Some(1),
+            Some(1),
+            Some(""),
+        )
+        .unwrap();
+    assert!(run.error_summary().is_none());
+}
+
+#[test]
+fn memory_store_rejects_negative_reconciliation_metrics() {
+    let mut store = MemoryStore::new();
+
+    // matched_postings
+    assert!(
+        store
+            .write_reconciliation_run("2026", "assets", 0, 0, 0, 0, 0, true, -1, 0, 0, &[])
+            .is_err()
+    );
+    assert!(
+        store
+            .write_reconciliation_run_and_month_close(
+                "2026",
+                "assets",
+                0,
+                0,
+                0,
+                0,
+                0,
+                true,
+                -1,
+                0,
+                0,
+                &[],
+                None
+            )
+            .is_err()
+    );
+
+    // inflow_cents
+    assert!(
+        store
+            .write_reconciliation_run("2026", "assets", 0, 0, 0, 0, 0, true, 0, -1, 0, &[])
+            .is_err()
+    );
+    assert!(
+        store
+            .write_reconciliation_run_and_month_close(
+                "2026",
+                "assets",
+                0,
+                0,
+                0,
+                0,
+                0,
+                true,
+                0,
+                -1,
+                0,
+                &[],
+                None
+            )
+            .is_err()
+    );
+
+    // outflow_cents
+    assert!(
+        store
+            .write_reconciliation_run("2026", "assets", 0, 0, 0, 0, 0, true, 0, 0, -1, &[])
+            .is_err()
+    );
+    assert!(
+        store
+            .write_reconciliation_run_and_month_close(
+                "2026",
+                "assets",
+                0,
+                0,
+                0,
+                0,
+                0,
+                true,
+                0,
+                0,
+                -1,
+                &[],
+                None
+            )
+            .is_err()
+    );
+}
+
+#[test]
+fn memory_store_rejects_missing_transactions_in_write_recon_and_month_close() {
+    let mut store = MemoryStore::new();
+    let res = store.write_reconciliation_run_and_month_close(
+        "2026",
+        "assets",
+        0,
+        0,
+        0,
+        0,
+        0,
+        true,
+        0,
+        0,
+        0,
+        &[TransactionId::new("missing").unwrap()],
+        None,
+    );
+    assert!(res.is_err());
+}
+
+#[test]
+fn memory_store_rejects_zero_reconciliation_metrics() {
+    let mut store = MemoryStore::new();
+
+    // Test the boundaries! < vs <=
+    let res = store.write_reconciliation_run_and_month_close(
+        "2026",
+        "assets",
+        0,
+        0,
+        0,
+        0,
+        0,
+        true,
+        0,
+        0,
+        0,
+        &[],
+        None,
+    );
+    assert!(res.is_ok());
+
+    // missing artifact_id
+    let res = store.write_reconciliation_run_and_month_close(
+        "2027",
+        "assets",
+        0,
+        0,
+        0,
+        0,
+        0,
+        true,
+        0,
+        0,
+        0,
+        &[],
+        Some("missing"),
+    );
+    assert!(res.is_err());
+}
+
+// Kill unused variables to get a clean build
